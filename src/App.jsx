@@ -66,6 +66,14 @@ function AppShell() {
     setCompletedSet(new Set());
   }
 
+  if (!state.fsInitialized) {
+    return (
+      <div className="app-fs-init">
+        <LoadingIndicator message="Loading…" />
+      </div>
+    );
+  }
+
   if (!apiKey) return <ApiKeySetup />;
 
   return (

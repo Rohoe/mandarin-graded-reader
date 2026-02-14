@@ -1,3 +1,12 @@
+/* ── FS init splash ──────────────────────────────────────────── */
+.app-fs-init {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+}
+
 /* ── Root ────────────────────────────────────────────────────── */
 #root {
   min-height: 100vh;

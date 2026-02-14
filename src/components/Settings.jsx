@@ -5,14 +5,15 @@ import { getStorageUsage } from '../lib/storage';
 import './Settings.css';
 
 export default function Settings({ onClose }) {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, pickSaveFolder, removeSaveFolder } = useApp();
   const act = actions(dispatch);
 
-  const [newKey, setNewKey]     = useState('');
-  const [showKey, setShowKey]   = useState(false);
+  const [newKey, setNewKey]           = useState('');
+  const [showKey, setShowKey]         = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
 
   const usage = getStorageUsage();
+  const { saveFolder, fsSupported } = state;
 
   function handleUpdateKey(e) {
     e.preventDefault();
@@ -25,10 +26,7 @@ export default function Settings({ onClose }) {
   }
 
   function handleClearAll() {
-    if (!confirmClear) {
-      setConfirmClear(true);
-      return;
-    }
+    if (!confirmClear) { setConfirmClear(true); return; }
     act.clearAll();
     act.notify('success', 'All app data cleared.');
     setConfirmClear(false);
@@ -63,19 +61,11 @@ export default function Settings({ onClose }) {
                 onChange={e => setNewKey(e.target.value)}
                 autoComplete="off"
               />
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                onClick={() => setShowKey(s => !s)}
-              >
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowKey(s => !s)}>
                 {showKey ? '🙈' : '👁'}
               </button>
             </div>
-            <button
-              type="submit"
-              className="btn btn-secondary btn-sm"
-              disabled={!newKey.trim()}
-            >
+            <button type="submit" className="btn btn-secondary btn-sm" disabled={!newKey.trim()}>
               Update Key
             </button>
           </form>
@@ -83,19 +73,60 @@ export default function Settings({ onClose }) {
 
         <hr className="divider" />
 
-        {/* Storage usage */}
+        {/* Save folder */}
         <section className="settings-section">
-          <h3 className="settings-section__title form-label">Storage Usage</h3>
+          <h3 className="settings-section__title form-label">Save Folder</h3>
+
+          {!fsSupported ? (
+            <p className="settings-section__desc text-muted">
+              File System Access API is not supported in this browser.
+              Use Chrome or Edge to enable disk persistence.
+            </p>
+          ) : saveFolder ? (
+            <>
+              <div className="settings-folder-active">
+                <span className="settings-folder-icon">📁</span>
+                <div>
+                  <p className="settings-folder-name">{saveFolder.name}</p>
+                  <p className="settings-section__desc text-muted" style={{ marginTop: 2 }}>
+                    Data is being saved to this folder on every change.
+                  </p>
+                </div>
+              </div>
+              <div className="settings-section__form">
+                <button className="btn btn-secondary btn-sm" onClick={pickSaveFolder}>
+                  Change folder
+                </button>
+                <button className="btn btn-ghost btn-sm" onClick={removeSaveFolder}>
+                  Remove folder
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="settings-section__desc text-muted">
+                Choose a folder on your computer where the app will save your syllabi,
+                readers, and vocabulary as JSON files. This is in addition to browser
+                storage and survives clearing browser data.
+              </p>
+              <button className="btn btn-secondary btn-sm" onClick={pickSaveFolder}>
+                📁 Choose save folder…
+              </button>
+            </>
+          )}
+        </section>
+
+        <hr className="divider" />
+
+        {/* localStorage usage */}
+        <section className="settings-section">
+          <h3 className="settings-section__title form-label">Browser Storage Usage</h3>
           <div className="settings-storage">
             <div className="settings-storage__bar">
-              <div
-                className="settings-storage__fill"
-                style={{ width: `${Math.min(usage.pct, 100)}%` }}
-              />
+              <div className="settings-storage__fill" style={{ width: `${Math.min(usage.pct, 100)}%` }} />
             </div>
             <p className="settings-storage__label text-subtle">
-              {(usage.used / 1024).toFixed(0)} KB / {(usage.limit / 1024 / 1024).toFixed(0)} MB
-              ({usage.pct}% used)
+              {(usage.used / 1024).toFixed(0)} KB / {(usage.limit / 1024 / 1024).toFixed(0)} MB ({usage.pct}% used)
             </p>
           </div>
         </section>
@@ -108,27 +139,27 @@ export default function Settings({ onClose }) {
             Danger Zone
           </h3>
           <p className="settings-section__desc text-muted">
-            Clear all syllabi, generated readers, and vocabulary history. Your API key will be kept.
+            Clear all syllabi, generated readers, and vocabulary history from browser storage.
+            {saveFolder && ' Files in your save folder are not deleted.'}
           </p>
-          <button
-            className={`btn btn-sm ${confirmClear ? 'settings-danger-confirm' : 'btn-ghost'}`}
-            onClick={handleClearAll}
-            style={confirmClear ? {
-              background: 'var(--color-error-light)',
-              color: 'var(--color-error)',
-              border: '1px solid var(--color-error)'
-            } : {}}
-          >
-            {confirmClear ? 'Click again to confirm' : 'Clear all data'}
-          </button>
-          {confirmClear && (
+          <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
             <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => setConfirmClear(false)}
+              className="btn btn-sm"
+              onClick={handleClearAll}
+              style={confirmClear ? {
+                background: 'var(--color-error-light)',
+                color: 'var(--color-error)',
+                border: '1px solid var(--color-error)',
+              } : { background: 'transparent', color: 'var(--color-text-muted)' }}
             >
-              Cancel
+              {confirmClear ? 'Click again to confirm' : 'Clear browser data'}
             </button>
-          )}
+            {confirmClear && (
+              <button className="btn btn-ghost btn-sm" onClick={() => setConfirmClear(false)}>
+                Cancel
+              </button>
+            )}
+          </div>
         </section>
       </div>
     </div>

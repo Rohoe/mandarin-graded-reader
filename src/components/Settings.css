@@ -95,6 +95,31 @@
   font-size: var(--text-xs);
 }
 
+/* Save folder active state */
+.settings-folder-active {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.settings-folder-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.settings-folder-name {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  word-break: break-all;
+}
+
 /* Confirm row */
 .settings-section > .btn + .btn {
   margin-top: calc(-1 * var(--space-1));
