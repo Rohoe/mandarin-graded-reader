@@ -37,6 +37,7 @@ const KEYS = {
   MAX_TOKENS:         'gradedReader_maxTokens',
   DEFAULT_LEVEL:      'gradedReader_defaultLevel',
   DARK_MODE:          'gradedReader_darkMode',
+  TTS_VOICE_URI:      'gradedReader_ttsVoiceURI',
 };
 
 // ── Generic localStorage helpers ──────────────────────────────
@@ -280,6 +281,16 @@ export function loadDarkMode() {
 
 export function saveDarkMode(val) {
   save(KEYS.DARK_MODE, val);
+}
+
+// ── TTS voice preference ──────────────────────────────────────
+
+export function loadTtsVoiceURI() {
+  return load(KEYS.TTS_VOICE_URI, null);
+}
+
+export function saveTtsVoiceURI(uri) {
+  save(KEYS.TTS_VOICE_URI, uri);
 }
 
 // ── Storage usage estimate ────────────────────────────────────

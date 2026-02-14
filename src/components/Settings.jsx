@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
 import { getStorageUsage } from '../lib/storage';
@@ -11,6 +11,22 @@ export default function Settings({ onClose }) {
   const [newKey, setNewKey]           = useState('');
   const [showKey, setShowKey]         = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [chineseVoices, setChineseVoices] = useState([]);
+
+  useEffect(() => {
+    if (!('speechSynthesis' in window)) return;
+    function loadVoices() {
+      const zh = window.speechSynthesis.getVoices().filter(v => /zh/i.test(v.lang));
+      setChineseVoices(zh);
+    }
+    loadVoices();
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+  }, []);
+
+  function isRecommendedVoice(v) {
+    return /^Google\s+/i.test(v.name) || /^(Tingting|Meijia|Sinji)$/i.test(v.name);
+  }
 
   const usage = getStorageUsage();
   const { saveFolder, fsSupported } = state;
@@ -62,6 +78,48 @@ export default function Settings({ onClose }) {
         </section>
 
         <hr className="divider" />
+
+        {/* TTS voice */}
+        {'speechSynthesis' in window && chineseVoices.length > 0 && (
+          <>
+            <section className="settings-section">
+              <h3 className="settings-section__title form-label">Text-to-Speech Voice</h3>
+              <p className="settings-section__desc text-muted">
+                Chinese voice used when listening to stories.
+              </p>
+              <select
+                className="form-select"
+                value={state.ttsVoiceURI || ''}
+                onChange={e => act.setTtsVoice(e.target.value)}
+                style={{ maxWidth: '18rem' }}
+              >
+                {(() => {
+                  const recommended = chineseVoices.filter(isRecommendedVoice);
+                  const other = chineseVoices.filter(v => !isRecommendedVoice(v));
+                  return (
+                    <>
+                      {recommended.length > 0 && (
+                        <optgroup label="Recommended">
+                          {recommended.map(v => (
+                            <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>
+                          ))}
+                        </optgroup>
+                      )}
+                      {other.length > 0 && (
+                        <optgroup label="Other voices">
+                          {other.map(v => (
+                            <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>
+                          ))}
+                        </optgroup>
+                      )}
+                    </>
+                  );
+                })()}
+              </select>
+            </section>
+            <hr className="divider" />
+          </>
+        )}
 
         {/* API Key */}
         <section className="settings-section">

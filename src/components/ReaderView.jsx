@@ -14,7 +14,7 @@ import './ReaderView.css';
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
-  const { generatedReaders, learnedVocabulary, error, pendingReaders, apiKey, maxTokens } = state;
+  const { generatedReaders, learnedVocabulary, error, pendingReaders, apiKey, maxTokens, ttsVoiceURI } = state;
   const isPending = !!(lessonKey && pendingReaders[lessonKey]);
 
   const reader = generatedReaders[lessonKey];
@@ -27,16 +27,8 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   const [speakingKey, setSpeakingKey] = useState(null);
   const utteranceRef = useRef(null);
   const [chineseVoices, setChineseVoices] = useState([]);
-  const [selectedVoiceURI, setSelectedVoiceURI] = useState(null);
 
-  function isRecommendedVoice(v) {
-    return /^Google\s+/i.test(v.name) ||
-      /^(Tingting|Meijia|Sinji|Lekha)$/i.test(v.name);
-  }
-
-  // Voice preference order: Google neural > macOS Tingting > any zh-CN > any zh
   function pickBestVoice(voices) {
-    const zh = voices.filter(v => /zh/i.test(v.lang));
     const priority = [
       v => v.name === 'Google 普通话（中国大陆）',
       v => v.name === 'Google 国语（台灣）',
@@ -46,24 +38,27 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       v => v.lang.startsWith('zh'),
     ];
     for (const test of priority) {
-      const match = zh.find(test);
+      const match = voices.find(test);
       if (match) return match;
     }
-    return zh[0] || null;
+    return voices[0] || null;
   }
 
   useEffect(() => {
     if (!ttsSupported) return;
     function loadVoices() {
-      const all = window.speechSynthesis.getVoices();
-      const zh = all.filter(v => /zh/i.test(v.lang));
+      const zh = window.speechSynthesis.getVoices().filter(v => /zh/i.test(v.lang));
       setChineseVoices(zh);
-      const best = pickBestVoice(zh);
-      if (best) setSelectedVoiceURI(uri => uri || best.voiceURI);
+      // Auto-set best voice in global state if none saved yet
+      if (!ttsVoiceURI && zh.length > 0) {
+        const best = pickBestVoice(zh);
+        if (best) act.setTtsVoice(best.voiceURI);
+      }
     }
     loadVoices();
     window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
     return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsSupported]);
 
   // Cancel speech when lesson changes
@@ -85,7 +80,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    const voice = chineseVoices.find(v => v.voiceURI === selectedVoiceURI);
+    const voice = chineseVoices.find(v => v.voiceURI === ttsVoiceURI);
     if (voice) {
       utterance.voice = voice;
       utterance.lang = voice.lang;
@@ -98,7 +93,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     utteranceRef.current = utterance;
     setSpeakingKey(key);
     window.speechSynthesis.speak(utterance);
-  }, [ttsSupported, speakingKey, chineseVoices, selectedVoiceURI]);
+  }, [ttsSupported, speakingKey, chineseVoices, ttsVoiceURI]);
 
   // Load from cache or generate
   useEffect(() => {
@@ -343,33 +338,6 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
                 ⏹ Stop
               </button>
             )}
-            {chineseVoices.length > 1 && (() => {
-              const recommended = chineseVoices.filter(isRecommendedVoice);
-              const other = chineseVoices.filter(v => !isRecommendedVoice(v));
-              return (
-                <select
-                  className="form-select reader-view__tts-voice-select"
-                  value={selectedVoiceURI || ''}
-                  onChange={e => setSelectedVoiceURI(e.target.value)}
-                  title="Choose voice"
-                >
-                  {recommended.length > 0 && (
-                    <optgroup label="Recommended">
-                      {recommended.map(v => (
-                        <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>
-                      ))}
-                    </optgroup>
-                  )}
-                  {other.length > 0 && (
-                    <optgroup label="Other voices">
-                      {other.map(v => (
-                        <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>
-                      ))}
-                    </optgroup>
-                  )}
-                </select>
-              );
-            })()}
           </>
         )}
         </div>

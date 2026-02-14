@@ -28,6 +28,8 @@ import {
   saveDefaultLevel,
   loadDarkMode,
   saveDarkMode,
+  loadTtsVoiceURI,
+  saveTtsVoiceURI,
 } from '../lib/storage';
 import {
   loadDirectoryHandle,
@@ -62,6 +64,7 @@ function buildInitialState() {
     maxTokens:         loadMaxTokens(),
     defaultLevel:      loadDefaultLevel(),
     darkMode:          loadDarkMode(),
+    ttsVoiceURI:       loadTtsVoiceURI(),
     // Background generation tracking (ephemeral, not persisted)
     pendingReaders:    {},
   };
@@ -283,6 +286,10 @@ function reducer(state, action) {
     case 'SET_DARK_MODE':
       saveDarkMode(action.payload);
       return { ...state, darkMode: action.payload };
+
+    case 'SET_TTS_VOICE':
+      saveTtsVoiceURI(action.payload);
+      return { ...state, ttsVoiceURI: action.payload };
 
     case 'START_PENDING_READER':
       return { ...state, pendingReaders: { ...state.pendingReaders, [action.payload]: true } };
