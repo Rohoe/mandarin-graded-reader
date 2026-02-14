@@ -1,0 +1,126 @@
+/* ── Root ────────────────────────────────────────────────────── */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Two-column layout ───────────────────────────────────────── */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.app-sidebar {
+  flex-shrink: 0;
+  width: var(--sidebar-width);
+}
+
+.app-main {
+  flex: 1;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+/* ── Mobile header ───────────────────────────────────────────── */
+.app-mobile-header {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-sidebar);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.app-mobile-title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+/* ── Mobile sidebar overlay ──────────────────────────────────── */
+.app-sidebar-overlay {
+  display: none;
+}
+
+/* ── Toast notification ──────────────────────────────────────── */
+.app-notification {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  box-shadow: var(--shadow-lg);
+  z-index: 300;
+  max-width: 360px;
+}
+
+.app-notification--success {
+  background: #EBF3EB;
+  border: 1px solid #AAC4AA;
+  color: var(--color-success);
+}
+
+.app-notification--error {
+  background: var(--color-error-light);
+  border: 1px solid #D4AAAA;
+  color: var(--color-error);
+}
+
+/* ── Loading wrapper (used in main) ──────────────────────────── */
+.app-loading-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .app-mobile-header {
+    display: flex;
+  }
+
+  .app-layout {
+    flex-direction: column;
+  }
+
+  .app-sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: min(var(--sidebar-width), 85vw);
+    transform: translateX(-100%);
+    transition: transform var(--transition-slow);
+    z-index: 50;
+  }
+
+  .app-sidebar--open {
+    transform: translateX(0);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .app-sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 24, 20, 0.35);
+    z-index: 49;
+  }
+
+  .app-notification {
+    bottom: var(--space-4);
+    right: var(--space-4);
+    left: var(--space-4);
+    max-width: none;
+  }
+}

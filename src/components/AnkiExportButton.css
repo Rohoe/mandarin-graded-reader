@@ -1,0 +1,36 @@
+.anki-export {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius);
+}
+
+.anki-export__info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+}
+
+.anki-export__new {
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.anki-export__skip {
+  font-size: var(--text-xs);
+}
+
+.anki-export__done {
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.anki-export__btn {
+  flex-shrink: 0;
+}

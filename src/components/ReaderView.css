@@ -1,0 +1,199 @@
+.reader-view {
+  flex: 1;
+  padding: var(--space-10) var(--space-12);
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  min-height: 100vh;
+}
+
+/* ── Empty / loading / error states ─────── */
+.reader-view--empty,
+.reader-view--loading,
+.reader-view--error,
+.reader-view--pregeneratе {
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-16) var(--space-8);
+}
+
+.reader-view__empty-state {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+  max-width: 360px;
+}
+
+.reader-view__empty-hanzi {
+  font-family: var(--font-chinese);
+  font-size: 6rem;
+  color: var(--color-accent-dim);
+  display: block;
+  animation: inkExpand 0.8s ease forwards;
+}
+
+.reader-view__empty-text {
+  font-size: var(--text-lg);
+  color: var(--color-text-muted);
+  line-height: var(--leading-relaxed);
+}
+
+/* ── Pre-generate card ───────────────────── */
+.reader-view__pregenerate {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.reader-view__lesson-num {
+  font-size: var(--text-sm);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.reader-view__lesson-title {
+  font-size: var(--text-chinese-title);
+}
+
+.reader-view__lesson-en {
+  font-size: var(--text-xl);
+}
+
+.reader-view__lesson-desc {
+  color: var(--color-text-muted);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+}
+
+.reader-view__vocab-focus {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--text-sm);
+}
+
+.reader-view__generate-btn {
+  margin-top: var(--space-2);
+}
+
+/* ── Error state ─────────────────────────── */
+.reader-view__error {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.reader-view__error-title {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--color-error);
+}
+
+.reader-view__error-msg {
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+}
+
+.reader-view__error-actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* ── Reader header ───────────────────────── */
+.reader-view__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.reader-view__meta {
+  font-size: var(--text-sm);
+  letter-spacing: 0.04em;
+}
+
+.reader-view__title {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+.reader-view__title-en {
+  font-size: var(--text-xl);
+  font-style: italic;
+}
+
+/* ── Story ───────────────────────────────── */
+.reader-view__story {
+  font-size: var(--text-chinese-body);
+  line-height: var(--leading-chinese);
+  letter-spacing: 0.02em;
+  color: var(--color-text);
+}
+
+.reader-view__vocab {
+  color: var(--color-accent-hover);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--color-accent-dim);
+  text-underline-offset: 3px;
+}
+
+/* ── Bottom actions ──────────────────────── */
+.reader-view__complete-row {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-6) 0;
+}
+
+.reader-view__complete-btn {
+  min-width: 220px;
+}
+
+.reader-view__completed-badge {
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  color: var(--color-success);
+  padding: var(--space-4);
+  background: #EBF3EB;
+  border: 1px solid #AAC4AA;
+  border-radius: var(--radius);
+}
+
+.reader-view__regen-row {
+  display: flex;
+  justify-content: center;
+  padding-bottom: var(--space-12);
+}
+
+/* ── Raw fallback ───────────────────────── */
+.reader-view__raw {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  background: var(--color-bg-elevated);
+  padding: var(--space-5);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  line-height: var(--leading-relaxed);
+}
+
+/* ── Responsive ─────────────────────────── */
+@media (max-width: 1024px) {
+  .reader-view {
+    padding: var(--space-8) var(--space-8);
+  }
+}
+
+@media (max-width: 768px) {
+  .reader-view {
+    padding: var(--space-6) var(--space-4);
+  }
+}
