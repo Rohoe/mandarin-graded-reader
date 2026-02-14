@@ -32,12 +32,21 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   }, [lessonKey]);
 
   async function handleGenerate() {
-    if (!lessonMeta || isPending) return;
+    if (isPending) return;
 
-    const topic = lessonMeta.title_zh
-      ? `${lessonMeta.title_zh} — ${lessonMeta.title_en || ''}: ${lessonMeta.description || ''}`
-      : lessonMeta.topic || '';
-    const level = lessonMeta.level || 3;
+    let topic, level;
+    if (lessonMeta) {
+      topic = lessonMeta.title_zh
+        ? `${lessonMeta.title_zh} — ${lessonMeta.title_en || ''}: ${lessonMeta.description || ''}`
+        : lessonMeta.topic || '';
+      level = lessonMeta.level || 3;
+    } else if (reader) {
+      // Standalone reader — use the metadata stored on the reader object
+      topic = reader.topic || '';
+      level = reader.level || 3;
+    } else {
+      return;
+    }
 
     act.startPendingReader(lessonKey);
     act.clearError();
