@@ -4,7 +4,7 @@ import { actions } from '../context/actions';
 import { generateAnkiExport, downloadFile } from '../lib/anki';
 import './AnkiExportButton.css';
 
-export default function AnkiExportButton({ ankiJson, topic, level }) {
+export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
   const { exportedWords } = state;
@@ -14,13 +14,15 @@ export default function AnkiExportButton({ ankiJson, topic, level }) {
   if (!ankiJson || ankiJson.length === 0) return null;
 
   // Calculate preview without triggering export
-  const newCount  = ankiJson.filter(c => c.chinese && !exportedWords.has(c.chinese)).length;
-  const skipCount = ankiJson.filter(c => c.chinese && exportedWords.has(c.chinese)).length;
+  const grammarCards = (grammarNotes || []).map(n => ({ chinese: n.pattern }));
+  const allCards     = [...ankiJson, ...grammarCards];
+  const newCount     = allCards.filter(c => c.chinese && !exportedWords.has(c.chinese)).length;
+  const skipCount    = allCards.filter(c => c.chinese && exportedWords.has(c.chinese)).length;
 
   const allExported = newCount === 0;
 
   function handleExport() {
-    const result = generateAnkiExport(ankiJson, topic, level, exportedWords, { forceAll: allExported });
+    const result = generateAnkiExport(ankiJson, topic, level, exportedWords, { forceAll: allExported, grammarNotes });
 
     if (result.content) {
       downloadFile(result.content, result.filename);

@@ -1,0 +1,278 @@
+.syllabus-home {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: var(--space-10) var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+/* ── Header ──────────────────────────────── */
+.syllabus-home__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.syllabus-home__title-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.syllabus-home__topic {
+  font-size: var(--text-4xl);
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.02em;
+}
+
+.syllabus-home__level-badge {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-accent);
+  background: var(--color-accent-light);
+  border: 1px solid var(--color-accent-dim);
+  border-radius: 999px;
+  padding: 2px 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.syllabus-home__date {
+  font-size: var(--text-sm);
+}
+
+/* ── Sections ────────────────────────────── */
+.syllabus-home__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.syllabus-home__section-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: var(--text-xs);
+}
+
+.syllabus-home__summary {
+  font-family: var(--font-body);
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text);
+}
+
+/* ── Lessons header row ──────────────────── */
+.syllabus-home__lessons-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-4);
+}
+
+.syllabus-home__progress-label {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* ── Progress bar ────────────────────────── */
+.syllabus-home__progress-bar {
+  height: 4px;
+  background: var(--color-border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: calc(-1 * var(--space-2));
+}
+
+.syllabus-home__progress-fill {
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: 2px;
+  transition: width var(--transition-slow);
+}
+
+/* ── Lesson list ─────────────────────────── */
+.syllabus-home__lesson-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.syllabus-home__lesson-list li + li {
+  border-top: 1px solid var(--color-border-light);
+}
+
+.syllabus-home__lesson-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  text-align: left;
+  background: var(--color-bg);
+  transition: background var(--transition);
+}
+
+.syllabus-home__lesson-row:hover {
+  background: var(--color-accent-light);
+}
+
+.syllabus-home__lesson-row--completed {
+  background: var(--color-bg-elevated);
+}
+
+.syllabus-home__lesson-row--completed:hover {
+  background: var(--color-accent-light);
+}
+
+.syllabus-home__lesson-status {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-text-subtle);
+  min-width: 1.5rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.syllabus-home__lesson-status--done {
+  color: var(--color-success);
+}
+
+.syllabus-home__lesson-titles {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.syllabus-home__lesson-zh {
+  font-size: var(--text-chinese-body);
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+.syllabus-home__lesson-en {
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.syllabus-home__lesson-cta {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.syllabus-home__lesson-row:hover .syllabus-home__lesson-cta {
+  opacity: 1;
+}
+
+/* ── Continue CTA ────────────────────────── */
+.syllabus-home__cta {
+  display: flex;
+}
+
+/* ── Danger zone ─────────────────────────── */
+.syllabus-home__danger-zone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+}
+
+.syllabus-home__danger-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--text-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.syllabus-home__danger-divider::before,
+.syllabus-home__danger-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border-light);
+}
+
+.syllabus-home__delete-btn {
+  align-self: flex-start;
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
+  background: transparent;
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius);
+  transition: background var(--transition), color var(--transition);
+}
+
+.syllabus-home__delete-btn:hover {
+  background: var(--color-error-light);
+}
+
+.syllabus-home__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg-elevated);
+}
+
+.syllabus-home__confirm-text {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-text);
+}
+
+.syllabus-home__confirm-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.syllabus-home__delete-confirm-btn {
+  background: var(--color-error);
+  color: #fff;
+  border: none;
+}
+
+.syllabus-home__delete-confirm-btn:hover {
+  background: var(--color-error);
+  opacity: 0.85;
+}
+
+/* ── Mobile ──────────────────────────────── */
+@media (max-width: 768px) {
+  .syllabus-home {
+    padding: var(--space-6) var(--space-5);
+    gap: var(--space-6);
+  }
+
+  .syllabus-home__topic {
+    font-size: var(--text-3xl);
+  }
+}

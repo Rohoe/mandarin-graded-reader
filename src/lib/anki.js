@@ -23,14 +23,29 @@ export function prepareExport(ankiJson, exportedWords) {
 
 // ── File generation ───────────────────────────────────────────
 
-export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forceAll = false } = {}) {
-  const { toExport: newCards, skipped } = prepareExport(ankiJson, exportedWords);
+function grammarNotesToCards(grammarNotes) {
+  if (!grammarNotes?.length) return [];
+  return grammarNotes.map(note => ({
+    chinese:          note.pattern,
+    pinyin:           '',
+    english:          note.label,
+    example_story:    note.example     || '',
+    usage_note_story: note.explanation || '',
+    example_extra:    '',
+    usage_note_extra: '',
+    _isGrammar:       true,
+  }));
+}
+
+export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forceAll = false, grammarNotes = [] } = {}) {
+  const allCards = [...ankiJson, ...grammarNotesToCards(grammarNotes)];
+  const { toExport: newCards, skipped } = prepareExport(allCards, exportedWords);
 
   const today     = new Date().toISOString().split('T')[0];
   const topicTag  = topic.replace(/[\s/\\:*?"<>|]+/g, '_').replace(/_+/g, '_');
   const filename  = `anki_cards_${topicTag}_HSK${level}_${today}.txt`;
 
-  const toExport = forceAll ? ankiJson.filter(c => c.chinese) : newCards;
+  const toExport = forceAll ? allCards.filter(c => c.chinese) : newCards;
 
   let content = null;
   if (toExport.length > 0) {
@@ -59,7 +74,9 @@ function formatRow(card, level, topicTag, date) {
   }
   const examples = exampleParts.join('<br>');
 
-  const tags = `HSK${level} ${topicTag} ${date}`;
+  const tags = card._isGrammar
+    ? `HSK${level} ${topicTag} ${date} Grammar`
+    : `HSK${level} ${topicTag} ${date}`;
 
   return [
     sanitize(card.chinese),

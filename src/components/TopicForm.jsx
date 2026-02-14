@@ -32,11 +32,12 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
     act.setLoading(true, '正在生成课程大纲…');
     act.clearError();
     try {
-      const lessons = await generateSyllabus(state.apiKey, topic.trim(), level, lessonCount);
+      const { summary, lessons } = await generateSyllabus(state.apiKey, topic.trim(), level, lessonCount);
       const newSyllabus = {
         id:        `syllabus_${Date.now().toString(36)}`,
         topic:     topic.trim(),
         level,
+        summary,
         lessons,
         createdAt: Date.now(),
       };

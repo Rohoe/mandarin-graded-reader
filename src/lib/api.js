@@ -49,12 +49,14 @@ Topic: {topic}
 HSK Level: {level}
 Number of lessons: {lessonCount}
 
-Return a JSON array of lesson objects. Each object must have:
-- "lesson_number": integer (1-{lessonCount})
-- "title_zh": Chinese lesson title (8-15 characters)
-- "title_en": English lesson title
-- "description": One English sentence describing what the reader covers
-- "vocabulary_focus": 3-5 English keywords describing the vocabulary theme
+Return a JSON object with exactly two keys:
+- "summary": A 2-3 sentence overview (in English) of what the learner will cover across all lessons
+- "lessons": an array of lesson objects, each with:
+  - "lesson_number": integer (1-{lessonCount})
+  - "title_zh": Chinese lesson title (8-15 characters)
+  - "title_en": English lesson title
+  - "description": One English sentence describing what the reader covers
+  - "vocabulary_focus": 3-5 English keywords describing the vocabulary theme
 
 Return ONLY valid JSON. No explanation, no markdown fences.`;
 
@@ -66,14 +68,27 @@ export async function generateSyllabus(apiKey, topic, level, lessonCount = 6) {
 
   const raw = await callClaude(apiKey, '', prompt, 2048);
 
-  // Try direct parse, then extract from surrounding text
+  let result;
   try {
-    return JSON.parse(raw.trim());
+    result = JSON.parse(raw.trim());
   } catch {
-    const match = raw.match(/\[[\s\S]*?\]/);
-    if (match) return JSON.parse(match[0]);
-    throw new Error('Claude returned an invalid syllabus format. Please try again.');
+    // Try extracting an object first, then an array (legacy fallback)
+    const objMatch = raw.match(/\{[\s\S]*\}/);
+    if (objMatch) {
+      try { result = JSON.parse(objMatch[0]); } catch { /* fall through */ }
+    }
+    if (!result) {
+      const arrMatch = raw.match(/\[[\s\S]*?\]/);
+      if (arrMatch) result = JSON.parse(arrMatch[0]);
+    }
+    if (!result) throw new Error('Claude returned an invalid syllabus format. Please try again.');
   }
+
+  // Normalise: handle both new { summary, lessons } and old plain-array formats
+  if (Array.isArray(result)) {
+    return { summary: '', lessons: result };
+  }
+  return { summary: result.summary || '', lessons: result.lessons || [] };
 }
 
 // ── Reader generation ─────────────────────────────────────────
@@ -133,7 +148,12 @@ Return a JSON block tagged \`\`\`anki-json containing an array of card objects:
     "usage_note_extra": "Usage note explaining what this example demonstrates."
   }
 ]
-\`\`\``;
+\`\`\`
+
+### 6. Grammar Notes
+Identify 3-5 key grammar patterns used in the story. For each pattern:
+- **Pattern** (English name) — one-sentence explanation of the structure and when to use it
+- Example sentence taken directly from the story`;
 
 // ── Answer grading ────────────────────────────────────────────
 

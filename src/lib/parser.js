@@ -11,14 +11,15 @@ export function parseReaderResponse(rawText) {
   console.log('[parser] all headings in response:', headingLines);
 
   const result = {
-    raw:        rawText,
-    titleZh:    '',
-    titleEn:    '',
-    story:      '',
-    vocabulary: [],
-    questions:  [],
-    ankiJson:   [],
-    parseError: null,
+    raw:          rawText,
+    titleZh:      '',
+    titleEn:      '',
+    story:        '',
+    vocabulary:   [],
+    questions:    [],
+    ankiJson:     [],
+    grammarNotes: [],
+    parseError:   null,
   };
 
   if (!rawText) {
@@ -88,6 +89,14 @@ export function parseReaderResponse(rawText) {
       } catch {
         result.ankiJson = [];
       }
+    }
+
+    // ── 6. Grammar Notes ──────────────────────────────────────
+    const grammarSectionMatch = rawText.match(
+      /#{2,4}\s*6\.[^\n]*\s*\n+([\s\S]*?)(?=#{2,4}\s*7\.|$)/i
+    );
+    if (grammarSectionMatch) {
+      result.grammarNotes = parseGrammarNotes(grammarSectionMatch[1]);
     }
 
     // If vocab list is empty but we have anki data, synthesise from anki
@@ -189,6 +198,26 @@ function parseQuestions(text) {
   }
 
   return questions;
+}
+
+// ── Grammar notes parser ──────────────────────────────────────
+
+function parseGrammarNotes(text) {
+  if (!text) return [];
+  const items = [];
+  // Match: **Pattern** (English name) — explanation
+  const headerPattern = /\*\*([^*]+)\*\*\s*\(([^)]+)\)\s*[-–—]\s*([^\n]+)/g;
+  let match;
+  while ((match = headerPattern.exec(text)) !== null) {
+    const pattern     = match[1].trim();
+    const label       = match[2].trim();
+    const explanation = match[3].trim();
+    // Next non-empty line after the header is the example
+    const afterHeader = text.slice(match.index + match[0].length);
+    const exampleLine = afterHeader.split('\n').map(l => l.trim()).find(l => l.length > 0) || '';
+    items.push({ pattern, label, explanation, example: exampleLine });
+  }
+  return items;
 }
 
 // ── Story text rendering helpers ──────────────────────────────

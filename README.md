@@ -4,13 +4,14 @@ A single-page web app for generating Mandarin Chinese graded readers using Claud
 
 ## Features
 
-- **Syllabus Mode** — Generate a 6-lesson course for any topic at HSK 1–6
+- **Syllabus Mode** — Generate a course for any topic at HSK 1–6, with an AI-written summary and a dedicated home page showing all lessons and completion status
 - **Graded Reader Generation** — Stories with bolded vocabulary, HSK-calibrated grammar
 - **Vocabulary Memory** — Tracks learned words across sessions; new readers avoid repeating them
-- **Anki Export** — Download flashcard files (.txt) with duplicate prevention
+- **Anki Export** — Download flashcard files (.txt) with duplicate prevention; includes both vocabulary cards and grammar pattern cards (tagged `Grammar`)
 - **Offline persistence** — All data stored in `localStorage`; pick up where you left off
+- **Grammar Notes** — Each reader includes 3–5 collapsible grammar pattern cards explaining structures used in the story, with examples
 - **Comprehension grading** — Type answers to comprehension questions and get AI-powered feedback with per-question scores; results persist across sessions
-- **Delete syllabi** — Remove a syllabus (and all its cached readers) from the switcher row with a confirmation dialog
+- **Syllabus home page** — Overview of all lessons with completion badges, a summary, Continue CTA, and delete button with confirmation
 - **Configurable length** — Sliders for syllabus lesson count (2–12) and reader story length (500–2000 characters)
 - **Disk persistence** — Optionally save all data as JSON files to a folder on your computer (Chrome/Edge only)
 

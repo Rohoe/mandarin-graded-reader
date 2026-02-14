@@ -7,6 +7,7 @@ import VocabularyList from './VocabularyList';
 import ComprehensionQuestions from './ComprehensionQuestions';
 import AnkiExportButton from './AnkiExportButton';
 import GenerationProgress from './GenerationProgress';
+import GrammarNotes from './GrammarNotes';
 import './ReaderView.css';
 
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted }) {
@@ -231,6 +232,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
           ankiJson={reader.ankiJson}
           topic={reader.topic || lessonMeta?.title_en || 'lesson'}
           level={reader.level || 3}
+          grammarNotes={reader.grammarNotes}
         />
       )}
 
@@ -245,6 +247,9 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         story={reader.story}
         level={reader.level || lessonMeta?.level || 3}
       />
+
+      {/* Grammar notes */}
+      <GrammarNotes grammarNotes={reader.grammarNotes} />
 
       {/* Mark complete */}
       {!isCompleted && onMarkComplete && (

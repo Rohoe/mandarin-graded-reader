@@ -7,6 +7,7 @@ import './SyllabusPanel.css';
 export default function SyllabusPanel({
   activeSyllabusId,
   standaloneKey,
+  syllabusView,
   onSelectLesson,
   onNewSyllabus,
   onShowSettings,
@@ -14,6 +15,7 @@ export default function SyllabusPanel({
   onStandaloneGenerating,
   onSwitchSyllabus,
   onSelectStandalone,
+  onGoSyllabusHome,
 }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
@@ -29,20 +31,16 @@ export default function SyllabusPanel({
   const [formOpen, setFormOpen] = useState(!currentSyllabus);
   useEffect(() => { setFormOpen(!currentSyllabus); }, [activeSyllabusId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Confirmation dialog state: { type: 'syllabus'|'reader', id, label } | null
+  // Confirmation dialog state: { id, label } | null (for standalone reader deletion only)
   const [confirmPending, setConfirmPending] = useState(null);
 
-  function requestDelete(type, id, label) {
-    setConfirmPending({ type, id, label });
+  function requestDelete(id, label) {
+    setConfirmPending({ id, label });
   }
 
   function confirmDelete() {
     if (!confirmPending) return;
-    if (confirmPending.type === 'syllabus') {
-      act.removeSyllabus(confirmPending.id);
-    } else {
-      act.removeStandaloneReader(confirmPending.id);
-    }
+    act.removeStandaloneReader(confirmPending.id);
     setConfirmPending(null);
   }
 
@@ -55,7 +53,6 @@ export default function SyllabusPanel({
 
   function handleLessonClick(idx) {
     if (loading) return;
-    act.setLessonIndex(activeSyllabusId, idx);
     onSelectLesson?.(idx);
   }
 
@@ -64,8 +61,7 @@ export default function SyllabusPanel({
       {/* Header */}
       <div className="syllabus-panel__header">
         <h1 className="syllabus-panel__app-title font-display">
-          <span className="syllabus-panel__hanzi">读书</span>
-          <span className="syllabus-panel__app-name">Graded Reader</span>
+          <span className="syllabus-panel__hanzi">漫读</span>
           {pendingCount > 0 && (
             <span className="syllabus-panel__pending-badge" title={`${pendingCount} reader${pendingCount > 1 ? 's' : ''} generating`}>
               ⟳ {pendingCount}
@@ -96,14 +92,6 @@ export default function SyllabusPanel({
           >
             + New
           </button>
-          <button
-            className="btn btn-ghost btn-sm syllabus-panel__delete-syllabus-btn"
-            onClick={() => requestDelete('syllabus', activeSyllabusId, syllabi.find(s => s.id === activeSyllabusId)?.topic)}
-            title="Delete this syllabus"
-            aria-label="Delete syllabus"
-          >
-            ×
-          </button>
         </div>
       )}
 
@@ -122,14 +110,18 @@ export default function SyllabusPanel({
       {/* Lesson list */}
       {currentSyllabus && !formOpen && lessons.length > 0 && (
         <div className="syllabus-panel__lessons">
-          <div className="syllabus-panel__lessons-header">
+          <button
+            className={`syllabus-panel__lessons-header syllabus-panel__lessons-header--clickable ${syllabusView === 'home' && !standaloneKey ? 'syllabus-panel__lessons-header--active' : ''}`}
+            onClick={() => { onGoSyllabusHome?.(); setFormOpen(false); }}
+            title="Syllabus overview"
+          >
             <span className="form-label">
               {currentSyllabus.topic} · HSK {currentSyllabus.level}
             </span>
             <span className="syllabus-panel__progress text-subtle">
               {completedLessons.size}/{lessons.length}
             </span>
-          </div>
+          </button>
 
           <div className="syllabus-panel__progress-bar">
             <div
@@ -196,7 +188,7 @@ export default function SyllabusPanel({
                   </button>
                   <button
                     className="btn btn-ghost btn-sm syllabus-panel__delete-btn"
-                    onClick={() => requestDelete('reader', r.key, r.topic)}
+                    onClick={() => requestDelete(r.key, r.topic)}
                     aria-label="Delete reader"
                     title="Delete this reader"
                   >
@@ -224,7 +216,7 @@ export default function SyllabusPanel({
         <div className="syllabus-panel__confirm-overlay" role="dialog" aria-modal="true">
           <div className="syllabus-panel__confirm-dialog">
             <p className="syllabus-panel__confirm-title">
-              Delete {confirmPending.type === 'syllabus' ? 'syllabus' : 'reader'}?
+              Delete reader?
             </p>
             <p className="syllabus-panel__confirm-label text-muted">
               "{confirmPending.label}" will be permanently removed.

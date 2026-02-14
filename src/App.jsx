@@ -3,6 +3,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import { actions } from './context/actions';
 import ApiKeySetup from './components/ApiKeySetup';
 import SyllabusPanel from './components/SyllabusPanel';
+import SyllabusHome from './components/SyllabusHome';
 import ReaderView from './components/ReaderView';
 import Settings from './components/Settings';
 import LoadingIndicator from './components/LoadingIndicator';
@@ -33,11 +34,13 @@ function AppShell() {
   const [sidebarOpen,  setSidebarOpen]      = useState(false);
   const [standaloneKey, setStandaloneKey]   = useState(null);
   const [activeSyllabusId, setActiveSyllabusId] = useState(() => syllabi[0]?.id || null);
+  const [syllabusView, setSyllabusView]     = useState('home'); // 'home' | 'lesson'
 
   // Keep activeSyllabusId valid if the active syllabus is removed
   useEffect(() => {
     if (activeSyllabusId && !syllabi.find(s => s.id === activeSyllabusId)) {
       setActiveSyllabusId(syllabi[0]?.id || null);
+      setSyllabusView('home');
     }
   }, [syllabi, activeSyllabusId]);
 
@@ -55,13 +58,24 @@ function AppShell() {
   const activeMeta      = lessons[lessonIndex] || null;
   const activeLessonKey = standaloneKey
     ? standaloneKey
-    : currentSyllabus
+    : (activeSyllabusId && syllabusView === 'lesson')
       ? `lesson_${activeSyllabusId}_${lessonIndex}`
       : null;
 
   function handleSelectLesson(idx) {
+    act.setLessonIndex(activeSyllabusId, idx);
     setStandaloneKey(null);
+    setSyllabusView('lesson');
     setSidebarOpen(false);
+  }
+
+  function handleGoSyllabusHome() {
+    setSyllabusView('home');
+    setStandaloneKey(null);
+  }
+
+  function handleDeleteSyllabus(id) {
+    act.removeSyllabus(id);
   }
 
   function handleMarkComplete() {
@@ -78,11 +92,13 @@ function AppShell() {
   function handleNewSyllabus(newSyllabusId) {
     setActiveSyllabusId(newSyllabusId);
     setStandaloneKey(null);
+    setSyllabusView('home');
   }
 
   function handleSwitchSyllabus(id) {
     setActiveSyllabusId(id);
     setStandaloneKey(null);
+    setSyllabusView('home');
   }
 
   function handleSelectStandalone(key) {
@@ -132,6 +148,7 @@ function AppShell() {
         <SyllabusPanel
           activeSyllabusId={activeSyllabusId}
           standaloneKey={standaloneKey}
+          syllabusView={syllabusView}
           onSelectLesson={handleSelectLesson}
           onNewSyllabus={handleNewSyllabus}
           onShowSettings={() => setShowSettings(true)}
@@ -139,20 +156,33 @@ function AppShell() {
           onSwitchSyllabus={handleSwitchSyllabus}
           onSelectStandalone={handleSelectStandalone}
           onStandaloneGenerating={handleStandaloneGenerating}
+          onGoSyllabusHome={handleGoSyllabusHome}
         />
       </div>
 
       {/* ─ Main content ──────────────────────────────────── */}
       <main className="app-main">
-        <ReaderView
-          lessonKey={activeLessonKey}
-          lessonMeta={standaloneKey ? null : (activeMeta
-            ? { ...activeMeta, level: currentSyllabus?.level, lesson_number: lessonIndex + 1 }
-            : null)}
-          onMarkComplete={handleMarkComplete}
-          onUnmarkComplete={handleUnmarkComplete}
-          isCompleted={completedSet.has(lessonIndex)}
-        />
+        {activeSyllabusId && syllabusView === 'home' && !standaloneKey
+          ? (
+            <SyllabusHome
+              syllabus={currentSyllabus}
+              progress={progress}
+              onSelectLesson={handleSelectLesson}
+              onDelete={() => handleDeleteSyllabus(activeSyllabusId)}
+            />
+          )
+          : (
+            <ReaderView
+              lessonKey={activeLessonKey}
+              lessonMeta={standaloneKey ? null : (activeMeta
+                ? { ...activeMeta, level: currentSyllabus?.level, lesson_number: lessonIndex + 1 }
+                : null)}
+              onMarkComplete={handleMarkComplete}
+              onUnmarkComplete={handleUnmarkComplete}
+              isCompleted={completedSet.has(lessonIndex)}
+            />
+          )
+        }
       </main>
 
       {/* ─ Settings modal ────────────────────────────────── */}

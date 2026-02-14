@@ -21,7 +21,8 @@ No `.env` file is required. On first load the app shows a setup screen prompting
 ```
 src/
   App.jsx                     Root layout; manages UI-only state (sidebar open,
-                              settings modal, activeSyllabusId, standaloneKey)
+                              settings modal, activeSyllabusId, standaloneKey,
+                              syllabusView 'home'|'lesson')
   App.css                     Two-column layout, mobile header, toast notification
   index.css                   Design system: tokens, reset, shared primitives
 
@@ -48,7 +49,8 @@ src/
                                 graded-reader-vocabulary.json (learnedVocabulary)
                                 graded-reader-exported.json   (exportedWords array)
     parser.js                 Parses Claude's markdown response into structured data:
-                              titleZh, titleEn, story, vocabulary[], questions[], ankiJson[]
+                              titleZh, titleEn, story, vocabulary[], questions[], ankiJson[],
+                              grammarNotes[]
     anki.js                   Generates tab-separated Anki .txt export; duplicate prevention
 
   components/
@@ -56,14 +58,19 @@ src/
     TopicForm                 Topic input + HSK selector; two modes: syllabus / standalone.
                               Sliders: lesson count (2–12, syllabus mode only) and reader
                               length (500–2000 chars, step 100). Both passed to API calls.
-    SyllabusPanel             Left sidebar; syllabus tab bar, lesson list, standalone
+    SyllabusPanel             Left sidebar; syllabus dropdown, lesson list, standalone
                               readers list, progress bar, settings link.
-                              Tab bar: one pill per syllabus + "+" to open TopicForm.
-                              Switching tabs sets activeSyllabusId (passed from App.jsx).
+                              Home (⌂) button in switcher row calls onGoSyllabusHome.
                               Standalone Readers section lists all standaloneReaders[]
                               with delete buttons; clicking opens the reader in ReaderView.
+                              Syllabus deletion moved to SyllabusHome (no longer in sidebar).
                               formOpen state resets to false via useEffect when
                               activeSyllabusId changes (auto-collapses after generation).
+    SyllabusHome              Overview page for a syllabus (shown when syllabusView='home').
+                              Displays: topic, HSK badge, date, AI-generated summary, lesson
+                              list with completion status and Start/Review CTAs, Continue
+                              button, and a danger-zone Delete Syllabus button with inline
+                              confirmation. Located at components/SyllabusHome/index.jsx.
     ReaderView                Main content area; empty/pre-generate/error/reading states
     VocabularyList            Collapsible accordion of vocab cards with examples
     ComprehensionQuestions    Collapsible question list with interactive answer input and AI grading.
@@ -72,7 +79,13 @@ src/
                               Calls gradeAnswers() from api.js; persists userAnswers + gradingResults
                               into the reader object via act.setReader(). State initialised from
                               reader.userAnswers / reader.gradingResults so results survive page reload.
-    AnkiExportButton          Shows new/skip counts; triggers download on click
+    GrammarNotes              Collapsible section showing 3–5 grammar pattern cards per reader.
+                              Each card shows: pattern (Chinese), label (English name),
+                              explanation, and an example sentence from the story.
+                              Renders nothing if grammarNotes is empty (old readers).
+    AnkiExportButton          Shows new/skip counts; triggers download on click.
+                              Accepts grammarNotes prop; merges grammar pattern cards
+                              into preview counts and export (tagged Grammar).
     LoadingIndicator          Animated ink-wash Chinese characters (读写学文语书)
     GenerationProgress        Timed phase-based progress bar shown during API calls.
                               type='reader': 6 phases (~30s budget); shown in ReaderView
@@ -93,6 +106,7 @@ src/
     id:        string,                // "syllabus_<timestamp36>"
     topic:     string,
     level:     number,                // 1–6
+    summary:   string,                // AI-generated 2-3 sentence overview (may be '' for old data)
     lessons:   Array<{ lesson_number, title_zh, title_en, description, vocabulary_focus }>,
     createdAt: number,
   }>,
@@ -106,6 +120,9 @@ src/
     createdAt: number,
   }>,
   generatedReaders:  { [lessonKey]: parsedReaderData },  // in-memory + localStorage + file
+                     // parsedReaderData fields: raw, titleZh, titleEn, story, vocabulary[],
+                     //   questions[], ankiJson[], grammarNotes[], parseError,
+                     //   userAnswers, gradingResults, topic, level, lessonKey
   learnedVocabulary: { [chineseWord]: { pinyin, english, dateAdded } },
   exportedWords:     Set<string>,     // serialised as array in localStorage + file
   loading:           boolean,
@@ -124,7 +141,7 @@ src/
 }
 ```
 
-`activeSyllabusId` and `standaloneKey` are local UI state in `App.jsx` (not persisted).
+`activeSyllabusId`, `standaloneKey`, and `syllabusView` ('home'|'lesson') are local UI state in `App.jsx` (not persisted). When `syllabusView === 'home'` and `standaloneKey` is null, `SyllabusHome` is shown instead of `ReaderView`.
 
 Lesson keys: `lesson_<syllabusId>_<lessonIndex>` for syllabus lessons, `standalone_<timestamp>` for one-off readers.
 
@@ -133,7 +150,7 @@ Lesson keys: `lesson_<syllabusId>_<lessonIndex>` for syllabus lessons, `standalo
 - **Model:** `claude-sonnet-4-20250514`
 - **Endpoint:** `POST https://api.anthropic.com/v1/messages`
 - **Required browser header:** `anthropic-dangerous-direct-browser-access: true`
-- **Syllabus prompt:** Returns a JSON array of 6 lesson objects (no markdown fences)
+- **Syllabus prompt:** Returns a JSON object `{ summary: string, lessons: [] }` (no markdown fences). Falls back gracefully if Claude returns a plain array (old format).
 - **Reader prompt:** Returns structured markdown with sections 1–5; section 5 is an ` ```anki-json ``` ` block
 
 The `learnedVocabulary` object keys are passed to Claude in each new reader request so it avoids re-introducing already-covered words.
