@@ -14,7 +14,7 @@ npm run dev        # starts at http://localhost:5173 (or 5174 if port taken)
 npm run build      # production build to dist/
 ```
 
-No `.env` file is required. On first load the app shows a setup screen prompting the user to enter their Anthropic API key (`sk-ant-...`). The key is stored in `localStorage`.
+No `.env` file is required for basic use. On first load the app shows a setup screen prompting the user to enter their Anthropic API key (`sk-ant-...`). The key is stored in `localStorage`. For cloud sync, a `.env` file with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` is needed (see README for setup).
 
 ## Architecture
 
@@ -56,6 +56,12 @@ src/
                               titleZh, titleEn, story, vocabulary[], questions[], ankiJson[],
                               grammarNotes[]
     anki.js                   Generates tab-separated Anki .txt export; duplicate prevention
+    supabase.js               Supabase client singleton (reads VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY)
+    cloudSync.js              Cloud sync helpers: signInWithGoogle(), signInWithApple(), signOut(),
+                              pushToCloud(state), pullFromCloud(). Auth uses Supabase OAuth with
+                              redirectTo: window.location.origin. pushToCloud upserts all syncable
+                              state to user_data table; pullFromCloud returns the row or null
+                              (PGRST116 = no row, not an error).
 
   components/
     ApiKeySetup               First-run screen; validates key starts with "sk-ant-"
@@ -163,6 +169,9 @@ src/
   fsInitialized:     boolean,         // true once async FS init completes on mount
   saveFolder:        { name: string } | null,  // active folder name, or null
   fsSupported:       boolean,         // false on Firefox/Safari (no showDirectoryPicker)
+  // Cloud sync (ephemeral, not persisted)
+  cloudUser:         object | null,   // Supabase User object, or null if not signed in
+  cloudSyncing:      boolean,         // push/pull in progress
 }
 ```
 

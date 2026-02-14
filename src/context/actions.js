@@ -36,5 +36,8 @@ export function actions(dispatch) {
     // Background generation tracking
     startPendingReader:    key    => dispatch({ type: 'START_PENDING_READER', payload: key }),
     clearPendingReader:    key    => dispatch({ type: 'CLEAR_PENDING_READER', payload: key }),
+    // Cloud sync
+    setCloudUser:          user   => dispatch({ type: 'SET_CLOUD_USER', payload: user }),
+    setCloudSyncing:       val    => dispatch({ type: 'SET_CLOUD_SYNCING', payload: val }),
   };
 }

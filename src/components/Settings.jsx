@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
 import { getStorageUsage } from '../lib/storage';
 import { parseReaderResponse } from '../lib/parser';
+import { signInWithGoogle, signInWithApple, signOut, pushToCloud, pullFromCloud } from '../lib/cloudSync';
 import './Settings.css';
 
 export default function Settings({ onClose }) {
@@ -12,6 +13,7 @@ export default function Settings({ onClose }) {
   const [newKey, setNewKey]           = useState('');
   const [showKey, setShowKey]         = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [confirmPull, setConfirmPull] = useState(false);
   const [chineseVoices, setChineseVoices] = useState([]);
 
   useEffect(() => {
@@ -59,6 +61,34 @@ export default function Settings({ onClose }) {
       count++;
     }
     act.notify('success', `Re-parsed ${count} reader${count !== 1 ? 's' : ''} from cached text.`);
+  }
+
+  async function handlePush() {
+    act.setCloudSyncing(true);
+    try {
+      await pushToCloud(state);
+      act.notify('success', 'Data pushed to cloud.');
+    } catch (e) {
+      act.notify('error', `Push failed: ${e.message}`);
+    } finally {
+      act.setCloudSyncing(false);
+    }
+  }
+
+  async function handlePull() {
+    if (!confirmPull) { setConfirmPull(true); return; }
+    setConfirmPull(false);
+    act.setCloudSyncing(true);
+    try {
+      const data = await pullFromCloud();
+      if (!data) { act.notify('error', 'No cloud data found. Push from another device first.'); return; }
+      dispatch({ type: 'HYDRATE_FROM_CLOUD', payload: data });
+      act.notify('success', 'Data pulled from cloud.');
+    } catch (e) {
+      act.notify('error', `Pull failed: ${e.message}`);
+    } finally {
+      act.setCloudSyncing(false);
+    }
   }
 
   function handleClearAll() {
@@ -285,6 +315,67 @@ export default function Settings({ onClose }) {
                 Re-parse {Object.keys(state.generatedReaders).length} cached reader{Object.keys(state.generatedReaders).length !== 1 ? 's' : ''}
               </button>
             </div>
+          )}
+        </section>
+
+        <hr className="divider" />
+
+        {/* Cloud Sync */}
+        <section className="settings-section">
+          <h3 className="settings-section__title form-label">Cloud Sync</h3>
+          {state.cloudUser ? (
+            <>
+              <p className="settings-section__desc text-muted">
+                Signed in as <strong>{state.cloudUser.email || state.cloudUser.user_metadata?.full_name || state.cloudUser.id}</strong>
+              </p>
+              <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', marginTop: 'var(--space-3)' }}>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={handlePush}
+                  disabled={state.cloudSyncing}
+                >
+                  {state.cloudSyncing ? 'Syncing…' : 'Push to cloud ↑'}
+                </button>
+                <button
+                  className="btn btn-sm"
+                  onClick={handlePull}
+                  disabled={state.cloudSyncing}
+                  style={confirmPull ? {
+                    background: 'var(--color-error-light)',
+                    color: 'var(--color-error)',
+                    border: '1px solid var(--color-error)',
+                  } : { background: 'transparent', color: 'var(--color-text-muted)' }}
+                >
+                  {confirmPull ? 'This will replace local data — confirm?' : 'Pull from cloud ↓'}
+                </button>
+                {confirmPull && (
+                  <button className="btn btn-ghost btn-sm" onClick={() => setConfirmPull(false)}>
+                    Cancel
+                  </button>
+                )}
+              </div>
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ marginTop: 'var(--space-3)', color: 'var(--color-text-muted)' }}
+                onClick={() => signOut()}
+              >
+                Sign out
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="settings-section__desc text-muted">
+                Sign in to sync your syllabi, readers, and vocabulary across devices.
+              </p>
+              <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', marginTop: 'var(--space-3)' }}>
+                <button className="btn btn-secondary btn-sm" onClick={() => signInWithGoogle()}>
+                  Sign in with Google
+                </button>
+                <button className="btn btn-secondary btn-sm" onClick={() => signInWithApple()}>
+                  Sign in with Apple
+                </button>
+              </div>
+            </>
           )}
         </section>
 

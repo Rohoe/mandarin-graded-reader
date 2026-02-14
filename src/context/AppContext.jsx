@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useReducer, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import {
   loadApiKey,
   saveApiKey,
@@ -67,6 +68,9 @@ function buildInitialState() {
     ttsVoiceURI:       loadTtsVoiceURI(),
     // Background generation tracking (ephemeral, not persisted)
     pendingReaders:    {},
+    // Cloud sync (ephemeral, not persisted)
+    cloudUser:         null,
+    cloudSyncing:      false,
   };
 }
 
@@ -300,6 +304,32 @@ function reducer(state, action) {
       return { ...state, pendingReaders: next };
     }
 
+    // ── Cloud sync actions ────────────────────────────────────
+
+    case 'SET_CLOUD_USER':
+      return { ...state, cloudUser: action.payload };
+
+    case 'SET_CLOUD_SYNCING':
+      return { ...state, cloudSyncing: action.payload };
+
+    case 'HYDRATE_FROM_CLOUD': {
+      const d = action.payload;
+      // Mirror to localStorage
+      saveSyllabi(d.syllabi);
+      saveSyllabusProgress(d.syllabus_progress);
+      saveStandaloneReaders(d.standalone_readers);
+      for (const [k, v] of Object.entries(d.generated_readers)) saveReader(k, v);
+      return {
+        ...state,
+        syllabi:           d.syllabi,
+        syllabusProgress:  d.syllabus_progress,
+        standaloneReaders: d.standalone_readers,
+        generatedReaders:  d.generated_readers,
+        learnedVocabulary: d.learned_vocabulary,
+        exportedWords:     new Set(d.exported_words),
+      };
+    }
+
     default:
       return state;
   }
@@ -347,6 +377,15 @@ export function AppProvider({ children }) {
     }
 
     initFileStorage();
+
+    // Auth listener for cloud sync
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      dispatch({ type: 'SET_CLOUD_USER', payload: session?.user ?? null });
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      dispatch({ type: 'SET_CLOUD_USER', payload: session?.user ?? null });
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   async function pickSaveFolder() {

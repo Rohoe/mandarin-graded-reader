@@ -21,6 +21,7 @@ A single-page web app for generating Mandarin Chinese graded readers using Claud
 - **Click-to-define** — Click any bolded vocabulary word in the story to see a popover with pinyin and English definition. Toggle off by clicking again, pressing Escape, or clicking elsewhere
 - **Pinyin toggle** — "拼 Pinyin" button shows pinyin above every character using `<ruby>` tags (powered by `pinyin-pro`). Essential for HSK 1–3 learners
 - **Disk persistence** — Optionally save all data as JSON files to a folder on your computer (Chrome/Edge only)
+- **Cloud Sync** — Sign in with Google or Apple to push/pull all your data to/from Supabase. Manual sync via explicit Push/Pull buttons in Settings; API key stays local
 
 ## Setup
 
@@ -80,6 +81,45 @@ To fix truncated readers, open **Settings → API Output Tokens** and drag the s
 In the **Settings** panel (⚙ icon), the **Save Folder** section lets you pick a folder on your computer. Once set, all data (syllabus, readers, vocabulary, exported words) is written to JSON files in that folder on every change, in addition to `localStorage`. This survives clearing browser data and works across machines if you sync the folder.
 
 > Requires Chrome or Edge. Firefox and Safari do not support the File System Access API.
+
+### Optional: Cloud sync via Supabase
+
+The **Cloud Sync** section in Settings lets you push/pull all app data to/from a personal Supabase database.
+
+**Prerequisites (one-time setup):**
+1. Create a free project at [supabase.com](https://supabase.com)
+2. Enable **Google** and/or **Apple** OAuth in Authentication → Providers
+3. Add `http://localhost:5173` (and your production URL) to Authentication → URL Configuration → Redirect URLs
+4. Run the following SQL in the SQL editor:
+
+```sql
+CREATE TABLE user_data (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id),
+  syllabi JSONB DEFAULT '[]',
+  syllabus_progress JSONB DEFAULT '{}',
+  standalone_readers JSONB DEFAULT '[]',
+  generated_readers JSONB DEFAULT '{}',
+  learned_vocabulary JSONB DEFAULT '{}',
+  exported_words JSONB DEFAULT '[]',
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE user_data ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own data"
+  ON user_data FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+```
+
+5. Create a `.env` file in the project root:
+
+```
+VITE_SUPABASE_URL=https://xxxx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJ...
+```
+
+Once configured, open Settings → Cloud Sync → sign in with Google or Apple. Use **Push to cloud ↑** to upload your data, and **Pull from cloud ↓** on another device to download it.
+
+> Your API key is never synced to the cloud — it stays local to each device.
 
 ## Security note
 
