@@ -173,7 +173,7 @@ export function saveStandaloneReaders(arr) {
 
 // ── Generated Readers (cache) ─────────────────────────────────
 
-function loadAllReaders() {
+export function loadAllReaders() {
   return load(KEYS.READERS, {});
 }
 
