@@ -27,13 +27,14 @@ export function getDirectoryHandle() {
 // ── localStorage key constants ────────────────────────────────
 
 const KEYS = {
-  API_KEY:    'gradedReader_apiKey',
-  SYLLABUS:   'gradedReader_syllabus',
-  LESSON_IDX: 'gradedReader_lessonIndex',
-  READERS:    'gradedReader_readers',
-  VOCABULARY: 'gradedReader_learnedVocabulary',
-  EXPORTED:   'gradedReader_exportedWords',
-  MAX_TOKENS: 'gradedReader_maxTokens',
+  API_KEY:            'gradedReader_apiKey',
+  SYLLABI:            'gradedReader_syllabi',
+  SYLLABUS_PROGRESS:  'gradedReader_syllabusProgress',
+  STANDALONE_READERS: 'gradedReader_standaloneReaders',
+  READERS:            'gradedReader_readers',
+  VOCABULARY:         'gradedReader_learnedVocabulary',
+  EXPORTED:           'gradedReader_exportedWords',
+  MAX_TOKENS:         'gradedReader_maxTokens',
 };
 
 // ── Generic localStorage helpers ──────────────────────────────
@@ -67,7 +68,6 @@ function save(key, value) {
 }
 
 // Fan out to file if a directory handle is registered.
-// Returns the data so callers can chain easily.
 function saveWithFile(lsKey, value, fileKey) {
   save(lsKey, value);
   if (_dirHandle && fileKey) {
@@ -77,23 +77,25 @@ function saveWithFile(lsKey, value, fileKey) {
   return value;
 }
 
-// Build the file payload for a given file key, merging with current state
-// so each file stays self-contained (syllabus file holds both syllabus + index).
+// Build file payload — syllabi file holds syllabi + progress + standaloneReaders together.
 function buildFilePayload(fileKey, newValue) {
-  if (fileKey === 'syllabus') {
+  if (fileKey === 'syllabi') {
     return {
-      syllabus:    newValue ?? load(KEYS.SYLLABUS, null),
-      lessonIndex: load(KEYS.LESSON_IDX, 0),
+      syllabi:           newValue ?? load(KEYS.SYLLABI, []),
+      syllabusProgress:  load(KEYS.SYLLABUS_PROGRESS, {}),
+      standaloneReaders: load(KEYS.STANDALONE_READERS, []),
     };
   }
   return newValue;
 }
 
-// Helper specifically for syllabus + index (they share one file)
-function saveSyllabusFile(syllabus, lessonIndex) {
+function saveSyllabiFile() {
   if (_dirHandle) {
-    writeJSON(_dirHandle, FILES.syllabus, { syllabus, lessonIndex })
-      .catch(e => console.warn('[storage] file write failed: syllabus', e));
+    writeJSON(_dirHandle, FILES.syllabi, {
+      syllabi:           load(KEYS.SYLLABI, []),
+      syllabusProgress:  load(KEYS.SYLLABUS_PROGRESS, {}),
+      standaloneReaders: load(KEYS.STANDALONE_READERS, []),
+    }).catch(e => console.warn('[storage] file write failed: syllabi', e));
   }
 }
 
@@ -112,35 +114,58 @@ export function clearApiKey() {
   localStorage.removeItem(KEYS.API_KEY);
 }
 
-// ── Syllabus ──────────────────────────────────────────────────
+// ── Syllabi ───────────────────────────────────────────────────
 
-export function saveSyllabus(syllabus) {
-  save(KEYS.SYLLABUS, syllabus);
-  save(KEYS.LESSON_IDX, 0);
-  saveSyllabusFile(syllabus, 0);
+export function loadSyllabi() {
+  // Migration: convert old single-syllabus format if present
+  const oldSyllabus = load('gradedReader_syllabus', null);
+  if (oldSyllabus) {
+    const oldIndex = load('gradedReader_lessonIndex', 0);
+    const migrated = [{
+      id:        'migrated_' + Date.now().toString(36),
+      topic:     oldSyllabus.topic,
+      level:     oldSyllabus.level,
+      lessons:   oldSyllabus.lessons || [],
+      createdAt: Date.now(),
+    }];
+    save(KEYS.SYLLABI, migrated);
+    // Migrate progress
+    const progress = load(KEYS.SYLLABUS_PROGRESS, {});
+    progress[migrated[0].id] = { lessonIndex: oldIndex, completedLessons: [] };
+    save(KEYS.SYLLABUS_PROGRESS, progress);
+    // Remove old keys
+    localStorage.removeItem('gradedReader_syllabus');
+    localStorage.removeItem('gradedReader_lessonIndex');
+    return migrated;
+  }
+  return load(KEYS.SYLLABI, []);
 }
 
-export function loadSyllabus() {
-  return load(KEYS.SYLLABUS, null);
+export function saveSyllabi(arr) {
+  save(KEYS.SYLLABI, arr);
+  saveSyllabiFile();
 }
 
-export function clearSyllabus() {
-  localStorage.removeItem(KEYS.SYLLABUS);
-  localStorage.removeItem(KEYS.LESSON_IDX);
-  saveSyllabusFile(null, 0);
+// ── Syllabus Progress ─────────────────────────────────────────
+
+export function loadSyllabusProgress() {
+  return load(KEYS.SYLLABUS_PROGRESS, {});
 }
 
-// ── Lesson Index ──────────────────────────────────────────────
-
-export function saveLessonIndex(idx) {
-  save(KEYS.LESSON_IDX, idx);
-  // Update syllabus file to keep lessonIndex in sync
-  const syllabus = load(KEYS.SYLLABUS, null);
-  saveSyllabusFile(syllabus, idx);
+export function saveSyllabusProgress(map) {
+  save(KEYS.SYLLABUS_PROGRESS, map);
+  saveSyllabiFile();
 }
 
-export function loadLessonIndex() {
-  return load(KEYS.LESSON_IDX, 0);
+// ── Standalone Readers ────────────────────────────────────────
+
+export function loadStandaloneReaders() {
+  return load(KEYS.STANDALONE_READERS, []);
+}
+
+export function saveStandaloneReaders(arr) {
+  save(KEYS.STANDALONE_READERS, arr);
+  saveSyllabiFile();
 }
 
 // ── Generated Readers (cache) ─────────────────────────────────
@@ -219,6 +244,16 @@ export function clearExportedWords() {
   }
 }
 
+// ── Max tokens preference ─────────────────────────────────────
+
+export function loadMaxTokens() {
+  return load(KEYS.MAX_TOKENS, 8192);
+}
+
+export function saveMaxTokens(n) {
+  save(KEYS.MAX_TOKENS, n);
+}
+
 // ── Storage usage estimate ────────────────────────────────────
 
 export function getStorageUsage() {
@@ -234,17 +269,6 @@ export function getStorageUsage() {
   } catch {
     return { used: 0, limit: 5 * 1024 * 1024, pct: 0 };
   }
-}
-
-// ── Max tokens preference ─────────────────────────────────────
-// User-configurable ceiling for API output; not synced to file (preference only).
-
-export function loadMaxTokens() {
-  return load(KEYS.MAX_TOKENS, 8192);
-}
-
-export function saveMaxTokens(n) {
-  save(KEYS.MAX_TOKENS, n);
 }
 
 // ── Clear everything ──────────────────────────────────────────

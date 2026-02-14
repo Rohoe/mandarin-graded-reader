@@ -37,6 +37,86 @@
   letter-spacing: -0.01em;
 }
 
+/* ── Syllabus tab bar ───────────────────── */
+.syllabus-panel__tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-light);
+  scrollbar-width: none;
+}
+
+.syllabus-panel__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.syllabus-panel__tab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  max-width: 6rem;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: background var(--transition), border-color var(--transition);
+  text-align: left;
+}
+
+.syllabus-panel__tab:hover:not(:disabled) {
+  background: rgba(74, 124, 126, 0.08);
+}
+
+.syllabus-panel__tab--active {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent-dim);
+}
+
+.syllabus-panel__tab--new {
+  font-size: var(--text-lg);
+  color: var(--color-accent);
+  flex-shrink: 0;
+  max-width: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1) var(--space-2);
+  line-height: 1;
+}
+
+.syllabus-panel__tab--new:hover {
+  background: rgba(74, 124, 126, 0.12);
+}
+
+.syllabus-panel__tab-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 5rem;
+  line-height: 1.3;
+}
+
+.syllabus-panel__tab--active .syllabus-panel__tab-label {
+  color: var(--color-accent-hover);
+}
+
+.syllabus-panel__tab-level {
+  font-size: 0.65rem;
+  color: var(--color-text-subtle);
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.syllabus-panel__tab--active .syllabus-panel__tab-level {
+  color: var(--color-accent);
+}
+
 /* ── Topic form ─────────────────────────── */
 .syllabus-panel__form-section {
   padding: var(--space-5);
@@ -170,6 +250,50 @@
 
 .syllabus-panel__lesson-btn--active .syllabus-panel__lesson-zh {
   color: var(--color-accent-hover);
+}
+
+/* ── Standalone readers section ─────────── */
+.syllabus-panel__standalone {
+  padding: var(--space-3) var(--space-3);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.syllabus-panel__standalone-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.syllabus-panel__standalone-item {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  gap: 0;
+}
+
+.syllabus-panel__standalone-select {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  padding: var(--space-3) var(--space-3);
+  text-align: left;
+  min-width: 0;
+}
+
+.syllabus-panel__delete-btn {
+  flex-shrink: 0;
+  padding: var(--space-2);
+  opacity: 0;
+  transition: opacity var(--transition);
+  color: var(--color-text-subtle);
+  font-size: var(--text-base);
+  line-height: 1;
+}
+
+.syllabus-panel__standalone-item:hover .syllabus-panel__delete-btn {
+  opacity: 1;
 }
 
 /* ── Footer ─────────────────────────────── */

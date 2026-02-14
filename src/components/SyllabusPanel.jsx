@@ -1,27 +1,42 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
 import TopicForm from './TopicForm';
 import './SyllabusPanel.css';
 
-export default function SyllabusPanel({ completedLessons, onSelectLesson, onNewSyllabus, onShowSettings, onStandaloneGenerated }) {
+export default function SyllabusPanel({
+  activeSyllabusId,
+  standaloneKey,
+  onSelectLesson,
+  onNewSyllabus,
+  onShowSettings,
+  onStandaloneGenerated,
+  onSwitchSyllabus,
+  onSelectStandalone,
+}) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
-  const { currentSyllabus, lessonIndex, loading } = state;
+  const { syllabi, syllabusProgress, standaloneReaders, loading } = state;
 
-  // Form is open when no syllabus exists; auto-closes after generation via handleNewSyllabus
+  const currentSyllabus  = syllabi.find(s => s.id === activeSyllabusId) || null;
+  const progress         = syllabusProgress[activeSyllabusId] || { lessonIndex: 0, completedLessons: [] };
+  const lessonIndex      = progress.lessonIndex;
+  const completedLessons = new Set(progress.completedLessons);
+
+  // Form is open when no syllabi exist; resets when active syllabus changes
   const [formOpen, setFormOpen] = useState(!currentSyllabus);
+  useEffect(() => { setFormOpen(!currentSyllabus); }, [activeSyllabusId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function handleNewSyllabus() {
+  function handleNewSyllabus(newSyllabusId) {
     setFormOpen(false);
-    onNewSyllabus?.();
+    onNewSyllabus?.(newSyllabusId);
   }
 
   const lessons = currentSyllabus?.lessons || [];
 
   function handleLessonClick(idx) {
     if (loading) return;
-    act.setLessonIndex(idx);
+    act.setLessonIndex(activeSyllabusId, idx);
     onSelectLesson?.(idx);
   }
 
@@ -35,28 +50,46 @@ export default function SyllabusPanel({ completedLessons, onSelectLesson, onNewS
         </h1>
       </div>
 
-      {/* Topic form — collapses to a compact bar when a syllabus is active */}
-      <div className="syllabus-panel__form-section">
-        {!currentSyllabus || formOpen ? (
+      {/* Syllabus tabs — shown when at least one syllabus exists */}
+      {syllabi.length > 0 && (
+        <div className="syllabus-panel__tabs" role="tablist">
+          {syllabi.map(s => (
+            <button
+              key={s.id}
+              role="tab"
+              aria-selected={s.id === activeSyllabusId && !standaloneKey}
+              className={`syllabus-panel__tab ${s.id === activeSyllabusId && !standaloneKey ? 'syllabus-panel__tab--active' : ''}`}
+              onClick={() => { onSwitchSyllabus?.(s.id); setFormOpen(false); }}
+              title={`${s.topic} · HSK ${s.level}`}
+            >
+              <span className="syllabus-panel__tab-label">{s.topic}</span>
+              <span className="syllabus-panel__tab-level">HSK {s.level}</span>
+            </button>
+          ))}
+          <button
+            className="syllabus-panel__tab syllabus-panel__tab--new"
+            onClick={() => setFormOpen(true)}
+            title="New syllabus or standalone reader"
+            aria-label="New"
+          >
+            +
+          </button>
+        </div>
+      )}
+
+      {/* Topic form — shown when no syllabus exists or user clicked + */}
+      {(!currentSyllabus || formOpen) && (
+        <div className="syllabus-panel__form-section">
           <TopicForm
             onNewSyllabus={handleNewSyllabus}
             onStandaloneGenerated={onStandaloneGenerated}
             onCancel={currentSyllabus ? () => setFormOpen(false) : undefined}
           />
-        ) : (
-          <div className="syllabus-panel__syllabus-bar">
-            <span className="syllabus-panel__syllabus-bar-label">
-              {currentSyllabus.topic} · HSK {currentSyllabus.level}
-            </span>
-            <button className="btn btn-ghost btn-sm" onClick={() => setFormOpen(true)}>
-              ✎ New
-            </button>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Lesson list */}
-      {currentSyllabus && lessons.length > 0 && (
+      {currentSyllabus && !formOpen && lessons.length > 0 && (
         <div className="syllabus-panel__lessons">
           <div className="syllabus-panel__lessons-header">
             <span className="form-label">
@@ -76,7 +109,7 @@ export default function SyllabusPanel({ completedLessons, onSelectLesson, onNewS
 
           <ul className="syllabus-panel__list" role="list">
             {lessons.map((lesson, idx) => {
-              const isActive    = idx === lessonIndex;
+              const isActive    = idx === lessonIndex && !standaloneKey;
               const isCompleted = completedLessons.has(idx);
 
               return (
@@ -104,6 +137,43 @@ export default function SyllabusPanel({ completedLessons, onSelectLesson, onNewS
                 </li>
               );
             })}
+          </ul>
+        </div>
+      )}
+
+      {/* Standalone readers list */}
+      {standaloneReaders.length > 0 && (
+        <div className="syllabus-panel__standalone">
+          <div className="syllabus-panel__standalone-header">
+            <span className="form-label">Standalone Readers</span>
+          </div>
+          <ul className="syllabus-panel__list" role="list">
+            {standaloneReaders.map(r => (
+              <li key={r.key}>
+                <div
+                  className={`syllabus-panel__lesson-btn syllabus-panel__standalone-item ${standaloneKey === r.key ? 'syllabus-panel__lesson-btn--active' : ''}`}
+                >
+                  <button
+                    className="syllabus-panel__standalone-select"
+                    onClick={() => onSelectStandalone?.(r.key)}
+                    disabled={loading}
+                  >
+                    <span className="syllabus-panel__lesson-text">
+                      <span className="syllabus-panel__lesson-zh text-chinese">{r.topic}</span>
+                      <span className="syllabus-panel__lesson-en text-muted">HSK {r.level}</span>
+                    </span>
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-sm syllabus-panel__delete-btn"
+                    onClick={() => act.removeStandaloneReader(r.key)}
+                    aria-label="Delete reader"
+                    title="Delete this reader"
+                  >
+                    ×
+                  </button>
+                </div>
+              </li>
+            ))}
           </ul>
         </div>
       )}

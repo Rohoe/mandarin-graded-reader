@@ -33,9 +33,16 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onCanc
     act.clearError();
     try {
       const lessons = await generateSyllabus(state.apiKey, topic.trim(), level, lessonCount);
-      act.setSyllabus({ topic: topic.trim(), level, lessons });
+      const newSyllabus = {
+        id:        `syllabus_${Date.now().toString(36)}`,
+        topic:     topic.trim(),
+        level,
+        lessons,
+        createdAt: Date.now(),
+      };
+      act.addSyllabus(newSyllabus);
       act.notify('success', `Syllabus generated: ${lessons.length} lessons on "${topic}"`);
-      onNewSyllabus?.();
+      onNewSyllabus?.(newSyllabus.id);
     } catch (err) {
       act.setError(err.message);
     } finally {
@@ -54,6 +61,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onCanc
       const parsed = parseReaderResponse(raw);
       const lessonKey = `standalone_${Date.now()}`;
       act.setReader(lessonKey, { ...parsed, topic: topic.trim(), level, lessonKey, isStandalone: true });
+      act.addStandaloneReader({ key: lessonKey, topic: topic.trim(), level, createdAt: Date.now() });
       if (parsed.ankiJson?.length > 0) {
         act.addVocabulary(parsed.ankiJson.map(c => ({
           chinese: c.chinese, pinyin: c.pinyin, english: c.english,
@@ -176,24 +184,15 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onCanc
         <GenerationProgress type={mode === 'syllabus' ? 'syllabus' : 'reader'} />
       )}
 
-      {mode === 'syllabus' && state.currentSyllabus && !state.loading && (
+      {onCancel && !state.loading && (
         <div className="topic-form__footer-row">
           <button
             type="button"
             className="btn btn-ghost btn-sm topic-form__clear"
-            onClick={() => act.clearSyllabus()}
+            onClick={onCancel}
           >
-            Clear syllabus
+            Cancel
           </button>
-          {onCancel && (
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm topic-form__clear"
-              onClick={onCancel}
-            >
-              Cancel
-            </button>
-          )}
         </div>
       )}
     </form>

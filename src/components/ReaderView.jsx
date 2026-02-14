@@ -38,7 +38,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, isCo
       const topic = lessonMeta.title_zh
         ? `${lessonMeta.title_zh} — ${lessonMeta.title_en || ''}: ${lessonMeta.description || ''}`
         : lessonMeta.topic || '';
-      const level = lessonMeta.level || state.currentSyllabus?.level || 3;
+      const level = lessonMeta.level || 3;
 
       const raw    = await generateReader(apiKey, topic, level, learnedVocabulary, 1200, maxTokens);
       const parsed = parseReaderResponse(raw);
@@ -96,7 +96,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, isCo
           {lessonMeta && (
             <>
               <p className="reader-view__lesson-num text-subtle font-display">
-                Lesson {(lessonMeta.lesson_number ?? (state.lessonIndex + 1))}
+                Lesson {lessonMeta.lesson_number}
               </p>
               <h2 className="text-chinese-title reader-view__lesson-title">
                 {lessonMeta.title_zh}
@@ -120,7 +120,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, isCo
           {lessonMeta && (
             <>
               <p className="reader-view__lesson-num text-subtle font-display">
-                Lesson {(lessonMeta.lesson_number ?? (state.lessonIndex + 1))}
+                Lesson {lessonMeta.lesson_number}
               </p>
               <h2 className="text-chinese-title reader-view__lesson-title">
                 {lessonMeta.title_zh}
@@ -167,7 +167,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, isCo
   }
 
   // ── Main reading view ───────────────────────────────────────
-  const storySegments = parseStorySegments(reader.story);
+  const storyParagraphs = (reader.story || '').split(/\n\n+/).map(p => p.trim()).filter(Boolean);
 
   return (
     <article className="reader-view fade-in" ref={scrollRef}>
@@ -189,11 +189,15 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, isCo
 
       {/* Story */}
       <div className="reader-view__story text-chinese">
-        {storySegments.map((seg, i) => {
-          if (seg.type === 'bold')   return <strong key={i} className="reader-view__vocab">{seg.content}</strong>;
-          if (seg.type === 'italic') return <em key={i}>{seg.content}</em>;
-          return <span key={i}>{seg.content}</span>;
-        })}
+        {storyParagraphs.map((para, pi) => (
+          <p key={pi} className="reader-view__paragraph">
+            {parseStorySegments(para).map((seg, i) => {
+              if (seg.type === 'bold')   return <strong key={i} className="reader-view__vocab">{seg.content}</strong>;
+              if (seg.type === 'italic') return <em key={i}>{seg.content}</em>;
+              return <span key={i}>{seg.content}</span>;
+            })}
+          </p>
+        ))}
       </div>
 
       <hr className="divider" />
@@ -203,7 +207,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, isCo
         <AnkiExportButton
           ankiJson={reader.ankiJson}
           topic={reader.topic || lessonMeta?.title_en || 'lesson'}
-          level={reader.level || state.currentSyllabus?.level || 3}
+          level={reader.level || 3}
         />
       )}
 

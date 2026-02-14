@@ -4,11 +4,12 @@ import {
   loadApiKey,
   saveApiKey,
   clearApiKey,
-  loadSyllabus,
-  saveSyllabus,
-  clearSyllabus,
-  loadLessonIndex,
-  saveLessonIndex,
+  loadSyllabi,
+  saveSyllabi,
+  loadSyllabusProgress,
+  saveSyllabusProgress,
+  loadStandaloneReaders,
+  saveStandaloneReaders,
   loadReader,
   saveReader,
   clearReaders,
@@ -38,8 +39,9 @@ import {
 function buildInitialState() {
   return {
     apiKey:            loadApiKey(),
-    currentSyllabus:   loadSyllabus(),
-    lessonIndex:       loadLessonIndex(),
+    syllabi:           loadSyllabi(),
+    syllabusProgress:  loadSyllabusProgress(),
+    standaloneReaders: loadStandaloneReaders(),
     generatedReaders:  {},
     learnedVocabulary: loadLearnedVocabulary(),
     exportedWords:     loadExportedWords(),
@@ -48,8 +50,8 @@ function buildInitialState() {
     error:             null,
     notification:      null,
     // File storage
-    fsInitialized:     false,   // true once the async FS init is done
-    saveFolder:        null,    // { name: string } when a folder is active
+    fsInitialized:     false,
+    saveFolder:        null,
     fsSupported:       isSupported(),
     // API preferences
     maxTokens:         loadMaxTokens(),
@@ -69,29 +71,72 @@ function reducer(state, action) {
       clearApiKey();
       return { ...state, apiKey: '' };
 
-    case 'SET_SYLLABUS':
-      saveSyllabus(action.payload);
-      saveLessonIndex(0);
-      return {
-        ...state,
-        currentSyllabus:  action.payload,
-        lessonIndex:      0,
-        generatedReaders: {},
-      };
+    // ── Syllabus actions ──────────────────────────────────────
 
-    case 'CLEAR_SYLLABUS':
-      clearSyllabus();
-      clearReaders();
-      return {
-        ...state,
-        currentSyllabus:  null,
-        lessonIndex:      0,
-        generatedReaders: {},
+    case 'ADD_SYLLABUS': {
+      const newSyllabi = [action.payload, ...state.syllabi];
+      saveSyllabi(newSyllabi);
+      const newProgress = {
+        ...state.syllabusProgress,
+        [action.payload.id]: { lessonIndex: 0, completedLessons: [] },
       };
+      saveSyllabusProgress(newProgress);
+      return { ...state, syllabi: newSyllabi, syllabusProgress: newProgress };
+    }
 
-    case 'SET_LESSON_INDEX':
-      saveLessonIndex(action.payload);
-      return { ...state, lessonIndex: action.payload };
+    case 'REMOVE_SYLLABUS': {
+      const id = action.payload;
+      const newSyllabi = state.syllabi.filter(s => s.id !== id);
+      saveSyllabi(newSyllabi);
+      const newProgress = { ...state.syllabusProgress };
+      delete newProgress[id];
+      saveSyllabusProgress(newProgress);
+      // Remove cached readers for this syllabus
+      const newReaders = { ...state.generatedReaders };
+      Object.keys(newReaders).forEach(k => {
+        if (k.startsWith(`lesson_${id}_`)) delete newReaders[k];
+      });
+      return { ...state, syllabi: newSyllabi, syllabusProgress: newProgress, generatedReaders: newReaders };
+    }
+
+    case 'SET_LESSON_INDEX': {
+      const { syllabusId, lessonIndex } = action.payload;
+      const newProgress = {
+        ...state.syllabusProgress,
+        [syllabusId]: { ...state.syllabusProgress[syllabusId], lessonIndex },
+      };
+      saveSyllabusProgress(newProgress);
+      return { ...state, syllabusProgress: newProgress };
+    }
+
+    case 'MARK_LESSON_COMPLETE': {
+      const { syllabusId, lessonIndex } = action.payload;
+      const entry = state.syllabusProgress[syllabusId] || { lessonIndex: 0, completedLessons: [] };
+      if (entry.completedLessons.includes(lessonIndex)) return state;
+      const newEntry = { ...entry, completedLessons: [...entry.completedLessons, lessonIndex] };
+      const newProgress = { ...state.syllabusProgress, [syllabusId]: newEntry };
+      saveSyllabusProgress(newProgress);
+      return { ...state, syllabusProgress: newProgress };
+    }
+
+    // ── Standalone reader actions ─────────────────────────────
+
+    case 'ADD_STANDALONE_READER': {
+      const newList = [action.payload, ...state.standaloneReaders];
+      saveStandaloneReaders(newList);
+      return { ...state, standaloneReaders: newList };
+    }
+
+    case 'REMOVE_STANDALONE_READER': {
+      const key = action.payload;
+      const newList = state.standaloneReaders.filter(r => r.key !== key);
+      saveStandaloneReaders(newList);
+      const newReaders = { ...state.generatedReaders };
+      delete newReaders[key];
+      return { ...state, standaloneReaders: newList, generatedReaders: newReaders };
+    }
+
+    // ── Reader cache actions ──────────────────────────────────
 
     case 'SET_READER': {
       const { lessonKey, data } = action.payload;
@@ -112,6 +157,8 @@ function reducer(state, action) {
       };
     }
 
+    // ── Vocabulary actions ────────────────────────────────────
+
     case 'ADD_VOCABULARY': {
       const updated = addLearnedVocabulary(action.payload);
       return { ...state, learnedVocabulary: updated };
@@ -129,6 +176,8 @@ function reducer(state, action) {
     case 'CLEAR_EXPORTED_WORDS':
       clearExportedWords();
       return { ...state, exportedWords: new Set() };
+
+    // ── UI state ──────────────────────────────────────────────
 
     case 'SET_LOADING':
       return {
@@ -166,24 +215,26 @@ function reducer(state, action) {
       return { ...state, fsInitialized: true };
 
     case 'SET_SAVE_FOLDER':
-      return { ...state, saveFolder: action.payload }; // { name } or null
+      return { ...state, saveFolder: action.payload };
 
-    case 'SET_MAX_TOKENS':
-      saveMaxTokens(action.payload);
-      return { ...state, maxTokens: action.payload };
-
-    // Hydrate all state from files (called after reading save folder on startup)
     case 'HYDRATE_FROM_FILES': {
       const d = action.payload;
       return {
         ...state,
-        currentSyllabus:   d.currentSyllabus,
-        lessonIndex:       d.lessonIndex,
+        syllabi:           d.syllabi,
+        syllabusProgress:  d.syllabusProgress,
+        standaloneReaders: d.standaloneReaders,
         generatedReaders:  d.generatedReaders,
         learnedVocabulary: d.learnedVocabulary,
         exportedWords:     d.exportedWords,
       };
     }
+
+    // ── API preferences ───────────────────────────────────────
+
+    case 'SET_MAX_TOKENS':
+      saveMaxTokens(action.payload);
+      return { ...state, maxTokens: action.payload };
 
     default:
       return state;
@@ -209,24 +260,21 @@ export function AppProvider({ children }) {
 
         const hasPermission = await verifyPermission(handle);
         if (!hasPermission) {
-          // Permission denied — clear the stale handle
           await clearDirectoryHandle();
           dispatch({ type: 'FS_INITIALIZED' });
           return;
         }
 
-        // Register handle so storage.js fans writes to files
         setDirectoryHandle(handle);
         dispatch({ type: 'SET_SAVE_FOLDER', payload: { name: handle.name } });
 
-        // Read files and hydrate state
         const data = await readAllFromFolder(handle);
         dispatch({ type: 'HYDRATE_FROM_FILES', payload: data });
 
-        // Mirror hydrated data back to localStorage so future sync reads are fast
-        if (data.currentSyllabus !== null) saveSyllabus(data.currentSyllabus);
-        saveLessonIndex(data.lessonIndex);
-        addLearnedVocabulary([]); // no-op — already written inside readAllFromFolder merge
+        // Mirror hydrated data back to localStorage
+        if (data.syllabi.length > 0) saveSyllabi(data.syllabi);
+        if (Object.keys(data.syllabusProgress).length > 0) saveSyllabusProgress(data.syllabusProgress);
+        if (data.standaloneReaders.length > 0) saveStandaloneReaders(data.standaloneReaders);
       } catch (err) {
         console.warn('[AppContext] File storage init failed:', err);
       } finally {
@@ -237,13 +285,11 @@ export function AppProvider({ children }) {
     initFileStorage();
   }, []);
 
-  // ── Async pick-folder action (called from Settings) ──────────
-  // Exposed via context so Settings can trigger it without prop-drilling.
   async function pickSaveFolder() {
     if (!isSupported()) return;
     try {
       const handle = await pickDirectory();
-      if (!handle) return; // user cancelled
+      if (!handle) return;
 
       await saveDirectoryHandle(handle);
       setDirectoryHandle(handle);
@@ -275,5 +321,4 @@ export function AppProvider({ children }) {
   );
 }
 
-// useApp hook is in ./useApp.js to satisfy fast-refresh rules
 export { useApp } from './useApp';

@@ -137,6 +137,14 @@
   color: var(--color-text);
 }
 
+.reader-view__paragraph {
+  margin-bottom: 1.25em;
+}
+
+.reader-view__paragraph:last-child {
+  margin-bottom: 0;
+}
+
 .reader-view__vocab {
   color: var(--color-accent-hover);
   font-weight: 700;

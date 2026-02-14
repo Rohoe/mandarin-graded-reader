@@ -7,7 +7,7 @@
  * one user gesture away).
  *
  * File layout inside the chosen folder:
- *   graded-reader-syllabus.json      — currentSyllabus + lessonIndex
+ *   graded-reader-syllabi.json       — syllabi array + syllabusProgress + standaloneReaders
  *   graded-reader-readers.json       — generatedReaders cache
  *   graded-reader-vocabulary.json    — learnedVocabulary ledger
  *   graded-reader-exported.json      — exportedWords array
@@ -97,7 +97,7 @@ export async function pickDirectory() {
 // ── JSON file I/O ─────────────────────────────────────────────
 
 const FILES = {
-  syllabus:    'graded-reader-syllabus.json',
+  syllabi:     'graded-reader-syllabi.json',
   readers:     'graded-reader-readers.json',
   vocabulary:  'graded-reader-vocabulary.json',
   exported:    'graded-reader-exported.json',
@@ -129,16 +129,17 @@ export async function readJSON(dirHandle, filename) {
 // ── Read all app data from folder ─────────────────────────────
 
 export async function readAllFromFolder(dirHandle) {
-  const [syllabusData, readers, vocabulary, exportedArr] = await Promise.all([
-    readJSON(dirHandle, FILES.syllabus),
+  const [syllabiData, readers, vocabulary, exportedArr] = await Promise.all([
+    readJSON(dirHandle, FILES.syllabi),
     readJSON(dirHandle, FILES.readers),
     readJSON(dirHandle, FILES.vocabulary),
     readJSON(dirHandle, FILES.exported),
   ]);
 
   return {
-    currentSyllabus:   syllabusData?.syllabus   ?? null,
-    lessonIndex:       syllabusData?.lessonIndex ?? 0,
+    syllabi:           syllabiData?.syllabi           ?? [],
+    syllabusProgress:  syllabiData?.syllabusProgress  ?? {},
+    standaloneReaders: syllabiData?.standaloneReaders ?? [],
     generatedReaders:  readers      ?? {},
     learnedVocabulary: vocabulary   ?? {},
     exportedWords:     new Set(exportedArr ?? []),
@@ -149,9 +150,10 @@ export async function readAllFromFolder(dirHandle) {
 
 export async function writeAllToFolder(dirHandle, state) {
   await Promise.all([
-    writeJSON(dirHandle, FILES.syllabus, {
-      syllabus:    state.currentSyllabus,
-      lessonIndex: state.lessonIndex,
+    writeJSON(dirHandle, FILES.syllabi, {
+      syllabi:           state.syllabi,
+      syllabusProgress:  state.syllabusProgress,
+      standaloneReaders: state.standaloneReaders,
     }),
     writeJSON(dirHandle, FILES.readers,    state.generatedReaders),
     writeJSON(dirHandle, FILES.vocabulary, state.learnedVocabulary),

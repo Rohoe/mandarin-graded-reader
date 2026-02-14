@@ -42,10 +42,18 @@ export function parseReaderResponse(rawText) {
     if (storySectionMatch) {
       result.story = storySectionMatch[1].trim();
     } else {
-      // Fallback: try to find large Chinese text block
-      const chineseBlock = rawText.match(/([\u4e00-\u9fff\s*_.,，。！？、；：""''（）【】]{200,})/);
-      if (chineseBlock) result.story = chineseBlock[1].trim();
+      // Fallback: strip heading lines from top, take text up to the next ## section
+      const withoutTopHeadings = rawText.replace(/^(#{1,4}[^\n]*\n)+\s*/, '');
+      const bodyMatch = withoutTopHeadings.match(/^([\s\S]*?)(?=\n#{1,4}\s)/);
+      if (bodyMatch) result.story = bodyMatch[1].trim();
+      else {
+        const chineseBlock = rawText.match(/([\u4e00-\u9fff\s*_.,，。！？、；：""''（）【】]{200,})/);
+        if (chineseBlock) result.story = chineseBlock[1].trim();
+      }
     }
+
+    // Strip any stray leading heading lines (e.g. "级读物：…") from the story
+    result.story = result.story.replace(/^(#{1,4}[^\n]*\n\n?)+/, '').trim();
 
     // ── 3. Vocabulary ─────────────────────────────────────────
     const vocabSectionMatch = rawText.match(/###\s*3\.\s*Vocabulary[^\n]*\n+([\s\S]*?)(?=###\s*4\.)/i);

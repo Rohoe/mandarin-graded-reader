@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { actions } from './context/actions';
 import ApiKeySetup from './components/ApiKeySetup';
@@ -27,43 +27,63 @@ function Notification() {
 function AppShell() {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
-  const { apiKey, currentSyllabus, lessonIndex } = state;
+  const { apiKey, syllabi, syllabusProgress } = state;
 
   const [showSettings, setShowSettings]     = useState(false);
   const [sidebarOpen,  setSidebarOpen]      = useState(false);
-  const [completedSet, setCompletedSet]     = useState(new Set());
   const [standaloneKey, setStandaloneKey]   = useState(null);
+  const [activeSyllabusId, setActiveSyllabusId] = useState(() => syllabi[0]?.id || null);
+
+  // Keep activeSyllabusId valid if the active syllabus is removed
+  useEffect(() => {
+    if (activeSyllabusId && !syllabi.find(s => s.id === activeSyllabusId)) {
+      setActiveSyllabusId(syllabi[0]?.id || null);
+    }
+  }, [syllabi, activeSyllabusId]);
 
   // Callback for TopicForm to surface a newly-generated standalone reader
   function onStandaloneGenerated(lessonKey) {
     setStandaloneKey(lessonKey);
   }
 
-  // Derive active lesson info
+  // Derive active lesson info from per-syllabus progress
+  const currentSyllabus = syllabi.find(s => s.id === activeSyllabusId) || null;
+  const progress        = syllabusProgress[activeSyllabusId] || { lessonIndex: 0, completedLessons: [] };
+  const lessonIndex     = progress.lessonIndex;
+  const completedSet    = new Set(progress.completedLessons);
   const lessons         = currentSyllabus?.lessons || [];
   const activeMeta      = lessons[lessonIndex] || null;
   const activeLessonKey = standaloneKey
     ? standaloneKey
     : currentSyllabus
-      ? `lesson_${currentSyllabus.topic}_${currentSyllabus.level}_${lessonIndex}`
+      ? `lesson_${activeSyllabusId}_${lessonIndex}`
       : null;
 
   function handleSelectLesson(idx) {
-    setStandaloneKey(null);   // exit standalone mode
-    act.setLessonIndex(idx);
+    setStandaloneKey(null);
     setSidebarOpen(false);
   }
 
   function handleMarkComplete() {
-    setCompletedSet(prev => { const s = new Set(prev); s.add(lessonIndex); return s; });
+    act.markLessonComplete(activeSyllabusId, lessonIndex);
     if (currentSyllabus && lessonIndex < lessons.length - 1) {
-      act.setLessonIndex(lessonIndex + 1);
+      act.setLessonIndex(activeSyllabusId, lessonIndex + 1);
     }
   }
 
-  function handleNewSyllabus() {
+  function handleNewSyllabus(newSyllabusId) {
+    setActiveSyllabusId(newSyllabusId);
     setStandaloneKey(null);
-    setCompletedSet(new Set());
+  }
+
+  function handleSwitchSyllabus(id) {
+    setActiveSyllabusId(id);
+    setStandaloneKey(null);
+  }
+
+  function handleSelectStandalone(key) {
+    setStandaloneKey(key);
+    setSidebarOpen(false);
   }
 
   if (!state.fsInitialized) {
@@ -101,11 +121,14 @@ function AppShell() {
       {/* ─ Left sidebar ──────────────────────────────────── */}
       <div className={`app-sidebar ${sidebarOpen ? 'app-sidebar--open' : ''}`}>
         <SyllabusPanel
-          completedLessons={completedSet}
+          activeSyllabusId={activeSyllabusId}
+          standaloneKey={standaloneKey}
           onSelectLesson={handleSelectLesson}
           onNewSyllabus={handleNewSyllabus}
           onShowSettings={() => setShowSettings(true)}
           onStandaloneGenerated={onStandaloneGenerated}
+          onSwitchSyllabus={handleSwitchSyllabus}
+          onSelectStandalone={handleSelectStandalone}
         />
       </div>
 
@@ -114,7 +137,7 @@ function AppShell() {
         <ReaderView
           lessonKey={activeLessonKey}
           lessonMeta={standaloneKey ? null : (activeMeta
-            ? { ...activeMeta, level: currentSyllabus?.level }
+            ? { ...activeMeta, level: currentSyllabus?.level, lesson_number: lessonIndex + 1 }
             : null)}
           onMarkComplete={handleMarkComplete}
           isCompleted={completedSet.has(lessonIndex)}
