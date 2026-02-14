@@ -33,6 +33,7 @@ const KEYS = {
   READERS:    'gradedReader_readers',
   VOCABULARY: 'gradedReader_learnedVocabulary',
   EXPORTED:   'gradedReader_exportedWords',
+  MAX_TOKENS: 'gradedReader_maxTokens',
 };
 
 // ── Generic localStorage helpers ──────────────────────────────
@@ -233,6 +234,17 @@ export function getStorageUsage() {
   } catch {
     return { used: 0, limit: 5 * 1024 * 1024, pct: 0 };
   }
+}
+
+// ── Max tokens preference ─────────────────────────────────────
+// User-configurable ceiling for API output; not synced to file (preference only).
+
+export function loadMaxTokens() {
+  return load(KEYS.MAX_TOKENS, 8192);
+}
+
+export function saveMaxTokens(n) {
+  save(KEYS.MAX_TOKENS, n);
 }
 
 // ── Clear everything ──────────────────────────────────────────

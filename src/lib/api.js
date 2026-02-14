@@ -47,10 +47,10 @@ const SYLLABUS_PROMPT = `You are a Mandarin Chinese curriculum designer. Generat
 
 Topic: {topic}
 HSK Level: {level}
-Number of lessons: 6
+Number of lessons: {lessonCount}
 
 Return a JSON array of lesson objects. Each object must have:
-- "lesson_number": integer (1-6)
+- "lesson_number": integer (1-{lessonCount})
 - "title_zh": Chinese lesson title (8-15 characters)
 - "title_en": English lesson title
 - "description": One English sentence describing what the reader covers
@@ -58,10 +58,11 @@ Return a JSON array of lesson objects. Each object must have:
 
 Return ONLY valid JSON. No explanation, no markdown fences.`;
 
-export async function generateSyllabus(apiKey, topic, level) {
+export async function generateSyllabus(apiKey, topic, level, lessonCount = 6) {
   const prompt = SYLLABUS_PROMPT
     .replace('{topic}', topic)
-    .replace('{level}', level);
+    .replace('{level}', level)
+    .replace(/\{lessonCount\}/g, lessonCount);
 
   const raw = await callClaude(apiKey, '', prompt, 2048);
 
@@ -89,7 +90,7 @@ If a user types in a series of words from the article, assume those are new voca
 - Bold all instances of new vocabulary: **新词**
 
 ## STORY REQUIREMENTS
-- Length: 1000-1500 Chinese characters (字)
+- Length: {targetChars} Chinese characters (字)
 - Topic: {topic}
 - Calibrate language complexity to the HSK level:
   - HSK 1-2: Simple sentences (5-10 characters), basic 是/有/在 structures, high-frequency verbs, concrete nouns, present/past with 了
@@ -130,10 +131,13 @@ Return a JSON block tagged \`\`\`anki-json containing an array of card objects:
 ]
 \`\`\``;
 
-export async function generateReader(apiKey, topic, level, learnedWords = {}) {
+export async function generateReader(apiKey, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192) {
+  // Build a range string: e.g. 1200 → "1100-1300 Chinese characters"
+  const charRange = `${targetChars - 100}-${targetChars + 100}`;
   const system = READER_SYSTEM
     .replace('{level}', level)
-    .replace('{topic}', topic);
+    .replace('{topic}', topic)
+    .replace('{targetChars}', charRange);
 
   const learnedList = Object.keys(learnedWords);
   const learnedSection = learnedList.length > 0
@@ -142,5 +146,5 @@ export async function generateReader(apiKey, topic, level, learnedWords = {}) {
 
   const userMessage = `Generate a graded reader for the topic: ${topic}${learnedSection}`;
 
-  return await callClaude(apiKey, system, userMessage, 8192);
+  return await callClaude(apiKey, system, userMessage, maxTokens);
 }

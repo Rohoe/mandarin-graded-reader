@@ -43,3 +43,38 @@
   align-self: center;
   font-size: var(--text-xs);
 }
+
+/* Sliders */
+.topic-form__slider-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-2);
+}
+
+.topic-form__slider-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.topic-form__slider {
+  width: 100%;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.topic-form__slider:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.topic-form__slider-ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+  font-family: var(--font-display);
+}

@@ -53,7 +53,9 @@ src/
 
   components/
     ApiKeySetup               First-run screen; validates key starts with "sk-ant-"
-    TopicForm                 Topic input + HSK selector; two modes: syllabus / standalone
+    TopicForm                 Topic input + HSK selector; two modes: syllabus / standalone.
+                              Sliders: lesson count (2–12, syllabus mode only) and reader
+                              length (500–2000 chars, step 100). Both passed to API calls.
     SyllabusPanel             Left sidebar; lesson list, progress bar, settings link
     ReaderView                Main content area; empty/pre-generate/error/reading states
     VocabularyList            Collapsible accordion of vocab cards with examples
@@ -65,7 +67,8 @@ src/
                               type='syllabus': 4 phases (~10s budget); shown in TopicForm
                               Uses setTimeout chain to advance through phases; bar
                               holds at ~97-98% until response arrives and component unmounts
-    Settings                  API key update, save folder picker, storage usage meter,
+    Settings                  API key update, save folder picker, API output tokens slider
+                              (4096–16384, persisted to localStorage), storage usage meter,
                               clear-all data
 ```
 
@@ -83,6 +86,8 @@ src/
   loadingMessage:    string,
   error:             string | null,
   notification:      { type: 'success'|'error', message } | null,
+  // API preferences (persisted to localStorage, not cleared by CLEAR_ALL_DATA)
+  maxTokens:         number,          // API output ceiling, default 8192
   // File storage
   fsInitialized:     boolean,         // true once async FS init completes on mount
   saveFolder:        { name: string } | null,  // active folder name, or null

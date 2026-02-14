@@ -18,5 +18,6 @@ export function actions(dispatch) {
     clearError:        ()     => dispatch({ type: 'CLEAR_ERROR' }),
     notify:            (type, message) => dispatch({ type: 'SET_NOTIFICATION', payload: { type, message } }),
     clearAll:          ()     => dispatch({ type: 'CLEAR_ALL_DATA' }),
+    setMaxTokens:      n      => dispatch({ type: 'SET_MAX_TOKENS', payload: Number(n) }),
   };
 }

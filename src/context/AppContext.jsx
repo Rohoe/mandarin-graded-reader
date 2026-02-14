@@ -20,6 +20,8 @@ import {
   clearExportedWords,
   clearAllAppData,
   setDirectoryHandle,
+  loadMaxTokens,
+  saveMaxTokens,
 } from '../lib/storage';
 import {
   loadDirectoryHandle,
@@ -49,6 +51,8 @@ function buildInitialState() {
     fsInitialized:     false,   // true once the async FS init is done
     saveFolder:        null,    // { name: string } when a folder is active
     fsSupported:       isSupported(),
+    // API preferences
+    maxTokens:         loadMaxTokens(),
   };
 }
 
@@ -153,6 +157,7 @@ function reducer(state, action) {
         saveFolder:    state.saveFolder,
         fsInitialized: state.fsInitialized,
         fsSupported:   state.fsSupported,
+        maxTokens:     state.maxTokens,
       };
 
     // ── File storage actions ──────────────────────────────────
@@ -162,6 +167,10 @@ function reducer(state, action) {
 
     case 'SET_SAVE_FOLDER':
       return { ...state, saveFolder: action.payload }; // { name } or null
+
+    case 'SET_MAX_TOKENS':
+      saveMaxTokens(action.payload);
+      return { ...state, maxTokens: action.payload };
 
     // Hydrate all state from files (called after reading save folder on startup)
     case 'HYDRATE_FROM_FILES': {

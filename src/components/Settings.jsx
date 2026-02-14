@@ -118,6 +118,32 @@ export default function Settings({ onClose }) {
 
         <hr className="divider" />
 
+        {/* Max output tokens */}
+        <section className="settings-section">
+          <h3 className="settings-section__title form-label">API Output Tokens</h3>
+          <p className="settings-section__desc text-muted">
+            Maximum tokens Claude can return per generation. Increase this if readers are being cut off.
+          </p>
+          <div className="settings-slider-row">
+            <span className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>4 096</span>
+            <span className="settings-slider-value">{state.maxTokens.toLocaleString()}</span>
+            <span className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>16 384</span>
+          </div>
+          <input
+            type="range"
+            className="settings-slider"
+            min={4096} max={16384} step={1024}
+            value={state.maxTokens}
+            onChange={e => act.setMaxTokens(e.target.value)}
+          />
+          <p className="settings-section__desc text-muted" style={{ fontSize: 'var(--text-xs)' }}>
+            Current: <code className="settings-key-preview">{state.maxTokens.toLocaleString()} tokens</code>
+            {state.maxTokens > 8192 && ' — Note: values above 8,192 may not be supported by all API tiers.'}
+          </p>
+        </section>
+
+        <hr className="divider" />
+
         {/* localStorage usage */}
         <section className="settings-section">
           <h3 className="settings-section__title form-label">Browser Storage Usage</h3>

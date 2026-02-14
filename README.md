@@ -9,6 +9,7 @@ A single-page web app for generating Mandarin Chinese graded readers using Claud
 - **Vocabulary Memory** — Tracks learned words across sessions; new readers avoid repeating them
 - **Anki Export** — Download flashcard files (.txt) with duplicate prevention
 - **Offline persistence** — All data stored in `localStorage`; pick up where you left off
+- **Configurable length** — Sliders for syllabus lesson count (2–12) and reader story length (500–2000 characters)
 - **Disk persistence** — Optionally save all data as JSON files to a folder on your computer (Chrome/Edge only)
 
 ## Setup
@@ -43,6 +44,14 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 6. **Export to Anki** — click the export button to download a `.txt` file. Already-exported words are skipped automatically.
 
 Alternatively, use **Single Reader** mode to generate a one-off story without a syllabus.
+
+### Adjusting output length
+
+Use the sliders in the sidebar form to control:
+- **Lessons** (syllabus mode) — how many lessons to generate (2–12, default 6)
+- **Reader Length** — target story length in Chinese characters (500–2000, default 1200)
+
+To fix truncated readers, open **Settings → API Output Tokens** and drag the slider up. The default is 8,192 tokens. Values above 8,192 may require an API tier that supports extended output.
 
 ### Optional: Save to disk
 

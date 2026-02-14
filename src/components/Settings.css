@@ -120,6 +120,29 @@
   word-break: break-all;
 }
 
+/* Sliders (max tokens) */
+.settings-slider-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.settings-slider-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-accent);
+  min-width: 4.5rem;
+  text-align: center;
+}
+
+.settings-slider {
+  width: 100%;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
 /* Confirm row */
 .settings-section > .btn + .btn {
   margin-top: calc(-1 * var(--space-1));

@@ -19,9 +19,11 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
 
-  const [topic, setTopic]       = useState('');
-  const [level, setLevel]       = useState(3);
-  const [mode, setMode]         = useState('syllabus'); // 'syllabus' | 'standalone'
+  const [topic, setTopic]         = useState('');
+  const [level, setLevel]         = useState(3);
+  const [mode, setMode]           = useState('syllabus'); // 'syllabus' | 'standalone'
+  const [lessonCount, setLessonCount] = useState(6);
+  const [readerLength, setReaderLength] = useState(1200);
 
   async function handleGenerateSyllabus(e) {
     e.preventDefault();
@@ -30,7 +32,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated }) {
     act.setLoading(true, '正在生成课程大纲…');
     act.clearError();
     try {
-      const lessons = await generateSyllabus(state.apiKey, topic.trim(), level);
+      const lessons = await generateSyllabus(state.apiKey, topic.trim(), level, lessonCount);
       act.setSyllabus({ topic: topic.trim(), level, lessons });
       act.notify('success', `Syllabus generated: ${lessons.length} lessons on "${topic}"`);
       onNewSyllabus?.();
@@ -48,7 +50,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated }) {
     act.setLoading(true, '正在生成阅读材料…');
     act.clearError();
     try {
-      const raw = await generateReader(state.apiKey, topic.trim(), level, state.learnedVocabulary);
+      const raw = await generateReader(state.apiKey, topic.trim(), level, state.learnedVocabulary, readerLength, state.maxTokens);
       const parsed = parseReaderResponse(raw);
       const lessonKey = `standalone_${Date.now()}`;
       act.setReader(lessonKey, { ...parsed, topic: topic.trim(), level, lessonKey, isStandalone: true });
@@ -116,6 +118,46 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated }) {
             </option>
           ))}
         </select>
+      </div>
+
+      {mode === 'syllabus' && (
+        <div className="form-group">
+          <div className="topic-form__slider-row">
+            <label className="form-label" htmlFor="lesson-count">Lessons</label>
+            <span className="topic-form__slider-value">{lessonCount}</span>
+          </div>
+          <input
+            id="lesson-count"
+            type="range"
+            className="topic-form__slider"
+            min={2} max={12} step={1}
+            value={lessonCount}
+            onChange={e => setLessonCount(Number(e.target.value))}
+            disabled={state.loading}
+          />
+          <div className="topic-form__slider-ticks">
+            <span>2</span><span>12</span>
+          </div>
+        </div>
+      )}
+
+      <div className="form-group">
+        <div className="topic-form__slider-row">
+          <label className="form-label" htmlFor="reader-length">Reader Length</label>
+          <span className="topic-form__slider-value">~{readerLength} chars</span>
+        </div>
+        <input
+          id="reader-length"
+          type="range"
+          className="topic-form__slider"
+          min={500} max={2000} step={100}
+          value={readerLength}
+          onChange={e => setReaderLength(Number(e.target.value))}
+          disabled={state.loading}
+        />
+        <div className="topic-form__slider-ticks">
+          <span>Short</span><span>Long</span>
+        </div>
       </div>
 
       <button

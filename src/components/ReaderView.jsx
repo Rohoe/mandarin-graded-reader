@@ -12,7 +12,7 @@ import './ReaderView.css';
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, isCompleted }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
-  const { generatedReaders, learnedVocabulary, error, loading, apiKey } = state;
+  const { generatedReaders, learnedVocabulary, error, loading, apiKey, maxTokens } = state;
 
   const reader = generatedReaders[lessonKey];
   const scrollRef = useRef(null);
@@ -40,7 +40,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, isCo
         : lessonMeta.topic || '';
       const level = lessonMeta.level || state.currentSyllabus?.level || 3;
 
-      const raw    = await generateReader(apiKey, topic, level, learnedVocabulary);
+      const raw    = await generateReader(apiKey, topic, level, learnedVocabulary, 1200, maxTokens);
       const parsed = parseReaderResponse(raw);
 
       act.setReader(lessonKey, { ...parsed, topic, level, lessonKey });
