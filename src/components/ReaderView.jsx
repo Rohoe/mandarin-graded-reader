@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
 import { generateReader } from '../lib/api';
 import { parseReaderResponse, parseStorySegments } from '../lib/parser';
+import { pinyin } from 'pinyin-pro';
 import VocabularyList from './VocabularyList';
 import ComprehensionQuestions from './ComprehensionQuestions';
 import AnkiExportButton from './AnkiExportButton';
@@ -19,6 +20,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   const reader = generatedReaders[lessonKey];
   const scrollRef = useRef(null);
   const [confirmRegen, setConfirmRegen] = useState(false);
+  const [pinyinOn, setPinyinOn] = useState(false);
 
   // ── Text-to-speech ──────────────────────────────────────────
   const ttsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -271,6 +273,30 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   // ── Main reading view ───────────────────────────────────────
   const storyParagraphs = (reader.story || '').split(/\n\n+/).map(p => p.trim()).filter(Boolean);
 
+  // Renders text with <ruby> pinyin annotations for Chinese characters
+  function renderChars(text, keyPrefix) {
+    if (!pinyinOn) return text;
+    const chars = [...text];
+    const pinyinArr = pinyin(text, { type: 'array', toneType: 'symbol' });
+    const nodes = [];
+    let nonChi = '';
+    let nonChiStart = 0;
+    for (let i = 0; i < chars.length; i++) {
+      if (/[\u4e00-\u9fff]/.test(chars[i])) {
+        if (nonChi) {
+          nodes.push(<span key={`${keyPrefix}-t${nonChiStart}`}>{nonChi}</span>);
+          nonChi = '';
+        }
+        nodes.push(<ruby key={`${keyPrefix}-r${i}`}>{chars[i]}<rt>{pinyinArr[i]}</rt></ruby>);
+      } else {
+        if (!nonChi) nonChiStart = i;
+        nonChi += chars[i];
+      }
+    }
+    if (nonChi) nodes.push(<span key={`${keyPrefix}-tend`}>{nonChi}</span>);
+    return nodes;
+  }
+
   return (
     <article className="reader-view fade-in" ref={scrollRef}>
       {/* Title */}
@@ -291,8 +317,16 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
 
       {/* Story */}
       <div className="reader-view__story-section">
+        <div className="reader-view__tts-bar">
+          <button
+            className={`btn btn-ghost btn-sm reader-view__tts-btn ${pinyinOn ? 'reader-view__tts-btn--active' : ''}`}
+            onClick={() => setPinyinOn(v => !v)}
+            title={pinyinOn ? 'Hide pinyin' : 'Show pinyin'}
+          >
+            拼 Pinyin
+          </button>
         {ttsSupported && (
-          <div className="reader-view__tts-bar">
+          <>
             <button
               className={`btn btn-ghost btn-sm reader-view__tts-btn ${speakingKey === 'story' ? 'reader-view__tts-btn--active' : ''}`}
               onClick={() => speakText(stripMarkdown(storyParagraphs.join('\n\n')), 'story')}
@@ -336,9 +370,10 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
                 </select>
               );
             })()}
-          </div>
+          </>
         )}
-        <div className="reader-view__story text-chinese">
+        </div>
+        <div className={`reader-view__story text-chinese ${pinyinOn ? 'reader-view__story--pinyin' : ''}`}>
           {storyParagraphs.map((para, pi) => {
             const paraKey = `para-${pi}`;
             const isSpeaking = speakingKey === paraKey;
@@ -350,9 +385,9 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
                 title={ttsSupported ? (isSpeaking ? 'Stop' : 'Click to listen') : undefined}
               >
                 {parseStorySegments(para).map((seg, i) => {
-                  if (seg.type === 'bold')   return <strong key={i} className="reader-view__vocab">{seg.content}</strong>;
-                  if (seg.type === 'italic') return <em key={i}>{seg.content}</em>;
-                  return <span key={i}>{seg.content}</span>;
+                  if (seg.type === 'bold')   return <strong key={i} className="reader-view__vocab">{renderChars(seg.content, `${pi}-b${i}`)}</strong>;
+                  if (seg.type === 'italic') return <em key={i}>{renderChars(seg.content, `${pi}-em${i}`)}</em>;
+                  return <span key={i}>{renderChars(seg.content, `${pi}-s${i}`)}</span>;
                 })}
               </p>
             );

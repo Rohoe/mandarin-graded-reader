@@ -169,6 +169,23 @@
   margin-bottom: 0;
 }
 
+/* ── Pinyin ruby annotations ─────────────── */
+ruby {
+  ruby-align: center;
+}
+
+rt {
+  font-size: 0.55em;
+  font-family: var(--font-display);
+  color: var(--color-accent);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.reader-view__story--pinyin .reader-view__paragraph {
+  line-height: 2.8;
+}
+
 .reader-view__paragraph--tts {
   cursor: pointer;
   border-radius: var(--radius-sm);

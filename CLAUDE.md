@@ -91,6 +91,9 @@ src/
                               Voices loaded via Web Speech API voiceschanged event; auto-selects
                               best Chinese voice (Google neural > Tingting/Meijia > zh-CN).
                               Voice picker shows Recommended / Other voices as optgroups.
+                              Pinyin toggle: "拼 Pinyin" button wraps Chinese characters in
+                              <ruby> tags using pinyin-pro. Line-height increases to 2.8 when
+                              active. renderChars() helper handles mixed Chinese/non-Chinese text.
     VocabularyList            Collapsible accordion of vocab cards with examples
     ComprehensionQuestions    Collapsible question list with interactive answer input and AI grading.
                               Input mode: textarea per question + "Grade My Answers" button.
