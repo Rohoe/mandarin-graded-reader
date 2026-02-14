@@ -29,6 +29,23 @@ export default function SyllabusPanel({
   const [formOpen, setFormOpen] = useState(!currentSyllabus);
   useEffect(() => { setFormOpen(!currentSyllabus); }, [activeSyllabusId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Confirmation dialog state: { type: 'syllabus'|'reader', id, label } | null
+  const [confirmPending, setConfirmPending] = useState(null);
+
+  function requestDelete(type, id, label) {
+    setConfirmPending({ type, id, label });
+  }
+
+  function confirmDelete() {
+    if (!confirmPending) return;
+    if (confirmPending.type === 'syllabus') {
+      act.removeSyllabus(confirmPending.id);
+    } else {
+      act.removeStandaloneReader(confirmPending.id);
+    }
+    setConfirmPending(null);
+  }
+
   function handleNewSyllabus(newSyllabusId) {
     setFormOpen(false);
     onNewSyllabus?.(newSyllabusId);
@@ -78,6 +95,14 @@ export default function SyllabusPanel({
             title="New syllabus or standalone reader"
           >
             + New
+          </button>
+          <button
+            className="btn btn-ghost btn-sm syllabus-panel__delete-syllabus-btn"
+            onClick={() => requestDelete('syllabus', activeSyllabusId, syllabi.find(s => s.id === activeSyllabusId)?.topic)}
+            title="Delete this syllabus"
+            aria-label="Delete syllabus"
+          >
+            ×
           </button>
         </div>
       )}
@@ -171,7 +196,7 @@ export default function SyllabusPanel({
                   </button>
                   <button
                     className="btn btn-ghost btn-sm syllabus-panel__delete-btn"
-                    onClick={() => act.removeStandaloneReader(r.key)}
+                    onClick={() => requestDelete('reader', r.key, r.topic)}
                     aria-label="Delete reader"
                     title="Delete this reader"
                   >
@@ -193,6 +218,34 @@ export default function SyllabusPanel({
           ⚙ Settings
         </button>
       </div>
+
+      {/* Confirmation dialog */}
+      {confirmPending && (
+        <div className="syllabus-panel__confirm-overlay" role="dialog" aria-modal="true">
+          <div className="syllabus-panel__confirm-dialog">
+            <p className="syllabus-panel__confirm-title">
+              Delete {confirmPending.type === 'syllabus' ? 'syllabus' : 'reader'}?
+            </p>
+            <p className="syllabus-panel__confirm-label text-muted">
+              "{confirmPending.label}" will be permanently removed.
+            </p>
+            <div className="syllabus-panel__confirm-actions">
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setConfirmPending(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-sm syllabus-panel__confirm-delete-btn"
+                onClick={confirmDelete}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
