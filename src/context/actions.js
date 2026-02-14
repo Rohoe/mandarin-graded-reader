@@ -31,6 +31,7 @@ export function actions(dispatch) {
     clearAll:              ()     => dispatch({ type: 'CLEAR_ALL_DATA' }),
     setMaxTokens:          n      => dispatch({ type: 'SET_MAX_TOKENS', payload: Number(n) }),
     setDefaultLevel:       n      => dispatch({ type: 'SET_DEFAULT_LEVEL', payload: Number(n) }),
+    setDarkMode:           val    => dispatch({ type: 'SET_DARK_MODE', payload: Boolean(val) }),
     // Background generation tracking
     startPendingReader:    key    => dispatch({ type: 'START_PENDING_READER', payload: key }),
     clearPendingReader:    key    => dispatch({ type: 'CLEAR_PENDING_READER', payload: key }),

@@ -147,3 +147,43 @@
 .settings-section > .btn + .btn {
   margin-top: calc(-1 * var(--space-1));
 }
+
+/* ── Dark mode toggle ────────────────────────────────────────── */
+.settings-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+}
+
+.settings-toggle {
+  flex-shrink: 0;
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--color-border);
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  transition: background var(--transition-slow);
+  position: relative;
+}
+
+.settings-toggle--on {
+  background: var(--color-accent);
+}
+
+.settings-toggle__thumb {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  transform: translateX(0);
+  transition: transform var(--transition-slow);
+}
+
+.settings-toggle--on .settings-toggle__thumb {
+  transform: translateX(20px);
+}

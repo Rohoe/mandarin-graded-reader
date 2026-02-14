@@ -36,6 +36,7 @@ const KEYS = {
   EXPORTED:           'gradedReader_exportedWords',
   MAX_TOKENS:         'gradedReader_maxTokens',
   DEFAULT_LEVEL:      'gradedReader_defaultLevel',
+  DARK_MODE:          'gradedReader_darkMode',
 };
 
 // ── Generic localStorage helpers ──────────────────────────────
@@ -269,6 +270,16 @@ export function loadDefaultLevel() {
 
 export function saveDefaultLevel(n) {
   save(KEYS.DEFAULT_LEVEL, n);
+}
+
+// ── Dark mode preference ──────────────────────────────────────
+
+export function loadDarkMode() {
+  return load(KEYS.DARK_MODE, false);
+}
+
+export function saveDarkMode(val) {
+  save(KEYS.DARK_MODE, val);
 }
 
 // ── Storage usage estimate ────────────────────────────────────

@@ -103,9 +103,9 @@ src/
                               type='syllabus': 4 phases (~10s budget); shown in TopicForm
                               Uses setTimeout chain to advance through phases; bar
                               holds at ~97-98% until response arrives and component unmounts
-    Settings                  API key update, default HSK level select, save folder picker,
-                              API output tokens slider (4096–16384, persisted to localStorage),
-                              storage usage meter, clear-all data
+    Settings                  API key update, dark mode toggle, default HSK level select,
+                              save folder picker, API output tokens slider (4096–16384,
+                              persisted to localStorage), storage usage meter, clear-all data
 ```
 
 ## State shape (AppContext)
@@ -198,6 +198,8 @@ All tokens are CSS custom properties in `src/index.css`:
 | `--leading-chinese` | 1.9 |
 
 Fonts loaded from Google Fonts. Layout: two-column on desktop (280px sidebar + flex main), single column with slide-in sidebar on mobile (≤768px).
+
+Dark mode is implemented via `[data-theme="dark"]` on `<html>`. The selector overrides all colour tokens plus `.card` and `.form-input` backgrounds (which use hardcoded `#fff` in light mode). Toggled by `state.darkMode` (persisted to `gradedReader_darkMode` in localStorage); a `useEffect` in `AppProvider` applies/removes the attribute.
 
 ## Persistent file storage
 

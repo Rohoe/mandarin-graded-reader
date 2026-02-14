@@ -8,7 +8,7 @@
 
 - [ ] **Click-to-define words in story** — Highlight words that appear in the reader's vocabulary list; click to show a popover with pinyin + definition. Data is already parsed.
 
-- [ ] **Dark mode** — Add `data-theme="dark"` to the root element and override the ~8 CSS custom property tokens. Toggle in Settings.
+- [x] ~~**Dark mode** — Add `data-theme="dark"` to the root element and override the ~8 CSS custom property tokens. Toggle in Settings.~~
 
 - [x] ~~**Grammar notes section** — Add a 6th section to Claude's reader prompt: key grammar patterns used in the story with brief explanations. New component similar to `VocabularyList`. Includes Anki export with `Grammar` tag.~~
 

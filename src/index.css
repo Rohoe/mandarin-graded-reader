@@ -70,6 +70,42 @@
   --sidebar-width: 280px;
 }
 
+/* ── Dark theme ─────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --color-bg:           #1C1A17;
+  --color-bg-elevated:  #252320;
+  --color-bg-sidebar:   #201E1B;
+  --color-border:       #3C3830;
+  --color-border-light: #2E2C28;
+
+  --color-text:         #E8E4DE;
+  --color-text-muted:   #9A9490;
+  --color-text-subtle:  #6A6560;
+
+  --color-accent-light: #1E3535;
+  --color-accent-dim:   #2A4A4A;
+  --color-error-light:  #3A2020;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.18);
+  --shadow:    0 4px 12px rgba(0,0,0,0.30), 0 2px 4px rgba(0,0,0,0.18);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.40), 0 4px 8px rgba(0,0,0,0.22);
+}
+
+[data-theme="dark"] .card {
+  background: var(--color-bg-elevated);
+}
+
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] .form-textarea {
+  background: var(--color-bg-elevated);
+}
+
+[data-theme="dark"] .alert-success {
+  background: #1E3020;
+  border-color: #3A5A3A;
+}
+
 /* ── Reset ─────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 

@@ -43,6 +43,26 @@ export default function Settings({ onClose }) {
 
         <hr className="divider" />
 
+        {/* Dark mode */}
+        <section className="settings-section">
+          <div className="settings-toggle-row">
+            <div>
+              <h3 className="settings-section__title form-label">Dark Mode</h3>
+              <p className="settings-section__desc text-muted">Switch to a dark colour scheme.</p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={state.darkMode}
+              className={`settings-toggle ${state.darkMode ? 'settings-toggle--on' : ''}`}
+              onClick={() => act.setDarkMode(!state.darkMode)}
+            >
+              <span className="settings-toggle__thumb" />
+            </button>
+          </div>
+        </section>
+
+        <hr className="divider" />
+
         {/* API Key */}
         <section className="settings-section">
           <h3 className="settings-section__title form-label">Anthropic API Key</h3>

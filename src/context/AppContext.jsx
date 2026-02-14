@@ -26,6 +26,8 @@ import {
   saveMaxTokens,
   loadDefaultLevel,
   saveDefaultLevel,
+  loadDarkMode,
+  saveDarkMode,
 } from '../lib/storage';
 import {
   loadDirectoryHandle,
@@ -59,6 +61,7 @@ function buildInitialState() {
     // API preferences (persisted, survive CLEAR_ALL_DATA)
     maxTokens:         loadMaxTokens(),
     defaultLevel:      loadDefaultLevel(),
+    darkMode:          loadDarkMode(),
     // Background generation tracking (ephemeral, not persisted)
     pendingReaders:    {},
   };
@@ -277,6 +280,10 @@ function reducer(state, action) {
       saveDefaultLevel(action.payload);
       return { ...state, defaultLevel: action.payload };
 
+    case 'SET_DARK_MODE':
+      saveDarkMode(action.payload);
+      return { ...state, darkMode: action.payload };
+
     case 'START_PENDING_READER':
       return { ...state, pendingReaders: { ...state.pendingReaders, [action.payload]: true } };
 
@@ -356,6 +363,15 @@ export function AppProvider({ children }) {
     dispatch({ type: 'SET_SAVE_FOLDER', payload: null });
     dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'success', message: 'Save folder removed. Data will only be stored in browser localStorage.' } });
   }
+
+  // Apply / remove dark theme attribute on <html>
+  useEffect(() => {
+    if (state.darkMode) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }, [state.darkMode]);
 
   // Auto-clear notifications after 5 s
   useEffect(() => {

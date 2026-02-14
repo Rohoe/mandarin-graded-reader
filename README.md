@@ -13,6 +13,7 @@ A single-page web app for generating Mandarin Chinese graded readers using Claud
 - **Comprehension grading** — Type answers to comprehension questions and get AI-powered feedback with per-question scores; results persist across sessions
 - **Syllabus home page** — Overview of all lessons with completion badges, a summary, Continue CTA, and delete button with confirmation
 - **Configurable length** — Sliders for syllabus lesson count (2–12) and reader story length (500–2000 characters)
+- **Dark mode** — Toggle in Settings; persists across sessions. Overrides all colour tokens via `[data-theme="dark"]` on the root element
 - **Story continuation** — "Next episode →" button generates a follow-up reader that continues the narrative from the previous story, maintaining characters and setting
 - **Extend syllabus** — "Add more lessons" panel on the syllabus home page appends 2–6 AI-generated lessons to an existing syllabus
 - **Disk persistence** — Optionally save all data as JSON files to a folder on your computer (Chrome/Edge only)
@@ -38,6 +39,18 @@ npm run dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### Accessing from your phone or tablet
+
+To open the app on a mobile device on the same Wi-Fi network, start the dev server with the `--host` flag:
+
+```bash
+npm run dev -- --host
+```
+
+Vite will print a **Network** URL like `http://192.168.x.x:5173`. Open that URL on your phone.
+
+> Your computer and mobile device must be on the same Wi-Fi network. You may also need to allow port 5173 through your firewall if the page doesn't load.
 
 ## Usage
 
