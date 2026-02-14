@@ -79,9 +79,11 @@
   --color-border-light: #2E2C28;
 
   --color-text:         #E8E4DE;
-  --color-text-muted:   #9A9490;
-  --color-text-subtle:  #6A6560;
+  --color-text-muted:   #B0ABA4;
+  --color-text-subtle:  #8A8580;
 
+  --color-accent:       #6AB4B6;
+  --color-accent-hover: #7ECACB;
   --color-accent-light: #1E3535;
   --color-accent-dim:   #2A4A4A;
   --color-error-light:  #3A2020;
@@ -104,6 +106,38 @@
 [data-theme="dark"] .alert-success {
   background: #1E3020;
   border-color: #3A5A3A;
+}
+
+/* ── Component background overrides ─────────────────────────── */
+[data-theme="dark"] .vocabulary-list,
+[data-theme="dark"] .grammar-notes,
+[data-theme="dark"] .comprehension {
+  background: var(--color-bg-elevated);
+}
+
+[data-theme="dark"] .vocab-card__body,
+[data-theme="dark"] .grammar-card__body {
+  background: var(--color-bg);
+}
+
+[data-theme="dark"] .comprehension__answer {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+[data-theme="dark"] .comprehension__score-badge--good {
+  background: #1A3020;
+  color: #6DBF6D;
+}
+
+[data-theme="dark"] .comprehension__score-badge--ok {
+  background: #2E2210;
+  color: #E8A050;
+}
+
+[data-theme="dark"] .comprehension__score-badge--poor {
+  background: #2E1010;
+  color: #E07070;
 }
 
 /* ── Reset ─────────────────────────────────────────────────── */
