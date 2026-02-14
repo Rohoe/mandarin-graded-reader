@@ -139,3 +139,56 @@ npm run build
 ```
 
 The output in `dist/` can be served from any static host (Netlify, Vercel, GitHub Pages, etc.). Users will still need to enter their own API key.
+
+## Deploying to Vercel
+
+The app is a static SPA — no backend required. Vercel auto-detects Vite.
+
+### 1. Import the repository
+
+Go to [vercel.com](https://vercel.com) → **New Project** → import `Rohoe/mandarin-graded-reader` from GitHub. Vercel auto-detects the Vite framework; no manual config needed.
+
+Alternatively, use the CLI:
+
+```bash
+npm i -g vercel
+vercel
+```
+
+### 2. Add environment variables
+
+In the Vercel project dashboard → **Settings → Environment Variables**, add:
+
+| Name | Value |
+|------|-------|
+| `VITE_SUPABASE_URL` | Your Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon/public key |
+
+Set scope to **Production** (and Preview/Development if desired).
+
+> `VITE_ANTHROPIC_API_KEY` is **not** needed — the API key is entered by users at runtime and stored in localStorage.
+
+### 3. Whitelist the Vercel domain in Supabase
+
+In Supabase dashboard → **Authentication → URL Configuration**, add your Vercel URL to **Redirect URLs**:
+
+```
+https://your-app.vercel.app
+```
+
+If you use a custom domain, add that as well. This is required for Google/Apple OAuth to redirect back correctly.
+
+### 4. Deploy
+
+Push a commit to `main` — Vercel deploys automatically. Or trigger manually:
+
+```bash
+vercel --prod
+```
+
+### Verification
+
+1. Open the deployed URL — the ApiKeySetup screen appears
+2. Enter a valid Anthropic API key — proceeds to the main UI
+3. Generate a reader — confirms browser-to-API calls work
+4. (Optional) Sign in with Google/Apple in Settings → Cloud Sync — confirms OAuth redirect works

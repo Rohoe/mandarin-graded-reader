@@ -251,6 +251,16 @@ function saveWithFile(lsKey, value, fileKey) {
 - While initializing, `App.jsx` renders a loading spinner (`fsInitialized === false`)
 - Once done (with or without a folder), `fsInitialized` is set to `true` and normal UI renders
 
+## Deployment (Vercel)
+
+The app is hosted at: `https://mandarin-graded-reader.vercel.app` (update when first deployed).
+
+- **No `vercel.json` needed** — Vite is auto-detected by Vercel
+- **No code changes needed** — `cloudSync.js` uses `window.location.origin` dynamically, so OAuth redirects work on any domain
+- **Required env vars in Vercel dashboard:** `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- **Supabase redirect URL:** Add the Vercel production URL to Supabase → Authentication → URL Configuration → Redirect URLs. Without this, Google/Apple OAuth will fail in production.
+- **`VITE_ANTHROPIC_API_KEY` is not set** — users enter their own key at runtime
+
 ## Known limitations / future work
 
 - **API key security:** Key is in `localStorage` in plain text. Acceptable for personal use; a backend proxy would be needed for shared deployments.
