@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
 import { generateSyllabus, generateReader } from '../lib/api';
 import { parseReaderResponse } from '../lib/parser';
+import GenerationProgress from './GenerationProgress';
 import './TopicForm.css';
 
 const HSK_LEVELS = [
@@ -129,7 +130,11 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated }) {
             : 'Generate Reader'}
       </button>
 
-      {mode === 'syllabus' && state.currentSyllabus && (
+      {state.loading && (
+        <GenerationProgress type={mode === 'syllabus' ? 'syllabus' : 'reader'} />
+      )}
+
+      {mode === 'syllabus' && state.currentSyllabus && !state.loading && (
         <button
           type="button"
           className="btn btn-ghost btn-sm topic-form__clear"

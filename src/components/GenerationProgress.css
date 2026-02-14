@@ -1,0 +1,28 @@
+.gen-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.gen-progress__bar-track {
+  height: 4px;
+  background: var(--color-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.gen-progress__bar-fill {
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: 2px;
+  transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gen-progress__label {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+  min-height: 1.4em;
+}

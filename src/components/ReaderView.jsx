@@ -6,12 +6,13 @@ import { parseReaderResponse, parseStorySegments } from '../lib/parser';
 import VocabularyList from './VocabularyList';
 import ComprehensionQuestions from './ComprehensionQuestions';
 import AnkiExportButton from './AnkiExportButton';
+import GenerationProgress from './GenerationProgress';
 import './ReaderView.css';
 
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, isCompleted }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
-  const { generatedReaders, learnedVocabulary, error, apiKey } = state;
+  const { generatedReaders, learnedVocabulary, error, loading, apiKey } = state;
 
   const reader = generatedReaders[lessonKey];
   const scrollRef = useRef(null);
@@ -82,6 +83,30 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, isCo
             <button className="btn btn-primary" onClick={handleGenerate}>Retry</button>
             <button className="btn btn-ghost" onClick={() => act.clearError()}>Dismiss</button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Generating ──────────────────────────────────────────────
+  if (!reader && loading) {
+    return (
+      <div className="reader-view reader-view--generating">
+        <div className="reader-view__pregenerate card card-padded">
+          {lessonMeta && (
+            <>
+              <p className="reader-view__lesson-num text-subtle font-display">
+                Lesson {(lessonMeta.lesson_number ?? (state.lessonIndex + 1))}
+              </p>
+              <h2 className="text-chinese-title reader-view__lesson-title">
+                {lessonMeta.title_zh}
+              </h2>
+              <p className="reader-view__lesson-en font-display text-muted">
+                {lessonMeta.title_en}
+              </p>
+            </>
+          )}
+          <GenerationProgress type="reader" />
         </div>
       </div>
     );

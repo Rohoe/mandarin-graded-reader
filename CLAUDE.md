@@ -60,6 +60,11 @@ src/
     ComprehensionQuestions    Collapsible question list
     AnkiExportButton          Shows new/skip counts; triggers download on click
     LoadingIndicator          Animated ink-wash Chinese characters (读写学文语书)
+    GenerationProgress        Timed phase-based progress bar shown during API calls.
+                              type='reader': 6 phases (~30s budget); shown in ReaderView
+                              type='syllabus': 4 phases (~10s budget); shown in TopicForm
+                              Uses setTimeout chain to advance through phases; bar
+                              holds at ~97-98% until response arrives and component unmounts
     Settings                  API key update, save folder picker, storage usage meter,
                               clear-all data
 ```
