@@ -86,6 +86,11 @@ function AppShell() {
     setSidebarOpen(false);
   }
 
+  // Called at the START of standalone generation so lessonMeta clears immediately
+  function handleStandaloneGenerating() {
+    setStandaloneKey('standalone_pending');
+  }
+
   if (!state.fsInitialized) {
     return (
       <div className="app-fs-init">
@@ -129,6 +134,7 @@ function AppShell() {
           onStandaloneGenerated={onStandaloneGenerated}
           onSwitchSyllabus={handleSwitchSyllabus}
           onSelectStandalone={handleSelectStandalone}
+          onStandaloneGenerating={handleStandaloneGenerating}
         />
       </div>
 

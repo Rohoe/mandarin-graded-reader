@@ -11,6 +11,7 @@ export default function SyllabusPanel({
   onNewSyllabus,
   onShowSettings,
   onStandaloneGenerated,
+  onStandaloneGenerating,
   onSwitchSyllabus,
   onSelectStandalone,
 }) {
@@ -50,29 +51,27 @@ export default function SyllabusPanel({
         </h1>
       </div>
 
-      {/* Syllabus tabs — shown when at least one syllabus exists */}
+      {/* Syllabus switcher — shown when at least one syllabus exists */}
       {syllabi.length > 0 && (
-        <div className="syllabus-panel__tabs" role="tablist">
-          {syllabi.map(s => (
-            <button
-              key={s.id}
-              role="tab"
-              aria-selected={s.id === activeSyllabusId && !standaloneKey}
-              className={`syllabus-panel__tab ${s.id === activeSyllabusId && !standaloneKey ? 'syllabus-panel__tab--active' : ''}`}
-              onClick={() => { onSwitchSyllabus?.(s.id); setFormOpen(false); }}
-              title={`${s.topic} · HSK ${s.level}`}
-            >
-              <span className="syllabus-panel__tab-label">{s.topic}</span>
-              <span className="syllabus-panel__tab-level">HSK {s.level}</span>
-            </button>
-          ))}
+        <div className="syllabus-panel__switcher">
+          <select
+            className="form-select syllabus-panel__switcher-select"
+            value={activeSyllabusId || ''}
+            onChange={e => { onSwitchSyllabus?.(e.target.value); setFormOpen(false); }}
+            aria-label="Switch syllabus"
+          >
+            {syllabi.map(s => (
+              <option key={s.id} value={s.id}>
+                {s.topic} · HSK {s.level}
+              </option>
+            ))}
+          </select>
           <button
-            className="syllabus-panel__tab syllabus-panel__tab--new"
+            className="btn btn-ghost btn-sm"
             onClick={() => setFormOpen(true)}
             title="New syllabus or standalone reader"
-            aria-label="New"
           >
-            +
+            + New
           </button>
         </div>
       )}
@@ -83,6 +82,7 @@ export default function SyllabusPanel({
           <TopicForm
             onNewSyllabus={handleNewSyllabus}
             onStandaloneGenerated={onStandaloneGenerated}
+            onStandaloneGenerating={onStandaloneGenerating}
             onCancel={currentSyllabus ? () => setFormOpen(false) : undefined}
           />
         </div>

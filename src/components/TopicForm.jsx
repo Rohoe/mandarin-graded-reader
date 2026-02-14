@@ -15,7 +15,7 @@ const HSK_LEVELS = [
   { value: 6, label: 'HSK 6', desc: 'Advanced (~5,000 words)' },
 ];
 
-export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onCancel }) {
+export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStandaloneGenerating, onCancel }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
 
@@ -54,6 +54,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onCanc
     e.preventDefault();
     if (!topic.trim()) return;
 
+    onStandaloneGenerating?.();
     act.setLoading(true, '正在生成阅读材料…');
     act.clearError();
     try {
@@ -70,6 +71,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onCanc
       onStandaloneGenerated?.(lessonKey);
     } catch (err) {
       act.setError(err.message);
+      onStandaloneGenerated?.(null);  // clear the pending placeholder on error
     } finally {
       act.setLoading(false);
     }
