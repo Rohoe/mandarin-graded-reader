@@ -113,6 +113,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  margin-bottom: calc(-1 * var(--space-3));
 }
 
 .reader-view__meta {
@@ -127,6 +128,11 @@
 .reader-view__title-en {
   font-size: var(--text-xl);
   font-style: italic;
+}
+
+/* ── First divider (after header) ────────── */
+.reader-view > .divider:first-of-type {
+  margin: var(--space-3) 0;
 }
 
 /* ── Story ───────────────────────────────── */
@@ -168,7 +174,7 @@ ruby {
 }
 
 rt {
-  font-size: 0.55em;
+  font-size: 0.7em;
   font-family: var(--font-display);
   color: var(--color-accent);
   letter-spacing: 0.02em;
