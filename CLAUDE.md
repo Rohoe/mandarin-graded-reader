@@ -70,6 +70,9 @@ src/
                               Syllabus deletion moved to SyllabusHome (no longer in sidebar).
                               formOpen state resets to false via useEffect when
                               activeSyllabusId changes (auto-collapses after generation).
+                              Both syllabus lesson list and standalone readers list are
+                              collapsible via caret (▾/▸) buttons; lessonsOpen and
+                              standaloneOpen state (both default true).
     SyllabusHome              Overview page for a syllabus (shown when syllabusView='home').
                               Displays: topic, HSK badge, date, AI-generated summary, lesson
                               list with completion status and Start/Review CTAs, Continue

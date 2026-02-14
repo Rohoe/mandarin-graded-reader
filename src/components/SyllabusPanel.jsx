@@ -31,6 +31,9 @@ export default function SyllabusPanel({
   const [formOpen, setFormOpen] = useState(!currentSyllabus);
   useEffect(() => { setFormOpen(!currentSyllabus); }, [activeSyllabusId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const [lessonsOpen, setLessonsOpen] = useState(true);
+  const [standaloneOpen, setStandaloneOpen] = useState(true);
+
   // Confirmation dialog state: { id, label } | null (for standalone reader deletion only)
   const [confirmPending, setConfirmPending] = useState(null);
 
@@ -110,19 +113,30 @@ export default function SyllabusPanel({
       {/* Lesson list */}
       {currentSyllabus && !formOpen && lessons.length > 0 && (
         <div className="syllabus-panel__lessons">
-          <button
-            className={`syllabus-panel__lessons-header syllabus-panel__lessons-header--clickable ${syllabusView === 'home' && !standaloneKey ? 'syllabus-panel__lessons-header--active' : ''}`}
-            onClick={() => { onGoSyllabusHome?.(); setFormOpen(false); }}
-            title="Syllabus overview"
-          >
-            <span className="form-label">
-              {currentSyllabus.topic} · HSK {currentSyllabus.level}
-            </span>
-            <span className="syllabus-panel__progress text-subtle">
-              {completedLessons.size}/{lessons.length}
-            </span>
-          </button>
+          <div className={`syllabus-panel__lessons-header ${syllabusView === 'home' && !standaloneKey ? 'syllabus-panel__lessons-header--active' : ''}`}>
+            <button
+              className="syllabus-panel__lessons-title-btn"
+              onClick={() => { onGoSyllabusHome?.(); setFormOpen(false); }}
+              title="Syllabus overview"
+            >
+              <span className="form-label">
+                {currentSyllabus.topic} · HSK {currentSyllabus.level}
+              </span>
+              <span className="syllabus-panel__progress text-subtle">
+                {completedLessons.size}/{lessons.length}
+              </span>
+            </button>
+            <button
+              className="syllabus-panel__caret-btn"
+              onClick={() => setLessonsOpen(o => !o)}
+              aria-label={lessonsOpen ? 'Collapse lessons' : 'Expand lessons'}
+            >
+              {lessonsOpen ? '▾' : '▸'}
+            </button>
+          </div>
 
+          {lessonsOpen && (
+          <>
           <div className="syllabus-panel__progress-bar">
             <div
               className="syllabus-panel__progress-fill"
@@ -161,15 +175,23 @@ export default function SyllabusPanel({
               );
             })}
           </ul>
+          </>
+          )}
         </div>
       )}
 
       {/* Standalone readers list */}
       {standaloneReaders.length > 0 && (
         <div className="syllabus-panel__standalone">
-          <div className="syllabus-panel__standalone-header">
+          <button
+            className="syllabus-panel__standalone-header"
+            onClick={() => setStandaloneOpen(o => !o)}
+            aria-expanded={standaloneOpen}
+          >
             <span className="form-label">Standalone Readers</span>
-          </div>
+            <span className="syllabus-panel__caret-btn">{standaloneOpen ? '▾' : '▸'}</span>
+          </button>
+          {standaloneOpen && (
           <ul className="syllabus-panel__list" role="list">
             {standaloneReaders.map(r => (
               <li key={r.key}>
@@ -202,6 +224,7 @@ export default function SyllabusPanel({
               </li>
             ))}
           </ul>
+          )}
         </div>
       )}
 

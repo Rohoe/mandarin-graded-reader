@@ -104,27 +104,49 @@
 
 .syllabus-panel__lessons-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 0 var(--space-2);
   margin-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border-light);
+  padding-bottom: var(--space-2);
 }
 
-.syllabus-panel__lessons-header--clickable {
-  width: 100%;
+.syllabus-panel__lessons-title-btn {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   background: none;
   border: none;
   cursor: pointer;
   text-align: left;
   border-radius: var(--radius-sm);
   transition: background 0.15s;
+  padding: var(--space-1) var(--space-2) var(--space-1) 0;
+  min-width: 0;
 }
 
-.syllabus-panel__lessons-header--clickable:hover {
+.syllabus-panel__lessons-title-btn:hover {
   background: var(--color-surface-hover, rgba(0,0,0,0.05));
 }
 
 .syllabus-panel__lessons-header--active .form-label {
+  color: var(--color-accent);
+}
+
+.syllabus-panel__caret-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  color: var(--color-text-subtle);
+  font-size: var(--text-xs);
+  line-height: 1;
+  transition: color var(--transition);
+}
+
+.syllabus-panel__caret-btn:hover {
   color: var(--color-accent);
 }
 
@@ -233,8 +255,20 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 var(--space-2);
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-border-light);
+  cursor: pointer;
+  text-align: left;
+  padding: var(--space-1) var(--space-2);
   margin-bottom: var(--space-2);
+  border-radius: 0;
+  transition: background 0.15s;
+}
+
+.syllabus-panel__standalone-header:hover {
+  background: var(--color-surface-hover, rgba(0,0,0,0.05));
 }
 
 .syllabus-panel__standalone-item {

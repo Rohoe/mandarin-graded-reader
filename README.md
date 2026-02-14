@@ -16,6 +16,7 @@ A single-page web app for generating Mandarin Chinese graded readers using Claud
 - **Dark mode** — Toggle in Settings; persists across sessions. Overrides all colour tokens via `[data-theme="dark"]` on the root element
 - **Story continuation** — "Next episode →" button generates a follow-up reader that continues the narrative from the previous story, maintaining characters and setting
 - **Extend syllabus** — "Add more lessons" panel on the syllabus home page appends 2–6 AI-generated lessons to an existing syllabus
+- **Collapsible sidebar sections** — Syllabus lesson list and standalone readers list can be collapsed/expanded via caret buttons in their section headers
 - **Disk persistence** — Optionally save all data as JSON files to a folder on your computer (Chrome/Edge only)
 
 ## Setup
