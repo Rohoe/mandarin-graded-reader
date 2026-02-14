@@ -25,7 +25,7 @@ export function parseReaderResponse(rawText) {
   try {
     // ── 1. Title ──────────────────────────────────────────────
     // Look for "### 1. Title" section, or just grab the first heading
-    const titleSectionMatch = rawText.match(/###\s*1\.\s*Title\s*\n+([\s\S]*?)(?=###\s*2\.)/i);
+    const titleSectionMatch = rawText.match(/#{2,4}\s*1\.\s*Title\s*\n+([\s\S]*?)(?=#{2,4}\s*2\.)/i);
     if (titleSectionMatch) {
       const titleBlock = titleSectionMatch[1].trim();
       const lines = titleBlock.split('\n').map(l => l.trim()).filter(Boolean);
@@ -38,7 +38,7 @@ export function parseReaderResponse(rawText) {
     }
 
     // ── 2. Story ──────────────────────────────────────────────
-    const storySectionMatch = rawText.match(/###\s*2\.\s*Story\s*\n+([\s\S]*?)(?=###\s*3\.)/i);
+    const storySectionMatch = rawText.match(/#{2,4}\s*2\.\s*Story\s*\n+([\s\S]*?)(?=#{2,4}\s*3\.)/i);
     if (storySectionMatch) {
       result.story = storySectionMatch[1].trim();
     } else {
@@ -56,13 +56,14 @@ export function parseReaderResponse(rawText) {
     result.story = result.story.replace(/^(#{1,4}[^\n]*\n\n?)+/, '').trim();
 
     // ── 3. Vocabulary ─────────────────────────────────────────
-    const vocabSectionMatch = rawText.match(/###\s*3\.\s*Vocabulary[^\n]*\n+([\s\S]*?)(?=###\s*4\.)/i);
+    const vocabSectionMatch = rawText.match(/#{2,4}\s*3\.[^\n]*\n+([\s\S]*?)(?=#{2,4}\s*4\.)/i);
     if (vocabSectionMatch) {
       result.vocabulary = parseVocabularySection(vocabSectionMatch[1]);
     }
 
     // ── 4. Comprehension Questions ────────────────────────────
-    const questionsSectionMatch = rawText.match(/###\s*4\.\s*Comprehension[^\n]*\n+([\s\S]*?)(?=###\s*5\.|```anki-json|$)/i);
+    // Match "### 4." with any heading text (model may translate or vary the title)
+    const questionsSectionMatch = rawText.match(/#{2,4}\s*4\.[^\n]*\n+([\s\S]*?)(?=#{2,4}\s*5\.|```anki-json|$)/i);
     if (questionsSectionMatch) {
       result.questions = parseQuestions(questionsSectionMatch[1]);
     }

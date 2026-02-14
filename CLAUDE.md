@@ -203,5 +203,5 @@ function saveWithFile(lsKey, value, fileKey) {
 - **API key security:** Key is in `localStorage` in plain text. Acceptable for personal use; a backend proxy would be needed for shared deployments.
 - **localStorage quota:** ~5MB limit. The Settings page shows usage %. If many long readers are cached, old ones may need to be cleared manually.
 - **File System Access API:** Only available in Chromium-based browsers (Chrome, Edge). Not supported in Firefox or Safari. Falls back gracefully to localStorage-only mode.
-- **Parsing robustness:** The regex parser relies on Claude following the exact `### N. Section` format. If Claude deviates, the raw text fallback is shown.
+- **Parsing robustness:** The regex parser uses `#{2,4}\s*N\.` to match section headings, tolerating minor formatting variation (2–4 hash marks, any section title text). If section extraction fails entirely, the raw text fallback is shown.
 - **No streaming:** Reader generation can take 15–30s with no partial content shown; only the ink-character animation plays during this time.
