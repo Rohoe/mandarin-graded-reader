@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
 import { generateReader } from '../lib/api';
@@ -21,6 +22,8 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   const scrollRef = useRef(null);
   const [confirmRegen, setConfirmRegen] = useState(false);
   const [pinyinOn, setPinyinOn] = useState(false);
+  const [activeVocab, setActiveVocab] = useState(null);
+  const popoverRef = useRef(null);
 
   // ── Text-to-speech ──────────────────────────────────────────
   const ttsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -61,10 +64,11 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsSupported]);
 
-  // Cancel speech when lesson changes
+  // Cancel speech & close popover when lesson changes
   useEffect(() => {
     window.speechSynthesis?.cancel();
     setSpeakingKey(null);
+    setActiveVocab(null);
   }, [lessonKey]);
 
   function stripMarkdown(text) {
@@ -268,6 +272,75 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   // ── Main reading view ───────────────────────────────────────
   const storyParagraphs = (reader.story || '').split(/\n\n+/).map(p => p.trim()).filter(Boolean);
 
+  const vocabMap = useMemo(() => {
+    const map = new Map();
+    if (reader.vocabulary) {
+      for (const v of reader.vocabulary) {
+        map.set(v.chinese, v);
+        // Also index without trailing/leading punctuation
+        const stripped = v.chinese.replace(/^[^\u4e00-\u9fff]+|[^\u4e00-\u9fff]+$/g, '');
+        if (stripped && stripped !== v.chinese) map.set(stripped, v);
+      }
+    }
+    return map;
+  }, [reader.vocabulary]);
+
+  function lookupVocab(text) {
+    // Exact match first
+    const exact = vocabMap.get(text);
+    if (exact) return exact;
+    // Strip punctuation from bold text and retry
+    const stripped = text.replace(/^[^\u4e00-\u9fff]+|[^\u4e00-\u9fff]+$/g, '');
+    if (stripped && stripped !== text) return vocabMap.get(stripped);
+    return null;
+  }
+
+  const handleVocabClick = useCallback((e, vocabWord) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setActiveVocab(prev =>
+      prev && prev.word.chinese === vocabWord.chinese ? null : { word: vocabWord, rect }
+    );
+  }, []);
+
+  function getPopoverPosition(rect) {
+    const gap = 8;
+    const popoverWidth = 220;
+    let left = rect.left + rect.width / 2 - popoverWidth / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - popoverWidth - 8));
+    const above = rect.top - gap;
+    const below = rect.bottom + gap;
+    const preferAbove = above > 120;
+    return {
+      position: 'fixed',
+      zIndex: 60,
+      width: popoverWidth,
+      left,
+      ...(preferAbove ? { bottom: window.innerHeight - rect.top + gap } : { top: below }),
+    };
+  }
+
+  // Close popover on Escape, outside click, or scroll
+  useEffect(() => {
+    if (!activeVocab) return;
+    function onKey(e) { if (e.key === 'Escape') setActiveVocab(null); }
+    function onMouseDown(e) {
+      if (popoverRef.current && popoverRef.current.contains(e.target)) return;
+      // Don't close if clicking another vocab word — let handleVocabClick handle it
+      if (e.target.closest('.reader-view__vocab--clickable')) return;
+      setActiveVocab(null);
+    }
+    function onScroll() { setActiveVocab(null); }
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('scroll', onScroll, true);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('scroll', onScroll, true);
+    };
+  }, [activeVocab]);
+
   // Renders text with <ruby> pinyin annotations for Chinese characters
   function renderChars(text, keyPrefix) {
     if (!pinyinOn) return text;
@@ -353,7 +426,23 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
                 title={ttsSupported ? (isSpeaking ? 'Stop' : 'Click to listen') : undefined}
               >
                 {parseStorySegments(para).map((seg, i) => {
-                  if (seg.type === 'bold')   return <strong key={i} className="reader-view__vocab">{renderChars(seg.content, `${pi}-b${i}`)}</strong>;
+                  if (seg.type === 'bold') {
+                    const entry = lookupVocab(seg.content);
+                    return (
+                      <strong
+                        key={i}
+                        className={`reader-view__vocab${entry ? ' reader-view__vocab--clickable' : ''}`}
+                        {...(entry ? {
+                          role: 'button',
+                          tabIndex: 0,
+                          onClick: (e) => handleVocabClick(e, entry),
+                          onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleVocabClick(e, entry); } },
+                        } : {})}
+                      >
+                        {renderChars(seg.content, `${pi}-b${i}`)}
+                      </strong>
+                    );
+                  }
                   if (seg.type === 'italic') return <em key={i}>{renderChars(seg.content, `${pi}-em${i}`)}</em>;
                   return <span key={i}>{renderChars(seg.content, `${pi}-s${i}`)}</span>;
                 })}
@@ -361,6 +450,14 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
             );
           })}
         </div>
+        {activeVocab && createPortal(
+          <div ref={popoverRef} className="reader-view__popover" style={getPopoverPosition(activeVocab.rect)}>
+            <span className="reader-view__popover-chinese text-chinese">{activeVocab.word.chinese}</span>
+            <span className="reader-view__popover-pinyin">{activeVocab.word.pinyin}</span>
+            <span className="reader-view__popover-english">{activeVocab.word.english}</span>
+          </div>,
+          document.body
+        )}
       </div>
 
       <hr className="divider" />

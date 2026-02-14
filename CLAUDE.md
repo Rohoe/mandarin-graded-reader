@@ -94,6 +94,9 @@ src/
                               Pinyin toggle: "拼 Pinyin" button wraps Chinese characters in
                               <ruby> tags using pinyin-pro. Line-height increases to 2.8 when
                               active. renderChars() helper handles mixed Chinese/non-Chinese text.
+                              Click-to-define: bold vocab words are clickable (looked up via
+                              vocabMap). Click shows a fixed-position popover with pinyin +
+                              definition. Closes on Escape, outside click, or scroll.
     VocabularyList            Collapsible accordion of vocab cards with examples
     ComprehensionQuestions    Collapsible question list with interactive answer input and AI grading.
                               Input mode: textarea per question + "Grade My Answers" button.
