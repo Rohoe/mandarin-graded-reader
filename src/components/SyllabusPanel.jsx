@@ -19,7 +19,7 @@ export default function SyllabusPanel({
 }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
-  const { syllabi, syllabusProgress, standaloneReaders, loading, pendingReaders } = state;
+  const { syllabi, syllabusProgress, standaloneReaders, generatedReaders, loading, pendingReaders } = state;
   const pendingCount = Object.keys(pendingReaders).length;
 
   const currentSyllabus  = syllabi.find(s => s.id === activeSyllabusId) || null;
@@ -182,8 +182,12 @@ export default function SyllabusPanel({
                     disabled={loading}
                   >
                     <span className="syllabus-panel__lesson-text">
-                      <span className="syllabus-panel__lesson-zh text-chinese">{r.topic}</span>
-                      <span className="syllabus-panel__lesson-en text-muted">HSK {r.level}</span>
+                      <span className="syllabus-panel__lesson-zh text-chinese">
+                        {generatedReaders[r.key]?.titleZh || r.topic}
+                      </span>
+                      <span className="syllabus-panel__lesson-en text-muted">
+                        {generatedReaders[r.key]?.titleEn || `HSK ${r.level}`}
+                      </span>
                     </span>
                   </button>
                   <button

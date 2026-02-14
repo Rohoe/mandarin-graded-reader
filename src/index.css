@@ -115,6 +115,12 @@
   background: var(--color-bg-elevated);
 }
 
+[data-theme="dark"] .vocabulary-list__toggle,
+[data-theme="dark"] .grammar-notes__toggle,
+[data-theme="dark"] .comprehension__toggle {
+  background: #2E2B27;
+}
+
 [data-theme="dark"] .vocab-card__body,
 [data-theme="dark"] .grammar-card__body {
   background: var(--color-bg);
