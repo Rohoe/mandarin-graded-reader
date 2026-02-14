@@ -1,6 +1,20 @@
 import { useState } from 'react';
 import './VocabularyList.css';
 
+function renderInline(text) {
+  if (!text) return null;
+  const pattern = /(\*\*([^*]+)\*\*|\*([^*]+)\*|[^*]+)/g;
+  const parts = [];
+  let m;
+  let i = 0;
+  while ((m = pattern.exec(text)) !== null) {
+    if (m[2] !== undefined)      parts.push(<strong key={i++}>{m[2]}</strong>);
+    else if (m[3] !== undefined) parts.push(<em key={i++}>{m[3]}</em>);
+    else                         parts.push(<span key={i++}>{m[0]}</span>);
+  }
+  return parts;
+}
+
 function VocabCard({ word, index }) {
   const [open, setOpen] = useState(false);
 
@@ -23,18 +37,18 @@ function VocabCard({ word, index }) {
           {word.exampleStory && (
             <div className="vocab-card__example">
               <span className="vocab-card__example-label text-subtle">From story</span>
-              <p className="vocab-card__example-text text-chinese">{word.exampleStory}</p>
+              <p className="vocab-card__example-text text-chinese">{renderInline(word.exampleStory)}</p>
               {word.usageNoteStory && (
-                <p className="vocab-card__usage-note text-subtle">{word.usageNoteStory}</p>
+                <p className="vocab-card__usage-note text-subtle">{renderInline(word.usageNoteStory)}</p>
               )}
             </div>
           )}
           {word.exampleExtra && (
             <div className="vocab-card__example">
               <span className="vocab-card__example-label text-subtle">Additional example</span>
-              <p className="vocab-card__example-text text-chinese">{word.exampleExtra}</p>
+              <p className="vocab-card__example-text text-chinese">{renderInline(word.exampleExtra)}</p>
               {word.usageNoteExtra && (
-                <p className="vocab-card__usage-note text-subtle">{word.usageNoteExtra}</p>
+                <p className="vocab-card__usage-note text-subtle">{renderInline(word.usageNoteExtra)}</p>
               )}
             </div>
           )}

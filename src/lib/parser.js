@@ -165,7 +165,6 @@ function parseVocabularySection(text) {
 }
 
 function extractExamples(text) {
-  // Grab the next 1-3 non-empty lines before the next bold word entry
   const lines = text.split('\n');
   const examples = [];
 
@@ -176,6 +175,8 @@ function extractExamples(text) {
     if (/^\*\*/.test(trimmed) || /^\d+\./.test(trimmed)) break;
     // Skip sub-headers
     if (/^#{1,4}/.test(trimmed)) break;
+    // Only collect lines that contain Chinese characters — skip English usage notes
+    if (!/[\u4e00-\u9fff]/.test(trimmed)) continue;
     if (examples.length < 2) examples.push(trimmed.replace(/^[-•]\s*/, ''));
     else break;
   }
