@@ -21,7 +21,7 @@ No `.env` file is required. On first load the app shows a setup screen prompting
 ```
 src/
   App.jsx                     Root layout; manages UI-only state (sidebar open,
-                              settings modal, standalone reader key, completed lessons)
+                              settings modal, activeSyllabusId, standaloneKey)
   App.css                     Two-column layout, mobile header, toast notification
   index.css                   Design system: tokens, reset, shared primitives
 
@@ -43,7 +43,7 @@ src/
                               files in a user-chosen folder. Stores the directory handle
                               in IndexedDB (localStorage can't hold object handles).
                               File layout in chosen folder:
-                                graded-reader-syllabus.json   (currentSyllabus + lessonIndex)
+                                graded-reader-syllabi.json    (syllabi + syllabusProgress + standaloneReaders)
                                 graded-reader-readers.json    (generatedReaders cache)
                                 graded-reader-vocabulary.json (learnedVocabulary)
                                 graded-reader-exported.json   (exportedWords array)
@@ -56,11 +56,14 @@ src/
     TopicForm                 Topic input + HSK selector; two modes: syllabus / standalone.
                               Sliders: lesson count (2–12, syllabus mode only) and reader
                               length (500–2000 chars, step 100). Both passed to API calls.
-    SyllabusPanel             Left sidebar; lesson list, progress bar, settings link.
-                              Contains collapsible TopicForm: collapses to a one-line
-                              "topic · HSK N  ✎ New" bar when a syllabus is active.
+    SyllabusPanel             Left sidebar; syllabus tab bar, lesson list, standalone
+                              readers list, progress bar, settings link.
+                              Tab bar: one pill per syllabus + "+" to open TopicForm.
+                              Switching tabs sets activeSyllabusId (passed from App.jsx).
+                              Standalone Readers section lists all standaloneReaders[]
+                              with delete buttons; clicking opens the reader in ReaderView.
                               formOpen state resets to false via useEffect when
-                              currentSyllabus changes (auto-collapses after generation).
+                              activeSyllabusId changes (auto-collapses after generation).
     ReaderView                Main content area; empty/pre-generate/error/reading states
     VocabularyList            Collapsible accordion of vocab cards with examples
     ComprehensionQuestions    Collapsible question list
@@ -81,8 +84,22 @@ src/
 ```js
 {
   apiKey:            string,          // stored in localStorage only (never synced to file)
-  currentSyllabus:   { topic, level, lessons: [...] } | null,
-  lessonIndex:       number,
+  syllabi:           Array<{          // all saved syllabi, newest first
+    id:        string,                // "syllabus_<timestamp36>"
+    topic:     string,
+    level:     number,                // 1–6
+    lessons:   Array<{ lesson_number, title_zh, title_en, description, vocabulary_focus }>,
+    createdAt: number,
+  }>,
+  syllabusProgress:  {                // per-syllabus progress, keyed by id
+    [syllabusId]: { lessonIndex: number, completedLessons: number[] },
+  },
+  standaloneReaders: Array<{          // metadata for one-off readers, newest first
+    key:       string,                // "standalone_<timestamp>"
+    topic:     string,
+    level:     number,
+    createdAt: number,
+  }>,
   generatedReaders:  { [lessonKey]: parsedReaderData },  // in-memory + localStorage + file
   learnedVocabulary: { [chineseWord]: { pinyin, english, dateAdded } },
   exportedWords:     Set<string>,     // serialised as array in localStorage + file
@@ -99,7 +116,9 @@ src/
 }
 ```
 
-Lesson keys follow the pattern `lesson_<topic>_<level>_<index>` for syllabus lessons and `standalone_<timestamp>` for one-off readers.
+`activeSyllabusId` and `standaloneKey` are local UI state in `App.jsx` (not persisted).
+
+Lesson keys: `lesson_<syllabusId>_<lessonIndex>` for syllabus lessons, `standalone_<timestamp>` for one-off readers.
 
 ## Claude API integration
 
