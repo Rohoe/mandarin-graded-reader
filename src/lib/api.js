@@ -109,9 +109,11 @@ With bolded vocabulary and italicized proper nouns
 
 ### 3. Vocabulary List
 For each word:
-- Word (pinyin) - English definition
+- **Word** (pinyin) - English definition
 - Example sentence FROM STORY
+- *Brief usage note for the story example — explain the grammar pattern, collocation, register, or nuance shown (1 sentence, in English)*
 - Additional example sentence (NOT from story, demonstrating different usage context)
+- *Brief usage note for the additional example — explain what new aspect of usage this example shows (1 sentence, in English)*
 
 ### 4. Comprehension Questions
 3-5 questions in Chinese at the target level
@@ -124,9 +126,9 @@ Return a JSON block tagged \`\`\`anki-json containing an array of card objects:
     "pinyin": "cí",
     "english": "n. word/term",
     "example_story": "Story sentence using the word.",
+    "usage_note_story": "Usage note explaining what this example demonstrates.",
     "example_extra": "Additional example sentence.",
-    "usage_note_story": "Optional usage note for story example.",
-    "usage_note_extra": "Optional usage note for extra example."
+    "usage_note_extra": "Usage note explaining what this example demonstrates."
   }
 ]
 \`\`\``;

@@ -88,6 +88,18 @@ export function parseReaderResponse(rawText) {
         usageNoteStory: card.usage_note_story || '',
         usageNoteExtra: card.usage_note_extra || '',
       }));
+    } else if (result.vocabulary.length > 0 && result.ankiJson.length > 0) {
+      // Enrich vocabulary items with usage notes from the Anki JSON block
+      const ankiByWord = new Map(result.ankiJson.map(c => [c.chinese, c]));
+      result.vocabulary = result.vocabulary.map(word => {
+        const card = ankiByWord.get(word.chinese);
+        if (!card) return word;
+        return {
+          ...word,
+          usageNoteStory: card.usage_note_story || word.usageNoteStory,
+          usageNoteExtra: card.usage_note_extra || word.usageNoteExtra,
+        };
+      });
     }
   } catch (err) {
     result.parseError = err.message;

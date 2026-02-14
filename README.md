@@ -40,8 +40,8 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 2. **Choose "Course Syllabus"** — enter a topic (e.g. "Chinese business culture") and HSK level, then click "Generate Syllabus"
 3. **Click a lesson** in the sidebar to generate its reader
 4. **Read** the story; bolded words are new vocabulary
-5. **Expand vocabulary cards** to see pinyin, definitions, and example sentences
-6. **Export to Anki** — click the export button to download a `.txt` file. Already-exported words are skipped automatically.
+5. **Expand vocabulary cards** to see pinyin, definitions, example sentences, and italic usage notes explaining each example's grammar or nuance
+6. **Export to Anki** — click the export button to download a `.txt` file. Already-exported words are skipped automatically; re-download at any time with the "Re-download Cards" button.
 
 Alternatively, use **Single Reader** mode to generate a one-off story without a syllabus.
 

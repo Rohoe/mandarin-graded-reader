@@ -23,12 +23,14 @@ export function prepareExport(ankiJson, exportedWords) {
 
 // ── File generation ───────────────────────────────────────────
 
-export function generateAnkiExport(ankiJson, topic, level, exportedWords) {
-  const { toExport, skipped } = prepareExport(ankiJson, exportedWords);
+export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forceAll = false } = {}) {
+  const { toExport: newCards, skipped } = prepareExport(ankiJson, exportedWords);
 
   const today     = new Date().toISOString().split('T')[0];
   const topicTag  = topic.replace(/[\s/\\:*?"<>|]+/g, '_').replace(/_+/g, '_');
   const filename  = `anki_cards_${topicTag}_HSK${level}_${today}.txt`;
+
+  const toExport = forceAll ? ankiJson.filter(c => c.chinese) : newCards;
 
   let content = null;
   if (toExport.length > 0) {
@@ -39,15 +41,23 @@ export function generateAnkiExport(ankiJson, topic, level, exportedWords) {
   return {
     content,
     filename,
-    stats:          { exported: toExport.length, skipped: skipped.length },
+    stats:          { exported: toExport.length, skipped: forceAll ? 0 : skipped.length },
     exportedChinese: new Set(toExport.map(c => c.chinese)),
   };
 }
 
 function formatRow(card, level, topicTag, date) {
-  const examples = [card.example_story, card.example_extra]
-    .filter(Boolean)
-    .join('<br><br>');
+  const exampleParts = [];
+  if (card.example_story) {
+    exampleParts.push(card.example_story);
+    if (card.usage_note_story) exampleParts.push(`<i>${card.usage_note_story}</i>`);
+  }
+  if (card.example_extra) {
+    if (exampleParts.length > 0) exampleParts.push('');
+    exampleParts.push(card.example_extra);
+    if (card.usage_note_extra) exampleParts.push(`<i>${card.usage_note_extra}</i>`);
+  }
+  const examples = exampleParts.join('<br>');
 
   const tags = `HSK${level} ${topicTag} ${date}`;
 

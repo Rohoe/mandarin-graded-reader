@@ -17,8 +17,10 @@ export default function AnkiExportButton({ ankiJson, topic, level }) {
   const newCount  = ankiJson.filter(c => c.chinese && !exportedWords.has(c.chinese)).length;
   const skipCount = ankiJson.filter(c => c.chinese && exportedWords.has(c.chinese)).length;
 
+  const allExported = newCount === 0;
+
   function handleExport() {
-    const result = generateAnkiExport(ankiJson, topic, level, exportedWords);
+    const result = generateAnkiExport(ankiJson, topic, level, exportedWords, { forceAll: allExported });
 
     if (result.content) {
       downloadFile(result.content, result.filename);
@@ -29,8 +31,6 @@ export default function AnkiExportButton({ ankiJson, topic, level }) {
         (result.stats.skipped > 0 ? `, skipped ${result.stats.skipped} duplicate${result.stats.skipped !== 1 ? 's' : ''}` : '') +
         '.'
       );
-    } else {
-      act.notify('error', 'All cards have already been exported.');
     }
   }
 
@@ -49,10 +49,9 @@ export default function AnkiExportButton({ ankiJson, topic, level }) {
       <button
         className={`btn ${newCount > 0 ? 'btn-secondary' : 'btn-ghost'} btn-sm anki-export__btn`}
         onClick={handleExport}
-        disabled={newCount === 0}
-        title={newCount === 0 ? 'All cards already exported' : `Export ${newCount} new Anki cards`}
+        title={allExported ? `Re-download all ${skipCount} cards` : `Export ${newCount} new Anki cards`}
       >
-        Export Anki Cards
+        {allExported ? 'Re-download Cards' : 'Export Anki Cards'}
       </button>
     </div>
   );
