@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { actions } from './context/actions';
+import { generateReader, extendSyllabus } from './lib/api';
+import { parseReaderResponse } from './lib/parser';
 import ApiKeySetup from './components/ApiKeySetup';
 import SyllabusPanel from './components/SyllabusPanel';
 import SyllabusHome from './components/SyllabusHome';
@@ -111,6 +113,49 @@ function AppShell() {
     setStandaloneKey('standalone_pending');
   }
 
+  async function handleContinueStory({ story, topic, level }) {
+    const newKey = `standalone_${Date.now()}`;
+    const continuationTopic = `Continuation: ${topic}`;
+    act.addStandaloneReader({ key: newKey, topic: continuationTopic, level, createdAt: Date.now() });
+    act.startPendingReader(newKey);
+    setStandaloneKey(newKey);
+    setSidebarOpen(false);
+    try {
+      const raw    = await generateReader(state.apiKey, continuationTopic, level, state.learnedVocabulary, 1200, state.maxTokens, story);
+      const parsed = parseReaderResponse(raw);
+      act.setReader(newKey, { ...parsed, topic: continuationTopic, level, lessonKey: newKey });
+      if (parsed.ankiJson?.length > 0) {
+        act.addVocabulary(parsed.ankiJson.map(c => ({ chinese: c.chinese, pinyin: c.pinyin, english: c.english })));
+      }
+      act.notify('success', 'Continuation reader ready!');
+    } catch (err) {
+      act.removeStandaloneReader(newKey);
+      act.notify('error', `Continuation failed: ${err.message.slice(0, 80)}`);
+    } finally {
+      act.clearPendingReader(newKey);
+    }
+  }
+
+  async function handleExtendSyllabus(additionalCount) {
+    if (!activeSyllabusId || !currentSyllabus) return;
+    act.setLoading(true, '正在扩展课程大纲…');
+    try {
+      const { lessons: newLessons } = await extendSyllabus(
+        state.apiKey,
+        currentSyllabus.topic,
+        currentSyllabus.level,
+        currentSyllabus.lessons,
+        additionalCount,
+      );
+      act.extendSyllabusLessons(activeSyllabusId, newLessons);
+      act.notify('success', `Added ${newLessons.length} new lesson${newLessons.length !== 1 ? 's' : ''}`);
+    } catch (err) {
+      act.notify('error', `Could not extend syllabus: ${err.message.slice(0, 80)}`);
+    } finally {
+      act.setLoading(false, '');
+    }
+  }
+
   if (!state.fsInitialized) {
     return (
       <div className="app-fs-init">
@@ -169,6 +214,7 @@ function AppShell() {
               progress={progress}
               onSelectLesson={handleSelectLesson}
               onDelete={() => handleDeleteSyllabus(activeSyllabusId)}
+              onExtend={handleExtendSyllabus}
             />
           )
           : (
@@ -180,6 +226,7 @@ function AppShell() {
               onMarkComplete={handleMarkComplete}
               onUnmarkComplete={handleUnmarkComplete}
               isCompleted={completedSet.has(lessonIndex)}
+              onContinueStory={handleContinueStory}
             />
           )
         }

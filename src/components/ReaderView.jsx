@@ -10,7 +10,7 @@ import GenerationProgress from './GenerationProgress';
 import GrammarNotes from './GrammarNotes';
 import './ReaderView.css';
 
-export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted }) {
+export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
   const { generatedReaders, learnedVocabulary, error, pendingReaders, apiKey, maxTokens } = state;
@@ -288,6 +288,18 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
           </button>
         )}
       </div>
+
+      {/* Continue story */}
+      {onContinueStory && reader.story && !isPending && (
+        <div className="reader-view__continue-row">
+          <button
+            className="btn btn-primary"
+            onClick={() => onContinueStory({ story: reader.story, topic: reader.topic || lessonMeta?.title_en || 'story', level: reader.level || lessonMeta?.level || 3 })}
+          >
+            Next episode →
+          </button>
+        </div>
+      )}
     </article>
   );
 }

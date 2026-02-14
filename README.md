@@ -13,6 +13,8 @@ A single-page web app for generating Mandarin Chinese graded readers using Claud
 - **Comprehension grading** — Type answers to comprehension questions and get AI-powered feedback with per-question scores; results persist across sessions
 - **Syllabus home page** — Overview of all lessons with completion badges, a summary, Continue CTA, and delete button with confirmation
 - **Configurable length** — Sliders for syllabus lesson count (2–12) and reader story length (500–2000 characters)
+- **Story continuation** — "Next episode →" button generates a follow-up reader that continues the narrative from the previous story, maintaining characters and setting
+- **Extend syllabus** — "Add more lessons" panel on the syllabus home page appends 2–6 AI-generated lessons to an existing syllabus
 - **Disk persistence** — Optionally save all data as JSON files to a folder on your computer (Chrome/Edge only)
 
 ## Setup

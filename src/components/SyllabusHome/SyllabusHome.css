@@ -7,6 +7,19 @@
   gap: var(--space-8);
 }
 
+/* ── Loading overlay ─────────────────────── */
+
+.syllabus-home__loading {
+  position: fixed;
+  inset: 0;
+  background: rgba(250, 248, 245, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(2px);
+}
+
 /* ── Header ──────────────────────────────── */
 .syllabus-home__header {
   display: flex;
@@ -215,6 +228,47 @@
   flex: 1;
   height: 1px;
   background: var(--color-border-light);
+}
+
+/* ── Extend section ─────────────────────── */
+
+.syllabus-home__extend-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.syllabus-home__extend-toggle {
+  font-size: var(--text-sm);
+}
+
+.syllabus-home__extend-panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.syllabus-home__extend-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.syllabus-home__extend-label {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+
+.syllabus-home__extend-slider {
+  width: 100%;
+  max-width: 240px;
+  accent-color: var(--color-accent);
+}
+
+.syllabus-home__extend-actions {
+  display: flex;
+  gap: var(--space-2);
 }
 
 .syllabus-home__delete-btn {

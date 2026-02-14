@@ -10,6 +10,6 @@
 
 - [ ] **Dark mode** — Add `data-theme="dark"` to the root element and override the ~8 CSS custom property tokens. Toggle in Settings.
 
-- [ ] **Grammar notes section** — Add a 6th section to Claude's reader prompt: key grammar patterns used in the story with brief explanations. New component similar to `VocabularyList`.
+- [x] ~~**Grammar notes section** — Add a 6th section to Claude's reader prompt: key grammar patterns used in the story with brief explanations. New component similar to `VocabularyList`. Includes Anki export with `Grammar` tag.~~
 
-- [ ] **Story continuation** — "Next episode →" button that passes the previous story to Claude and asks it to continue the narrative. Reuses all existing generation/parsing infrastructure.
+- [x] ~~**Story continuation** — "Next episode →" button that passes the previous story to Claude and asks it to continue the narrative. Reuses all existing generation/parsing infrastructure.~~

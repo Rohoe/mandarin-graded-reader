@@ -33,7 +33,11 @@ src/
     actions.js                actions() helper factory (separate file — same reason)
 
   lib/
-    api.js                    Claude API calls: generateSyllabus(), generateReader()
+    api.js                    Claude API calls: generateSyllabus(), generateReader(),
+                              extendSyllabus(), gradeAnswers()
+                              generateReader() accepts optional previousStory (7th arg) for
+                              story continuation. extendSyllabus() takes existing lessons and
+                              returns only new lessons as a JSON array.
                               Uses anthropic-dangerous-direct-browser-access header
                               Model: claude-sonnet-4-20250514
     storage.js                localStorage helpers — load/save for all persisted state.
@@ -71,9 +75,14 @@ src/
                               list with completion status and Start/Review CTAs, Continue
                               button, and a danger-zone Delete Syllabus button with inline
                               confirmation. Located at components/SyllabusHome/index.jsx.
+                              "Add more lessons" collapsible panel: slider 2–6, Generate button
+                              calls onExtend(additionalCount). Shows a fixed LoadingIndicator
+                              overlay while state.loading is true.
     ReaderView                Main content area; empty/pre-generate/error/reading states.
                               Section order: story → comprehension questions → vocabulary
                               → grammar notes → Anki export.
+                              "Next episode →" button at the bottom calls onContinueStory with
+                              the current story text, topic, and level.
     VocabularyList            Collapsible accordion of vocab cards with examples
     ComprehensionQuestions    Collapsible question list with interactive answer input and AI grading.
                               Input mode: textarea per question + "Grade My Answers" button.

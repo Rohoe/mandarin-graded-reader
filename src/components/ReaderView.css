@@ -213,6 +213,12 @@
   color: #fff;
 }
 
+.reader-view__continue-row {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-4) 0 var(--space-12);
+}
+
 /* ── Raw fallback ───────────────────────── */
 .reader-view__raw {
   font-family: var(--font-mono);

@@ -1,8 +1,13 @@
 import { useState } from 'react';
+import { useApp } from '../../context/AppContext';
+import LoadingIndicator from '../LoadingIndicator';
 import './SyllabusHome.css';
 
-export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDelete }) {
+export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDelete, onExtend }) {
+  const { state } = useApp();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [extendOpen, setExtendOpen] = useState(false);
+  const [additionalCount, setAdditionalCount] = useState(3);
 
   if (!syllabus) return null;
 
@@ -26,6 +31,13 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
 
   return (
     <article className="syllabus-home">
+      {/* ── Loading overlay ─────────────────────── */}
+      {state.loading && (
+        <div className="syllabus-home__loading">
+          <LoadingIndicator message={state.loadingMessage || '正在生成…'} />
+        </div>
+      )}
+
       {/* ── Header ─────────────────────────────── */}
       <header className="syllabus-home__header">
         <div className="syllabus-home__title-row">
@@ -98,6 +110,55 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
             {allDone ? 'Review from the beginning →' : `Continue → Lesson ${continueIdx + 1}`}
           </button>
         </div>
+      )}
+
+      {/* ── Add more lessons ───────────────────── */}
+      {onExtend && (
+        <section className="syllabus-home__section syllabus-home__extend-section">
+          {!extendOpen ? (
+            <button
+              className="btn btn-ghost syllabus-home__extend-toggle"
+              onClick={() => setExtendOpen(true)}
+            >
+              + Add more lessons
+            </button>
+          ) : (
+            <div className="syllabus-home__extend-panel">
+              <h2 className="syllabus-home__section-title">Add more lessons</h2>
+              <div className="syllabus-home__extend-controls">
+                <label className="syllabus-home__extend-label">
+                  Number of new lessons: <strong>{additionalCount}</strong>
+                </label>
+                <input
+                  type="range"
+                  min={2}
+                  max={6}
+                  step={1}
+                  value={additionalCount}
+                  onChange={e => setAdditionalCount(Number(e.target.value))}
+                  className="syllabus-home__extend-slider"
+                  disabled={state.loading}
+                />
+              </div>
+              <div className="syllabus-home__extend-actions">
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setExtendOpen(false)}
+                  disabled={state.loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => { onExtend(additionalCount); setExtendOpen(false); }}
+                  disabled={state.loading}
+                >
+                  {state.loading ? state.loadingMessage || 'Generating…' : 'Generate'}
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
       )}
 
       {/* ── Danger zone ────────────────────────── */}

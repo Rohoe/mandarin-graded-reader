@@ -119,7 +119,8 @@ If a user types in a series of words from the article, assume those are new voca
 IMPORTANT: Use EXACTLY these English section headings (do not translate them to Chinese):
 
 ### 1. Title
-Chinese title + subtitle with target HSK level
+Chinese characters only (no bold markers, no English, no HSK level suffix)
+English subtitle on the next line
 
 ### 2. Story
 With bolded vocabulary and italicized proper nouns
@@ -198,7 +199,7 @@ export async function gradeAnswers(apiKey, questions, userAnswers, story, level,
 
 // ── Reader generation ─────────────────────────────────────────
 
-export async function generateReader(apiKey, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192) {
+export async function generateReader(apiKey, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192, previousStory = null) {
   // Build a range string: e.g. 1200 → "1100-1300 Chinese characters"
   const charRange = `${targetChars - 100}-${targetChars + 100}`;
   const system = READER_SYSTEM
@@ -211,7 +212,61 @@ export async function generateReader(apiKey, topic, level, learnedWords = {}, ta
     ? `\n\nPreviously introduced vocabulary (do not reuse as "new" vocabulary — you may use these words freely in the story but do not list them in the vocabulary section):\n${learnedList.join(', ')}`
     : '';
 
-  const userMessage = `Generate a graded reader for the topic: ${topic}${learnedSection}`;
+  const continuationSection = previousStory
+    ? `\n\nThis is a continuation. Previous episode for narrative context:\n---\n${previousStory}\n---\nContinue the story with new events, maintaining the same characters and setting.`
+    : '';
+
+  const userMessage = `Generate a graded reader for the topic: ${topic}${learnedSection}${continuationSection}`;
 
   return await callClaude(apiKey, system, userMessage, maxTokens);
+}
+
+// ── Syllabus extension ────────────────────────────────────────
+
+export async function extendSyllabus(apiKey, topic, level, existingLessons, additionalCount = 3) {
+  const existingTitles = existingLessons
+    .map((l, i) => `${i + 1}. ${l.title_en} (${l.title_zh})`)
+    .join('\n');
+
+  const startNumber = existingLessons.length + 1;
+  const endNumber = existingLessons.length + additionalCount;
+
+  const prompt = `You are a Mandarin Chinese curriculum designer extending an existing graded reader syllabus.
+
+Topic: ${topic}
+HSK Level: ${level}
+Number of new lessons to add: ${additionalCount}
+
+Existing lessons (do NOT repeat these):
+${existingTitles}
+
+Generate ${additionalCount} NEW lessons that continue the curriculum, numbered ${startNumber}–${endNumber}.
+Each new lesson should build on the existing ones and introduce new aspects of the topic.
+
+Return ONLY a JSON array of the new lesson objects (no wrapper object, no explanation, no markdown fences):
+[
+  {
+    "lesson_number": ${startNumber},
+    "title_zh": "Chinese lesson title (8-15 characters)",
+    "title_en": "English lesson title",
+    "description": "One English sentence describing what the reader covers",
+    "vocabulary_focus": ["3-5 English keywords describing the vocabulary theme"]
+  }
+]`;
+
+  const raw = await callClaude(apiKey, '', prompt, 2048);
+
+  let lessons;
+  try {
+    lessons = JSON.parse(raw.trim());
+  } catch {
+    const arrMatch = raw.match(/\[[\s\S]*\]/);
+    if (arrMatch) {
+      try { lessons = JSON.parse(arrMatch[0]); } catch { /* fall through */ }
+    }
+    if (!lessons) throw new Error('Claude returned an invalid lesson format. Please try again.');
+  }
+
+  if (!Array.isArray(lessons)) throw new Error('Expected an array of lessons. Please try again.');
+  return { lessons };
 }

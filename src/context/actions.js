@@ -8,6 +8,7 @@ export function actions(dispatch) {
     // Syllabi
     addSyllabus:           s      => dispatch({ type: 'ADD_SYLLABUS', payload: s }),
     removeSyllabus:        id     => dispatch({ type: 'REMOVE_SYLLABUS', payload: id }),
+    extendSyllabusLessons: (id, newLessons) => dispatch({ type: 'EXTEND_SYLLABUS_LESSONS', payload: { id, newLessons } }),
     setLessonIndex:        (syllabusId, lessonIndex) => dispatch({ type: 'SET_LESSON_INDEX', payload: { syllabusId, lessonIndex } }),
     markLessonComplete:    (syllabusId, lessonIndex) => dispatch({ type: 'MARK_LESSON_COMPLETE', payload: { syllabusId, lessonIndex } }),
     unmarkLessonComplete:  (syllabusId, lessonIndex) => dispatch({ type: 'UNMARK_LESSON_COMPLETE', payload: { syllabusId, lessonIndex } }),

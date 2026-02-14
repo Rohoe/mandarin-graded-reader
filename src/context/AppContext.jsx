@@ -90,6 +90,19 @@ function reducer(state, action) {
       return { ...state, syllabi: newSyllabi, syllabusProgress: newProgress };
     }
 
+    case 'EXTEND_SYLLABUS_LESSONS': {
+      const { id, newLessons } = action.payload;
+      const syllabusIdx = state.syllabi.findIndex(s => s.id === id);
+      if (syllabusIdx === -1) return state;
+      const existing = state.syllabi[syllabusIdx];
+      const startNum = existing.lessons.length + 1;
+      const renumbered = newLessons.map((l, i) => ({ ...l, lesson_number: startNum + i }));
+      const updated = { ...existing, lessons: [...existing.lessons, ...renumbered] };
+      const newSyllabi = state.syllabi.map(s => s.id === id ? updated : s);
+      saveSyllabi(newSyllabi);
+      return { ...state, syllabi: newSyllabi };
+    }
+
     case 'REMOVE_SYLLABUS': {
       const id = action.payload;
       const newSyllabi = state.syllabi.filter(s => s.id !== id);
