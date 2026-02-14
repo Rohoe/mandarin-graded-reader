@@ -99,6 +99,47 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     window.speechSynthesis.speak(utterance);
   }, [ttsSupported, speakingKey, chineseVoices, ttsVoiceURI]);
 
+  // ── Vocab lookup map (click-to-define) ──────────────────────
+  const vocabMap = useMemo(() => {
+    const map = new Map();
+    if (reader?.vocabulary) {
+      for (const v of reader.vocabulary) {
+        map.set(v.chinese, v);
+        const stripped = v.chinese.replace(/^[^\u4e00-\u9fff]+|[^\u4e00-\u9fff]+$/g, '');
+        if (stripped && stripped !== v.chinese) map.set(stripped, v);
+      }
+    }
+    return map;
+  }, [reader?.vocabulary]);
+
+  const handleVocabClick = useCallback((e, vocabWord) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setActiveVocab(prev =>
+      prev && prev.word.chinese === vocabWord.chinese ? null : { word: vocabWord, rect }
+    );
+  }, []);
+
+  // Close popover on Escape, outside click, or scroll
+  useEffect(() => {
+    if (!activeVocab) return;
+    function onKey(e) { if (e.key === 'Escape') setActiveVocab(null); }
+    function onMouseDown(e) {
+      if (popoverRef.current && popoverRef.current.contains(e.target)) return;
+      if (e.target.closest('.reader-view__vocab--clickable')) return;
+      setActiveVocab(null);
+    }
+    function onScroll() { setActiveVocab(null); }
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('scroll', onScroll, true);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('scroll', onScroll, true);
+    };
+  }, [activeVocab]);
+
   // Load from cache or generate
   useEffect(() => {
     if (!lessonKey) return;
@@ -272,74 +313,28 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   // ── Main reading view ───────────────────────────────────────
   const storyParagraphs = (reader.story || '').split(/\n\n+/).map(p => p.trim()).filter(Boolean);
 
-  const vocabMap = useMemo(() => {
-    const map = new Map();
-    if (reader.vocabulary) {
-      for (const v of reader.vocabulary) {
-        map.set(v.chinese, v);
-        // Also index without trailing/leading punctuation
-        const stripped = v.chinese.replace(/^[^\u4e00-\u9fff]+|[^\u4e00-\u9fff]+$/g, '');
-        if (stripped && stripped !== v.chinese) map.set(stripped, v);
-      }
-    }
-    return map;
-  }, [reader.vocabulary]);
-
   function lookupVocab(text) {
-    // Exact match first
     const exact = vocabMap.get(text);
     if (exact) return exact;
-    // Strip punctuation from bold text and retry
     const stripped = text.replace(/^[^\u4e00-\u9fff]+|[^\u4e00-\u9fff]+$/g, '');
     if (stripped && stripped !== text) return vocabMap.get(stripped);
     return null;
   }
-
-  const handleVocabClick = useCallback((e, vocabWord) => {
-    e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
-    setActiveVocab(prev =>
-      prev && prev.word.chinese === vocabWord.chinese ? null : { word: vocabWord, rect }
-    );
-  }, []);
 
   function getPopoverPosition(rect) {
     const gap = 8;
     const popoverWidth = 220;
     let left = rect.left + rect.width / 2 - popoverWidth / 2;
     left = Math.max(8, Math.min(left, window.innerWidth - popoverWidth - 8));
-    const above = rect.top - gap;
-    const below = rect.bottom + gap;
-    const preferAbove = above > 120;
+    const preferAbove = rect.top - gap > 120;
     return {
       position: 'fixed',
       zIndex: 60,
       width: popoverWidth,
       left,
-      ...(preferAbove ? { bottom: window.innerHeight - rect.top + gap } : { top: below }),
+      ...(preferAbove ? { bottom: window.innerHeight - rect.top + gap } : { top: rect.bottom + gap }),
     };
   }
-
-  // Close popover on Escape, outside click, or scroll
-  useEffect(() => {
-    if (!activeVocab) return;
-    function onKey(e) { if (e.key === 'Escape') setActiveVocab(null); }
-    function onMouseDown(e) {
-      if (popoverRef.current && popoverRef.current.contains(e.target)) return;
-      // Don't close if clicking another vocab word — let handleVocabClick handle it
-      if (e.target.closest('.reader-view__vocab--clickable')) return;
-      setActiveVocab(null);
-    }
-    function onScroll() { setActiveVocab(null); }
-    document.addEventListener('keydown', onKey);
-    document.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('scroll', onScroll, true);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('scroll', onScroll, true);
-    };
-  }, [activeVocab]);
 
   // Renders text with <ruby> pinyin annotations for Chinese characters
   function renderChars(text, keyPrefix) {
