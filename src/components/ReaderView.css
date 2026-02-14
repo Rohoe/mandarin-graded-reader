@@ -165,7 +165,10 @@
 }
 
 .reader-view__completed-badge {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
   font-family: var(--font-display);
   font-size: var(--text-base);
   color: var(--color-success);
@@ -173,6 +176,17 @@
   background: #EBF3EB;
   border: 1px solid #AAC4AA;
   border-radius: var(--radius);
+}
+
+.reader-view__unmark-btn {
+  font-size: var(--text-sm);
+  color: var(--color-text-subtle);
+  opacity: 0.7;
+}
+
+.reader-view__unmark-btn:hover {
+  opacity: 1;
+  color: var(--color-text);
 }
 
 .reader-view__regen-row {

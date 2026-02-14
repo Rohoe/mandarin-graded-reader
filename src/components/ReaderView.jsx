@@ -9,7 +9,7 @@ import AnkiExportButton from './AnkiExportButton';
 import GenerationProgress from './GenerationProgress';
 import './ReaderView.css';
 
-export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, isCompleted }) {
+export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
   const { generatedReaders, learnedVocabulary, error, pendingReaders, apiKey, maxTokens } = state;
@@ -232,6 +232,11 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, isCo
       {isCompleted && (
         <div className="reader-view__completed-badge">
           <span>✓ Lesson completed</span>
+          {onUnmarkComplete && (
+            <button className="btn btn-ghost btn-sm reader-view__unmark-btn" onClick={onUnmarkComplete}>
+              Undo
+            </button>
+          )}
         </div>
       )}
 

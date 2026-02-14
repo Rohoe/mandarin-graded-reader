@@ -71,6 +71,10 @@ function AppShell() {
     }
   }
 
+  function handleUnmarkComplete() {
+    act.unmarkLessonComplete(activeSyllabusId, lessonIndex);
+  }
+
   function handleNewSyllabus(newSyllabusId) {
     setActiveSyllabusId(newSyllabusId);
     setStandaloneKey(null);
@@ -146,6 +150,7 @@ function AppShell() {
             ? { ...activeMeta, level: currentSyllabus?.level, lesson_number: lessonIndex + 1 }
             : null)}
           onMarkComplete={handleMarkComplete}
+          onUnmarkComplete={handleUnmarkComplete}
           isCompleted={completedSet.has(lessonIndex)}
         />
       </main>

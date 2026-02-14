@@ -10,6 +10,7 @@ export function actions(dispatch) {
     removeSyllabus:        id     => dispatch({ type: 'REMOVE_SYLLABUS', payload: id }),
     setLessonIndex:        (syllabusId, lessonIndex) => dispatch({ type: 'SET_LESSON_INDEX', payload: { syllabusId, lessonIndex } }),
     markLessonComplete:    (syllabusId, lessonIndex) => dispatch({ type: 'MARK_LESSON_COMPLETE', payload: { syllabusId, lessonIndex } }),
+    unmarkLessonComplete:  (syllabusId, lessonIndex) => dispatch({ type: 'UNMARK_LESSON_COMPLETE', payload: { syllabusId, lessonIndex } }),
     // Standalone readers
     addStandaloneReader:   meta   => dispatch({ type: 'ADD_STANDALONE_READER', payload: meta }),
     removeStandaloneReader:key    => dispatch({ type: 'REMOVE_STANDALONE_READER', payload: key }),

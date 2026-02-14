@@ -124,6 +124,15 @@ function reducer(state, action) {
       return { ...state, syllabusProgress: newProgress };
     }
 
+    case 'UNMARK_LESSON_COMPLETE': {
+      const { syllabusId, lessonIndex } = action.payload;
+      const entry = state.syllabusProgress[syllabusId] || { lessonIndex: 0, completedLessons: [] };
+      const newEntry = { ...entry, completedLessons: entry.completedLessons.filter(i => i !== lessonIndex) };
+      const newProgress = { ...state.syllabusProgress, [syllabusId]: newEntry };
+      saveSyllabusProgress(newProgress);
+      return { ...state, syllabusProgress: newProgress };
+    }
+
     // ── Standalone reader actions ─────────────────────────────
 
     case 'ADD_STANDALONE_READER': {
