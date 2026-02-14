@@ -9,6 +9,7 @@ A single-page web app for generating Mandarin Chinese graded readers using Claud
 - **Vocabulary Memory** — Tracks learned words across sessions; new readers avoid repeating them
 - **Anki Export** — Download flashcard files (.txt) with duplicate prevention
 - **Offline persistence** — All data stored in `localStorage`; pick up where you left off
+- **Disk persistence** — Optionally save all data as JSON files to a folder on your computer (Chrome/Edge only)
 
 ## Setup
 
@@ -42,6 +43,12 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 6. **Export to Anki** — click the export button to download a `.txt` file. Already-exported words are skipped automatically.
 
 Alternatively, use **Single Reader** mode to generate a one-off story without a syllabus.
+
+### Optional: Save to disk
+
+In the **Settings** panel (⚙ icon), the **Save Folder** section lets you pick a folder on your computer. Once set, all data (syllabus, readers, vocabulary, exported words) is written to JSON files in that folder on every change, in addition to `localStorage`. This survives clearing browser data and works across machines if you sync the folder.
+
+> Requires Chrome or Edge. Firefox and Safari do not support the File System Access API.
 
 ## Security note
 

@@ -142,5 +142,5 @@ export async function generateReader(apiKey, topic, level, learnedWords = {}) {
 
   const userMessage = `Generate a graded reader for the topic: ${topic}${learnedSection}`;
 
-  return await callClaude(apiKey, system, userMessage, 4096);
+  return await callClaude(apiKey, system, userMessage, 8192);
 }
