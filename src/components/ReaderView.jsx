@@ -226,19 +226,6 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
 
       <hr className="divider" />
 
-      {/* Anki export */}
-      {reader.ankiJson?.length > 0 && (
-        <AnkiExportButton
-          ankiJson={reader.ankiJson}
-          topic={reader.topic || lessonMeta?.title_en || 'lesson'}
-          level={reader.level || 3}
-          grammarNotes={reader.grammarNotes}
-        />
-      )}
-
-      {/* Vocabulary */}
-      <VocabularyList vocabulary={reader.vocabulary} />
-
       {/* Comprehension questions */}
       <ComprehensionQuestions
         questions={reader.questions}
@@ -248,8 +235,21 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         level={reader.level || lessonMeta?.level || 3}
       />
 
+      {/* Vocabulary */}
+      <VocabularyList vocabulary={reader.vocabulary} />
+
       {/* Grammar notes */}
       <GrammarNotes grammarNotes={reader.grammarNotes} />
+
+      {/* Anki export */}
+      {reader.ankiJson?.length > 0 && (
+        <AnkiExportButton
+          ankiJson={reader.ankiJson}
+          topic={reader.topic || lessonMeta?.title_en || 'lesson'}
+          level={reader.level || 3}
+          grammarNotes={reader.grammarNotes}
+        />
+      )}
 
       {/* Mark complete */}
       {!isCompleted && onMarkComplete && (

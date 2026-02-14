@@ -71,7 +71,9 @@ src/
                               list with completion status and Start/Review CTAs, Continue
                               button, and a danger-zone Delete Syllabus button with inline
                               confirmation. Located at components/SyllabusHome/index.jsx.
-    ReaderView                Main content area; empty/pre-generate/error/reading states
+    ReaderView                Main content area; empty/pre-generate/error/reading states.
+                              Section order: story → comprehension questions → vocabulary
+                              → grammar notes → Anki export.
     VocabularyList            Collapsible accordion of vocab cards with examples
     ComprehensionQuestions    Collapsible question list with interactive answer input and AI grading.
                               Input mode: textarea per question + "Grade My Answers" button.
