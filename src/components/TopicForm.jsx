@@ -15,7 +15,7 @@ const HSK_LEVELS = [
   { value: 6, label: 'HSK 6', desc: 'Advanced (~5,000 words)' },
 ];
 
-export default function TopicForm({ onNewSyllabus, onStandaloneGenerated }) {
+export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onCancel }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
 
@@ -177,14 +177,24 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated }) {
       )}
 
       {mode === 'syllabus' && state.currentSyllabus && !state.loading && (
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm topic-form__clear"
-          onClick={() => act.clearSyllabus()}
-          disabled={state.loading}
-        >
-          Start new syllabus
-        </button>
+        <div className="topic-form__footer-row">
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm topic-form__clear"
+            onClick={() => act.clearSyllabus()}
+          >
+            Clear syllabus
+          </button>
+          {onCancel && (
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm topic-form__clear"
+              onClick={onCancel}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       )}
     </form>
   );

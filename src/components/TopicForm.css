@@ -40,8 +40,13 @@
 }
 
 .topic-form__clear {
-  align-self: center;
   font-size: var(--text-xs);
+}
+
+.topic-form__footer-row {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
 }
 
 /* Sliders */

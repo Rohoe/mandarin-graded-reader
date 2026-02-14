@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
 import TopicForm from './TopicForm';
@@ -7,6 +8,14 @@ export default function SyllabusPanel({ completedLessons, onSelectLesson, onNewS
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
   const { currentSyllabus, lessonIndex, loading } = state;
+
+  // Form is open when no syllabus exists; auto-closes after generation via handleNewSyllabus
+  const [formOpen, setFormOpen] = useState(!currentSyllabus);
+
+  function handleNewSyllabus() {
+    setFormOpen(false);
+    onNewSyllabus?.();
+  }
 
   const lessons = currentSyllabus?.lessons || [];
 
@@ -26,12 +35,24 @@ export default function SyllabusPanel({ completedLessons, onSelectLesson, onNewS
         </h1>
       </div>
 
-      {/* Topic form */}
+      {/* Topic form — collapses to a compact bar when a syllabus is active */}
       <div className="syllabus-panel__form-section">
-        <TopicForm
-          onNewSyllabus={onNewSyllabus}
-          onStandaloneGenerated={onStandaloneGenerated}
-        />
+        {!currentSyllabus || formOpen ? (
+          <TopicForm
+            onNewSyllabus={handleNewSyllabus}
+            onStandaloneGenerated={onStandaloneGenerated}
+            onCancel={currentSyllabus ? () => setFormOpen(false) : undefined}
+          />
+        ) : (
+          <div className="syllabus-panel__syllabus-bar">
+            <span className="syllabus-panel__syllabus-bar-label">
+              {currentSyllabus.topic} · HSK {currentSyllabus.level}
+            </span>
+            <button className="btn btn-ghost btn-sm" onClick={() => setFormOpen(true)}>
+              ✎ New
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Lesson list */}

@@ -56,7 +56,11 @@ src/
     TopicForm                 Topic input + HSK selector; two modes: syllabus / standalone.
                               Sliders: lesson count (2–12, syllabus mode only) and reader
                               length (500–2000 chars, step 100). Both passed to API calls.
-    SyllabusPanel             Left sidebar; lesson list, progress bar, settings link
+    SyllabusPanel             Left sidebar; lesson list, progress bar, settings link.
+                              Contains collapsible TopicForm: collapses to a one-line
+                              "topic · HSK N  ✎ New" bar when a syllabus is active.
+                              formOpen state resets to false via useEffect when
+                              currentSyllabus changes (auto-collapses after generation).
     ReaderView                Main content area; empty/pre-generate/error/reading states
     VocabularyList            Collapsible accordion of vocab cards with examples
     ComprehensionQuestions    Collapsible question list
