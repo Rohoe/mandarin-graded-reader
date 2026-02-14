@@ -22,7 +22,16 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
   const [grading, setGrading] = useState(false);
   const [gradingError, setGradingError] = useState(null);
 
-  if (!questions || questions.length === 0) return null;
+  if (!questions || questions.length === 0) {
+    return (
+      <section className="comprehension">
+        <p className="text-muted" style={{ padding: 'var(--space-4)', fontSize: 'var(--text-sm)' }}>
+          No comprehension questions found in this reader.{' '}
+          <span style={{ opacity: 0.6 }}>(Check browser console for parse details.)</span>
+        </p>
+      </section>
+    );
+  }
 
   const hasAnyAnswer = questions.some((_, i) => (answers[i] || '').trim().length > 0);
 

@@ -101,6 +101,8 @@ If a user types in a series of words from the article, assume those are new voca
 
 ## OUTPUT FORMAT
 
+IMPORTANT: Use EXACTLY these English section headings (do not translate them to Chinese):
+
 ### 1. Title
 Chinese title + subtitle with target HSK level
 

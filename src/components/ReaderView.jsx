@@ -53,7 +53,10 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     act.clearError();
     try {
       const raw    = await generateReader(apiKey, topic, level, learnedVocabulary, 1200, maxTokens);
+      console.log('[ReaderView] raw response (first 500 chars):', raw?.slice(0, 500));
       const parsed = parseReaderResponse(raw);
+      console.log('[ReaderView] parsed.questions:', parsed.questions);
+      console.log('[ReaderView] parsed.parseError:', parsed.parseError);
       act.setReader(lessonKey, { ...parsed, topic, level, lessonKey });
       if (parsed.ankiJson?.length > 0) {
         act.addVocabulary(parsed.ankiJson.map(c => ({

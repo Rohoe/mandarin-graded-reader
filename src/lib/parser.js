@@ -6,6 +6,10 @@
 // ── Main reader parser ────────────────────────────────────────
 
 export function parseReaderResponse(rawText) {
+  console.log('[parser] parseReaderResponse called, length:', rawText?.length);
+  const headingLines = rawText?.split('\n').filter(l => /^#{1,4}\s/.test(l));
+  console.log('[parser] all headings in response:', headingLines);
+
   const result = {
     raw:        rawText,
     titleZh:    '',
@@ -56,17 +60,25 @@ export function parseReaderResponse(rawText) {
     result.story = result.story.replace(/^(#{1,4}[^\n]*\n\n?)+/, '').trim();
 
     // ── 3. Vocabulary ─────────────────────────────────────────
-    const vocabSectionMatch = rawText.match(/#{2,4}\s*3\.[^\n]*\n+([\s\S]*?)(?=#{2,4}\s*4\.)/i);
+    // Matches "### 3. Vocabulary" (English numbered) or "## 词汇表" (Chinese)
+    const vocabSectionMatch = rawText.match(
+      /#{2,4}\s*(?:3\.[^\n]*|词汇[表列]?)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:4\.|理解|comprehension|```anki-json)|```anki-json|$)/i
+    );
     if (vocabSectionMatch) {
       result.vocabulary = parseVocabularySection(vocabSectionMatch[1]);
     }
 
     // ── 4. Comprehension Questions ────────────────────────────
-    // Match "### 4." with any heading text (model may translate or vary the title)
-    const questionsSectionMatch = rawText.match(/#{2,4}\s*4\.[^\n]*\n+([\s\S]*?)(?=#{2,4}\s*5\.|```anki-json|$)/i);
+    // Matches "### 4. Comprehension" (English numbered) or "## 理解题" (Chinese)
+    const questionsSectionMatch = rawText.match(
+      /#{2,4}\s*(?:4\.[^\n]*|理解[题问]?[^\n]*)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:5\.|anki)|```anki-json|$)/i
+    );
+    console.log('[parser] section4 match:', questionsSectionMatch ? 'YES' : 'NO');
     if (questionsSectionMatch) {
+      console.log('[parser] section4 text:', JSON.stringify(questionsSectionMatch[1]));
       result.questions = parseQuestions(questionsSectionMatch[1]);
     }
+    console.log('[parser] questions result:', result.questions);
 
     // ── 5. Anki JSON ──────────────────────────────────────────
     const ankiMatch = rawText.match(/```anki-json\s*\n([\s\S]*?)\n```/);
