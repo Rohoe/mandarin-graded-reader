@@ -12,6 +12,7 @@ import {
   saveStandaloneReaders,
   loadReader,
   saveReader,
+  deleteReader,
   clearReaders,
   loadLearnedVocabulary,
   addLearnedVocabulary,
@@ -159,6 +160,14 @@ function reducer(state, action) {
         ...state,
         generatedReaders: { ...state.generatedReaders, [lessonKey]: data },
       };
+    }
+
+    case 'CLEAR_READER': {
+      const key = action.payload;
+      deleteReader(key);
+      const newReaders = { ...state.generatedReaders };
+      delete newReaders[key];
+      return { ...state, generatedReaders: newReaders };
     }
 
     case 'LOAD_CACHED_READER': {

@@ -181,6 +181,12 @@ export function saveReader(lessonKey, readerData) {
   saveWithFile(KEYS.READERS, readers, 'readers');
 }
 
+export function deleteReader(lessonKey) {
+  const readers = loadAllReaders();
+  delete readers[lessonKey];
+  saveWithFile(KEYS.READERS, readers, 'readers');
+}
+
 export function loadReader(lessonKey) {
   return loadAllReaders()[lessonKey] ?? null;
 }

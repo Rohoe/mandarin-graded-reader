@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
 import { generateReader } from '../lib/api';
@@ -17,6 +17,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
 
   const reader = generatedReaders[lessonKey];
   const scrollRef = useRef(null);
+  const [confirmRegen, setConfirmRegen] = useState(false);
 
   // Load from cache or generate
   useEffect(() => {
@@ -65,6 +66,12 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     } finally {
       act.clearPendingReader(lessonKey);
     }
+  }
+
+  async function handleRegenConfirm() {
+    setConfirmRegen(false);
+    act.clearReader(lessonKey);
+    await handleGenerate();
   }
 
   // ── Empty state ─────────────────────────────────────────────
@@ -257,9 +264,21 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
 
       {/* Regenerate */}
       <div className="reader-view__regen-row">
-        <button className="btn btn-ghost btn-sm" onClick={handleGenerate}>
-          Regenerate reader
-        </button>
+        {confirmRegen ? (
+          <>
+            <span className="reader-view__regen-prompt text-muted">Replace this reader?</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => setConfirmRegen(false)}>
+              Cancel
+            </button>
+            <button className="btn btn-sm reader-view__regen-confirm-btn" onClick={handleRegenConfirm}>
+              Regenerate
+            </button>
+          </>
+        ) : (
+          <button className="btn btn-ghost btn-sm" onClick={() => setConfirmRegen(true)}>
+            Regenerate reader
+          </button>
+        )}
       </div>
     </article>
   );

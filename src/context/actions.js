@@ -16,6 +16,7 @@ export function actions(dispatch) {
     removeStandaloneReader:key    => dispatch({ type: 'REMOVE_STANDALONE_READER', payload: key }),
     // Reader cache
     setReader:             (k, d) => dispatch({ type: 'SET_READER', payload: { lessonKey: k, data: d } }),
+    clearReader:           k      => dispatch({ type: 'CLEAR_READER', payload: k }),
     // Vocabulary
     addVocabulary:         words  => dispatch({ type: 'ADD_VOCABULARY', payload: words }),
     clearVocabulary:       ()     => dispatch({ type: 'CLEAR_VOCABULARY' }),

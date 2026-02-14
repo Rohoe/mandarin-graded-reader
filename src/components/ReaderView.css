@@ -192,7 +192,25 @@
 .reader-view__regen-row {
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: var(--space-2);
   padding-bottom: var(--space-12);
+}
+
+.reader-view__regen-prompt {
+  font-size: var(--text-sm);
+}
+
+.reader-view__regen-confirm-btn {
+  background: var(--color-error);
+  color: #fff;
+  border: none;
+}
+
+.reader-view__regen-confirm-btn:hover {
+  background: var(--color-error);
+  opacity: 0.85;
+  color: #fff;
 }
 
 /* ── Raw fallback ───────────────────────── */
