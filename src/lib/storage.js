@@ -35,6 +35,7 @@ const KEYS = {
   VOCABULARY:         'gradedReader_learnedVocabulary',
   EXPORTED:           'gradedReader_exportedWords',
   MAX_TOKENS:         'gradedReader_maxTokens',
+  DEFAULT_LEVEL:      'gradedReader_defaultLevel',
 };
 
 // ── Generic localStorage helpers ──────────────────────────────
@@ -252,6 +253,16 @@ export function loadMaxTokens() {
 
 export function saveMaxTokens(n) {
   save(KEYS.MAX_TOKENS, n);
+}
+
+// ── Default HSK level preference ──────────────────────────────
+
+export function loadDefaultLevel() {
+  return load(KEYS.DEFAULT_LEVEL, 3);
+}
+
+export function saveDefaultLevel(n) {
+  save(KEYS.DEFAULT_LEVEL, n);
 }
 
 // ── Storage usage estimate ────────────────────────────────────

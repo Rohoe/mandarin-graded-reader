@@ -27,5 +27,9 @@ export function actions(dispatch) {
     notify:                (type, message) => dispatch({ type: 'SET_NOTIFICATION', payload: { type, message } }),
     clearAll:              ()     => dispatch({ type: 'CLEAR_ALL_DATA' }),
     setMaxTokens:          n      => dispatch({ type: 'SET_MAX_TOKENS', payload: Number(n) }),
+    setDefaultLevel:       n      => dispatch({ type: 'SET_DEFAULT_LEVEL', payload: Number(n) }),
+    // Background generation tracking
+    startPendingReader:    key    => dispatch({ type: 'START_PENDING_READER', payload: key }),
+    clearPendingReader:    key    => dispatch({ type: 'CLEAR_PENDING_READER', payload: key }),
   };
 }

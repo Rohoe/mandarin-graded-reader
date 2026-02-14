@@ -17,7 +17,8 @@ export default function SyllabusPanel({
 }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
-  const { syllabi, syllabusProgress, standaloneReaders, loading } = state;
+  const { syllabi, syllabusProgress, standaloneReaders, loading, pendingReaders } = state;
+  const pendingCount = Object.keys(pendingReaders).length;
 
   const currentSyllabus  = syllabi.find(s => s.id === activeSyllabusId) || null;
   const progress         = syllabusProgress[activeSyllabusId] || { lessonIndex: 0, completedLessons: [] };
@@ -48,6 +49,11 @@ export default function SyllabusPanel({
         <h1 className="syllabus-panel__app-title font-display">
           <span className="syllabus-panel__hanzi">读书</span>
           <span className="syllabus-panel__app-name">Graded Reader</span>
+          {pendingCount > 0 && (
+            <span className="syllabus-panel__pending-badge" title={`${pendingCount} reader${pendingCount > 1 ? 's' : ''} generating`}>
+              ⟳ {pendingCount}
+            </span>
+          )}
         </h1>
       </div>
 

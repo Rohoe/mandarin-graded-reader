@@ -20,7 +20,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
   const act = actions(dispatch);
 
   const [topic, setTopic]         = useState('');
-  const [level, setLevel]         = useState(3);
+  const [level, setLevel]         = useState(state.defaultLevel ?? 3);
   const [mode, setMode]           = useState('syllabus'); // 'syllabus' | 'standalone'
   const [lessonCount, setLessonCount] = useState(6);
   const [readerLength, setReaderLength] = useState(1200);
@@ -54,26 +54,32 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
     e.preventDefault();
     if (!topic.trim()) return;
 
-    onStandaloneGenerating?.();
-    act.setLoading(true, '正在生成阅读材料…');
+    const lessonKey = `standalone_${Date.now()}`;
+    const topicStr  = topic.trim();
+
+    // Register in sidebar and navigate to the reader view immediately
+    act.addStandaloneReader({ key: lessonKey, topic: topicStr, level, createdAt: Date.now() });
+    act.startPendingReader(lessonKey);
     act.clearError();
+    onStandaloneGenerating?.();
+    onStandaloneGenerated?.(lessonKey);
+
+    // Generate in background — form can close, user can navigate away
     try {
-      const raw = await generateReader(state.apiKey, topic.trim(), level, state.learnedVocabulary, readerLength, state.maxTokens);
+      const raw    = await generateReader(state.apiKey, topicStr, level, state.learnedVocabulary, readerLength, state.maxTokens);
       const parsed = parseReaderResponse(raw);
-      const lessonKey = `standalone_${Date.now()}`;
-      act.setReader(lessonKey, { ...parsed, topic: topic.trim(), level, lessonKey, isStandalone: true });
-      act.addStandaloneReader({ key: lessonKey, topic: topic.trim(), level, createdAt: Date.now() });
+      act.setReader(lessonKey, { ...parsed, topic: topicStr, level, lessonKey, isStandalone: true });
       if (parsed.ankiJson?.length > 0) {
         act.addVocabulary(parsed.ankiJson.map(c => ({
           chinese: c.chinese, pinyin: c.pinyin, english: c.english,
         })));
       }
-      onStandaloneGenerated?.(lessonKey);
+      act.notify('success', `Reader ready: "${topicStr}"`);
     } catch (err) {
-      act.setError(err.message);
-      onStandaloneGenerated?.(null);  // clear the pending placeholder on error
+      act.notify('error', `Generation failed: ${err.message.slice(0, 80)}`);
+      act.removeStandaloneReader(lessonKey);
     } finally {
-      act.setLoading(false);
+      act.clearPendingReader(lessonKey);
     }
   }
 
@@ -182,8 +188,8 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
             : 'Generate Reader'}
       </button>
 
-      {state.loading && (
-        <GenerationProgress type={mode === 'syllabus' ? 'syllabus' : 'reader'} />
+      {state.loading && mode === 'syllabus' && (
+        <GenerationProgress type="syllabus" />
       )}
 
       {onCancel && !state.loading && (

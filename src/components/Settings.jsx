@@ -118,6 +118,29 @@ export default function Settings({ onClose }) {
 
         <hr className="divider" />
 
+        {/* Default HSK level */}
+        <section className="settings-section">
+          <h3 className="settings-section__title form-label">Default HSK Level</h3>
+          <p className="settings-section__desc text-muted">
+            Pre-selected HSK level when opening the topic form.
+          </p>
+          <select
+            className="form-select"
+            value={state.defaultLevel}
+            onChange={e => act.setDefaultLevel(e.target.value)}
+            style={{ maxWidth: '18rem' }}
+          >
+            <option value={1}>HSK 1 — Absolute beginner (~150 words)</option>
+            <option value={2}>HSK 2 — Elementary (~300 words)</option>
+            <option value={3}>HSK 3 — Pre-intermediate (~600 words)</option>
+            <option value={4}>HSK 4 — Intermediate (~1,200 words)</option>
+            <option value={5}>HSK 5 — Upper-intermediate (~2,500 words)</option>
+            <option value={6}>HSK 6 — Advanced (~5,000 words)</option>
+          </select>
+        </section>
+
+        <hr className="divider" />
+
         {/* Max output tokens */}
         <section className="settings-section">
           <h3 className="settings-section__title form-label">API Output Tokens</h3>

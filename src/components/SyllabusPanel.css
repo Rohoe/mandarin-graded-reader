@@ -30,6 +30,24 @@
   line-height: 1;
 }
 
+.syllabus-panel__pending-badge {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-accent);
+  background: var(--color-accent-light);
+  border: 1px solid var(--color-accent-dim);
+  border-radius: 999px;
+  padding: 1px 6px;
+  margin-left: var(--space-2);
+  animation: spin-slow 2s linear infinite;
+}
+
+@keyframes spin-slow {
+  from { opacity: 1; }
+  50%  { opacity: 0.4; }
+  to   { opacity: 1; }
+}
+
 .syllabus-panel__app-name {
   font-size: var(--text-lg);
   font-weight: 700;

@@ -74,9 +74,9 @@ src/
                               type='syllabus': 4 phases (~10s budget); shown in TopicForm
                               Uses setTimeout chain to advance through phases; bar
                               holds at ~97-98% until response arrives and component unmounts
-    Settings                  API key update, save folder picker, API output tokens slider
-                              (4096–16384, persisted to localStorage), storage usage meter,
-                              clear-all data
+    Settings                  API key update, default HSK level select, save folder picker,
+                              API output tokens slider (4096–16384, persisted to localStorage),
+                              storage usage meter, clear-all data
 ```
 
 ## State shape (AppContext)
@@ -109,6 +109,9 @@ src/
   notification:      { type: 'success'|'error', message } | null,
   // API preferences (persisted to localStorage, not cleared by CLEAR_ALL_DATA)
   maxTokens:         number,          // API output ceiling, default 8192
+  defaultLevel:      number,          // Default HSK level for TopicForm, default 3
+  // Background generation (ephemeral, not persisted)
+  pendingReaders:    { [lessonKey]: true },  // keys currently being generated
   // File storage
   fsInitialized:     boolean,         // true once async FS init completes on mount
   saveFolder:        { name: string } | null,  // active folder name, or null

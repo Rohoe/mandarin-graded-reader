@@ -23,6 +23,8 @@ import {
   setDirectoryHandle,
   loadMaxTokens,
   saveMaxTokens,
+  loadDefaultLevel,
+  saveDefaultLevel,
 } from '../lib/storage';
 import {
   loadDirectoryHandle,
@@ -53,8 +55,11 @@ function buildInitialState() {
     fsInitialized:     false,
     saveFolder:        null,
     fsSupported:       isSupported(),
-    // API preferences
+    // API preferences (persisted, survive CLEAR_ALL_DATA)
     maxTokens:         loadMaxTokens(),
+    defaultLevel:      loadDefaultLevel(),
+    // Background generation tracking (ephemeral, not persisted)
+    pendingReaders:    {},
   };
 }
 
@@ -207,6 +212,7 @@ function reducer(state, action) {
         fsInitialized: state.fsInitialized,
         fsSupported:   state.fsSupported,
         maxTokens:     state.maxTokens,
+        defaultLevel:  state.defaultLevel,
       };
 
     // ── File storage actions ──────────────────────────────────
@@ -235,6 +241,19 @@ function reducer(state, action) {
     case 'SET_MAX_TOKENS':
       saveMaxTokens(action.payload);
       return { ...state, maxTokens: action.payload };
+
+    case 'SET_DEFAULT_LEVEL':
+      saveDefaultLevel(action.payload);
+      return { ...state, defaultLevel: action.payload };
+
+    case 'START_PENDING_READER':
+      return { ...state, pendingReaders: { ...state.pendingReaders, [action.payload]: true } };
+
+    case 'CLEAR_PENDING_READER': {
+      const next = { ...state.pendingReaders };
+      delete next[action.payload];
+      return { ...state, pendingReaders: next };
+    }
 
     default:
       return state;

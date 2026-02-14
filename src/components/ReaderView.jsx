@@ -12,7 +12,8 @@ import './ReaderView.css';
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, isCompleted }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
-  const { generatedReaders, learnedVocabulary, error, loading, apiKey, maxTokens } = state;
+  const { generatedReaders, learnedVocabulary, error, pendingReaders, apiKey, maxTokens } = state;
+  const isPending = !!(lessonKey && pendingReaders[lessonKey]);
 
   const reader = generatedReaders[lessonKey];
   const scrollRef = useRef(null);
@@ -31,30 +32,29 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, isCo
   }, [lessonKey]);
 
   async function handleGenerate() {
-    if (!lessonMeta) return;
-    act.setLoading(true, '正在生成阅读材料…');
+    if (!lessonMeta || isPending) return;
+
+    const topic = lessonMeta.title_zh
+      ? `${lessonMeta.title_zh} — ${lessonMeta.title_en || ''}: ${lessonMeta.description || ''}`
+      : lessonMeta.topic || '';
+    const level = lessonMeta.level || 3;
+
+    act.startPendingReader(lessonKey);
     act.clearError();
     try {
-      const topic = lessonMeta.title_zh
-        ? `${lessonMeta.title_zh} — ${lessonMeta.title_en || ''}: ${lessonMeta.description || ''}`
-        : lessonMeta.topic || '';
-      const level = lessonMeta.level || 3;
-
       const raw    = await generateReader(apiKey, topic, level, learnedVocabulary, 1200, maxTokens);
       const parsed = parseReaderResponse(raw);
-
       act.setReader(lessonKey, { ...parsed, topic, level, lessonKey });
-
-      // Add vocabulary to learned ledger
       if (parsed.ankiJson?.length > 0) {
         act.addVocabulary(parsed.ankiJson.map(c => ({
           chinese: c.chinese, pinyin: c.pinyin, english: c.english,
         })));
       }
+      act.notify('success', `Reader ready: ${lessonMeta.title_en || topic}`);
     } catch (err) {
-      act.setError(err.message);
+      act.notify('error', `Generation failed: ${err.message.slice(0, 80)}`);
     } finally {
-      act.setLoading(false);
+      act.clearPendingReader(lessonKey);
     }
   }
 
@@ -89,7 +89,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, isCo
   }
 
   // ── Generating ──────────────────────────────────────────────
-  if (!reader && loading) {
+  if (!reader && isPending) {
     return (
       <div className="reader-view reader-view--generating">
         <div className="reader-view__pregenerate card card-padded">
@@ -140,7 +140,11 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, isCo
               )}
             </>
           )}
-          <button className="btn btn-primary btn-lg reader-view__generate-btn" onClick={handleGenerate}>
+          <button
+            className="btn btn-primary btn-lg reader-view__generate-btn"
+            onClick={handleGenerate}
+            disabled={isPending}
+          >
             Generate Reader
           </button>
         </div>
