@@ -133,6 +133,49 @@ Return a JSON block tagged \`\`\`anki-json containing an array of card objects:
 ]
 \`\`\``;
 
+// ── Answer grading ────────────────────────────────────────────
+
+const GRADING_SYSTEM = `You are a Chinese language teacher grading reading comprehension answers.
+The student is studying Mandarin at HSK level {level}.
+
+Evaluate each answer for accuracy and completeness. Be encouraging but honest.
+The student may answer in English or Chinese.
+
+Return ONLY valid JSON — no explanation, no markdown fences:
+{
+  "overallScore": "X/Y",
+  "overallFeedback": "1-2 sentences of general feedback.",
+  "feedback": [
+    {
+      "question": "original question",
+      "userAnswer": "student's answer",
+      "score": "X/5",
+      "feedback": "Specific feedback."
+    }
+  ]
+}
+
+Score 1–5: 5=fully correct, 4=mostly correct, 3=partial, 2=mostly wrong, 1=incorrect/blank.
+Overall score = sum / (questions × 5).`;
+
+export async function gradeAnswers(apiKey, questions, userAnswers, story, level, maxTokens = 2048) {
+  const system = GRADING_SYSTEM.replace('{level}', level);
+  const answersBlock = questions
+    .map((q, i) => `Q${i + 1}: ${q}\nA${i + 1}: ${userAnswers[i] || '(no answer provided)'}`)
+    .join('\n\n');
+  const userMessage = `Story (for reference):\n${story}\n\n---\n\nQuestions and Student Answers:\n${answersBlock}`;
+  const raw = await callClaude(apiKey, system, userMessage, maxTokens);
+  try {
+    return JSON.parse(raw.trim());
+  } catch {
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (match) return JSON.parse(match[0]);
+    throw new Error('Grading response could not be parsed. Please try again.');
+  }
+}
+
+// ── Reader generation ─────────────────────────────────────────
+
 export async function generateReader(apiKey, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192) {
   // Build a range string: e.g. 1200 → "1100-1300 Chinese characters"
   const charRange = `${targetChars - 100}-${targetChars + 100}`;

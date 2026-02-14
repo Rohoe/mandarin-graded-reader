@@ -66,7 +66,12 @@ src/
                               activeSyllabusId changes (auto-collapses after generation).
     ReaderView                Main content area; empty/pre-generate/error/reading states
     VocabularyList            Collapsible accordion of vocab cards with examples
-    ComprehensionQuestions    Collapsible question list
+    ComprehensionQuestions    Collapsible question list with interactive answer input and AI grading.
+                              Input mode: textarea per question + "Grade My Answers" button.
+                              Results mode: per-question score badge (1–5) + feedback + overall score panel.
+                              Calls gradeAnswers() from api.js; persists userAnswers + gradingResults
+                              into the reader object via act.setReader(). State initialised from
+                              reader.userAnswers / reader.gradingResults so results survive page reload.
     AnkiExportButton          Shows new/skip counts; triggers download on click
     LoadingIndicator          Animated ink-wash Chinese characters (读写学文语书)
     GenerationProgress        Timed phase-based progress bar shown during API calls.

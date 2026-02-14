@@ -9,6 +9,7 @@ A single-page web app for generating Mandarin Chinese graded readers using Claud
 - **Vocabulary Memory** — Tracks learned words across sessions; new readers avoid repeating them
 - **Anki Export** — Download flashcard files (.txt) with duplicate prevention
 - **Offline persistence** — All data stored in `localStorage`; pick up where you left off
+- **Comprehension grading** — Type answers to comprehension questions and get AI-powered feedback with per-question scores; results persist across sessions
 - **Configurable length** — Sliders for syllabus lesson count (2–12) and reader story length (500–2000 characters)
 - **Disk persistence** — Optionally save all data as JSON files to a folder on your computer (Chrome/Edge only)
 

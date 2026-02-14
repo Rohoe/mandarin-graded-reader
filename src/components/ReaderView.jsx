@@ -219,7 +219,13 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       <VocabularyList vocabulary={reader.vocabulary} />
 
       {/* Comprehension questions */}
-      <ComprehensionQuestions questions={reader.questions} />
+      <ComprehensionQuestions
+        questions={reader.questions}
+        lessonKey={lessonKey}
+        reader={reader}
+        story={reader.story}
+        level={reader.level || lessonMeta?.level || 3}
+      />
 
       {/* Mark complete */}
       {!isCompleted && onMarkComplete && (
