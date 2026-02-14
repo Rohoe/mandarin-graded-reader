@@ -2,7 +2,7 @@
 
 ## Planned features (priority order)
 
-- [ ] **Text-to-speech** — "Listen" button on stories using the Web Speech API (built into Chrome, zero deps). Also support click-to-hear at the sentence level.
+- [x] ~~**Text-to-speech** — "Listen" button on stories using the Web Speech API (built into Chrome, zero deps). Also support click-to-hear at the sentence level.~~
 
 - [ ] **Pinyin toggle** — Toggle button that wraps story characters in `<ruby>` tags using `pinyin-pro`. Essential for HSK 1–3 learners.
 

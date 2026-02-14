@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
 import { generateReader } from '../lib/api';
@@ -19,6 +19,84 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   const reader = generatedReaders[lessonKey];
   const scrollRef = useRef(null);
   const [confirmRegen, setConfirmRegen] = useState(false);
+
+  // ── Text-to-speech ──────────────────────────────────────────
+  const ttsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+  const [speakingKey, setSpeakingKey] = useState(null);
+  const utteranceRef = useRef(null);
+  const [chineseVoices, setChineseVoices] = useState([]);
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState(null);
+
+  function isRecommendedVoice(v) {
+    return /^Google\s+/i.test(v.name) ||
+      /^(Tingting|Meijia|Sinji|Lekha)$/i.test(v.name);
+  }
+
+  // Voice preference order: Google neural > macOS Tingting > any zh-CN > any zh
+  function pickBestVoice(voices) {
+    const zh = voices.filter(v => /zh/i.test(v.lang));
+    const priority = [
+      v => v.name === 'Google 普通话（中国大陆）',
+      v => v.name === 'Google 国语（台灣）',
+      v => /^Tingting$/i.test(v.name),
+      v => /^Meijia$/i.test(v.name),
+      v => v.lang === 'zh-CN',
+      v => v.lang.startsWith('zh'),
+    ];
+    for (const test of priority) {
+      const match = zh.find(test);
+      if (match) return match;
+    }
+    return zh[0] || null;
+  }
+
+  useEffect(() => {
+    if (!ttsSupported) return;
+    function loadVoices() {
+      const all = window.speechSynthesis.getVoices();
+      const zh = all.filter(v => /zh/i.test(v.lang));
+      setChineseVoices(zh);
+      const best = pickBestVoice(zh);
+      if (best) setSelectedVoiceURI(uri => uri || best.voiceURI);
+    }
+    loadVoices();
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+  }, [ttsSupported]);
+
+  // Cancel speech when lesson changes
+  useEffect(() => {
+    window.speechSynthesis?.cancel();
+    setSpeakingKey(null);
+  }, [lessonKey]);
+
+  function stripMarkdown(text) {
+    return text.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1');
+  }
+
+  const speakText = useCallback((text, key) => {
+    if (!ttsSupported) return;
+    if (speakingKey === key) {
+      window.speechSynthesis.cancel();
+      setSpeakingKey(null);
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voice = chineseVoices.find(v => v.voiceURI === selectedVoiceURI);
+    if (voice) {
+      utterance.voice = voice;
+      utterance.lang = voice.lang;
+    } else {
+      utterance.lang = 'zh-CN';
+    }
+    utterance.rate = 0.85;
+    utterance.onend = () => setSpeakingKey(null);
+    utterance.onerror = () => setSpeakingKey(null);
+    utteranceRef.current = utterance;
+    setSpeakingKey(key);
+    window.speechSynthesis.speak(utterance);
+  }, [ttsSupported, speakingKey, chineseVoices, selectedVoiceURI]);
 
   // Load from cache or generate
   useEffect(() => {
@@ -212,16 +290,74 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       <hr className="divider" />
 
       {/* Story */}
-      <div className="reader-view__story text-chinese">
-        {storyParagraphs.map((para, pi) => (
-          <p key={pi} className="reader-view__paragraph">
-            {parseStorySegments(para).map((seg, i) => {
-              if (seg.type === 'bold')   return <strong key={i} className="reader-view__vocab">{seg.content}</strong>;
-              if (seg.type === 'italic') return <em key={i}>{seg.content}</em>;
-              return <span key={i}>{seg.content}</span>;
-            })}
-          </p>
-        ))}
+      <div className="reader-view__story-section">
+        {ttsSupported && (
+          <div className="reader-view__tts-bar">
+            <button
+              className={`btn btn-ghost btn-sm reader-view__tts-btn ${speakingKey === 'story' ? 'reader-view__tts-btn--active' : ''}`}
+              onClick={() => speakText(stripMarkdown(storyParagraphs.join('\n\n')), 'story')}
+              title={speakingKey === 'story' ? 'Stop' : 'Listen to story'}
+            >
+              {speakingKey === 'story' ? '⏹ Stop' : '🔊 Listen'}
+            </button>
+            {speakingKey && speakingKey !== 'story' && (
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => { window.speechSynthesis.cancel(); setSpeakingKey(null); }}
+                title="Stop"
+              >
+                ⏹ Stop
+              </button>
+            )}
+            {chineseVoices.length > 1 && (() => {
+              const recommended = chineseVoices.filter(isRecommendedVoice);
+              const other = chineseVoices.filter(v => !isRecommendedVoice(v));
+              return (
+                <select
+                  className="form-select reader-view__tts-voice-select"
+                  value={selectedVoiceURI || ''}
+                  onChange={e => setSelectedVoiceURI(e.target.value)}
+                  title="Choose voice"
+                >
+                  {recommended.length > 0 && (
+                    <optgroup label="Recommended">
+                      {recommended.map(v => (
+                        <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {other.length > 0 && (
+                    <optgroup label="Other voices">
+                      {other.map(v => (
+                        <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+              );
+            })()}
+          </div>
+        )}
+        <div className="reader-view__story text-chinese">
+          {storyParagraphs.map((para, pi) => {
+            const paraKey = `para-${pi}`;
+            const isSpeaking = speakingKey === paraKey;
+            return (
+              <p
+                key={pi}
+                className={`reader-view__paragraph ${ttsSupported ? 'reader-view__paragraph--tts' : ''} ${isSpeaking ? 'reader-view__paragraph--speaking' : ''}`}
+                onClick={ttsSupported ? () => speakText(stripMarkdown(para), paraKey) : undefined}
+                title={ttsSupported ? (isSpeaking ? 'Stop' : 'Click to listen') : undefined}
+              >
+                {parseStorySegments(para).map((seg, i) => {
+                  if (seg.type === 'bold')   return <strong key={i} className="reader-view__vocab">{seg.content}</strong>;
+                  if (seg.type === 'italic') return <em key={i}>{seg.content}</em>;
+                  return <span key={i}>{seg.content}</span>;
+                })}
+              </p>
+            );
+          })}
+        </div>
       </div>
 
       <hr className="divider" />

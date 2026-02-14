@@ -130,6 +130,30 @@
 }
 
 /* ── Story ───────────────────────────────── */
+.reader-view__story-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.reader-view__tts-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.reader-view__tts-btn--active {
+  color: var(--color-accent);
+  border-color: var(--color-accent-dim);
+}
+
+.reader-view__tts-voice-select {
+  font-size: var(--text-xs);
+  padding: 2px var(--space-2);
+  height: auto;
+  max-width: 200px;
+}
+
 .reader-view__story {
   font-size: var(--text-chinese-body);
   line-height: var(--leading-chinese);
@@ -143,6 +167,24 @@
 
 .reader-view__paragraph:last-child {
   margin-bottom: 0;
+}
+
+.reader-view__paragraph--tts {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  margin-left: calc(-1 * var(--space-2));
+  transition: background var(--transition);
+}
+
+.reader-view__paragraph--tts:hover {
+  background: rgba(74, 124, 126, 0.06);
+}
+
+.reader-view__paragraph--speaking {
+  background: var(--color-accent-light);
+  border-left: 2px solid var(--color-accent);
+  padding-left: calc(var(--space-2) - 2px);
 }
 
 .reader-view__vocab {

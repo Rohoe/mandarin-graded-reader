@@ -86,6 +86,11 @@ src/
                               → grammar notes → Anki export.
                               "Next episode →" button at the bottom calls onContinueStory with
                               the current story text, topic, and level.
+                              Text-to-speech: "🔊 Listen" button reads full story; each paragraph
+                              is clickable to read individually (highlighted while speaking).
+                              Voices loaded via Web Speech API voiceschanged event; auto-selects
+                              best Chinese voice (Google neural > Tingting/Meijia > zh-CN).
+                              Voice picker shows Recommended / Other voices as optgroups.
     VocabularyList            Collapsible accordion of vocab cards with examples
     ComprehensionQuestions    Collapsible question list with interactive answer input and AI grading.
                               Input mode: textarea per question + "Grade My Answers" button.

@@ -17,6 +17,7 @@ A single-page web app for generating Mandarin Chinese graded readers using Claud
 - **Story continuation** — "Next episode →" button generates a follow-up reader that continues the narrative from the previous story, maintaining characters and setting
 - **Extend syllabus** — "Add more lessons" panel on the syllabus home page appends 2–6 AI-generated lessons to an existing syllabus
 - **Collapsible sidebar sections** — Syllabus lesson list and standalone readers list can be collapsed/expanded via caret buttons in their section headers
+- **Text-to-speech** — "🔊 Listen" button reads the full story aloud; click any paragraph to hear just that sentence. Auto-selects the best available Chinese voice (Google neural, macOS Tingting/Meijia). Voice picker groups voices into Recommended / Other (Chrome/Edge)
 - **Disk persistence** — Optionally save all data as JSON files to a folder on your computer (Chrome/Edge only)
 
 ## Setup
