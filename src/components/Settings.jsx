@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
 import { getStorageUsage } from '../lib/storage';
+import { parseReaderResponse } from '../lib/parser';
 import './Settings.css';
 
 export default function Settings({ onClose }) {
@@ -39,6 +40,25 @@ export default function Settings({ onClose }) {
     act.notify('success', 'API key updated.');
     setNewKey('');
     onClose?.();
+  }
+
+  function handleReparseAll() {
+    const readers = state.generatedReaders;
+    let count = 0;
+    for (const [key, reader] of Object.entries(readers)) {
+      if (!reader?.raw) continue;
+      const parsed = parseReaderResponse(reader.raw);
+      act.setReader(key, {
+        ...parsed,
+        topic:          reader.topic,
+        level:          reader.level,
+        lessonKey:      reader.lessonKey || key,
+        userAnswers:    reader.userAnswers,
+        gradingResults: reader.gradingResults,
+      });
+      count++;
+    }
+    act.notify('success', `Re-parsed ${count} reader${count !== 1 ? 's' : ''} from cached text.`);
   }
 
   function handleClearAll() {
@@ -256,6 +276,16 @@ export default function Settings({ onClose }) {
               {(usage.used / 1024).toFixed(0)} KB / {(usage.limit / 1024 / 1024).toFixed(0)} MB ({usage.pct}% used)
             </p>
           </div>
+          {Object.keys(state.generatedReaders).length > 0 && (
+            <div style={{ marginTop: 'var(--space-3)' }}>
+              <p className="settings-section__desc text-muted">
+                Re-parse all cached readers from their saved raw text. Use this after a parser update to refresh vocabulary and examples without regenerating.
+              </p>
+              <button className="btn btn-secondary btn-sm" onClick={handleReparseAll}>
+                Re-parse {Object.keys(state.generatedReaders).length} cached reader{Object.keys(state.generatedReaders).length !== 1 ? 's' : ''}
+              </button>
+            </div>
+          )}
         </section>
 
         <hr className="divider" />
