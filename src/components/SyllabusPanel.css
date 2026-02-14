@@ -391,6 +391,8 @@
     transition: transform var(--transition-slow);
     z-index: 50;
     width: min(var(--sidebar-width), 85vw);
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .syllabus-panel--open {

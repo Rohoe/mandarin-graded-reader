@@ -268,3 +268,4 @@ The app is hosted at: `https://mandarin-graded-reader.vercel.app` (update when f
 - **File System Access API:** Only available in Chromium-based browsers (Chrome, Edge). Not supported in Firefox or Safari. Falls back gracefully to localStorage-only mode.
 - **Parsing robustness:** The regex parser uses `#{2,4}\s*N\.` to match section headings, tolerating minor formatting variation (2–4 hash marks, any section title text). If section extraction fails entirely, the raw text fallback is shown.
 - **No streaming:** Reader generation can take 15–30s with no partial content shown; only the ink-character animation plays during this time.
+- **Mobile:** Uses `viewport-fit=cover` + `env(safe-area-inset-*)` for notch/Dynamic Island support, `100dvh` for iOS Safari viewport height, `pointerdown` (not `mousedown`) for the vocab popover close handler, and body scroll lock when the sidebar overlay is open.

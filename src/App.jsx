@@ -38,6 +38,12 @@ function AppShell() {
   const [activeSyllabusId, setActiveSyllabusId] = useState(() => syllabi[0]?.id || null);
   const [syllabusView, setSyllabusView]     = useState('home'); // 'home' | 'lesson'
 
+  // Lock body scroll when mobile sidebar is open
+  useEffect(() => {
+    document.body.style.overflow = sidebarOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [sidebarOpen]);
+
   // Keep activeSyllabusId valid if the active syllabus is removed
   useEffect(() => {
     if (activeSyllabusId && !syllabi.find(s => s.id === activeSyllabusId)) {

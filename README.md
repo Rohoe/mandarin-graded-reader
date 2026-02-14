@@ -57,6 +57,8 @@ Vite will print a **Network** URL like `http://192.168.x.x:5173`. Open that URL 
 
 > Your computer and mobile device must be on the same Wi-Fi network. You may also need to allow port 5173 through your firewall if the page doesn't load.
 
+The app is optimised for iPhone and Android: safe area insets keep the UI clear of the notch/Dynamic Island, tap targets meet the 44×44px minimum, and body scroll is locked when the sidebar is open.
+
 ## Usage
 
 1. **Enter your API key** on the setup screen (first run only)

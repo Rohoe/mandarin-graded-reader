@@ -131,11 +131,11 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     }
     function onScroll() { setActiveVocab(null); }
     document.addEventListener('keydown', onKey);
-    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('pointerdown', onMouseDown);
     window.addEventListener('scroll', onScroll, true);
     return () => {
       document.removeEventListener('keydown', onKey);
-      document.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('pointerdown', onMouseDown);
       window.removeEventListener('scroll', onScroll, true);
     };
   }, [activeVocab]);
