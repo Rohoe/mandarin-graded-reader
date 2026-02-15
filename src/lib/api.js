@@ -183,11 +183,17 @@ Overall score = sum / (questions × 5).`;
 
 // Escape literal control characters inside JSON string values so JSON.parse
 // doesn't choke on responses like: "feedback": "Good.\nAlso try harder."
+// Handles all ASCII control chars (< 0x20) and also strips markdown fences.
 function repairJSON(str) {
+  // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
+  const fenceMatch = str.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) str = fenceMatch[1].trim();
+
   let result = '';
   let inString = false;
   let escaped = false;
   for (const char of str) {
+    const code = char.codePointAt(0);
     if (escaped) {
       result += char;
       escaped = false;
@@ -197,8 +203,14 @@ function repairJSON(str) {
     } else if (char === '"') {
       result += char;
       inString = !inString;
-    } else if (inString && (char === '\n' || char === '\r' || char === '\t')) {
-      result += char === '\n' ? '\\n' : char === '\r' ? '\\r' : '\\t';
+    } else if (inString && code < 0x20) {
+      // Escape any bare control character inside a string
+      if (char === '\n') result += '\\n';
+      else if (char === '\r') result += '\\r';
+      else if (char === '\t') result += '\\t';
+      else if (char === '\b') result += '\\b';
+      else if (char === '\f') result += '\\f';
+      else result += `\\u${code.toString(16).padStart(4, '0')}`;
     } else {
       result += char;
     }
@@ -213,12 +225,20 @@ export async function gradeAnswers(apiKey, questions, userAnswers, story, level,
     .join('\n\n');
   const userMessage = `Story (for reference):\n${story}\n\n---\n\nQuestions and Student Answers:\n${answersBlock}`;
   const raw = await callClaude(apiKey, system, userMessage, maxTokens);
+  console.debug('[gradeAnswers] raw response:', raw);
   const cleaned = repairJSON(raw.trim());
   try {
     return JSON.parse(cleaned);
-  } catch {
+  } catch (e1) {
+    console.debug('[gradeAnswers] first parse failed:', e1.message, '\ncleaned:', cleaned);
     const match = cleaned.match(/\{[\s\S]*\}/);
-    if (match) return JSON.parse(match[0]);
+    if (match) {
+      try {
+        return JSON.parse(match[0]);
+      } catch (e2) {
+        console.debug('[gradeAnswers] second parse failed:', e2.message);
+      }
+    }
     throw new Error('Grading response could not be parsed. Please try again.');
   }
 }
