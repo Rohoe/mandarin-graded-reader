@@ -29,10 +29,14 @@ import {
   saveMaxTokens,
   loadDefaultLevel,
   saveDefaultLevel,
+  loadDefaultTopikLevel,
+  saveDefaultTopikLevel,
   loadDarkMode,
   saveDarkMode,
   loadTtsVoiceURI,
   saveTtsVoiceURI,
+  loadTtsKoVoiceURI,
+  saveTtsKoVoiceURI,
 } from '../lib/storage';
 import {
   loadDirectoryHandle,
@@ -66,8 +70,10 @@ function buildInitialState() {
     // API preferences (persisted, survive CLEAR_ALL_DATA)
     maxTokens:         loadMaxTokens(),
     defaultLevel:      loadDefaultLevel(),
+    defaultTopikLevel: loadDefaultTopikLevel(),
     darkMode:          loadDarkMode(),
     ttsVoiceURI:       loadTtsVoiceURI(),
+    ttsKoVoiceURI:     loadTtsKoVoiceURI(),
     // Background generation tracking (ephemeral, not persisted)
     pendingReaders:    {},
     // Cloud sync (ephemeral, not persisted)
@@ -256,6 +262,7 @@ function reducer(state, action) {
         fsSupported:   state.fsSupported,
         maxTokens:     state.maxTokens,
         defaultLevel:  state.defaultLevel,
+        defaultTopikLevel: state.defaultTopikLevel,
       };
 
     // ── File storage actions ──────────────────────────────────
@@ -289,6 +296,10 @@ function reducer(state, action) {
       saveDefaultLevel(action.payload);
       return { ...state, defaultLevel: action.payload };
 
+    case 'SET_DEFAULT_TOPIK_LEVEL':
+      saveDefaultTopikLevel(action.payload);
+      return { ...state, defaultTopikLevel: action.payload };
+
     case 'SET_DARK_MODE':
       saveDarkMode(action.payload);
       return { ...state, darkMode: action.payload };
@@ -296,6 +307,10 @@ function reducer(state, action) {
     case 'SET_TTS_VOICE':
       saveTtsVoiceURI(action.payload);
       return { ...state, ttsVoiceURI: action.payload };
+
+    case 'SET_TTS_KO_VOICE':
+      saveTtsKoVoiceURI(action.payload);
+      return { ...state, ttsKoVoiceURI: action.payload };
 
     case 'START_PENDING_READER':
       return { ...state, pendingReaders: { ...state.pendingReaders, [action.payload]: true } };

@@ -13,7 +13,8 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
 
   const [topic, setTopic]         = useState('');
   const [langId, setLangId]       = useState(DEFAULT_LANG_ID);
-  const [level, setLevel]         = useState(state.defaultLevel ?? 3);
+  const defaultLevelForLang = langId === 'ko' ? (state.defaultTopikLevel ?? 2) : (state.defaultLevel ?? 3);
+  const [level, setLevel]         = useState(defaultLevelForLang);
   const [mode, setMode]           = useState('syllabus'); // 'syllabus' | 'standalone'
   const [lessonCount, setLessonCount] = useState(6);
   const [readerLength, setReaderLength] = useState(1200);
@@ -113,7 +114,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
                 key={lang.id}
                 type="button"
                 className={`topic-form__lang-pill ${langId === lang.id ? 'active' : ''}`}
-                onClick={() => { setLangId(lang.id); setLevel(Math.min(level, lang.proficiency.levels.length)); }}
+                onClick={() => { setLangId(lang.id); setLevel(lang.id === 'ko' ? (state.defaultTopikLevel ?? 2) : (state.defaultLevel ?? 3)); }}
                 disabled={state.loading}
               >
                 {lang.nameNative}

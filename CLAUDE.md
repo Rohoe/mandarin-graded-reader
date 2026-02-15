@@ -154,9 +154,11 @@ src/
                               type='syllabus': 4 phases (~10s budget); shown in TopicForm
                               Uses setTimeout chain to advance through phases; bar
                               holds at ~97-98% until response arrives and component unmounts
-    Settings                  API key update, dark mode toggle, default HSK level select,
-                              save folder picker, API output tokens slider (4096–16384,
-                              persisted to localStorage), storage usage meter, clear-all data.
+    Settings                  Sections in order: dark mode toggle, cloud sync (sign-in
+                              + push/pull), save folder picker, TTS voice selectors
+                              (Chinese + Korean), default HSK level, default TOPIK level,
+                              API key update, API output tokens slider (4096–16384),
+                              storage usage meter, danger zone (clear-all data).
                               Sticky header (title + close button stay visible when scrolling).
                               Close button enlarged to 32×32px for easier tap target.
 ```
@@ -198,6 +200,8 @@ src/
   // API preferences (persisted to localStorage, not cleared by CLEAR_ALL_DATA)
   maxTokens:         number,          // API output ceiling, default 8192
   defaultLevel:      number,          // Default HSK level for TopicForm, default 3
+  defaultTopikLevel: number,          // Default TOPIK level for TopicForm, default 2
+  ttsKoVoiceURI:     string | null,   // Preferred Korean TTS voice URI, or null
   // Background generation (ephemeral, not persisted)
   pendingReaders:    { [lessonKey]: true },  // keys currently being generated
   // File storage

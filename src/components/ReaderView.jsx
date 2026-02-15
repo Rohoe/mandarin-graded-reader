@@ -16,7 +16,7 @@ import './ReaderView.css';
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
-  const { generatedReaders, learnedVocabulary, error, pendingReaders, apiKey, maxTokens, ttsVoiceURI } = state;
+  const { generatedReaders, learnedVocabulary, error, pendingReaders, apiKey, maxTokens, ttsVoiceURI, ttsKoVoiceURI } = state;
   const isPending = !!(lessonKey && pendingReaders[lessonKey]);
 
   const reader = generatedReaders[lessonKey];
@@ -89,9 +89,13 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       const filtered = window.speechSynthesis.getVoices().filter(v => langConfig.tts.langFilter.test(v.lang));
       setVoices(filtered);
       // Auto-set best voice in global state if none saved yet
-      if (!ttsVoiceURI && filtered.length > 0) {
+      const activeVoiceURI = langId === 'ko' ? ttsKoVoiceURI : ttsVoiceURI;
+      if (!activeVoiceURI && filtered.length > 0) {
         const best = pickBestVoice(filtered);
-        if (best) act.setTtsVoice(best.voiceURI);
+        if (best) {
+          if (langId === 'ko') act.setTtsKoVoice(best.voiceURI);
+          else act.setTtsVoice(best.voiceURI);
+        }
       }
     }
     loadVoices();
@@ -120,7 +124,8 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    const voice = voices.find(v => v.voiceURI === ttsVoiceURI);
+    const activeVoiceURI = langId === 'ko' ? ttsKoVoiceURI : ttsVoiceURI;
+    const voice = voices.find(v => v.voiceURI === activeVoiceURI);
     if (voice) {
       utterance.voice = voice;
       utterance.lang = voice.lang;
@@ -133,7 +138,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     utteranceRef.current = utterance;
     setSpeakingKey(key);
     window.speechSynthesis.speak(utterance);
-  }, [ttsSupported, speakingKey, voices, ttsVoiceURI, langConfig.tts]);
+  }, [ttsSupported, speakingKey, voices, ttsVoiceURI, ttsKoVoiceURI, langId, langConfig.tts]);
 
   // ── Vocab lookup map (click-to-define) ──────────────────────
   const scriptRegex = langConfig.scriptRegex;

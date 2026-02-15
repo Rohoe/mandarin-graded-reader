@@ -36,8 +36,10 @@ const KEYS = {
   EXPORTED:           'gradedReader_exportedWords',
   MAX_TOKENS:         'gradedReader_maxTokens',
   DEFAULT_LEVEL:      'gradedReader_defaultLevel',
+  DEFAULT_TOPIK_LEVEL: 'gradedReader_defaultTopikLevel',
   DARK_MODE:          'gradedReader_darkMode',
   TTS_VOICE_URI:      'gradedReader_ttsVoiceURI',
+  TTS_KO_VOICE_URI:   'gradedReader_ttsKoVoiceURI',
 };
 
 // ── Generic localStorage helpers ──────────────────────────────
@@ -275,6 +277,16 @@ export function saveDefaultLevel(n) {
   save(KEYS.DEFAULT_LEVEL, n);
 }
 
+// ── Default TOPIK level preference ───────────────────────────
+
+export function loadDefaultTopikLevel() {
+  return load(KEYS.DEFAULT_TOPIK_LEVEL, 2);
+}
+
+export function saveDefaultTopikLevel(n) {
+  save(KEYS.DEFAULT_TOPIK_LEVEL, n);
+}
+
 // ── Dark mode preference ──────────────────────────────────────
 
 export function loadDarkMode() {
@@ -293,6 +305,16 @@ export function loadTtsVoiceURI() {
 
 export function saveTtsVoiceURI(uri) {
   save(KEYS.TTS_VOICE_URI, uri);
+}
+
+// ── Korean TTS voice preference ──────────────────────────────
+
+export function loadTtsKoVoiceURI() {
+  return load(KEYS.TTS_KO_VOICE_URI, null);
+}
+
+export function saveTtsKoVoiceURI(uri) {
+  save(KEYS.TTS_KO_VOICE_URI, uri);
 }
 
 // ── Storage usage estimate ────────────────────────────────────

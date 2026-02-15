@@ -18,7 +18,7 @@ A single-page web app for generating graded readers in **Mandarin Chinese** and 
 - **Story continuation** — "Next episode →" button generates a follow-up reader that continues the narrative from the previous story, maintaining characters and setting
 - **Extend syllabus** — "Add more lessons" panel on the syllabus home page appends 2–6 AI-generated lessons to an existing syllabus
 - **Collapsible sidebar sections** — Syllabus lesson list and standalone readers list can be collapsed/expanded via caret buttons in their section headers
-- **Text-to-speech** — 🔊 icon button reads the full story aloud; click any paragraph to hear just that sentence. Auto-selects the best available voice for each language (Chinese: Google neural, macOS Tingting/Meijia; Korean: Yuna)
+- **Text-to-speech** — 🔊 icon button reads the full story aloud; click any paragraph to hear just that sentence. Separate voice preferences for Chinese and Korean, configurable in Settings. Auto-selects the best available voice for each language (Chinese: Google neural, macOS Tingting/Meijia; Korean: Google, Yuna)
 - **Click-to-define** — Click any bolded vocabulary word in the story to see a popover with romanization and English definition. Toggle off by clicking again, pressing Escape, or clicking elsewhere
 - **Romanization toggle** — 拼 (Chinese) or Aa (Korean) icon button shows romanization above every character using `<ruby>` tags. Powered by `pinyin-pro` for Chinese, `hangul-romanization` for Korean
 - **Floating reader controls** — Pinyin and TTS icon buttons sit in the article header top-right; when the header scrolls off screen they float as a fixed pill via React portal (bypassing `fadeIn` transform containment)
