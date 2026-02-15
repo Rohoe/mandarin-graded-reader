@@ -190,7 +190,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
           id="reader-length"
           type="range"
           className="topic-form__slider"
-          min={500} max={2000} step={100}
+          min={300} max={2000} step={100}
           value={readerLength}
           onChange={e => setReaderLength(Number(e.target.value))}
           disabled={state.loading}

@@ -440,6 +440,7 @@ export default function Settings({ onClose }) {
             onChange={e => act.setDefaultLevel(e.target.value)}
             style={{ maxWidth: '18rem' }}
           >
+            <option value={0}>HSK 0 — Total beginner (~30 words, pinyin focus)</option>
             <option value={1}>HSK 1 — Absolute beginner (~150 words)</option>
             <option value={2}>HSK 2 — Elementary (~300 words)</option>
             <option value={3}>HSK 3 — Pre-intermediate (~600 words)</option>
@@ -463,6 +464,7 @@ export default function Settings({ onClose }) {
             onChange={e => act.setDefaultTopikLevel(e.target.value)}
             style={{ maxWidth: '18rem' }}
           >
+            <option value={0}>TOPIK 0 — Total beginner (~30 words, hangul focus)</option>
             <option value={1}>TOPIK 1 — Absolute beginner (~800 words)</option>
             <option value={2}>TOPIK 2 — Elementary (~1,500 words)</option>
             <option value={3}>TOPIK 3 — Pre-intermediate (~3,000 words)</option>

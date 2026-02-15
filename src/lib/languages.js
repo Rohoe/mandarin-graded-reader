@@ -13,6 +13,7 @@ const zhConfig = {
   proficiency: {
     name: 'HSK',
     levels: [
+      { value: 0, label: 'HSK 0', desc: 'Total beginner (~30 words, pinyin focus)' },
       { value: 1, label: 'HSK 1', desc: 'Absolute beginner (~150 words)' },
       { value: 2, label: 'HSK 2', desc: 'Elementary (~300 words)' },
       { value: 3, label: 'HSK 3', desc: 'Pre-intermediate (~600 words)' },
@@ -70,6 +71,7 @@ const zhConfig = {
     titleInstruction: 'Chinese lesson title (8-15 characters)',
     titleFieldKey: 'title_zh',
     storyRequirements: `- Calibrate language complexity to the HSK level:
+  - HSK 0: Absolute total beginner — ultra-short sentences (3-5 characters each), only the ~30 most common words (我、你、他、好、是、有、不、大、小、来、去、吃、喝、家、人), no grammar beyond subject+verb+object, every character introduced in vocabulary, heavy pinyin support expected
   - HSK 1-2: Simple sentences (5-10 characters), basic 是/有/在 structures, high-frequency verbs, concrete nouns, present/past with 了
   - HSK 3-4: Compound sentences, 把/被 constructions, common complements (得、到、完), conjunctions (虽然...但是, 因为...所以), some idiomatic expressions
   - HSK 5-6: Complex syntax, literary expressions where appropriate (之、而、则), abstract vocabulary, formal and informal register as suits the content, classical allusions or chengyu if relevant to the topic
@@ -101,6 +103,7 @@ const koConfig = {
   proficiency: {
     name: 'TOPIK',
     levels: [
+      { value: 0, label: 'TOPIK 0', desc: 'Total beginner (~30 words, hangul focus)' },
       { value: 1, label: 'TOPIK 1', desc: 'Absolute beginner (~800 words)' },
       { value: 2, label: 'TOPIK 2', desc: 'Elementary (~1,500 words)' },
       { value: 3, label: 'TOPIK 3', desc: 'Pre-intermediate (~3,000 words)' },
@@ -164,6 +167,7 @@ const koConfig = {
     titleInstruction: 'Korean lesson title (5-15 syllables)',
     titleFieldKey: 'title_ko',
     storyRequirements: `- Calibrate language complexity to the TOPIK level:
+  - TOPIK 0: Absolute total beginner — ultra-short sentences (3-6 syllables each), only the ~30 most common words (나, 너, 이, 그, 있다, 없다, 좋다, 가다, 오다, 먹다, 물, 집, 사람, 크다, 작다), no grammar beyond subject+verb, every word introduced in vocabulary, heavy romanization support expected
   - TOPIK 1-2: Simple sentences, basic 이다/있다/없다 structures, high-frequency verbs, concrete nouns, present/past with -았/었-, polite speech level (-아요/-어요)
   - TOPIK 3-4: Compound sentences, passive/causative constructions, common grammar patterns (-는 것, -기 때문에, -으면), connecting endings (-고, -지만, -아서), some idiomatic expressions
   - TOPIK 5-6: Complex syntax, formal register (-습니다), literary expressions, advanced grammar (-는 바, -에 의하면), hanja-derived vocabulary, proverbs if relevant
@@ -195,6 +199,7 @@ const yueConfig = {
   proficiency: {
     name: 'YUE',
     levels: [
+      { value: 0, label: 'YUE 0', desc: 'Total beginner (~30 words, jyutping focus)' },
       { value: 1, label: 'YUE 1', desc: 'Absolute beginner (~150 words)' },
       { value: 2, label: 'YUE 2', desc: 'Elementary (~300 words)' },
       { value: 3, label: 'YUE 3', desc: 'Pre-intermediate (~600 words)' },
@@ -259,6 +264,7 @@ const yueConfig = {
   - Include Cantonese sentence-final particles where natural: 啦, 喎, 嘅, 咩, 㗎, 囉, 喇, 呢
   - Dialogue should reflect natural Cantonese speech patterns
 - Calibrate language complexity to the proficiency level:
+  - Level 0: Absolute total beginner — ultra-short sentences (3-5 characters each), only the ~30 most common Cantonese words (我、你、佢、好、係、有、唔、大、細、嚟、去、食、飲、屋、人), no grammar beyond subject+verb+object, every character introduced in vocabulary, heavy jyutping support expected
   - Level 1-2: Simple sentences (5-10 characters), basic 係/有/喺 structures, high-frequency Cantonese verbs, concrete nouns, past tense with 咗
   - Level 3-4: Compound sentences, 將/被 constructions, common Cantonese complements (到、晒、返), conjunctions (雖然...但係, 因為...所以), Cantonese idioms
   - Level 5-6: Complex syntax, literary Cantonese expressions, abstract vocabulary, mixing formal and colloquial registers, Cantonese proverbs and slang
