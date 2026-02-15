@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { loadAllReaders } from './storage';
 
 export async function signInWithGoogle() {
   return supabase.auth.signInWithOAuth({
@@ -26,7 +27,7 @@ export async function pushToCloud(state) {
     syllabi:            state.syllabi,
     syllabus_progress:  state.syllabusProgress,
     standalone_readers: state.standaloneReaders,
-    generated_readers:  state.generatedReaders,
+    generated_readers:  loadAllReaders(),
     learned_vocabulary: state.learnedVocabulary,
     exported_words:     [...state.exportedWords],
     updated_at:         new Date().toISOString(),

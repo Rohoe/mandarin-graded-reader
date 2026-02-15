@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
-import { getStorageUsage } from '../lib/storage';
+import { getStorageUsage, loadAllReaders, exportAllData } from '../lib/storage';
 import { parseReaderResponse } from '../lib/parser';
 import { signInWithGoogle, signInWithApple, signOut, pushToCloud, pullFromCloud } from '../lib/cloudSync';
 import './Settings.css';
@@ -14,6 +14,8 @@ export default function Settings({ onClose }) {
   const [showKey, setShowKey]         = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const [confirmPull, setConfirmPull] = useState(false);
+  const [confirmRestore, setConfirmRestore] = useState(false);
+  const [restoreError, setRestoreError] = useState(null);
   const [chineseVoices, setChineseVoices] = useState([]);
   const [koreanVoices, setKoreanVoices]   = useState([]);
   const [cantoneseVoices, setCantoneseVoices] = useState([]);
@@ -57,7 +59,9 @@ export default function Settings({ onClose }) {
   }
 
   function handleReparseAll() {
-    const readers = state.generatedReaders;
+    // Use loadAllReaders() directly so we re-parse everything in localStorage,
+    // not just the subset currently loaded into React state.
+    const readers = loadAllReaders();
     let count = 0;
     for (const [key, reader] of Object.entries(readers)) {
       if (!reader?.raw) continue;
@@ -73,6 +77,41 @@ export default function Settings({ onClose }) {
       count++;
     }
     act.notify('success', `Re-parsed ${count} reader${count !== 1 ? 's' : ''} from cached text.`);
+  }
+
+  function handleExportBackup() {
+    const data = exportAllData();
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `graded-reader-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleRestoreFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setRestoreError(null);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!data || typeof data !== 'object' || !data.syllabi) {
+          throw new Error('Invalid backup file: missing syllabi field.');
+        }
+        act.restoreFromBackup(data);
+        act.notify('success', 'Backup restored successfully.');
+        setConfirmRestore(false);
+      } catch (err) {
+        setRestoreError(err.message);
+      }
+    };
+    reader.readAsText(file);
+    // Reset input so same file can be re-selected
+    e.target.value = '';
   }
 
   async function handlePush() {
@@ -502,15 +541,62 @@ export default function Settings({ onClose }) {
               {(usage.used / 1024).toFixed(0)} KB / {(usage.limit / 1024 / 1024).toFixed(0)} MB ({usage.pct}% used)
             </p>
           </div>
-          {Object.keys(state.generatedReaders).length > 0 && (
-            <div style={{ marginTop: 'var(--space-3)' }}>
-              <p className="settings-section__desc text-muted">
-                Re-parse all cached readers from their saved raw text. Use this after a parser update to refresh vocabulary and examples without regenerating.
-              </p>
-              <button className="btn btn-secondary btn-sm" onClick={handleReparseAll}>
-                Re-parse {Object.keys(state.generatedReaders).length} cached reader{Object.keys(state.generatedReaders).length !== 1 ? 's' : ''}
+          {(() => {
+            const allReaders = loadAllReaders();
+            const readerCount = Object.keys(allReaders).length;
+            return readerCount > 0 ? (
+              <div style={{ marginTop: 'var(--space-3)' }}>
+                <p className="settings-section__desc text-muted">
+                  Re-parse all cached readers from their saved raw text. Use this after a parser update to refresh vocabulary and examples without regenerating.
+                </p>
+                <button className="btn btn-secondary btn-sm" onClick={handleReparseAll}>
+                  Re-parse {readerCount} cached reader{readerCount !== 1 ? 's' : ''}
+                </button>
+              </div>
+            ) : null;
+          })()}
+        </section>
+
+        <hr className="divider" />
+
+        {/* Backup & Restore */}
+        <section className="settings-section">
+          <h3 className="settings-section__title form-label">Backup &amp; Restore</h3>
+          <p className="settings-section__desc text-muted">
+            Export all your data (syllabi, readers, vocabulary) as a JSON file, or restore from a previous backup. Your API key is never included.
+          </p>
+          <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', marginTop: 'var(--space-3)' }}>
+            <button className="btn btn-secondary btn-sm" onClick={handleExportBackup}>
+              Export backup ↓
+            </button>
+            {!confirmRestore ? (
+              <button className="btn btn-ghost btn-sm" onClick={() => { setConfirmRestore(true); setRestoreError(null); }}>
+                Restore from backup…
               </button>
-            </div>
+            ) : (
+              <>
+                <label
+                  className="btn btn-sm"
+                  style={{ background: 'var(--color-error-light)', color: 'var(--color-error)', border: '1px solid var(--color-error)', cursor: 'pointer' }}
+                >
+                  This will replace all data — choose file
+                  <input
+                    type="file"
+                    accept=".json"
+                    style={{ display: 'none' }}
+                    onChange={handleRestoreFile}
+                  />
+                </label>
+                <button className="btn btn-ghost btn-sm" onClick={() => { setConfirmRestore(false); setRestoreError(null); }}>
+                  Cancel
+                </button>
+              </>
+            )}
+          </div>
+          {restoreError && (
+            <p className="settings-section__desc" style={{ color: 'var(--color-error)', marginTop: 'var(--space-2)' }}>
+              ⚠ {restoreError}
+            </p>
           )}
         </section>
 

@@ -4,7 +4,7 @@ import { getLang, getLessonTitle } from '../../lib/languages';
 import LoadingIndicator from '../LoadingIndicator';
 import './SyllabusHome.css';
 
-export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDelete, onExtend }) {
+export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDelete, onArchive, onExtend }) {
   const { state } = useApp();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [extendOpen, setExtendOpen] = useState(false);
@@ -190,12 +190,22 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
             </div>
           </div>
         ) : (
-          <button
-            className="btn syllabus-home__delete-btn"
-            onClick={() => setConfirmingDelete(true)}
-          >
-            Delete Syllabus
-          </button>
+          <div className="syllabus-home__danger-actions">
+            {onArchive && (
+              <button
+                className="btn btn-ghost syllabus-home__archive-btn"
+                onClick={onArchive}
+              >
+                Archive Syllabus
+              </button>
+            )}
+            <button
+              className="btn syllabus-home__delete-btn"
+              onClick={() => setConfirmingDelete(true)}
+            >
+              Delete Syllabus
+            </button>
+          </div>
         )}
       </section>
     </article>

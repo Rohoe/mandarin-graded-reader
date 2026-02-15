@@ -194,6 +194,30 @@ export function deleteReader(lessonKey) {
   saveWithFile(KEYS.READERS, readers, 'readers');
 }
 
+/**
+ * Like saveReader but catches QuotaExceededError and returns { ok, quotaExceeded }.
+ */
+export function saveReaderSafe(lessonKey, readerData) {
+  try {
+    const readers = loadAllReaders();
+    readers[lessonKey] = readerData;
+    localStorage.setItem(KEYS.READERS, JSON.stringify(readers));
+    // Fan out to file (fire-and-forget, no quota concern)
+    if (_dirHandle) {
+      writeJSON(_dirHandle, FILES.readers, readers)
+        .catch(e => console.warn('[storage] file write failed: readers', e));
+    }
+    return { ok: true, quotaExceeded: false };
+  } catch (e) {
+    const isQuota = e instanceof DOMException && (
+      e.name === 'QuotaExceededError' ||
+      e.name === 'NS_ERROR_DOM_QUOTA_REACHED'
+    );
+    console.warn('[storage] saveReaderSafe failed:', e);
+    return { ok: false, quotaExceeded: isQuota };
+  }
+}
+
 export function loadReader(lessonKey) {
   return loadAllReaders()[lessonKey] ?? null;
 }
@@ -372,4 +396,25 @@ export function getStorageUsage() {
 export function clearAllAppData() {
   Object.values(KEYS).forEach(k => localStorage.removeItem(k));
   // Files are left on disk intentionally — user can delete the folder manually
+}
+
+// ── Backup export ─────────────────────────────────────────────
+
+/**
+ * Returns a snapshot of all app data suitable for JSON export.
+ * Reads directly from localStorage so it captures ALL readers,
+ * not just the ones currently in React state.
+ * API key is deliberately excluded.
+ */
+export function exportAllData() {
+  return {
+    version:          1,
+    exportedAt:       new Date().toISOString(),
+    syllabi:          load(KEYS.SYLLABI, []),
+    syllabusProgress: load(KEYS.SYLLABUS_PROGRESS, {}),
+    standaloneReaders:load(KEYS.STANDALONE_READERS, []),
+    generatedReaders: load(KEYS.READERS, {}),
+    learnedVocabulary:load(KEYS.VOCABULARY, {}),
+    exportedWords:    load(KEYS.EXPORTED, []),
+  };
 }

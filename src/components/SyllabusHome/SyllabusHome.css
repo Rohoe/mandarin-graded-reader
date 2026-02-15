@@ -271,6 +271,27 @@
   gap: var(--space-2);
 }
 
+.syllabus-home__danger-actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.syllabus-home__archive-btn {
+  align-self: flex-start;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  background: transparent;
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius);
+  transition: background var(--transition);
+}
+
+.syllabus-home__archive-btn:hover {
+  background: var(--color-bg-subtle);
+}
+
 .syllabus-home__delete-btn {
   align-self: flex-start;
   border: 1px solid var(--color-error);

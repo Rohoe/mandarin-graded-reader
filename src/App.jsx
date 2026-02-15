@@ -221,6 +221,12 @@ function AppShell() {
               progress={progress}
               onSelectLesson={handleSelectLesson}
               onDelete={() => handleDeleteSyllabus(activeSyllabusId)}
+              onArchive={() => {
+                act.archiveSyllabus(activeSyllabusId);
+                const nextActive = state.syllabi.find(s => !s.archived && s.id !== activeSyllabusId);
+                setActiveSyllabusId(nextActive?.id || null);
+                setSyllabusView('home');
+              }}
               onExtend={handleExtendSyllabus}
             />
           )

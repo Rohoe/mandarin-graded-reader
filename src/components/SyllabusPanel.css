@@ -301,6 +301,34 @@
   opacity: 1;
 }
 
+.syllabus-panel__archive-btn {
+  flex-shrink: 0;
+  padding: var(--space-2);
+  opacity: 0;
+  transition: opacity var(--transition);
+  color: var(--color-text-subtle);
+  font-size: var(--text-base);
+  line-height: 1;
+}
+
+.syllabus-panel__standalone-item:hover .syllabus-panel__archive-btn {
+  opacity: 1;
+}
+
+.syllabus-panel__archived-item {
+  opacity: 0.65;
+}
+
+.syllabus-panel__archived-item .syllabus-panel__archive-btn,
+.syllabus-panel__archived-item .syllabus-panel__delete-btn {
+  opacity: 0;
+}
+
+.syllabus-panel__archived-item:hover .syllabus-panel__archive-btn,
+.syllabus-panel__archived-item:hover .syllabus-panel__delete-btn {
+  opacity: 1;
+}
+
 /* ── Syllabus home/overview button (in switcher row) ─── */
 .syllabus-panel__home-btn {
   flex-shrink: 0;

@@ -15,6 +15,11 @@ export function actions(dispatch) {
     // Standalone readers
     addStandaloneReader:   meta   => dispatch({ type: 'ADD_STANDALONE_READER', payload: meta }),
     removeStandaloneReader:key    => dispatch({ type: 'REMOVE_STANDALONE_READER', payload: key }),
+    // Archive
+    archiveSyllabus:            id  => dispatch({ type: 'ARCHIVE_SYLLABUS', payload: id }),
+    unarchiveSyllabus:          id  => dispatch({ type: 'UNARCHIVE_SYLLABUS', payload: id }),
+    archiveStandaloneReader:    key => dispatch({ type: 'ARCHIVE_STANDALONE_READER', payload: key }),
+    unarchiveStandaloneReader:  key => dispatch({ type: 'UNARCHIVE_STANDALONE_READER', payload: key }),
     // Reader cache
     setReader:             (k, d) => dispatch({ type: 'SET_READER', payload: { lessonKey: k, data: d } }),
     clearReader:           k      => dispatch({ type: 'CLEAR_READER', payload: k }),
@@ -40,6 +45,8 @@ export function actions(dispatch) {
     // Background generation tracking
     startPendingReader:    key    => dispatch({ type: 'START_PENDING_READER', payload: key }),
     clearPendingReader:    key    => dispatch({ type: 'CLEAR_PENDING_READER', payload: key }),
+    // Backup / restore
+    restoreFromBackup:     data   => dispatch({ type: 'RESTORE_FROM_BACKUP', payload: data }),
     // Cloud sync
     setCloudUser:          user   => dispatch({ type: 'SET_CLOUD_USER', payload: user }),
     setCloudSyncing:       val    => dispatch({ type: 'SET_CLOUD_SYNCING', payload: val }),

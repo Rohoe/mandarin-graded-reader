@@ -15,6 +15,7 @@ import {
   loadAllReaders,
   loadReader,
   saveReader,
+  saveReaderSafe,
   deleteReader,
   clearReaders,
   loadLearnedVocabulary,
@@ -62,13 +63,14 @@ function buildInitialState() {
     syllabi:           normalizeSyllabi(loadSyllabi()),
     syllabusProgress:  loadSyllabusProgress(),
     standaloneReaders: normalizeStandaloneReaders(loadStandaloneReaders()),
-    generatedReaders:  loadAllReaders(),
+    generatedReaders:  {},
     learnedVocabulary: loadLearnedVocabulary(),
     exportedWords:     loadExportedWords(),
     loading:           false,
     loadingMessage:    '',
     error:             null,
     notification:      null,
+    quotaWarning:      false,
     // File storage
     fsInitialized:     false,
     saveFolder:        null,
@@ -97,9 +99,12 @@ const DATA_ACTIONS = new Set([
   'ADD_SYLLABUS', 'EXTEND_SYLLABUS_LESSONS', 'REMOVE_SYLLABUS',
   'SET_LESSON_INDEX', 'MARK_LESSON_COMPLETE', 'UNMARK_LESSON_COMPLETE',
   'ADD_STANDALONE_READER', 'REMOVE_STANDALONE_READER',
+  'ARCHIVE_SYLLABUS', 'UNARCHIVE_SYLLABUS',
+  'ARCHIVE_STANDALONE_READER', 'UNARCHIVE_STANDALONE_READER',
   'SET_READER', 'CLEAR_READER',
   'ADD_VOCABULARY', 'CLEAR_VOCABULARY',
   'ADD_EXPORTED_WORDS', 'CLEAR_EXPORTED_WORDS',
+  'RESTORE_FROM_BACKUP',
 ]);
 
 // ── Reducer ───────────────────────────────────────────────────
@@ -148,7 +153,11 @@ function baseReducer(state, action) {
       const newProgress = { ...state.syllabusProgress };
       delete newProgress[id];
       saveSyllabusProgress(newProgress);
-      // Remove cached readers for this syllabus
+      // Remove cached readers from localStorage (all keys, not just in-memory state)
+      const allReaders = loadAllReaders();
+      Object.keys(allReaders).forEach(k => {
+        if (k.startsWith(`lesson_${id}_`)) deleteReader(k);
+      });
       const newReaders = { ...state.generatedReaders };
       Object.keys(newReaders).forEach(k => {
         if (k.startsWith(`lesson_${id}_`)) delete newReaders[k];
@@ -197,6 +206,7 @@ function baseReducer(state, action) {
       const key = action.payload;
       const newList = state.standaloneReaders.filter(r => r.key !== key);
       saveStandaloneReaders(newList);
+      deleteReader(key);
       const newReaders = { ...state.generatedReaders };
       delete newReaders[key];
       return { ...state, standaloneReaders: newList, generatedReaders: newReaders };
@@ -206,10 +216,11 @@ function baseReducer(state, action) {
 
     case 'SET_READER': {
       const { lessonKey, data } = action.payload;
-      saveReader(lessonKey, data);
+      const { quotaExceeded } = saveReaderSafe(lessonKey, data);
       return {
         ...state,
         generatedReaders: { ...state.generatedReaders, [lessonKey]: data },
+        ...(quotaExceeded ? { quotaWarning: true } : {}),
       };
     }
 
@@ -228,6 +239,69 @@ function baseReducer(state, action) {
       return {
         ...state,
         generatedReaders: { ...state.generatedReaders, [lessonKey]: cached },
+      };
+    }
+
+    case 'SET_QUOTA_WARNING':
+      return { ...state, quotaWarning: action.payload };
+
+    // ── Archive actions ───────────────────────────────────────
+
+    case 'ARCHIVE_SYLLABUS': {
+      const newSyllabi = state.syllabi.map(s =>
+        s.id === action.payload ? { ...s, archived: true } : s
+      );
+      saveSyllabi(newSyllabi);
+      return { ...state, syllabi: newSyllabi };
+    }
+
+    case 'UNARCHIVE_SYLLABUS': {
+      const newSyllabi = state.syllabi.map(s =>
+        s.id === action.payload ? { ...s, archived: false } : s
+      );
+      saveSyllabi(newSyllabi);
+      return { ...state, syllabi: newSyllabi };
+    }
+
+    case 'ARCHIVE_STANDALONE_READER': {
+      const newList = state.standaloneReaders.map(r =>
+        r.key === action.payload ? { ...r, archived: true } : r
+      );
+      saveStandaloneReaders(newList);
+      return { ...state, standaloneReaders: newList };
+    }
+
+    case 'UNARCHIVE_STANDALONE_READER': {
+      const newList = state.standaloneReaders.map(r =>
+        r.key === action.payload ? { ...r, archived: false } : r
+      );
+      saveStandaloneReaders(newList);
+      return { ...state, standaloneReaders: newList };
+    }
+
+    // ── Backup restore ────────────────────────────────────────
+
+    case 'RESTORE_FROM_BACKUP': {
+      const d = action.payload;
+      const restoredSyllabi = normalizeSyllabi(d.syllabi || []);
+      const restoredProgress = d.syllabusProgress || d.syllabus_progress || {};
+      const restoredStandalone = normalizeStandaloneReaders(d.standaloneReaders || d.standalone_readers || []);
+      const restoredReaders = d.generatedReaders || d.generated_readers || {};
+      const restoredVocab = d.learnedVocabulary || d.learned_vocabulary || {};
+      const restoredExported = d.exportedWords || d.exported_words || [];
+      saveSyllabi(restoredSyllabi);
+      saveSyllabusProgress(restoredProgress);
+      saveStandaloneReaders(restoredStandalone);
+      clearReaders();
+      for (const [k, v] of Object.entries(restoredReaders)) saveReader(k, v);
+      return {
+        ...state,
+        syllabi:           restoredSyllabi,
+        syllabusProgress:  restoredProgress,
+        standaloneReaders: restoredStandalone,
+        generatedReaders:  {},
+        learnedVocabulary: restoredVocab,
+        exportedWords:     new Set(Array.isArray(restoredExported) ? restoredExported : Object.keys(restoredExported)),
       };
     }
 
@@ -377,7 +451,7 @@ function baseReducer(state, action) {
         syllabi:           normalizedSyllabi,
         syllabusProgress:  d.syllabus_progress,
         standaloneReaders: normalizedStandalone,
-        generatedReaders:  d.generated_readers,
+        generatedReaders:  {},
         learnedVocabulary: d.learned_vocabulary,
         exportedWords:     new Set(d.exported_words),
       };

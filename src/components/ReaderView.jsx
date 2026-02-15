@@ -16,7 +16,7 @@ import './ReaderView.css';
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
-  const { generatedReaders, learnedVocabulary, error, pendingReaders, apiKey, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, verboseVocab } = state;
+  const { generatedReaders, learnedVocabulary, error, pendingReaders, apiKey, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, verboseVocab, quotaWarning } = state;
   const isPending = !!(lessonKey && pendingReaders[lessonKey]);
 
   const reader = generatedReaders[lessonKey];
@@ -420,6 +420,19 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
 
   return (
     <article className="reader-view fade-in" ref={scrollRef}>
+      {/* Quota warning banner */}
+      {quotaWarning && (
+        <div className="reader-view__quota-warning">
+          <span>Browser storage is full. New readers will not be saved between sessions. Free up space in Settings → Browser Storage.</span>
+          <button
+            className="reader-view__quota-dismiss"
+            onClick={() => dispatch({ type: 'SET_QUOTA_WARNING', payload: false })}
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       {/* Title + controls */}
       <header className="reader-view__header" ref={headerRef}>
         <div className="reader-view__header-text">
