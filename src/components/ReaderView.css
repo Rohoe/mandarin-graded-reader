@@ -247,14 +247,14 @@ rt {
 }
 
 .reader-view__vocab {
-  color: var(--color-accent-hover);
   font-weight: 700;
-  text-decoration: underline;
-  text-decoration-color: var(--color-accent-dim);
-  text-underline-offset: 3px;
 }
 
 .reader-view__vocab--clickable {
+  color: var(--color-accent-hover);
+  text-decoration: underline;
+  text-decoration-color: var(--color-accent-dim);
+  text-underline-offset: 3px;
   cursor: pointer;
   border-radius: var(--radius-sm);
   transition: background var(--transition);
