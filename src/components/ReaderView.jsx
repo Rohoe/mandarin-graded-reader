@@ -56,6 +56,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     return () => obs.disconnect();
   }, [lessonKey]);
 
+  const [readerLength, setReaderLength] = useState(1200);
   const [pinyinOn, setPinyinOn] = useState(false);
   const [activeVocab, setActiveVocab] = useState(null);
   const popoverRef = useRef(null);
@@ -220,7 +221,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     act.startPendingReader(lessonKey);
     act.clearError();
     try {
-      const raw    = await generateReader(apiKey, topic, level, learnedVocabulary, 1200, maxTokens, null, readerLangId);
+      const raw    = await generateReader(apiKey, topic, level, learnedVocabulary, readerLength, maxTokens, null, readerLangId);
       console.log('[ReaderView] raw response (first 500 chars):', raw?.slice(0, 500));
       const parsed = parseReaderResponse(raw, readerLangId);
       console.log('[ReaderView] parsed.questions:', parsed.questions);
@@ -336,6 +337,23 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
               )}
             </>
           )}
+          <div className="reader-view__length-row">
+            <label className="reader-view__length-label" htmlFor="rv-reader-length">
+              Reader Length
+            </label>
+            <span className="reader-view__length-value">~{readerLength} chars</span>
+            <input
+              id="rv-reader-length"
+              type="range"
+              className="reader-view__length-slider"
+              min={300} max={2000} step={100}
+              value={readerLength}
+              onChange={e => setReaderLength(Number(e.target.value))}
+            />
+            <div className="reader-view__length-ticks">
+              <span>Short</span><span>Long</span>
+            </div>
+          </div>
           <button
             className="btn btn-primary btn-lg reader-view__generate-btn"
             onClick={handleGenerate}

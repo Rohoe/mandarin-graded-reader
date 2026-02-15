@@ -181,24 +181,26 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
         </div>
       )}
 
-      <div className="form-group">
-        <div className="topic-form__slider-row">
-          <label className="form-label" htmlFor="reader-length">Reader Length</label>
-          <span className="topic-form__slider-value">~{readerLength} chars</span>
+      {mode === 'standalone' && (
+        <div className="form-group">
+          <div className="topic-form__slider-row">
+            <label className="form-label" htmlFor="reader-length">Reader Length</label>
+            <span className="topic-form__slider-value">~{readerLength} chars</span>
+          </div>
+          <input
+            id="reader-length"
+            type="range"
+            className="topic-form__slider"
+            min={300} max={2000} step={100}
+            value={readerLength}
+            onChange={e => setReaderLength(Number(e.target.value))}
+            disabled={state.loading}
+          />
+          <div className="topic-form__slider-ticks">
+            <span>Short</span><span>Long</span>
+          </div>
         </div>
-        <input
-          id="reader-length"
-          type="range"
-          className="topic-form__slider"
-          min={300} max={2000} step={100}
-          value={readerLength}
-          onChange={e => setReaderLength(Number(e.target.value))}
-          disabled={state.loading}
-        />
-        <div className="topic-form__slider-ticks">
-          <span>Short</span><span>Long</span>
-        </div>
-      </div>
+      )}
 
       <button
         type="submit"

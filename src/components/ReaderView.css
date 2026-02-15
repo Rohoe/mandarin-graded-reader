@@ -47,6 +47,43 @@
   opacity: 1;
 }
 
+/* ── Pre-generate reader length slider ───── */
+.reader-view__length-row {
+  width: 100%;
+  margin-bottom: var(--space-4);
+}
+
+.reader-view__length-label {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-subtle);
+  margin-bottom: var(--space-1);
+}
+
+.reader-view__length-value {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.reader-view__length-slider {
+  width: 100%;
+  accent-color: var(--color-accent);
+}
+
+.reader-view__length-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+  margin-top: var(--space-1);
+}
+
 /* ── Empty / loading / error states ─────── */
 .reader-view--empty,
 .reader-view--loading,
