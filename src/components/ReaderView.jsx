@@ -541,6 +541,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         story={reader.story}
         level={reader.level || lessonMeta?.level || 3}
         langId={langId}
+        renderChars={renderChars}
       />
 
       {/* Vocabulary */}

@@ -25,7 +25,7 @@ function scoreBadgeClass(scoreStr) {
   return 'comprehension__score-badge--poor';
 }
 
-export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId }) {
+export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
   const { apiKey } = state;
@@ -96,7 +96,9 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
               <li key={i} className="comprehension__item">
                 <span className="comprehension__num">{i + 1}.</span>
                 <div className="comprehension__item-body">
-                  <span className="comprehension__text text-chinese">{renderInline(q)}</span>
+                  <span className="comprehension__text text-chinese">
+                  {renderChars ? renderChars(q, `q${i}`) : renderInline(q)}
+                </span>
 
                   {results === null ? (
                     <textarea

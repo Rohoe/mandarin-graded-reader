@@ -149,6 +149,9 @@ src/
                               Calls gradeAnswers() from api.js; persists userAnswers + gradingResults
                               into the reader object via act.setReader(). State initialised from
                               reader.userAnswers / reader.gradingResults so results survive page reload.
+                              Accepts renderChars prop from ReaderView; when set (romanization toggle
+                              is on), question text is rendered with <ruby> romanization annotations
+                              instead of plain renderInline().
     GrammarNotes              Collapsible section showing 3–5 grammar pattern cards per reader.
                               Each card shows: pattern (Chinese), label (English name),
                               explanation, and an example sentence from the story.
