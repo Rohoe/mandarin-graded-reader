@@ -1,5 +1,4 @@
 import { supabase } from './supabase';
-import { loadAllReaders } from './storage';
 
 export async function signInWithGoogle() {
   return supabase.auth.signInWithOAuth({
@@ -19,6 +18,8 @@ export async function signOut() {
   return supabase.auth.signOut();
 }
 
+// Pushes all metadata (syllabi, progress, vocab, etc.) — excludes readers.
+// Readers are pushed individually via pushReaderToCloud when generated.
 export async function pushToCloud(state) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not signed in');
@@ -27,10 +28,27 @@ export async function pushToCloud(state) {
     syllabi:            state.syllabi,
     syllabus_progress:  state.syllabusProgress,
     standalone_readers: state.standaloneReaders,
-    generated_readers:  loadAllReaders(),
     learned_vocabulary: state.learnedVocabulary,
     exported_words:     [...state.exportedWords],
     updated_at:         new Date().toISOString(),
+  });
+  if (error) throw error;
+}
+
+// Merges a single newly-generated reader into the cloud row (read-then-write).
+export async function pushReaderToCloud(lessonKey, readerData) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+  const { data } = await supabase
+    .from('user_data')
+    .select('generated_readers')
+    .eq('user_id', user.id)
+    .single();
+  const existing = data?.generated_readers ?? {};
+  const { error } = await supabase.from('user_data').upsert({
+    user_id:           user.id,
+    generated_readers: { ...existing, [lessonKey]: readerData },
+    updated_at:        new Date().toISOString(),
   });
   if (error) throw error;
 }

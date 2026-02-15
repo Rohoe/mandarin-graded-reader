@@ -8,7 +8,7 @@ import GenerationProgress from './GenerationProgress';
 import './TopicForm.css';
 
 export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStandaloneGenerating, onCancel }) {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, pushGeneratedReader } = useApp();
   const act = actions(dispatch);
 
   const [topic, setTopic]         = useState('');
@@ -68,7 +68,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
     try {
       const raw    = await generateReader(state.apiKey, topicStr, level, state.learnedVocabulary, readerLength, state.maxTokens, null, langId);
       const parsed = parseReaderResponse(raw, langId);
-      act.setReader(lessonKey, { ...parsed, topic: topicStr, level, langId: langId, lessonKey, isStandalone: true });
+      pushGeneratedReader(lessonKey, { ...parsed, topic: topicStr, level, langId: langId, lessonKey, isStandalone: true });
       if (parsed.ankiJson?.length > 0) {
         act.addVocabulary(parsed.ankiJson.map(c => ({
           chinese: c.chinese, korean: c.korean, pinyin: c.pinyin, romanization: c.romanization, english: c.english, langId: langId,

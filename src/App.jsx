@@ -29,7 +29,7 @@ function Notification() {
 // ── App shell ──────────────────────────────────────────────────
 
 function AppShell() {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, pushGeneratedReader } = useApp();
   const act = actions(dispatch);
   const { apiKey, syllabi, syllabusProgress } = state;
 
@@ -149,7 +149,7 @@ function AppShell() {
     try {
       const raw    = await generateReader(state.apiKey, continuationTopic, level, state.learnedVocabulary, 1200, state.maxTokens, story, langId);
       const parsed = parseReaderResponse(raw, langId);
-      act.setReader(newKey, { ...parsed, topic: continuationTopic, level, langId, lessonKey: newKey });
+      pushGeneratedReader(newKey, { ...parsed, topic: continuationTopic, level, langId, lessonKey: newKey });
       if (parsed.ankiJson?.length > 0) {
         act.addVocabulary(parsed.ankiJson.map(c => ({ chinese: c.chinese, korean: c.korean, pinyin: c.pinyin, romanization: c.romanization, english: c.english, langId })));
       }

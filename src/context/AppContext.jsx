@@ -56,7 +56,7 @@ import {
   pickDirectory,
   isSupported,
 } from '../lib/fileStorage';
-import { pushToCloud, pullFromCloud } from '../lib/cloudSync';
+import { pushToCloud, pullFromCloud, pushReaderToCloud } from '../lib/cloudSync';
 
 // ── Initial state ─────────────────────────────────────────────
 
@@ -554,6 +554,16 @@ export function AppProvider({ children }) {
     dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'success', message: 'Save folder removed. Data will only be stored in browser localStorage.' } });
   }
 
+  // Saves a newly-generated reader to local state and immediately pushes it
+  // to cloud (bypassing the debounced auto-push to avoid bundling all readers).
+  function pushGeneratedReader(lessonKey, readerData) {
+    dispatch({ type: 'SET_READER', payload: { lessonKey, data: readerData } });
+    if (stateRef.current.cloudUser) {
+      pushReaderToCloud(lessonKey, readerData)
+        .catch(e => console.warn('[AppContext] Reader push failed:', e.message));
+    }
+  }
+
   // Apply / remove dark theme attribute on <html>
   useEffect(() => {
     if (state.darkMode) {
@@ -624,7 +634,7 @@ export function AppProvider({ children }) {
   }, [state.notification]);
 
   return (
-    <AppContext.Provider value={{ state, dispatch, pickSaveFolder, removeSaveFolder }}>
+    <AppContext.Provider value={{ state, dispatch, pickSaveFolder, removeSaveFolder, pushGeneratedReader }}>
       {children}
     </AppContext.Provider>
   );

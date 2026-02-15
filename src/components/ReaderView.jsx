@@ -14,7 +14,7 @@ import GrammarNotes from './GrammarNotes';
 import './ReaderView.css';
 
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar }) {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, pushGeneratedReader } = useApp();
   const act = actions(dispatch);
   const { generatedReaders, learnedVocabulary, error, pendingReaders, apiKey, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, verboseVocab, quotaWarning } = state;
   const isPending = !!(lessonKey && pendingReaders[lessonKey]);
@@ -226,7 +226,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       const parsed = parseReaderResponse(raw, readerLangId);
       console.log('[ReaderView] parsed.questions:', parsed.questions);
       console.log('[ReaderView] parsed.parseError:', parsed.parseError);
-      act.setReader(lessonKey, { ...parsed, topic, level, langId: readerLangId, lessonKey });
+      pushGeneratedReader(lessonKey, { ...parsed, topic, level, langId: readerLangId, lessonKey });
       if (parsed.ankiJson?.length > 0) {
         act.addVocabulary(parsed.ankiJson.map(c => ({
           chinese: c.chinese, korean: c.korean, pinyin: c.pinyin, romanization: c.romanization, english: c.english, langId: readerLangId,
