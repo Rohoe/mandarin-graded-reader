@@ -1,15 +1,20 @@
-# 漫读 — Feature Roadmap
+# TODO
 
-## Planned features (priority order)
+## Server-side reader generation
 
-- [x] ~~**Text-to-speech** — "Listen" button on stories using the Web Speech API (built into Chrome, zero deps). Also support click-to-hear at the sentence level.~~
+Move Claude API calls from the browser to a backend so that a lost connection after clicking "Generate" doesn't lose the result.
 
-- [x] ~~**Pinyin toggle** — Toggle button that wraps story characters in `<ruby>` tags using `pinyin-pro`. Essential for HSK 1–3 learners.~~
+**Proposed flow:**
+1. Client POSTs `{ apiKey, topic, level, ... }` to a Supabase Edge Function (or Vercel Function)
+2. Edge function calls Claude, parses the response, writes the reader directly to `user_data.generated_readers` in Supabase
+3. Client subscribes to its Supabase row via Realtime and receives the reader as soon as it lands — no polling needed
 
-- [ ] **Click-to-define words in story** — Highlight words that appear in the reader's vocabulary list; click to show a popover with pinyin + definition. Data is already parsed.
+**What needs building:**
+- Edge function (Supabase or Vercel) that accepts generation params and handles the Claude call + parse + DB write
+- Supabase Realtime subscription on the client (replaces waiting on the fetch to resolve)
+- Update `pushGeneratedReader` flow — reader goes cloud-first instead of local-first
 
-- [x] ~~**Dark mode** — Add `data-theme="dark"` to the root element and override the ~8 CSS custom property tokens. Toggle in Settings.~~
-
-- [x] ~~**Grammar notes section** — Add a 6th section to Claude's reader prompt: key grammar patterns used in the story with brief explanations. New component similar to `VocabularyList`. Includes Anki export with `Grammar` tag.~~
-
-- [x] ~~**Story continuation** — "Next episode →" button that passes the previous story to Claude and asks it to continue the narrative. Reuses all existing generation/parsing infrastructure.~~
+**Notes:**
+- API key would transit the network to the edge function (currently stays in localStorage only — not fundamentally less safe, but worth noting)
+- Supabase Edge Functions and Realtime are both available on the free tier
+- Current client-side generation in `src/lib/api.js` (`generateReader`) can be reused or ported to the edge function
