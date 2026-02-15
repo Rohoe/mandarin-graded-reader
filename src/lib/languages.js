@@ -135,7 +135,7 @@ const koConfig = {
 
   getRomanizer: () => import('hangul-romanization').then(m => ({
     romanize: (text) => {
-      const fn = m.romanize || m.default?.romanize || m.default;
+      const fn = m.convert || m.romanize || m.default?.romanize || m.default;
       if (typeof fn === 'function') {
         // Return array of romanizations per character for ruby display
         const result = [];
