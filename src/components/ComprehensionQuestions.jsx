@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
 import { gradeAnswers } from '../lib/api';
@@ -32,9 +32,18 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
 
   const [collapsed, setCollapsed] = useState(false);
   const [answers, setAnswers] = useState(() => reader?.userAnswers ?? {});
+  const [isDirty, setIsDirty] = useState(false);
   const [results, setResults] = useState(() => reader?.gradingResults ?? null);
   const [grading, setGrading] = useState(false);
   const [gradingError, setGradingError] = useState(null);
+
+  // Reset local state when switching to a different reader
+  useEffect(() => {
+    setAnswers(reader?.userAnswers ?? {});
+    setIsDirty(false);
+    setResults(reader?.gradingResults ?? null);
+    setGradingError(null);
+  }, [lessonKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!questions || questions.length === 0) {
     return (
@@ -49,8 +58,25 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
 
   const hasAnyAnswer = questions.some((_, i) => (answers[i] || '').trim().length > 0);
 
+  function handleAnswerChange(i, val) {
+    const next = { ...answers, [i]: val };
+    setAnswers(next);
+    const savedAnswers = reader?.userAnswers ?? {};
+    const dirty = questions.some((_, idx) => (next[idx] ?? '') !== (savedAnswers[idx] ?? ''));
+    setIsDirty(dirty);
+  }
+
+  function handleSaveDraft() {
+    if (!lessonKey) return;
+    act.setReader(lessonKey, { ...reader, userAnswers: answers });
+    setIsDirty(false);
+  }
+
   async function handleGrade() {
     if (!story) { setGradingError('Story text unavailable.'); return; }
+    // Implicitly save draft before grading
+    if (lessonKey) act.setReader(lessonKey, { ...reader, userAnswers: answers });
+    setIsDirty(false);
     setGrading(true);
     setGradingError(null);
     try {
@@ -105,7 +131,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                       className="comprehension__answer"
                       placeholder="Type your answer here…"
                       value={answers[i] || ''}
-                      onChange={e => setAnswers(prev => ({ ...prev, [i]: e.target.value }))}
+                      onChange={e => handleAnswerChange(i, e.target.value)}
                       disabled={grading}
                     />
                   ) : (
@@ -153,6 +179,15 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                 <p className="comprehension__error">{gradingError}</p>
               )}
               <div className="comprehension__actions">
+                {isDirty && (
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={handleSaveDraft}
+                    disabled={grading}
+                  >
+                    Save Draft
+                  </button>
+                )}
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={handleGrade}

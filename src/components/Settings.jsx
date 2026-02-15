@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
 import { getStorageUsage, loadAllReaders, exportAllData } from '../lib/storage';
 import { parseReaderResponse } from '../lib/parser';
-import { signInWithGoogle, signInWithApple, signOut, pushToCloud, pullFromCloud } from '../lib/cloudSync';
+import { signInWithGoogle, signInWithApple, signOut, pushToCloud } from '../lib/cloudSync';
 import './Settings.css';
 
 export default function Settings({ onClose }) {
@@ -13,7 +13,6 @@ export default function Settings({ onClose }) {
   const [newKey, setNewKey]           = useState('');
   const [showKey, setShowKey]         = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
-  const [confirmPull, setConfirmPull] = useState(false);
   const [confirmRestore, setConfirmRestore] = useState(false);
   const [restoreError, setRestoreError] = useState(null);
   const [chineseVoices, setChineseVoices] = useState([]);
@@ -114,31 +113,14 @@ export default function Settings({ onClose }) {
     e.target.value = '';
   }
 
-  async function handlePush() {
+  async function handleSyncNow() {
     act.setCloudSyncing(true);
     try {
       await pushToCloud(state);
       act.setCloudLastSynced(Date.now());
-      act.notify('success', 'Data pushed to cloud.');
+      act.notify('success', 'Synced to cloud.');
     } catch (e) {
-      act.notify('error', `Push failed: ${e.message}`);
-    } finally {
-      act.setCloudSyncing(false);
-    }
-  }
-
-  async function handlePull() {
-    if (!confirmPull) { setConfirmPull(true); return; }
-    setConfirmPull(false);
-    act.setCloudSyncing(true);
-    try {
-      const data = await pullFromCloud();
-      if (!data) { act.notify('error', 'No cloud data found. Push from another device first.'); return; }
-      dispatch({ type: 'HYDRATE_FROM_CLOUD', payload: data });
-      act.setCloudLastSynced(Date.now());
-      act.notify('success', 'Data pulled from cloud.');
-    } catch (e) {
-      act.notify('error', `Pull failed: ${e.message}`);
+      act.notify('error', `Sync failed: ${e.message}`);
     } finally {
       act.setCloudSyncing(false);
     }
@@ -219,31 +201,14 @@ export default function Settings({ onClose }) {
                   Sign out
                 </button>
               </div>
-              <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', marginTop: 'var(--space-3)' }}>
+              <div style={{ marginTop: 'var(--space-3)' }}>
                 <button
                   className="btn btn-secondary btn-sm"
-                  onClick={handlePush}
+                  onClick={handleSyncNow}
                   disabled={state.cloudSyncing}
                 >
-                  {state.cloudSyncing ? 'Syncing…' : 'Push to cloud ↑'}
+                  {state.cloudSyncing ? 'Syncing…' : 'Sync now'}
                 </button>
-                <button
-                  className="btn btn-sm"
-                  onClick={handlePull}
-                  disabled={state.cloudSyncing}
-                  style={confirmPull ? {
-                    background: 'var(--color-error-light)',
-                    color: 'var(--color-error)',
-                    border: '1px solid var(--color-error)',
-                  } : { background: 'transparent', color: 'var(--color-text-muted)' }}
-                >
-                  {confirmPull ? 'This will replace local data — confirm?' : 'Pull from cloud ↓'}
-                </button>
-                {confirmPull && (
-                  <button className="btn btn-ghost btn-sm" onClick={() => setConfirmPull(false)}>
-                    Cancel
-                  </button>
-                )}
               </div>
             </>
           ) : (

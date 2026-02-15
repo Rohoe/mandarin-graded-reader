@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useReducer, useEffect } from 'react';
+import { createContext, useReducer, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { normalizeSyllabi, normalizeStandaloneReaders } from '../lib/vocabNormalizer';
 import {
@@ -44,6 +44,8 @@ import {
   saveCloudLastSynced,
   loadVerboseVocab,
   saveVerboseVocab,
+  loadLastModified,
+  saveLastModified,
 } from '../lib/storage';
 import {
   loadDirectoryHandle,
@@ -54,6 +56,7 @@ import {
   pickDirectory,
   isSupported,
 } from '../lib/fileStorage';
+import { pushToCloud, pullFromCloud } from '../lib/cloudSync';
 
 // ── Initial state ─────────────────────────────────────────────
 
@@ -90,7 +93,7 @@ function buildInitialState() {
     cloudUser:         null,
     cloudSyncing:      false,
     cloudLastSynced:   loadCloudLastSynced(),
-    lastModified:      Date.now(),
+    lastModified:      loadLastModified() ?? Date.now(),
   };
 }
 
@@ -441,11 +444,13 @@ function baseReducer(state, action) {
       const d = action.payload;
       const normalizedSyllabi = normalizeSyllabi(d.syllabi);
       const normalizedStandalone = normalizeStandaloneReaders(d.standalone_readers);
+      const cloudTs = d.updated_at ? new Date(d.updated_at).getTime() : Date.now();
       // Mirror to localStorage
       saveSyllabi(normalizedSyllabi);
       saveSyllabusProgress(d.syllabus_progress);
       saveStandaloneReaders(normalizedStandalone);
       for (const [k, v] of Object.entries(d.generated_readers)) saveReader(k, v);
+      saveLastModified(cloudTs);
       return {
         ...state,
         syllabi:           normalizedSyllabi,
@@ -454,6 +459,7 @@ function baseReducer(state, action) {
         generatedReaders:  {},
         learnedVocabulary: d.learned_vocabulary,
         exportedWords:     new Set(d.exported_words),
+        lastModified:      cloudTs,
       };
     }
 
@@ -476,6 +482,9 @@ export const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, null, buildInitialState);
+  const stateRef = useRef(state);
+  const startupSyncDoneRef = useRef(false);
+  useEffect(() => { stateRef.current = state; }, [state]);
 
   // ── Async file storage initialisation (runs once on mount) ──
   useEffect(() => {
@@ -553,6 +562,59 @@ export function AppProvider({ children }) {
       document.documentElement.removeAttribute('data-theme');
     }
   }, [state.darkMode]);
+
+  // Persist lastModified to localStorage whenever it changes
+  useEffect(() => {
+    saveLastModified(state.lastModified);
+  }, [state.lastModified]);
+
+  // Startup sync: runs once when both cloudUser and fsInitialized are ready
+  useEffect(() => {
+    if (!state.cloudUser || !state.fsInitialized || startupSyncDoneRef.current) return;
+
+    async function doStartupSync() {
+      dispatch({ type: 'SET_CLOUD_SYNCING', payload: true });
+      try {
+        const data = await pullFromCloud();
+        if (data) {
+          const cloudTs = new Date(data.updated_at).getTime();
+          if (cloudTs > stateRef.current.lastModified) {
+            dispatch({ type: 'HYDRATE_FROM_CLOUD', payload: data });
+            dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: cloudTs });
+            dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'success', message: 'Synced from cloud.' } });
+          } else if (stateRef.current.lastModified > cloudTs + 1000) {
+            await pushToCloud(stateRef.current);
+            dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: Date.now() });
+          }
+        } else {
+          // No cloud data yet — upload local as initial backup
+          await pushToCloud(stateRef.current);
+          dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: Date.now() });
+        }
+      } catch (e) {
+        console.warn('[AppContext] Startup sync failed:', e.message);
+      } finally {
+        dispatch({ type: 'SET_CLOUD_SYNCING', payload: false });
+        startupSyncDoneRef.current = true;
+      }
+    }
+
+    doStartupSync();
+  }, [state.cloudUser, state.fsInitialized]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Debounced auto-push: 3s after any data change, once startup sync is done
+  useEffect(() => {
+    if (!state.cloudUser || !startupSyncDoneRef.current) return;
+    const timer = setTimeout(async () => {
+      try {
+        await pushToCloud(stateRef.current);
+        dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: Date.now() });
+      } catch (e) {
+        console.warn('[AppContext] Auto-sync failed:', e.message);
+      }
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [state.lastModified]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-clear notifications after 5 s
   useEffect(() => {

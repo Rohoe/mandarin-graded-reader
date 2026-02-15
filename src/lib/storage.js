@@ -374,6 +374,16 @@ export function saveCloudLastSynced(ts) {
   save(KEYS.CLOUD_LAST_SYNCED, ts);
 }
 
+// ── Last-modified timestamp ───────────────────────────────────
+
+export function loadLastModified() {
+  return load('gradedReader_lastModified', null);
+}
+
+export function saveLastModified(ts) {
+  save('gradedReader_lastModified', ts);
+}
+
 // ── Last session (restore on reload) ─────────────────────────
 
 const SESSION_KEY = 'gradedReader_lastSession';
