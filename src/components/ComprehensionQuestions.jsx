@@ -4,6 +4,20 @@ import { actions } from '../context/actions';
 import { gradeAnswers } from '../lib/api';
 import './ComprehensionQuestions.css';
 
+function renderInline(text) {
+  if (!text) return null;
+  const pattern = /(\*\*([^*]+)\*\*|\*([^*]+)\*|[^*]+)/g;
+  const parts = [];
+  let m;
+  let i = 0;
+  while ((m = pattern.exec(text)) !== null) {
+    if (m[2] !== undefined)      parts.push(<strong key={i++}>{m[2]}</strong>);
+    else if (m[3] !== undefined) parts.push(<em key={i++}>{m[3]}</em>);
+    else                         parts.push(<span key={i++}>{m[0]}</span>);
+  }
+  return parts;
+}
+
 function scoreBadgeClass(scoreStr) {
   const num = parseInt(scoreStr, 10);
   if (num >= 4) return 'comprehension__score-badge--good';
@@ -82,7 +96,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
               <li key={i} className="comprehension__item">
                 <span className="comprehension__num">{i + 1}.</span>
                 <div className="comprehension__item-body">
-                  <span className="comprehension__text text-chinese">{q}</span>
+                  <span className="comprehension__text text-chinese">{renderInline(q)}</span>
 
                   {results === null ? (
                     <textarea

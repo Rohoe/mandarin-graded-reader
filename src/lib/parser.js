@@ -165,15 +165,15 @@ function parseVocabularySection(text, scriptRegex) {
   function pushItem(chinese, pinyin, english, afterText) {
     if (seen.has(chinese)) return;
     seen.add(chinese);
-    const examples = extractExamples(afterText, scriptRegex);
+    const { examples, usageNotes } = extractExamples(afterText, scriptRegex);
     items.push({
       chinese,
       pinyin,
       english,
       exampleStory:   examples[0] || '',
       exampleExtra:   examples[1] || '',
-      usageNoteStory: '',
-      usageNoteExtra: '',
+      usageNoteStory: usageNotes[0] || '',
+      usageNoteExtra: usageNotes[1] || '',
     });
   }
 
@@ -206,6 +206,7 @@ function parseVocabularySection(text, scriptRegex) {
 function extractExamples(text, scriptRegex) {
   const lines = text.split('\n');
   const examples = [];
+  const usageNotes = [];
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -214,13 +215,20 @@ function extractExamples(text, scriptRegex) {
     if (/^\*\*/.test(trimmed) || /^\d+\./.test(trimmed)) break;
     // Skip sub-headers
     if (/^#{1,4}/.test(trimmed)) break;
-    // Only collect lines that contain target script characters — skip English usage notes
+    // Detect usage note lines: start with italic marker (*text*) after optional bullet
+    const stripped = trimmed.replace(/^[-•]\s*/, '');
+    if (/^\*[^*]/.test(stripped) && /\*\s*$/.test(stripped)) {
+      // This is a usage note (italic line), attach to the last example
+      usageNotes.push(stripped.replace(/^\*\s*/, '').replace(/\s*\*$/, ''));
+      continue;
+    }
+    // Only collect lines that contain target script characters — skip English-only lines
     if (!scriptRegex.test(trimmed)) continue;
-    if (examples.length < 2) examples.push(trimmed.replace(/^[-•]\s*/, ''));
+    if (examples.length < 2) examples.push(stripped);
     else break;
   }
 
-  return examples;
+  return { examples, usageNotes };
 }
 
 // ── Comprehension question parser ─────────────────────────────
