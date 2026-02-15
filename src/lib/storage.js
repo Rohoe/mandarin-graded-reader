@@ -374,6 +374,19 @@ export function saveCloudLastSynced(ts) {
   save(KEYS.CLOUD_LAST_SYNCED, ts);
 }
 
+// ── Last session (restore on reload) ─────────────────────────
+
+const SESSION_KEY = 'gradedReader_lastSession';
+
+export function loadLastSession() {
+  return load(SESSION_KEY, null);
+}
+
+export function saveLastSession(session) {
+  // session: { syllabusId, syllabusView, standaloneKey }
+  save(SESSION_KEY, session);
+}
+
 // ── Storage usage estimate ────────────────────────────────────
 
 export function getStorageUsage() {

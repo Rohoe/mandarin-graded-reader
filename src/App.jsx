@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { actions } from './context/actions';
 import { generateReader, extendSyllabus } from './lib/api';
+import { loadLastSession, saveLastSession } from './lib/storage';
 import { parseReaderResponse } from './lib/parser';
 import ApiKeySetup from './components/ApiKeySetup';
 import SyllabusPanel from './components/SyllabusPanel';
@@ -34,9 +35,27 @@ function AppShell() {
 
   const [showSettings, setShowSettings]     = useState(false);
   const [sidebarOpen,  setSidebarOpen]      = useState(false);
-  const [standaloneKey, setStandaloneKey]   = useState(null);
-  const [activeSyllabusId, setActiveSyllabusId] = useState(() => syllabi[0]?.id || null);
-  const [syllabusView, setSyllabusView]     = useState('home'); // 'home' | 'lesson'
+
+  // Restore last session, falling back to first non-archived syllabus
+  const [activeSyllabusId, setActiveSyllabusId] = useState(() => {
+    const session  = loadLastSession();
+    const nonArch  = syllabi.filter(s => !s.archived);
+    const fromSession = session?.syllabusId && nonArch.find(s => s.id === session.syllabusId);
+    return fromSession ? session.syllabusId : (nonArch[0]?.id || null);
+  });
+  const [syllabusView, setSyllabusView] = useState(() => {
+    const session = loadLastSession();
+    return session?.syllabusView || 'home';
+  });
+  const [standaloneKey, setStandaloneKey] = useState(() => {
+    const session = loadLastSession();
+    return session?.standaloneKey || null;
+  });
+
+  // Persist session whenever navigation state changes
+  useEffect(() => {
+    saveLastSession({ syllabusId: activeSyllabusId, syllabusView, standaloneKey });
+  }, [activeSyllabusId, syllabusView, standaloneKey]);
 
   // Lock body scroll when mobile sidebar is open
   useEffect(() => {
@@ -44,10 +63,11 @@ function AppShell() {
     return () => { document.body.style.overflow = ''; };
   }, [sidebarOpen]);
 
-  // Keep activeSyllabusId valid if the active syllabus is removed
+  // Keep activeSyllabusId valid if the active syllabus is removed or archived
   useEffect(() => {
-    if (activeSyllabusId && !syllabi.find(s => s.id === activeSyllabusId)) {
-      setActiveSyllabusId(syllabi[0]?.id || null);
+    const nonArch = syllabi.filter(s => !s.archived);
+    if (activeSyllabusId && !nonArch.find(s => s.id === activeSyllabusId)) {
+      setActiveSyllabusId(nonArch[0]?.id || null);
       setSyllabusView('home');
     }
   }, [syllabi, activeSyllabusId]);
