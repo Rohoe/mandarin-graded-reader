@@ -12,7 +12,7 @@ import GenerationProgress from './GenerationProgress';
 import GrammarNotes from './GrammarNotes';
 import './ReaderView.css';
 
-export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory }) {
+export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
   const { generatedReaders, learnedVocabulary, error, pendingReaders, apiKey, maxTokens, ttsVoiceURI } = state;
@@ -205,8 +205,14 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         <div className="reader-view__empty-state">
           <span className="reader-view__empty-hanzi">读</span>
           <p className="font-display reader-view__empty-text">
-            Select a lesson from the syllabus, or generate a standalone reader using the form on the left.
+            Select a lesson from the syllabus, or generate a standalone reader.
           </p>
+          <button
+            className="btn btn-primary reader-view__empty-open-menu"
+            onClick={onOpenSidebar}
+          >
+            ☰ Open menu
+          </button>
         </div>
       </div>
     );

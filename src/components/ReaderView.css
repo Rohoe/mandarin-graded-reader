@@ -42,6 +42,16 @@
   line-height: var(--leading-relaxed);
 }
 
+.reader-view__empty-open-menu {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .reader-view__empty-open-menu {
+    display: inline-flex;
+  }
+}
+
 /* ── Pre-generate card ───────────────────── */
 .reader-view__pregenerate {
   width: 100%;

@@ -183,7 +183,7 @@ function AppShell() {
         >
           ☰
         </button>
-        <span className="app-mobile-title font-display">读书 Graded Reader</span>
+        <span className="app-mobile-title font-display">漫读 Mandu</span>
         <button className="btn btn-ghost btn-sm" onClick={() => setShowSettings(true)} aria-label="Settings">
           ⚙
         </button>
@@ -233,6 +233,7 @@ function AppShell() {
               onUnmarkComplete={handleUnmarkComplete}
               isCompleted={completedSet.has(lessonIndex)}
               onContinueStory={handleContinueStory}
+              onOpenSidebar={() => setSidebarOpen(true)}
             />
           )
         }

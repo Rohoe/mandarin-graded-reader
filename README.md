@@ -1,4 +1,4 @@
-# 读书 Mandarin Graded Reader
+# 漫读 Mandu — Mandarin Graded Reader
 
 A single-page web app for generating Mandarin Chinese graded readers using Claude AI. Designed for HSK learners who want personalised reading practice with vocabulary tracking and Anki export.
 

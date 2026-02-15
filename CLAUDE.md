@@ -88,6 +88,9 @@ src/
                               calls onExtend(additionalCount). Shows a fixed LoadingIndicator
                               overlay while state.loading is true.
     ReaderView                Main content area; empty/pre-generate/error/reading states.
+                              Empty state shows an "☰ Open menu" button (mobile-only, hidden
+                              on desktop via CSS) that calls onOpenSidebar prop to open the
+                              sidebar — the only way to access content creation on mobile.
                               Section order: story → comprehension questions → vocabulary
                               → grammar notes → Anki export.
                               "Next episode →" button at the bottom calls onContinueStory with
