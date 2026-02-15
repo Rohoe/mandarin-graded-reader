@@ -421,6 +421,26 @@
 
 .syllabus-panel__sync-label--off {
   color: var(--color-text-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.syllabus-panel__sign-in-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.7rem;
+  color: var(--color-accent);
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.syllabus-panel__sign-in-link:hover {
+  opacity: 0.75;
 }
 
 /* ── Mobile ─────────────────────────────── */

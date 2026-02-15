@@ -101,7 +101,8 @@ src/
                               Footer shows cloud sync status: ☁ icon + label indicating
                               "Not signed in", "Synced", "Unsynced", "Syncing…", or
                               "Not yet synced". Dirty detection compares lastModified
-                              vs cloudLastSynced timestamps.
+                              vs cloudLastSynced timestamps. When not signed in, a
+                              "Sign in" link appears below the label and opens Settings.
     SyllabusHome              Overview page for a syllabus (shown when syllabusView='home').
                               Displays: topic, HSK badge, date, AI-generated summary, lesson
                               list with completion status and Start/Review CTAs, Continue

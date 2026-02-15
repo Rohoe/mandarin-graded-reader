@@ -251,7 +251,10 @@ export default function SyllabusPanel({
           ) : (
             <>
               <span className="syllabus-panel__sync-icon syllabus-panel__sync-icon--off" title="Not signed in">☁</span>
-              <span className="syllabus-panel__sync-label syllabus-panel__sync-label--off">Not signed in</span>
+              <span className="syllabus-panel__sync-label syllabus-panel__sync-label--off">
+                Not signed in
+                <button className="syllabus-panel__sign-in-link" onClick={onShowSettings}>Sign in</button>
+              </span>
             </>
           )}
         </div>
