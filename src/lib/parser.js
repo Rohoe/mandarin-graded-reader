@@ -111,17 +111,32 @@ export function parseReaderResponse(rawText) {
         usageNoteExtra: card.usage_note_extra || '',
       }));
     } else if (result.vocabulary.length > 0 && result.ankiJson.length > 0) {
-      // Enrich vocabulary items with usage notes from the Anki JSON block
+      // Enrich vocabulary items with usage notes + fill missing pinyin from the Anki JSON block
       const ankiByWord = new Map(result.ankiJson.map(c => [c.chinese, c]));
-      result.vocabulary = result.vocabulary.map(word => {
+      const enriched = result.vocabulary.map(word => {
         const card = ankiByWord.get(word.chinese);
         if (!card) return word;
         return {
           ...word,
+          pinyin:         word.pinyin || card.pinyin,
           usageNoteStory: card.usage_note_story || word.usageNoteStory,
           usageNoteExtra: card.usage_note_extra || word.usageNoteExtra,
         };
       });
+      // Append any words present in ankiJson but absent from the vocabulary section
+      const vocabChinese = new Set(enriched.map(v => v.chinese));
+      const missing = result.ankiJson
+        .filter(card => !vocabChinese.has(card.chinese))
+        .map(card => ({
+          chinese:        card.chinese,
+          pinyin:         card.pinyin,
+          english:        card.english,
+          exampleStory:   card.example_story || '',
+          exampleExtra:   card.example_extra || '',
+          usageNoteStory: card.usage_note_story || '',
+          usageNoteExtra: card.usage_note_extra || '',
+        }));
+      result.vocabulary = missing.length > 0 ? [...enriched, ...missing] : enriched;
     }
   } catch (err) {
     result.parseError = err.message;
@@ -134,22 +149,13 @@ export function parseReaderResponse(rawText) {
 
 function parseVocabularySection(text) {
   const items = [];
+  const seen  = new Set();
   if (!text) return items;
 
-  // Split by numbered items or bold word markers
-  // Pattern: **word** (pinyin) - definition
-  const wordPattern = /\*\*([^*]+)\*\*\s*\(([^)]+)\)\s*[-–—]\s*([^\n]+)/g;
-  let match;
-
-  while ((match = wordPattern.exec(text)) !== null) {
-    const chinese = match[1].trim();
-    const pinyin  = match[2].trim();
-    const english = match[3].trim();
-
-    // Try to extract the two example sentences that follow this entry
-    const afterWord = text.slice(match.index + match[0].length);
-    const examples  = extractExamples(afterWord);
-
+  function pushItem(chinese, pinyin, english, afterText) {
+    if (seen.has(chinese)) return;
+    seen.add(chinese);
+    const examples = extractExamples(afterText);
     items.push({
       chinese,
       pinyin,
@@ -159,6 +165,29 @@ function parseVocabularySection(text) {
       usageNoteStory: '',
       usageNoteExtra: '',
     });
+  }
+
+  // Pattern A: **word** (pinyin) — definition  [() or [], any dash/colon separator]
+  const patternA = /\*\*([^*\n]+)\*\*\s*[(\[]([^)\]\n]{1,40})[)\]]\s*[-–—:]\s*([^\n]+)/g;
+  let match;
+  while ((match = patternA.exec(text)) !== null) {
+    pushItem(
+      match[1].trim(),
+      match[2].trim(),
+      match[3].trim(),
+      text.slice(match.index + match[0].length),
+    );
+  }
+
+  // Pattern B: **word** — definition  (no pinyin brackets; pinyin filled later from ankiJson)
+  const patternB = /\*\*([^*\n]+)\*\*\s*[-–—]\s*([^\n*[({]+)/g;
+  while ((match = patternB.exec(text)) !== null) {
+    pushItem(
+      match[1].trim(),
+      '',
+      match[2].trim(),
+      text.slice(match.index + match[0].length),
+    );
   }
 
   return items;
