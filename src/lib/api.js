@@ -181,6 +181,31 @@ Return ONLY valid JSON — no explanation, no markdown fences:
 Score 1–5: 5=fully correct, 4=mostly correct, 3=partial, 2=mostly wrong, 1=incorrect/blank.
 Overall score = sum / (questions × 5).`;
 
+// Escape literal control characters inside JSON string values so JSON.parse
+// doesn't choke on responses like: "feedback": "Good.\nAlso try harder."
+function repairJSON(str) {
+  let result = '';
+  let inString = false;
+  let escaped = false;
+  for (const char of str) {
+    if (escaped) {
+      result += char;
+      escaped = false;
+    } else if (char === '\\' && inString) {
+      result += char;
+      escaped = true;
+    } else if (char === '"') {
+      result += char;
+      inString = !inString;
+    } else if (inString && (char === '\n' || char === '\r' || char === '\t')) {
+      result += char === '\n' ? '\\n' : char === '\r' ? '\\r' : '\\t';
+    } else {
+      result += char;
+    }
+  }
+  return result;
+}
+
 export async function gradeAnswers(apiKey, questions, userAnswers, story, level, maxTokens = 2048) {
   const system = GRADING_SYSTEM.replace('{level}', level);
   const answersBlock = questions
@@ -188,10 +213,11 @@ export async function gradeAnswers(apiKey, questions, userAnswers, story, level,
     .join('\n\n');
   const userMessage = `Story (for reference):\n${story}\n\n---\n\nQuestions and Student Answers:\n${answersBlock}`;
   const raw = await callClaude(apiKey, system, userMessage, maxTokens);
+  const cleaned = repairJSON(raw.trim());
   try {
-    return JSON.parse(raw.trim());
+    return JSON.parse(cleaned);
   } catch {
-    const match = raw.match(/\{[\s\S]*\}/);
+    const match = cleaned.match(/\{[\s\S]*\}/);
     if (match) return JSON.parse(match[0]);
     throw new Error('Grading response could not be parsed. Please try again.');
   }
