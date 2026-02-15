@@ -148,9 +148,18 @@ export default function Settings({ onClose }) {
           <h3 className="settings-section__title form-label">Cloud Sync</h3>
           {state.cloudUser ? (
             <>
-              <p className="settings-section__desc text-muted">
-                Signed in as <strong>{state.cloudUser.email || state.cloudUser.user_metadata?.full_name || state.cloudUser.id}</strong>
-              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <p className="settings-section__desc text-muted" style={{ margin: 0 }}>
+                  Signed in as <strong>{state.cloudUser.email || state.cloudUser.user_metadata?.full_name || state.cloudUser.id}</strong>
+                </p>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}
+                  onClick={() => signOut()}
+                >
+                  Sign out
+                </button>
+              </div>
               <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', marginTop: 'var(--space-3)' }}>
                 <button
                   className="btn btn-secondary btn-sm"
@@ -177,13 +186,6 @@ export default function Settings({ onClose }) {
                   </button>
                 )}
               </div>
-              <button
-                className="btn btn-ghost btn-sm"
-                style={{ marginTop: 'var(--space-3)', color: 'var(--color-text-muted)' }}
-                onClick={() => signOut()}
-              >
-                Sign out
-              </button>
             </>
           ) : (
             <>
