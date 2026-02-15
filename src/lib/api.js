@@ -164,14 +164,13 @@ The student is studying Mandarin at HSK level {level}.
 Evaluate each answer for accuracy and completeness. Be encouraging but honest.
 The student may answer in English or Chinese.
 
-Return ONLY valid JSON — no explanation, no markdown fences:
+Return ONLY valid JSON — no explanation, no markdown fences.
+Do NOT echo the question or answer text back. Use only ASCII characters in keys.
 {
   "overallScore": "X/Y",
   "overallFeedback": "1-2 sentences of general feedback.",
   "feedback": [
     {
-      "question": "original question",
-      "userAnswer": "student's answer",
       "score": "X/5",
       "feedback": "Specific feedback."
     }
@@ -225,18 +224,18 @@ export async function gradeAnswers(apiKey, questions, userAnswers, story, level,
     .join('\n\n');
   const userMessage = `Story (for reference):\n${story}\n\n---\n\nQuestions and Student Answers:\n${answersBlock}`;
   const raw = await callClaude(apiKey, system, userMessage, maxTokens);
-  console.debug('[gradeAnswers] raw response:', raw);
+  console.log('[gradeAnswers] raw response:', raw);
   const cleaned = repairJSON(raw.trim());
   try {
     return JSON.parse(cleaned);
   } catch (e1) {
-    console.debug('[gradeAnswers] first parse failed:', e1.message, '\ncleaned:', cleaned);
+    console.log('[gradeAnswers] first parse failed:', e1.message, '\ncleaned:', cleaned);
     const match = cleaned.match(/\{[\s\S]*\}/);
     if (match) {
       try {
         return JSON.parse(match[0]);
       } catch (e2) {
-        console.debug('[gradeAnswers] second parse failed:', e2.message);
+        console.log('[gradeAnswers] second parse failed:', e2.message);
       }
     }
     throw new Error('Grading response could not be parsed. Please try again.');
