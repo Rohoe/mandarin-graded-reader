@@ -10,7 +10,7 @@ A single-page web app for generating Mandarin Chinese graded readers using Claud
 - **Anki Export** — Download flashcard files (.txt) with duplicate prevention; includes both vocabulary cards and grammar pattern cards (tagged `Grammar`)
 - **Offline persistence** — All data stored in `localStorage`; pick up where you left off
 - **Grammar Notes** — Each reader includes 3–5 collapsible grammar pattern cards explaining structures used in the story, with examples
-- **Comprehension grading** — Type answers to comprehension questions and get AI-powered feedback with per-question scores; results persist across sessions
+- **Comprehension grading** — Type answers to comprehension questions and get AI-powered feedback with per-question scores; imperfect answers include a suggested model answer; results persist across sessions
 - **Syllabus home page** — Overview of all lessons with completion badges, a summary, Continue CTA, and delete button with confirmation
 - **Configurable length** — Sliders for syllabus lesson count (2–12) and reader story length (500–2000 characters)
 - **Dark mode** — Toggle in Settings; persists across sessions. Overrides all colour tokens via `[data-theme="dark"]` on the root element

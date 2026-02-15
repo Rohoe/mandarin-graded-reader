@@ -82,6 +82,7 @@
 .comprehension__score-badge--ok   { background: #FFF8E1; color: #e65100; }
 .comprehension__score-badge--poor { background: #FFEBEE; color: #c62828; }
 .comprehension__result-feedback { font-size: var(--text-sm); color: var(--color-text-muted); line-height: var(--leading-relaxed); }
+.comprehension__suggested-answer { font-size: var(--text-sm); color: var(--color-text-muted); line-height: var(--leading-relaxed); margin-top: 0.35rem; padding-top: 0.35rem; border-top: 1px dashed var(--color-border); }
 .comprehension__user-answer { margin-top: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted); font-style: italic; }
 
 /* Overall score panel */

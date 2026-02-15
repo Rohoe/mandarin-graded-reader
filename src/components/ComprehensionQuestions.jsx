@@ -102,9 +102,16 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                           <span className={`comprehension__score-badge ${scoreBadgeClass(results.feedback[i].score)}`}>
                             {results.feedback[i].score}
                           </span>
-                          <p className="comprehension__result-feedback">
-                            {results.feedback[i].feedback}
-                          </p>
+                          <div>
+                            <p className="comprehension__result-feedback">
+                              {results.feedback[i].feedback}
+                            </p>
+                            {results.feedback[i].suggestedAnswer && (
+                              <p className="comprehension__suggested-answer">
+                                <strong>Suggested answer:</strong> {results.feedback[i].suggestedAnswer}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>

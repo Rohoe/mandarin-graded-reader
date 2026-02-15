@@ -109,7 +109,8 @@ src/
     VocabularyList            Collapsible accordion of vocab cards with examples
     ComprehensionQuestions    Collapsible question list with interactive answer input and AI grading.
                               Input mode: textarea per question + "Grade My Answers" button.
-                              Results mode: per-question score badge (1–5) + feedback + overall score panel.
+                              Results mode: per-question score badge (1–5) + feedback + optional
+                              suggested answer (shown when score < 5/5) + overall score panel.
                               Calls gradeAnswers() from api.js; persists userAnswers + gradingResults
                               into the reader object via act.setReader(). State initialised from
                               reader.userAnswers / reader.gradingResults so results survive page reload.
