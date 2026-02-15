@@ -4,7 +4,7 @@ Project context and architecture notes for Claude Code sessions.
 
 ## What this app does
 
-Single-page React + Vite app that generates graded readers in **Mandarin Chinese** and **Korean** using the Anthropic Claude API. Users select a language and proficiency level (HSK 1–6 for Chinese, TOPIK 1–6 for Korean); the app generates structured stories with vocabulary, comprehension questions, and Anki flashcard exports. Chinese and Korean content can coexist side-by-side.
+Single-page React + Vite app that generates graded readers in **Mandarin Chinese**, **Cantonese**, and **Korean** using the Anthropic Claude API. Users select a language and proficiency level (HSK 1–6 for Chinese, YUE 1–6 for Cantonese, TOPIK 1–6 for Korean); the app generates structured stories with vocabulary, comprehension questions, and Anki flashcard exports. All three languages coexist side-by-side.
 
 ## Running the app
 
@@ -38,10 +38,12 @@ src/
                               Each language is a static object defining:
                               proficiency levels, scriptRegex, fonts, TTS config, prompt
                               fragments, decorative chars, romanization loader. Currently
-                              supports 'zh' (Mandarin Chinese) and 'ko' (Korean).
-    romanizer.js              Async romanization loader. Lazy-loads pinyin-pro (Chinese) or
-                              hangul-romanization (Korean) via the language config's
-                              getRomanizer() method. Returns { romanize(text): string[] }.
+                              supports 'zh' (Mandarin Chinese), 'yue' (Cantonese), and
+                              'ko' (Korean).
+    romanizer.js              Async romanization loader. Lazy-loads pinyin-pro (Chinese),
+                              to-jyutping (Cantonese), or hangul-romanization (Korean) via
+                              the language config's getRomanizer() method. Returns
+                              { romanize(text): string[] }.
     vocabNormalizer.js        Migration helpers: normalizeSyllabus() adds langId + title_target
                               to legacy data. normalizeVocabWord() maps chinese/pinyin/english
                               ↔ generic target/romanization/translation fields.
@@ -79,7 +81,7 @@ src/
 
   components/
     ApiKeySetup               First-run screen; validates key starts with "sk-ant-"
-    TopicForm                 Topic input + language selector (pill toggle: 中文 / 한국어)
+    TopicForm                 Topic input + language selector (pill toggle: 中文 / 粵語 / 한국어)
                               + proficiency level pills (read from langConfig). Two modes:
                               syllabus / standalone. Sliders: lesson count (2–12, syllabus
                               mode only) and reader length (500–2000 chars, step 100).
@@ -128,8 +130,9 @@ src/
                               langConfig.tts.priorityVoices.
                               Romanization toggle: uses async romanizer loaded via
                               loadRomanizer(langId). Label from langConfig.romanizationLabel
-                              (拼 for Chinese, Aa for Korean). Wraps chars in <ruby> tags.
-                              renderChars() uses langConfig.scriptRegex for detection.
+                              (拼 for Chinese, 粵 for Cantonese, Aa for Korean). Wraps chars
+                              in <ruby> tags. renderChars() uses langConfig.scriptRegex for
+                              detection.
                               Click-to-define: bold vocab words are clickable (looked up via
                               vocabMap). Click shows a fixed-position popover with romanization
                               + definition. Closes on Escape, outside click, or scroll.
@@ -156,7 +159,8 @@ src/
                               holds at ~97-98% until response arrives and component unmounts
     Settings                  Sections in order: dark mode toggle, cloud sync (sign-in
                               + push/pull), save folder picker, TTS voice selectors
-                              (Chinese + Korean), default HSK level, default TOPIK level,
+                              (Chinese + Korean + Cantonese), default HSK level, default
+                              TOPIK level,
                               API key update, API output tokens slider (4096–16384),
                               storage usage meter, danger zone (clear-all data).
                               Sticky header (title + close button stay visible when scrolling).
@@ -172,9 +176,9 @@ src/
     id:        string,                // "syllabus_<timestamp36>"
     topic:     string,
     level:     number,                // 1–6
-    langId:    string,                // 'zh' | 'ko' (defaults to 'zh' for legacy data)
+    langId:    string,                // 'zh' | 'yue' | 'ko' (defaults to 'zh' for legacy data)
     summary:   string,                // AI-generated 2-3 sentence overview (may be '' for old data)
-    lessons:   Array<{ lesson_number, title_zh|title_ko, title_en, description, vocabulary_focus }>,
+    lessons:   Array<{ lesson_number, title_zh|title_yue|title_ko, title_en, description, vocabulary_focus }>,
     createdAt: number,
   }>,
   syllabusProgress:  {                // per-syllabus progress, keyed by id
@@ -184,7 +188,7 @@ src/
     key:       string,                // "standalone_<timestamp>"
     topic:     string,
     level:     number,
-    langId:    string,                // 'zh' | 'ko'
+    langId:    string,                // 'zh' | 'yue' | 'ko'
     createdAt: number,
   }>,
   generatedReaders:  { [lessonKey]: parsedReaderData },  // in-memory + localStorage + file
@@ -202,6 +206,7 @@ src/
   defaultLevel:      number,          // Default HSK level for TopicForm, default 3
   defaultTopikLevel: number,          // Default TOPIK level for TopicForm, default 2
   ttsKoVoiceURI:     string | null,   // Preferred Korean TTS voice URI, or null
+  ttsYueVoiceURI:    string | null,   // Preferred Cantonese TTS voice URI, or null
   // Background generation (ephemeral, not persisted)
   pendingReaders:    { [lessonKey]: true },  // keys currently being generated
   // File storage
@@ -220,9 +225,9 @@ Lesson keys: `lesson_<syllabusId>_<lessonIndex>` for syllabus lessons, `standalo
 
 ## Multi-language architecture
 
-Language support is implemented via a config registry in `src/lib/languages.js`. Each language config defines: proficiency system (HSK/TOPIK), script detection regex, font stack, TTS config, romanization loader, decorative characters, and prompt fragments. All API calls, the parser, and the Anki exporter accept `langId` as a parameter.
+Language support is implemented via a config registry in `src/lib/languages.js`. Each language config defines: proficiency system (HSK/TOPIK/YUE), script detection regex, font stack, TTS config, romanization loader, decorative characters, and prompt fragments. All API calls, the parser, and the Anki exporter accept `langId` as a parameter.
 
-**Adding a new language:** Add a config object to `languages.js` following the existing `zh`/`ko` shape. Install any romanization library needed. Add font import to `index.css` and a `[data-lang="xx"]` override block.
+**Adding a new language:** Add a config object to `languages.js` following the existing `zh`/`yue`/`ko` shape. Install any romanization library needed. Add font import to `index.css` and a `[data-lang="xx"]` override block.
 
 **Migration:** Legacy data (missing `langId`) is automatically normalized to `langId: 'zh'` at hydration via `vocabNormalizer.js`.
 
@@ -270,9 +275,9 @@ All tokens are CSS custom properties in `src/index.css`:
 | `--leading-chinese` | 1.9 |
 | `--leading-target` | `var(--leading-chinese)` (overridden by `[data-lang]`) |
 
-Fonts loaded from Google Fonts (Noto Serif SC + Noto Serif KR + Cormorant Garamond). Layout: two-column on desktop (280px sidebar + flex main), single column with slide-in sidebar on mobile (≤768px).
+Fonts loaded from Google Fonts (Noto Serif SC + Noto Serif TC + Noto Serif KR + Cormorant Garamond). Layout: two-column on desktop (280px sidebar + flex main), single column with slide-in sidebar on mobile (≤768px).
 
-**Language-specific typography:** `[data-lang="ko"]` on `<html>` overrides `--font-target` to Noto Serif KR and `--leading-target` to 1.8. The attribute is set by `ReaderView` based on the reader's `langId`. CSS classes `.text-target` and `.text-target-title` use these tokens; `.text-chinese` is kept as an alias for backwards compatibility.
+**Language-specific typography:** `[data-lang="ko"]` on `<html>` overrides `--font-target` to Noto Serif KR and `--leading-target` to 1.8. `[data-lang="yue"]` overrides `--font-target` to Noto Serif TC and `--leading-target` to 1.9. The attribute is set by `ReaderView` based on the reader's `langId`. CSS classes `.text-target` and `.text-target-title` use these tokens; `.text-chinese` is kept as an alias for backwards compatibility.
 
 Dark mode is implemented via `[data-theme="dark"]` on `<html>`. The selector overrides all colour tokens plus `.card` and `.form-input` backgrounds (which use hardcoded `#fff` in light mode). Toggled by `state.darkMode` (persisted to `gradedReader_darkMode` in localStorage); a `useEffect` in `AppProvider` applies/removes the attribute.
 

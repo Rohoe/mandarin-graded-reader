@@ -16,6 +16,7 @@ export default function Settings({ onClose }) {
   const [confirmPull, setConfirmPull] = useState(false);
   const [chineseVoices, setChineseVoices] = useState([]);
   const [koreanVoices, setKoreanVoices]   = useState([]);
+  const [cantoneseVoices, setCantoneseVoices] = useState([]);
 
   useEffect(() => {
     if (!('speechSynthesis' in window)) return;
@@ -23,6 +24,7 @@ export default function Settings({ onClose }) {
       const all = window.speechSynthesis.getVoices();
       setChineseVoices(all.filter(v => /zh/i.test(v.lang)));
       setKoreanVoices(all.filter(v => /ko/i.test(v.lang)));
+      setCantoneseVoices(all.filter(v => /zh-HK|yue/i.test(v.lang)));
     }
     loadVoices();
     window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
@@ -35,6 +37,10 @@ export default function Settings({ onClose }) {
 
   function isRecommendedKoVoice(v) {
     return /^Google\s+/i.test(v.name) || /^Yuna$/i.test(v.name);
+  }
+
+  function isRecommendedYueVoice(v) {
+    return /^Google\s+/i.test(v.name) || /^Sin-?ji$/i.test(v.name);
   }
 
   const usage = getStorageUsage();
@@ -242,7 +248,7 @@ export default function Settings({ onClose }) {
         <hr className="divider" />
 
         {/* TTS voices */}
-        {'speechSynthesis' in window && (chineseVoices.length > 0 || koreanVoices.length > 0) && (
+        {'speechSynthesis' in window && (chineseVoices.length > 0 || koreanVoices.length > 0 || cantoneseVoices.length > 0) && (
           <>
             <section className="settings-section">
               <h3 className="settings-section__title form-label">Text-to-Speech Voices</h3>
@@ -296,6 +302,42 @@ export default function Settings({ onClose }) {
                     {(() => {
                       const recommended = koreanVoices.filter(isRecommendedKoVoice);
                       const other = koreanVoices.filter(v => !isRecommendedKoVoice(v));
+                      return (
+                        <>
+                          {recommended.length > 0 && (
+                            <optgroup label="Recommended">
+                              {recommended.map(v => (
+                                <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>
+                              ))}
+                            </optgroup>
+                          )}
+                          {other.length > 0 && (
+                            <optgroup label="Other voices">
+                              {other.map(v => (
+                                <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>
+                              ))}
+                            </optgroup>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </select>
+                </>
+              )}
+              {cantoneseVoices.length > 0 && (
+                <>
+                  <p className="settings-section__desc text-muted" style={{ marginTop: (chineseVoices.length > 0 || koreanVoices.length > 0) ? 'var(--space-4)' : 0 }}>
+                    Cantonese voice used when listening to stories.
+                  </p>
+                  <select
+                    className="form-select"
+                    value={state.ttsYueVoiceURI || ''}
+                    onChange={e => act.setTtsYueVoice(e.target.value)}
+                    style={{ maxWidth: '18rem' }}
+                  >
+                    {(() => {
+                      const recommended = cantoneseVoices.filter(isRecommendedYueVoice);
+                      const other = cantoneseVoices.filter(v => !isRecommendedYueVoice(v));
                       return (
                         <>
                           {recommended.length > 0 && (

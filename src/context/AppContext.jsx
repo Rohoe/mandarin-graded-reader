@@ -37,6 +37,8 @@ import {
   saveTtsVoiceURI,
   loadTtsKoVoiceURI,
   saveTtsKoVoiceURI,
+  loadTtsYueVoiceURI,
+  saveTtsYueVoiceURI,
 } from '../lib/storage';
 import {
   loadDirectoryHandle,
@@ -74,6 +76,7 @@ function buildInitialState() {
     darkMode:          loadDarkMode(),
     ttsVoiceURI:       loadTtsVoiceURI(),
     ttsKoVoiceURI:     loadTtsKoVoiceURI(),
+    ttsYueVoiceURI:    loadTtsYueVoiceURI(),
     // Background generation tracking (ephemeral, not persisted)
     pendingReaders:    {},
     // Cloud sync (ephemeral, not persisted)
@@ -263,6 +266,7 @@ function reducer(state, action) {
         maxTokens:     state.maxTokens,
         defaultLevel:  state.defaultLevel,
         defaultTopikLevel: state.defaultTopikLevel,
+        ttsYueVoiceURI: state.ttsYueVoiceURI,
       };
 
     // ── File storage actions ──────────────────────────────────
@@ -311,6 +315,10 @@ function reducer(state, action) {
     case 'SET_TTS_KO_VOICE':
       saveTtsKoVoiceURI(action.payload);
       return { ...state, ttsKoVoiceURI: action.payload };
+
+    case 'SET_TTS_YUE_VOICE':
+      saveTtsYueVoiceURI(action.payload);
+      return { ...state, ttsYueVoiceURI: action.payload };
 
     case 'START_PENDING_READER':
       return { ...state, pendingReaders: { ...state.pendingReaders, [action.payload]: true } };

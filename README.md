@@ -1,10 +1,10 @@
 # 漫读 — Multi-Language Graded Reader
 
-A single-page web app for generating graded readers in **Mandarin Chinese** and **Korean** using Claude AI. Designed for HSK and TOPIK learners who want personalised reading practice with vocabulary tracking and Anki export.
+A single-page web app for generating graded readers in **Mandarin Chinese**, **Cantonese**, and **Korean** using Claude AI. Designed for HSK, TOPIK, and Cantonese learners who want personalised reading practice with vocabulary tracking and Anki export.
 
 ## Features
 
-- **Multi-language support** — Generate readers in Mandarin Chinese (HSK 1–6) or Korean (TOPIK 1–6). Each syllabus and reader stores its language; Chinese and Korean content coexist side-by-side
+- **Multi-language support** — Generate readers in Mandarin Chinese (HSK 1–6), Cantonese (YUE 1–6, written Cantonese with jyutping), or Korean (TOPIK 1–6). Select a language via the pill toggle in the sidebar form; content in all languages coexists side-by-side
 - **Syllabus Mode** — Generate a course for any topic with proficiency-level selection, an AI-written summary and a dedicated home page showing all lessons and completion status
 - **Graded Reader Generation** — Stories with bolded vocabulary, level-calibrated grammar
 - **Vocabulary Memory** — Tracks learned words across sessions; new readers avoid repeating them
@@ -20,7 +20,7 @@ A single-page web app for generating graded readers in **Mandarin Chinese** and 
 - **Collapsible sidebar sections** — Syllabus lesson list and standalone readers list can be collapsed/expanded via caret buttons in their section headers
 - **Text-to-speech** — 🔊 icon button reads the full story aloud; click any paragraph to hear just that sentence. Separate voice preferences for Chinese and Korean, configurable in Settings. Auto-selects the best available voice for each language (Chinese: Google neural, macOS Tingting/Meijia; Korean: Google, Yuna)
 - **Click-to-define** — Click any bolded vocabulary word in the story to see a popover with romanization and English definition. Toggle off by clicking again, pressing Escape, or clicking elsewhere
-- **Romanization toggle** — 拼 (Chinese) or Aa (Korean) icon button shows romanization above every character using `<ruby>` tags. Powered by `pinyin-pro` for Chinese, `hangul-romanization` for Korean
+- **Romanization toggle** — 拼 (Chinese), 粵 (Cantonese), or Aa (Korean) icon button shows romanization above every character using `<ruby>` tags. Powered by `pinyin-pro` for Chinese, `to-jyutping` for Cantonese, `hangul-romanization` for Korean
 - **Floating reader controls** — Pinyin and TTS icon buttons sit in the article header top-right; when the header scrolls off screen they float as a fixed pill via React portal (bypassing `fadeIn` transform containment)
 - **Disk persistence** — Optionally save all data as JSON files to a folder on your computer (Chrome/Edge only)
 - **Cloud Sync** — Sign in with Google or Apple to push/pull all your data to/from Supabase. Manual sync via explicit Push/Pull buttons in Settings; API key stays local
@@ -133,9 +133,9 @@ Your API key is stored in plain text in `localStorage` and sent directly to Anth
 
 - React 18 + Vite 5
 - No backend required
-- Fonts: Noto Serif SC (Chinese), Noto Serif KR (Korean), Cormorant Garamond (English)
+- Fonts: Noto Serif SC (Chinese), Noto Serif TC (Cantonese), Noto Serif KR (Korean), Cormorant Garamond (English)
 - Zero UI framework dependencies — pure CSS with custom design tokens
-- Language-specific libraries loaded lazily (`pinyin-pro` for Chinese, `hangul-romanization` for Korean)
+- Language-specific libraries loaded lazily (`pinyin-pro` for Chinese, `to-jyutping` for Cantonese, `hangul-romanization` for Korean)
 
 ## Building for production
 

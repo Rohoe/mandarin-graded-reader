@@ -35,6 +35,7 @@ export function actions(dispatch) {
     setDarkMode:           val    => dispatch({ type: 'SET_DARK_MODE', payload: Boolean(val) }),
     setTtsVoice:           uri    => dispatch({ type: 'SET_TTS_VOICE', payload: uri }),
     setTtsKoVoice:         uri    => dispatch({ type: 'SET_TTS_KO_VOICE', payload: uri }),
+    setTtsYueVoice:        uri    => dispatch({ type: 'SET_TTS_YUE_VOICE', payload: uri }),
     // Background generation tracking
     startPendingReader:    key    => dispatch({ type: 'START_PENDING_READER', payload: key }),
     clearPendingReader:    key    => dispatch({ type: 'CLEAR_PENDING_READER', payload: key }),

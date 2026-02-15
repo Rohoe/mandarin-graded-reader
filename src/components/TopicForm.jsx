@@ -35,7 +35,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
         id:        `syllabus_${Date.now().toString(36)}`,
         topic:     topic.trim(),
         level,
-        langId,
+        langId:    langId,
         summary,
         lessons,
         createdAt: Date.now(),
@@ -58,7 +58,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
     const topicStr  = topic.trim();
 
     // Register in sidebar and navigate to the reader view immediately
-    act.addStandaloneReader({ key: lessonKey, topic: topicStr, level, langId, createdAt: Date.now() });
+    act.addStandaloneReader({ key: lessonKey, topic: topicStr, level, langId: langId, createdAt: Date.now() });
     act.startPendingReader(lessonKey);
     act.clearError();
     onStandaloneGenerating?.();
@@ -68,10 +68,10 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
     try {
       const raw    = await generateReader(state.apiKey, topicStr, level, state.learnedVocabulary, readerLength, state.maxTokens, null, langId);
       const parsed = parseReaderResponse(raw, langId);
-      act.setReader(lessonKey, { ...parsed, topic: topicStr, level, langId, lessonKey, isStandalone: true });
+      act.setReader(lessonKey, { ...parsed, topic: topicStr, level, langId: langId, lessonKey, isStandalone: true });
       if (parsed.ankiJson?.length > 0) {
         act.addVocabulary(parsed.ankiJson.map(c => ({
-          chinese: c.chinese, korean: c.korean, pinyin: c.pinyin, romanization: c.romanization, english: c.english, langId,
+          chinese: c.chinese, korean: c.korean, pinyin: c.pinyin, romanization: c.romanization, english: c.english, langId: langId,
         })));
       }
       act.notify('success', `Reader ready: "${topicStr}"`);

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Noto+Serif+TC:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
 
 /* ── Design Tokens ─────────────────────────────────────────── */
 :root {
@@ -305,6 +305,11 @@ a:hover { text-decoration: underline; }
 [data-lang="ko"] {
   --font-target:   'Noto Serif KR', 'Batang', 'Gungsuh', Georgia, serif;
   --leading-target: 1.8;
+}
+
+[data-lang="yue"] {
+  --font-target:   'Noto Serif TC', 'Noto Serif SC', 'PMingLiU', Georgia, serif;
+  --leading-target: 1.9;
 }
 
 /* ── Target Language Text ──────────────────────────────────── */

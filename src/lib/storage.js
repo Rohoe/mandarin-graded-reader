@@ -40,6 +40,7 @@ const KEYS = {
   DARK_MODE:          'gradedReader_darkMode',
   TTS_VOICE_URI:      'gradedReader_ttsVoiceURI',
   TTS_KO_VOICE_URI:   'gradedReader_ttsKoVoiceURI',
+  TTS_YUE_VOICE_URI:  'gradedReader_ttsYueVoiceURI',
 };
 
 // ── Generic localStorage helpers ──────────────────────────────
@@ -315,6 +316,16 @@ export function loadTtsKoVoiceURI() {
 
 export function saveTtsKoVoiceURI(uri) {
   save(KEYS.TTS_KO_VOICE_URI, uri);
+}
+
+// ── Cantonese TTS voice preference ────────────────────────────
+
+export function loadTtsYueVoiceURI() {
+  return load(KEYS.TTS_YUE_VOICE_URI, null);
+}
+
+export function saveTtsYueVoiceURI(uri) {
+  save(KEYS.TTS_YUE_VOICE_URI, uri);
 }
 
 // ── Storage usage estimate ────────────────────────────────────

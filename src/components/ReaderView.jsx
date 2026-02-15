@@ -16,7 +16,7 @@ import './ReaderView.css';
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
-  const { generatedReaders, learnedVocabulary, error, pendingReaders, apiKey, maxTokens, ttsVoiceURI, ttsKoVoiceURI } = state;
+  const { generatedReaders, learnedVocabulary, error, pendingReaders, apiKey, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI } = state;
   const isPending = !!(lessonKey && pendingReaders[lessonKey]);
 
   const reader = generatedReaders[lessonKey];
@@ -89,11 +89,12 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       const filtered = window.speechSynthesis.getVoices().filter(v => langConfig.tts.langFilter.test(v.lang));
       setVoices(filtered);
       // Auto-set best voice in global state if none saved yet
-      const activeVoiceURI = langId === 'ko' ? ttsKoVoiceURI : ttsVoiceURI;
+      const activeVoiceURI = langId === 'yue' ? ttsYueVoiceURI : langId === 'ko' ? ttsKoVoiceURI : ttsVoiceURI;
       if (!activeVoiceURI && filtered.length > 0) {
         const best = pickBestVoice(filtered);
         if (best) {
-          if (langId === 'ko') act.setTtsKoVoice(best.voiceURI);
+          if (langId === 'yue') act.setTtsYueVoice(best.voiceURI);
+          else if (langId === 'ko') act.setTtsKoVoice(best.voiceURI);
           else act.setTtsVoice(best.voiceURI);
         }
       }
@@ -124,7 +125,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    const activeVoiceURI = langId === 'ko' ? ttsKoVoiceURI : ttsVoiceURI;
+    const activeVoiceURI = langId === 'yue' ? ttsYueVoiceURI : langId === 'ko' ? ttsKoVoiceURI : ttsVoiceURI;
     const voice = voices.find(v => v.voiceURI === activeVoiceURI);
     if (voice) {
       utterance.voice = voice;
@@ -138,7 +139,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     utteranceRef.current = utterance;
     setSpeakingKey(key);
     window.speechSynthesis.speak(utterance);
-  }, [ttsSupported, speakingKey, voices, ttsVoiceURI, ttsKoVoiceURI, langId, langConfig.tts]);
+  }, [ttsSupported, speakingKey, voices, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, langId, langConfig.tts]);
 
   // ── Vocab lookup map (click-to-define) ──────────────────────
   const scriptRegex = langConfig.scriptRegex;

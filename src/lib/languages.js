@@ -183,9 +183,101 @@ const koConfig = {
   },
 };
 
+const yueConfig = {
+  id: 'yue',
+  name: 'Cantonese',
+  nameNative: '粵語',
+
+  proficiency: {
+    name: 'YUE',
+    levels: [
+      { value: 1, label: 'YUE 1', desc: 'Absolute beginner (~150 words)' },
+      { value: 2, label: 'YUE 2', desc: 'Elementary (~300 words)' },
+      { value: 3, label: 'YUE 3', desc: 'Pre-intermediate (~600 words)' },
+      { value: 4, label: 'YUE 4', desc: 'Intermediate (~1,200 words)' },
+      { value: 5, label: 'YUE 5', desc: 'Upper-intermediate (~2,500 words)' },
+      { value: 6, label: 'YUE 6', desc: 'Advanced (~5,000 words)' },
+    ],
+  },
+
+  fields: { target: 'chinese', romanization: 'jyutping', translation: 'english' },
+
+  scriptRegex: /[\u4e00-\u9fff]/,
+  punctuation: '\uff0c\u3002\uff01\uff1f\u3001\uff1b\uff1a\u201c\u201d\u2018\u2019\uff08\uff09\u3010\u3011',
+  charUnit: 'Chinese characters (字)',
+  charUnitShort: '字',
+
+  fonts: {
+    target: "'Noto Serif TC', 'Noto Serif SC', 'PMingLiU', Georgia, serif",
+    googleImport: 'Noto+Serif+TC:wght@400;600;700',
+  },
+  lineHeight: 1.9,
+
+  tts: {
+    langFilter: /zh-HK|yue/i,
+    defaultLang: 'zh-HK',
+    defaultRate: 0.85,
+    priorityVoices: [
+      v => /^Sin-?ji$/i.test(v.name),
+      v => v.name === 'Google 粵語（香港）',
+      v => v.lang === 'zh-HK',
+      v => /yue/i.test(v.lang),
+      v => v.lang.startsWith('zh'),
+    ],
+  },
+
+  getRomanizer: () => import('to-jyutping').then(m => {
+    const toJyutping = m.default || m;
+    return {
+      romanize: (text) => {
+        const result = [];
+        const pairs = toJyutping.getJyutpingList(text);
+        for (const [char, jyutping] of pairs) {
+          result.push(jyutping || char);
+        }
+        return result;
+      },
+    };
+  }),
+
+  decorativeChars: ['廣', '粵', '話', '語', '字', '音'],
+  romanizationLabel: '粵',
+  romanizationName: 'jyutping',
+
+  prompts: {
+    curriculumDesigner: 'Cantonese Chinese curriculum designer',
+    targetLanguage: 'Cantonese Chinese (written Cantonese)',
+    titleInstruction: 'Cantonese lesson title in traditional Chinese characters (8-15 characters)',
+    titleFieldKey: 'title_yue',
+    storyRequirements: `- Write in WRITTEN CANTONESE (書面粵語), NOT standard written Chinese (書面語):
+  - Use Cantonese-specific grammar: 係 (not 是), 唔 (not 不), 佢 (not 他/她), 喺 (not 在), 嘅 (not 的), 畀 (not 給), 咗 (not 了 for completion), 緊 (for progressive), 嚟 (not 來), 噉 (not 這樣), 點解 (not 為什麼)
+  - Use traditional Chinese characters throughout
+  - Include Cantonese sentence-final particles where natural: 啦, 喎, 嘅, 咩, 㗎, 囉, 喇, 呢
+  - Dialogue should reflect natural Cantonese speech patterns
+- Calibrate language complexity to the proficiency level:
+  - Level 1-2: Simple sentences (5-10 characters), basic 係/有/喺 structures, high-frequency Cantonese verbs, concrete nouns, past tense with 咗
+  - Level 3-4: Compound sentences, 將/被 constructions, common Cantonese complements (到、晒、返), conjunctions (雖然...但係, 因為...所以), Cantonese idioms
+  - Level 5-6: Complex syntax, literary Cantonese expressions, abstract vocabulary, mixing formal and colloquial registers, Cantonese proverbs and slang
+- Avoid vocabulary or structures above the target level unless explicitly introduced as new words`,
+    vocabFormat: `- **Word** (jyutping) - English definition`,
+    ankiFields: `{
+    "chinese": "詞",
+    "jyutping": "ci4",
+    "english": "n. word/term",
+    "example_story": "Story sentence using the word.",
+    "usage_note_story": "Usage note explaining what this example demonstrates.",
+    "example_extra": "Additional example sentence.",
+    "usage_note_extra": "Usage note explaining what this example demonstrates."
+  }`,
+    grammarContext: 'Cantonese grammar patterns',
+    gradingContext: 'Cantonese language teacher',
+    gradingLanguage: 'Cantonese',
+  },
+};
+
 // ── Registry ─────────────────────────────────────────────────
 
-const LANGUAGES = { zh: zhConfig, ko: koConfig };
+const LANGUAGES = { zh: zhConfig, ko: koConfig, yue: yueConfig };
 
 export function getLang(id) {
   return LANGUAGES[id] || LANGUAGES.zh;
@@ -205,5 +297,5 @@ export const DEFAULT_LANG_ID = 'zh';
 export function getLessonTitle(lesson, langId) {
   if (!lesson) return '';
   const key = getLang(langId).prompts.titleFieldKey;
-  return lesson[key] || lesson.title_zh || lesson.title_ko || lesson.title_target || '';
+  return lesson[key] || lesson.title_zh || lesson.title_yue || lesson.title_ko || lesson.title_target || '';
 }
