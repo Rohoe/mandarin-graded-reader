@@ -566,6 +566,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
 
       {/* Comprehension questions */}
       <ComprehensionQuestions
+        key={lessonKey}
         questions={reader.questions}
         lessonKey={lessonKey}
         reader={reader}
