@@ -56,7 +56,7 @@ import {
   pickDirectory,
   isSupported,
 } from '../lib/fileStorage';
-import { pushToCloud, pullFromCloud, pushReaderToCloud } from '../lib/cloudSync';
+import { pushToCloud, pullFromCloud, pushReaderToCloud, detectConflict } from '../lib/cloudSync';
 
 // ── Initial state ─────────────────────────────────────────────
 
@@ -94,6 +94,7 @@ function buildInitialState() {
     cloudSyncing:      false,
     cloudLastSynced:   loadCloudLastSynced(),
     lastModified:      loadLastModified() ?? Date.now(),
+    syncConflict:      null, // { cloudData, conflictInfo } when conflict detected
   };
 }
 
@@ -463,6 +464,12 @@ function baseReducer(state, action) {
       };
     }
 
+    case 'SHOW_SYNC_CONFLICT':
+      return { ...state, syncConflict: action.payload };
+
+    case 'HIDE_SYNC_CONFLICT':
+      return { ...state, syncConflict: null };
+
     default:
       return state;
   }
@@ -564,6 +571,33 @@ export function AppProvider({ children }) {
     }
   }
 
+  // Resolves a sync conflict by choosing either 'cloud' or 'local' data
+  async function resolveSyncConflict(choice) {
+    if (!state.syncConflict) return;
+
+    dispatch({ type: 'SET_CLOUD_SYNCING', payload: true });
+    try {
+      if (choice === 'cloud') {
+        // Pull cloud data, overwrite local
+        dispatch({ type: 'HYDRATE_FROM_CLOUD', payload: state.syncConflict.cloudData });
+        const cloudTs = new Date(state.syncConflict.cloudData.updated_at).getTime();
+        dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: cloudTs });
+        dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'success', message: 'Synced from cloud.' } });
+      } else if (choice === 'local') {
+        // Push local data, overwrite cloud
+        await pushToCloud(stateRef.current);
+        dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: Date.now() });
+        dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'success', message: 'Pushed to cloud.' } });
+      }
+    } catch (e) {
+      dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'error', message: `Sync failed: ${e.message}` } });
+    } finally {
+      dispatch({ type: 'HIDE_SYNC_CONFLICT' });
+      dispatch({ type: 'SET_CLOUD_SYNCING', payload: false });
+      startupSyncDoneRef.current = true;
+    }
+  }
+
   // Apply / remove dark theme attribute on <html>
   useEffect(() => {
     if (state.darkMode) {
@@ -588,11 +622,26 @@ export function AppProvider({ children }) {
         const data = await pullFromCloud();
         if (data) {
           const cloudTs = new Date(data.updated_at).getTime();
+
+          // If cloud is clearly newer, auto-pull
           if (cloudTs > stateRef.current.lastModified) {
             dispatch({ type: 'HYDRATE_FROM_CLOUD', payload: data });
             dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: cloudTs });
             dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'success', message: 'Synced from cloud.' } });
-          } else if (stateRef.current.lastModified > cloudTs + 1000) {
+          }
+          // If local is newer but we have NEVER synced before, show conflict dialog
+          else if (!stateRef.current.cloudLastSynced && stateRef.current.lastModified > cloudTs + 1000) {
+            const conflict = detectConflict(stateRef.current, data);
+            if (conflict) {
+              // Show conflict dialog - user will decide
+              dispatch({ type: 'SHOW_SYNC_CONFLICT', payload: { cloudData: data, conflictInfo: conflict } });
+            } else {
+              // Data is identical, just update timestamp
+              dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: cloudTs });
+            }
+          }
+          // If local is newer AND we've synced before, auto-push (safe)
+          else if (stateRef.current.lastModified > cloudTs + 1000) {
             await pushToCloud(stateRef.current);
             dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: Date.now() });
           }
@@ -634,7 +683,7 @@ export function AppProvider({ children }) {
   }, [state.notification]);
 
   return (
-    <AppContext.Provider value={{ state, dispatch, pickSaveFolder, removeSaveFolder, pushGeneratedReader }}>
+    <AppContext.Provider value={{ state, dispatch, pickSaveFolder, removeSaveFolder, pushGeneratedReader, resolveSyncConflict }}>
       {children}
     </AppContext.Provider>
   );

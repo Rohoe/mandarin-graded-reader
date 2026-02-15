@@ -64,3 +64,54 @@ export async function pullFromCloud() {
   if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no row found
   return data; // null if first sync
 }
+
+// Simple hash function for conflict detection
+function hashData(data) {
+  const str = JSON.stringify({
+    syllabi: data.syllabi,
+    syllabusProgress: data.syllabusProgress,
+    standaloneReaders: data.standaloneReaders,
+    learnedVocabulary: data.learnedVocabulary,
+    exportedWords: data.exportedWords,
+  });
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return hash.toString(36);
+}
+
+export function detectConflict(localState, cloudData) {
+  if (!cloudData) return null; // No cloud data, no conflict
+
+  const localHash = hashData({
+    syllabi: localState.syllabi,
+    syllabusProgress: localState.syllabusProgress,
+    standaloneReaders: localState.standaloneReaders,
+    learnedVocabulary: localState.learnedVocabulary,
+    exportedWords: localState.exportedWords,
+  });
+
+  const cloudHash = hashData({
+    syllabi: cloudData.syllabi,
+    syllabusProgress: cloudData.syllabus_progress,
+    standaloneReaders: cloudData.standalone_readers,
+    learnedVocabulary: cloudData.learned_vocabulary,
+    exportedWords: cloudData.exported_words,
+  });
+
+  if (localHash === cloudHash) return null; // Data is identical
+
+  const cloudTs = new Date(cloudData.updated_at).getTime();
+  const localTs = localState.lastModified;
+
+  return {
+    cloudNewer: cloudTs > localTs,
+    cloudDate: new Date(cloudTs).toLocaleString(),
+    localDate: new Date(localTs).toLocaleString(),
+    cloudSyllabusCount: cloudData.syllabi?.length || 0,
+    localSyllabusCount: localState.syllabi?.length || 0,
+  };
+}

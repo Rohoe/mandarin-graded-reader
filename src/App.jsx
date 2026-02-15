@@ -9,6 +9,7 @@ import SyllabusPanel from './components/SyllabusPanel';
 import SyllabusHome from './components/SyllabusHome';
 import ReaderView from './components/ReaderView';
 import Settings from './components/Settings';
+import SyncConflictDialog from './components/SyncConflictDialog';
 import LoadingIndicator from './components/LoadingIndicator';
 import './App.css';
 
@@ -29,7 +30,7 @@ function Notification() {
 // ── App shell ──────────────────────────────────────────────────
 
 function AppShell() {
-  const { state, dispatch, pushGeneratedReader } = useApp();
+  const { state, dispatch, pushGeneratedReader, resolveSyncConflict } = useApp();
   const act = actions(dispatch);
   const { apiKey, syllabi, syllabusProgress } = state;
 
@@ -268,6 +269,15 @@ function AppShell() {
 
       {/* ─ Settings modal ────────────────────────────────── */}
       {showSettings && <Settings onClose={() => setShowSettings(false)} />}
+
+      {/* ─ Sync conflict dialog ──────────────────────────── */}
+      {state.syncConflict && (
+        <SyncConflictDialog
+          conflict={state.syncConflict.conflictInfo}
+          onResolve={resolveSyncConflict}
+          onCancel={() => act.hideSyncConflict()}
+        />
+      )}
 
       {/* ─ Toast notification ────────────────────────────── */}
       <Notification />

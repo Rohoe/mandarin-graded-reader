@@ -179,6 +179,12 @@ src/
                               storage usage meter, danger zone (clear-all data).
                               Sticky header (title + close button stay visible when scrolling).
                               Close button enlarged to 32×32px for easier tap target.
+    SyncConflictDialog        Modal shown when local and cloud data differ (e.g., old browser
+                              tab with stale localStorage). Displays comparison of cloud vs
+                              local data (last updated timestamps, syllabus counts). User
+                              chooses which to keep. Prevents accidental overwrite of newer
+                              data by stale local state. Triggered on first sync from a device
+                              that has never synced before when data differs.
 ```
 
 ## State shape (AppContext)
@@ -233,6 +239,7 @@ src/
   cloudSyncing:      boolean,         // push/pull in progress
   cloudLastSynced:   number | null,   // timestamp of last successful push/pull
   lastModified:      number,          // timestamp bumped on every syncable data change
+  syncConflict:      { cloudData, conflictInfo } | null, // shown when local/cloud differ
 }
 ```
 
@@ -324,6 +331,26 @@ function saveWithFile(lsKey, value, fileKey) {
 - `AppContext` mounts → starts async `initFileStorage()`
 - While initializing, `App.jsx` renders a loading spinner (`fsInitialized === false`)
 - Once done (with or without a folder), `fsInitialized` is set to `true` and normal UI renders
+
+## Cloud sync conflict detection
+
+To prevent stale local data from overwriting newer cloud data (e.g., old browser tab with outdated localStorage), the app implements conflict detection via `detectConflict()` in `cloudSync.js`:
+
+**How it works:**
+1. **Hash-based comparison:** Local and cloud data are hashed to detect actual content differences (ignoring timestamp-only changes)
+2. **First-sync detection:** If `cloudLastSynced` is `null` (device has never synced before) AND local data differs from cloud, show `SyncConflictDialog`
+3. **User choice:** Dialog shows comparison (timestamps, syllabus counts) and lets user choose which data to keep
+4. **Safe auto-sync:** If device has synced before (`cloudLastSynced` exists), auto-push/pull proceeds normally (trusted device)
+
+**Conflict resolution:**
+- **Use Cloud Data:** Calls `HYDRATE_FROM_CLOUD` to overwrite local state with cloud data
+- **Use Local Data:** Pushes local state to cloud via `pushToCloud()`, overwriting cloud
+- **Decide Later:** Closes dialog without syncing; user can manually sync via Settings
+
+**Implementation:**
+- `detectConflict(localState, cloudData)` returns `null` if data is identical, or a `conflictInfo` object with comparison metadata
+- `state.syncConflict` stores `{ cloudData, conflictInfo }` when conflict detected
+- `resolveSyncConflict(choice)` in `AppContext` handles user's choice and triggers appropriate sync action
 
 ## Deployment (Vercel)
 

@@ -51,5 +51,7 @@ export function actions(dispatch) {
     setCloudUser:          user   => dispatch({ type: 'SET_CLOUD_USER', payload: user }),
     setCloudSyncing:       val    => dispatch({ type: 'SET_CLOUD_SYNCING', payload: val }),
     setCloudLastSynced:    ts     => dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: ts }),
+    showSyncConflict:      data   => dispatch({ type: 'SHOW_SYNC_CONFLICT', payload: data }),
+    hideSyncConflict:      ()     => dispatch({ type: 'HIDE_SYNC_CONFLICT' }),
   };
 }
