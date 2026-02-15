@@ -183,7 +183,7 @@ function AppShell() {
         >
           ☰
         </button>
-        <span className="app-mobile-title font-display">漫读 Mandu</span>
+        <span className="app-mobile-title font-display">漫读</span>
         <button className="btn btn-ghost btn-sm" onClick={() => setShowSettings(true)} aria-label="Settings">
           ⚙
         </button>

@@ -121,20 +121,24 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
       </div>
 
       <div className="form-group">
-        <label className="form-label" htmlFor="level-select">HSK Level</label>
-        <select
-          id="level-select"
-          className="form-select"
-          value={level}
-          onChange={e => setLevel(Number(e.target.value))}
-          disabled={state.loading}
-        >
+        <label className="form-label">HSK Level</label>
+        <div className="topic-form__hsk-pills">
           {HSK_LEVELS.map(l => (
-            <option key={l.value} value={l.value}>
-              {l.label} — {l.desc}
-            </option>
+            <button
+              key={l.value}
+              type="button"
+              className={`topic-form__hsk-pill ${level === l.value ? 'active' : ''}`}
+              onClick={() => setLevel(l.value)}
+              disabled={state.loading}
+              title={`${l.label} — ${l.desc}`}
+            >
+              {l.value}
+            </button>
           ))}
-        </select>
+        </div>
+        <p className="topic-form__hsk-desc">
+          {HSK_LEVELS.find(l => l.value === level)?.desc}
+        </p>
       </div>
 
       {mode === 'syllabus' && (
@@ -188,6 +192,10 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
             ? 'Generate Syllabus'
             : 'Generate Reader'}
       </button>
+
+      {!state.loading && !topic.trim() && (
+        <p className="topic-form__hint">Enter a topic above to get started</p>
+      )}
 
       {state.loading && mode === 'syllabus' && (
         <GenerationProgress type="syllabus" />

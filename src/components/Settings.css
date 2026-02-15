@@ -21,6 +21,23 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: inherit;
+  z-index: 1;
+  padding-bottom: var(--space-4);
+  margin-bottom: 0;
+}
+
+.settings-panel__close {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius);
+  font-size: var(--text-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .settings-panel__title {

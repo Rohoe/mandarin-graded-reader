@@ -1,4 +1,4 @@
-# 漫读 Mandu — Mandarin Graded Reader
+# 漫读 — Mandarin Graded Reader
 
 A single-page web app for generating Mandarin Chinese graded readers using Claude AI. Designed for HSK learners who want personalised reading practice with vocabulary tracking and Anki export.
 
@@ -17,9 +17,10 @@ A single-page web app for generating Mandarin Chinese graded readers using Claud
 - **Story continuation** — "Next episode →" button generates a follow-up reader that continues the narrative from the previous story, maintaining characters and setting
 - **Extend syllabus** — "Add more lessons" panel on the syllabus home page appends 2–6 AI-generated lessons to an existing syllabus
 - **Collapsible sidebar sections** — Syllabus lesson list and standalone readers list can be collapsed/expanded via caret buttons in their section headers
-- **Text-to-speech** — "🔊 Listen" button reads the full story aloud; click any paragraph to hear just that sentence. Auto-selects the best available Chinese voice (Google neural, macOS Tingting/Meijia). Voice picker groups voices into Recommended / Other (Chrome/Edge)
+- **Text-to-speech** — 🔊 icon button reads the full story aloud; click any paragraph to hear just that sentence. Auto-selects the best available Chinese voice (Google neural, macOS Tingting/Meijia). Voice picker groups voices into Recommended / Other (Chrome/Edge)
 - **Click-to-define** — Click any bolded vocabulary word in the story to see a popover with pinyin and English definition. Toggle off by clicking again, pressing Escape, or clicking elsewhere
-- **Pinyin toggle** — "拼 Pinyin" button shows pinyin above every character using `<ruby>` tags (powered by `pinyin-pro`). Essential for HSK 1–3 learners
+- **Pinyin toggle** — 拼 icon button shows pinyin above every character using `<ruby>` tags (powered by `pinyin-pro`). Essential for HSK 1–3 learners
+- **Floating reader controls** — Pinyin and TTS icon buttons sit in the article header top-right; when the header scrolls off screen they float as a fixed pill via React portal (bypassing `fadeIn` transform containment)
 - **Disk persistence** — Optionally save all data as JSON files to a folder on your computer (Chrome/Edge only)
 - **Cloud Sync** — Sign in with Google or Apple to push/pull all your data to/from Supabase. Manual sync via explicit Push/Pull buttons in Settings; API key stays local
 

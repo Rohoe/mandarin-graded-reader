@@ -83,3 +83,60 @@
   color: var(--color-text-subtle);
   font-family: var(--font-display);
 }
+
+/* HSK pill selector */
+.topic-form__hsk-pills {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.topic-form__hsk-pill {
+  flex: 1;
+  padding: var(--space-2) 0;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  background: #fff;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+.topic-form__hsk-pill.active {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+}
+
+.topic-form__hsk-pill:hover:not(.active):not(:disabled) {
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+  border-color: var(--color-accent-dim);
+}
+
+.topic-form__hsk-pill:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.topic-form__hsk-desc {
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+  margin-top: var(--space-1);
+  font-family: var(--font-display);
+}
+
+[data-theme="dark"] .topic-form__hsk-pill:not(.active) {
+  background: var(--color-bg-elevated);
+}
+
+/* Hint text below generate button */
+.topic-form__hint {
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+  font-family: var(--font-display);
+  margin-top: calc(-1 * var(--space-3));
+}

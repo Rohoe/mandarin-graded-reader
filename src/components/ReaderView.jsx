@@ -12,6 +12,8 @@ import GenerationProgress from './GenerationProgress';
 import GrammarNotes from './GrammarNotes';
 import './ReaderView.css';
 
+const HANZI_CHARS = ['读', '写', '学', '文', '语', '书'];
+
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
@@ -21,6 +23,29 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   const reader = generatedReaders[lessonKey];
   const scrollRef = useRef(null);
   const [confirmRegen, setConfirmRegen] = useState(false);
+
+  // Cycling hanzi for empty state
+  const [hanziIndex, setHanziIndex] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setHanziIndex(i => (i + 1) % HANZI_CHARS.length), 2000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Float header actions when article header scrolls off screen
+  const headerRef = useRef(null);
+  const [headerVisible, setHeaderVisible] = useState(true);
+  useEffect(() => {
+    setHeaderVisible(true);
+    const el = headerRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setHeaderVisible(entry.isIntersecting),
+      { root: null, threshold: 0 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [lessonKey]);
+
   const [pinyinOn, setPinyinOn] = useState(false);
   const [activeVocab, setActiveVocab] = useState(null);
   const popoverRef = useRef(null);
@@ -203,9 +228,9 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     return (
       <div className="reader-view reader-view--empty">
         <div className="reader-view__empty-state">
-          <span className="reader-view__empty-hanzi">读</span>
+          <span className="reader-view__empty-hanzi">{HANZI_CHARS[hanziIndex]}</span>
           <p className="font-display reader-view__empty-text">
-            Select a lesson from the syllabus, or generate a standalone reader.
+            Open the sidebar to generate a reader or start a course.
           </p>
           <button
             className="btn btn-primary reader-view__empty-open-menu"
@@ -368,53 +393,71 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
 
   return (
     <article className="reader-view fade-in" ref={scrollRef}>
-      {/* Title */}
-      <header className="reader-view__header">
-        <div className="reader-view__meta text-subtle font-display">
-          {reader.level && `HSK ${reader.level}`}
-          {reader.topic && ` · ${reader.topic}`}
+      {/* Title + controls */}
+      <header className="reader-view__header" ref={headerRef}>
+        <div className="reader-view__header-text">
+          <div className="reader-view__meta text-subtle font-display">
+            {reader.level && `HSK ${reader.level}`}
+            {reader.topic && ` · ${reader.topic}`}
+          </div>
+          <h1 className="reader-view__title text-chinese-title">
+            {reader.titleZh || lessonMeta?.title_zh || ''}
+          </h1>
+          {reader.titleEn && (
+            <p className="reader-view__title-en font-display text-muted">{reader.titleEn}</p>
+          )}
         </div>
-        <h1 className="reader-view__title text-chinese-title">
-          {reader.titleZh || lessonMeta?.title_zh || ''}
-        </h1>
-        {reader.titleEn && (
-          <p className="reader-view__title-en font-display text-muted">{reader.titleEn}</p>
+        {headerVisible && (
+          <div className="reader-view__header-actions">
+            <button
+              className={`btn btn-ghost btn-sm reader-view__tts-btn ${pinyinOn ? 'reader-view__tts-btn--active' : ''}`}
+              onClick={() => setPinyinOn(v => !v)}
+              title={pinyinOn ? 'Hide pinyin' : 'Show pinyin'}
+              aria-label={pinyinOn ? 'Hide pinyin' : 'Show pinyin'}
+            >
+              拼
+            </button>
+            {ttsSupported && (
+              <button
+                className={`btn btn-ghost btn-sm reader-view__tts-btn ${speakingKey === 'story' ? 'reader-view__tts-btn--active' : ''}`}
+                onClick={() => speakingKey ? (window.speechSynthesis.cancel(), setSpeakingKey(null)) : speakText(stripMarkdown(storyParagraphs.join('\n\n')), 'story')}
+                title={speakingKey ? 'Stop' : 'Listen to story'}
+                aria-label={speakingKey ? 'Stop' : 'Listen to story'}
+              >
+                {speakingKey ? '⏹' : '🔊'}
+              </button>
+            )}
+          </div>
         )}
       </header>
+      {!headerVisible && createPortal(
+        <div className="reader-view__header-actions reader-view__header-actions--floating">
+          <button
+            className={`btn btn-ghost btn-sm reader-view__tts-btn ${pinyinOn ? 'reader-view__tts-btn--active' : ''}`}
+            onClick={() => setPinyinOn(v => !v)}
+            title={pinyinOn ? 'Hide pinyin' : 'Show pinyin'}
+            aria-label={pinyinOn ? 'Hide pinyin' : 'Show pinyin'}
+          >
+            拼
+          </button>
+          {ttsSupported && (
+            <button
+              className={`btn btn-ghost btn-sm reader-view__tts-btn ${speakingKey === 'story' ? 'reader-view__tts-btn--active' : ''}`}
+              onClick={() => speakingKey ? (window.speechSynthesis.cancel(), setSpeakingKey(null)) : speakText(stripMarkdown(storyParagraphs.join('\n\n')), 'story')}
+              title={speakingKey ? 'Stop' : 'Listen to story'}
+              aria-label={speakingKey ? 'Stop' : 'Listen to story'}
+            >
+              {speakingKey ? '⏹' : '🔊'}
+            </button>
+          )}
+        </div>,
+        document.body
+      )}
 
       <hr className="divider" />
 
       {/* Story */}
       <div className="reader-view__story-section">
-        <div className="reader-view__tts-bar">
-          <button
-            className={`btn btn-ghost btn-sm reader-view__tts-btn ${pinyinOn ? 'reader-view__tts-btn--active' : ''}`}
-            onClick={() => setPinyinOn(v => !v)}
-            title={pinyinOn ? 'Hide pinyin' : 'Show pinyin'}
-          >
-            拼 Pinyin
-          </button>
-        {ttsSupported && (
-          <>
-            <button
-              className={`btn btn-ghost btn-sm reader-view__tts-btn ${speakingKey === 'story' ? 'reader-view__tts-btn--active' : ''}`}
-              onClick={() => speakText(stripMarkdown(storyParagraphs.join('\n\n')), 'story')}
-              title={speakingKey === 'story' ? 'Stop' : 'Listen to story'}
-            >
-              {speakingKey === 'story' ? '⏹ Stop' : '🔊 Listen'}
-            </button>
-            {speakingKey && speakingKey !== 'story' && (
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={() => { window.speechSynthesis.cancel(); setSpeakingKey(null); }}
-                title="Stop"
-              >
-                ⏹ Stop
-              </button>
-            )}
-          </>
-        )}
-        </div>
         <div className={`reader-view__story text-chinese ${pinyinOn ? 'reader-view__story--pinyin' : ''}`}>
           {storyParagraphs.map((para, pi) => {
             const paraKey = `para-${pi}`;

@@ -104,7 +104,7 @@ export default function Settings({ onClose }) {
       <div className="settings-panel card card-padded fade-in">
         <div className="settings-panel__header">
           <h2 className="font-display settings-panel__title">Settings</h2>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+          <button className="btn btn-ghost settings-panel__close" onClick={onClose} aria-label="Close settings">✕</button>
         </div>
 
         <hr className="divider" />

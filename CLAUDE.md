@@ -65,9 +65,11 @@ src/
 
   components/
     ApiKeySetup               First-run screen; validates key starts with "sk-ant-"
-    TopicForm                 Topic input + HSK selector; two modes: syllabus / standalone.
+    TopicForm                 Topic input + HSK pill selector (6 numbered buttons replacing
+                              the old <select>); two modes: syllabus / standalone.
                               Sliders: lesson count (2–12, syllabus mode only) and reader
                               length (500–2000 chars, step 100). Both passed to API calls.
+                              Hint text below disabled Generate button when topic is empty.
     SyllabusPanel             Left sidebar; syllabus dropdown, lesson list, standalone
                               readers list, progress bar, settings link.
                               Home (⌂) button in switcher row calls onGoSyllabusHome.
@@ -88,21 +90,28 @@ src/
                               calls onExtend(additionalCount). Shows a fixed LoadingIndicator
                               overlay while state.loading is true.
     ReaderView                Main content area; empty/pre-generate/error/reading states.
-                              Empty state shows an "☰ Open menu" button (mobile-only, hidden
-                              on desktop via CSS) that calls onOpenSidebar prop to open the
-                              sidebar — the only way to access content creation on mobile.
+                              Empty state cycles through 读写学文语书 characters every 2s;
+                              dark mode override uses --color-accent at 0.45 opacity.
+                              Shows "☰ Open menu" button (mobile-only, hidden on desktop
+                              via CSS) that calls onOpenSidebar prop to open the sidebar.
                               Section order: story → comprehension questions → vocabulary
                               → grammar notes → Anki export.
                               "Next episode →" button at the bottom calls onContinueStory with
                               the current story text, topic, and level.
-                              Text-to-speech: "🔊 Listen" button reads full story; each paragraph
+                              Reader controls (拼 pinyin toggle + 🔊 TTS) sit as icon-only
+                              buttons in the article header top-right. An IntersectionObserver
+                              on the header detects when it scrolls off screen; buttons then
+                              render via createPortal to document.body as a fixed floating
+                              pill (needed because the fadeIn animation's transform creates
+                              a containing block that breaks position:fixed).
+                              Text-to-speech: 🔊 icon reads full story; each paragraph
                               is clickable to read individually (highlighted while speaking).
                               Voices loaded via Web Speech API voiceschanged event; auto-selects
                               best Chinese voice (Google neural > Tingting/Meijia > zh-CN).
                               Voice picker shows Recommended / Other voices as optgroups.
-                              Pinyin toggle: "拼 Pinyin" button wraps Chinese characters in
-                              <ruby> tags using pinyin-pro. Line-height increases to 2.8 when
-                              active. renderChars() helper handles mixed Chinese/non-Chinese text.
+                              Pinyin toggle: 拼 icon wraps Chinese characters in <ruby> tags
+                              using pinyin-pro. Line-height increases to 2.8 when active.
+                              renderChars() helper handles mixed Chinese/non-Chinese text.
                               Click-to-define: bold vocab words are clickable (looked up via
                               vocabMap). Click shows a fixed-position popover with pinyin +
                               definition. Closes on Escape, outside click, or scroll.
@@ -129,7 +138,9 @@ src/
                               holds at ~97-98% until response arrives and component unmounts
     Settings                  API key update, dark mode toggle, default HSK level select,
                               save folder picker, API output tokens slider (4096–16384,
-                              persisted to localStorage), storage usage meter, clear-all data
+                              persisted to localStorage), storage usage meter, clear-all data.
+                              Sticky header (title + close button stay visible when scrolling).
+                              Close button enlarged to 32×32px for easier tap target.
 ```
 
 ## State shape (AppContext)
