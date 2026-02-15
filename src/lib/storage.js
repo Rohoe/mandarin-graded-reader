@@ -41,6 +41,7 @@ const KEYS = {
   TTS_VOICE_URI:      'gradedReader_ttsVoiceURI',
   TTS_KO_VOICE_URI:   'gradedReader_ttsKoVoiceURI',
   TTS_YUE_VOICE_URI:  'gradedReader_ttsYueVoiceURI',
+  CLOUD_LAST_SYNCED:  'gradedReader_cloudLastSynced',
 };
 
 // ── Generic localStorage helpers ──────────────────────────────
@@ -326,6 +327,16 @@ export function loadTtsYueVoiceURI() {
 
 export function saveTtsYueVoiceURI(uri) {
   save(KEYS.TTS_YUE_VOICE_URI, uri);
+}
+
+// ── Cloud last-synced timestamp ───────────────────────────────
+
+export function loadCloudLastSynced() {
+  return load(KEYS.CLOUD_LAST_SYNCED, null);
+}
+
+export function saveCloudLastSynced(ts) {
+  save(KEYS.CLOUD_LAST_SYNCED, ts);
 }
 
 // ── Storage usage estimate ────────────────────────────────────

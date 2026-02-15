@@ -39,6 +39,8 @@ import {
   saveTtsKoVoiceURI,
   loadTtsYueVoiceURI,
   saveTtsYueVoiceURI,
+  loadCloudLastSynced,
+  saveCloudLastSynced,
 } from '../lib/storage';
 import {
   loadDirectoryHandle,
@@ -79,15 +81,27 @@ function buildInitialState() {
     ttsYueVoiceURI:    loadTtsYueVoiceURI(),
     // Background generation tracking (ephemeral, not persisted)
     pendingReaders:    {},
-    // Cloud sync (ephemeral, not persisted)
+    // Cloud sync
     cloudUser:         null,
     cloudSyncing:      false,
+    cloudLastSynced:   loadCloudLastSynced(),
+    lastModified:      Date.now(),
   };
 }
 
+// Actions that modify syncable data — bumps lastModified timestamp
+const DATA_ACTIONS = new Set([
+  'ADD_SYLLABUS', 'EXTEND_SYLLABUS_LESSONS', 'REMOVE_SYLLABUS',
+  'SET_LESSON_INDEX', 'MARK_LESSON_COMPLETE', 'UNMARK_LESSON_COMPLETE',
+  'ADD_STANDALONE_READER', 'REMOVE_STANDALONE_READER',
+  'SET_READER', 'CLEAR_READER',
+  'ADD_VOCABULARY', 'CLEAR_VOCABULARY',
+  'ADD_EXPORTED_WORDS', 'CLEAR_EXPORTED_WORDS',
+]);
+
 // ── Reducer ───────────────────────────────────────────────────
 
-function reducer(state, action) {
+function baseReducer(state, action) {
   switch (action.type) {
 
     case 'SET_API_KEY':
@@ -337,6 +351,10 @@ function reducer(state, action) {
     case 'SET_CLOUD_SYNCING':
       return { ...state, cloudSyncing: action.payload };
 
+    case 'SET_CLOUD_LAST_SYNCED':
+      saveCloudLastSynced(action.payload);
+      return { ...state, cloudLastSynced: action.payload };
+
     case 'HYDRATE_FROM_CLOUD': {
       const d = action.payload;
       const normalizedSyllabi = normalizeSyllabi(d.syllabi);
@@ -360,6 +378,14 @@ function reducer(state, action) {
     default:
       return state;
   }
+}
+
+function reducer(state, action) {
+  const next = baseReducer(state, action);
+  if (next !== state && DATA_ACTIONS.has(action.type)) {
+    return { ...next, lastModified: Date.now() };
+  }
+  return next;
 }
 
 // ── Context + Provider ────────────────────────────────────────

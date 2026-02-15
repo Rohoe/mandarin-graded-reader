@@ -20,7 +20,7 @@ export default function SyllabusPanel({
 }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
-  const { syllabi, syllabusProgress, standaloneReaders, generatedReaders, loading, pendingReaders } = state;
+  const { syllabi, syllabusProgress, standaloneReaders, generatedReaders, loading, pendingReaders, cloudUser, cloudSyncing, cloudLastSynced, lastModified } = state;
   const pendingCount = Object.keys(pendingReaders).length;
 
   const currentSyllabus  = syllabi.find(s => s.id === activeSyllabusId) || null;
@@ -232,8 +232,29 @@ export default function SyllabusPanel({
         </div>
       )}
 
-      {/* Settings link */}
+      {/* Footer: sync status + settings */}
       <div className="syllabus-panel__footer">
+        <div className="syllabus-panel__sync-status">
+          {cloudUser ? (
+            <>
+              <span className="syllabus-panel__sync-icon" title={cloudUser.email || 'Signed in'}>☁</span>
+              {cloudSyncing ? (
+                <span className="syllabus-panel__sync-label syllabus-panel__sync-label--syncing">Syncing…</span>
+              ) : cloudLastSynced && lastModified > cloudLastSynced ? (
+                <span className="syllabus-panel__sync-label syllabus-panel__sync-label--unsynced">Unsynced</span>
+              ) : cloudLastSynced ? (
+                <span className="syllabus-panel__sync-label syllabus-panel__sync-label--synced">Synced</span>
+              ) : (
+                <span className="syllabus-panel__sync-label syllabus-panel__sync-label--unsynced">Not yet synced</span>
+              )}
+            </>
+          ) : (
+            <>
+              <span className="syllabus-panel__sync-icon syllabus-panel__sync-icon--off" title="Not signed in">☁</span>
+              <span className="syllabus-panel__sync-label syllabus-panel__sync-label--off">Not signed in</span>
+            </>
+          )}
+        </div>
         <button
           className="btn btn-ghost btn-sm"
           onClick={onShowSettings}

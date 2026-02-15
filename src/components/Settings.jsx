@@ -79,6 +79,7 @@ export default function Settings({ onClose }) {
     act.setCloudSyncing(true);
     try {
       await pushToCloud(state);
+      act.setCloudLastSynced(Date.now());
       act.notify('success', 'Data pushed to cloud.');
     } catch (e) {
       act.notify('error', `Push failed: ${e.message}`);
@@ -95,6 +96,7 @@ export default function Settings({ onClose }) {
       const data = await pullFromCloud();
       if (!data) { act.notify('error', 'No cloud data found. Push from another device first.'); return; }
       dispatch({ type: 'HYDRATE_FROM_CLOUD', payload: data });
+      act.setCloudLastSynced(Date.now());
       act.notify('success', 'Data pulled from cloud.');
     } catch (e) {
       act.notify('error', `Pull failed: ${e.message}`);

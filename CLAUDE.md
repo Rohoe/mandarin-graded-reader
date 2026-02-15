@@ -98,6 +98,10 @@ src/
                               Both syllabus lesson list and standalone readers list are
                               collapsible via caret (▾/▸) buttons; lessonsOpen and
                               standaloneOpen state (both default true).
+                              Footer shows cloud sync status: ☁ icon + label indicating
+                              "Not signed in", "Synced", "Unsynced", "Syncing…", or
+                              "Not yet synced". Dirty detection compares lastModified
+                              vs cloudLastSynced timestamps.
     SyllabusHome              Overview page for a syllabus (shown when syllabusView='home').
                               Displays: topic, HSK badge, date, AI-generated summary, lesson
                               list with completion status and Start/Review CTAs, Continue
@@ -216,6 +220,8 @@ src/
   // Cloud sync (ephemeral, not persisted)
   cloudUser:         object | null,   // Supabase User object, or null if not signed in
   cloudSyncing:      boolean,         // push/pull in progress
+  cloudLastSynced:   number | null,   // timestamp of last successful push/pull
+  lastModified:      number,          // timestamp bumped on every syncable data change
 }
 ```
 

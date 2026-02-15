@@ -23,7 +23,7 @@ A single-page web app for generating graded readers in **Mandarin Chinese**, **C
 - **Romanization toggle** — 拼 (Chinese), 粵 (Cantonese), or Aa (Korean) icon button shows romanization above every character using `<ruby>` tags. Powered by `pinyin-pro` for Chinese, `to-jyutping` for Cantonese, `hangul-romanization` for Korean
 - **Floating reader controls** — Pinyin and TTS icon buttons sit in the article header top-right; when the header scrolls off screen they float as a fixed pill via React portal (bypassing `fadeIn` transform containment)
 - **Disk persistence** — Optionally save all data as JSON files to a folder on your computer (Chrome/Edge only)
-- **Cloud Sync** — Sign in with Google or Apple to push/pull all your data to/from Supabase. Manual sync via explicit Push/Pull buttons in Settings; API key stays local
+- **Cloud Sync** — Sign in with Google or Apple to push/pull all your data to/from Supabase. Manual sync via explicit Push/Pull buttons in Settings; API key stays local. The sidebar footer shows sync status: signed-in state, "Synced"/"Unsynced" indicator based on whether local data has changed since the last push
 
 ## Setup
 
