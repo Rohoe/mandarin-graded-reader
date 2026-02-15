@@ -57,7 +57,7 @@ Return a JSON object with exactly two keys:
 - "summary": A 2-3 sentence overview (in English) of what the learner will cover across all lessons
 - "lessons": an array of lesson objects, each with:
   - "lesson_number": integer (1-${lessonCount})
-  - "title_zh": ${p.titleInstruction}
+  - "${p.titleFieldKey}": ${p.titleInstruction}
   - "title_en": English lesson title
   - "description": One English sentence describing what the reader covers
   - "vocabulary_focus": 3-5 English keywords describing the vocabulary theme
@@ -278,7 +278,7 @@ export async function extendSyllabus(apiKey, topic, level, existingLessons, addi
   const profName = langConfig.proficiency.name;
 
   const existingTitles = existingLessons
-    .map((l, i) => `${i + 1}. ${l.title_en} (${l.title_zh || l.title_target || ''})`)
+    .map((l, i) => `${i + 1}. ${l.title_en} (${l[p.titleFieldKey] || l.title_zh || l.title_target || ''})`)
     .join('\n');
 
   const startNumber = existingLessons.length + 1;
@@ -300,7 +300,7 @@ Return ONLY a JSON array of the new lesson objects (no wrapper object, no explan
 [
   {
     "lesson_number": ${startNumber},
-    "title_zh": "${p.titleInstruction}",
+    "${p.titleFieldKey}": "${p.titleInstruction}",
     "title_en": "English lesson title",
     "description": "One English sentence describing what the reader covers",
     "vocabulary_focus": ["3-5 English keywords describing the vocabulary theme"]

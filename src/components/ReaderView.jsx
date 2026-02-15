@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
 import { generateReader } from '../lib/api';
 import { parseReaderResponse, parseStorySegments } from '../lib/parser';
-import { getLang, DEFAULT_LANG_ID } from '../lib/languages';
+import { getLang, getLessonTitle, DEFAULT_LANG_ID } from '../lib/languages';
 import { loadRomanizer } from '../lib/romanizer';
 import VocabularyList from './VocabularyList';
 import ComprehensionQuestions from './ComprehensionQuestions';
@@ -195,8 +195,10 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
 
     let topic, level, readerLangId;
     if (lessonMeta) {
-      topic = lessonMeta.title_zh
-        ? `${lessonMeta.title_zh} — ${lessonMeta.title_en || ''}: ${lessonMeta.description || ''}`
+      const metaLang = getLang(lessonMeta.langId || langId);
+      const titleTarget = lessonMeta[metaLang.prompts.titleFieldKey] || lessonMeta.title_zh || lessonMeta.title_target;
+      topic = titleTarget
+        ? `${titleTarget} — ${lessonMeta.title_en || ''}: ${lessonMeta.description || ''}`
         : lessonMeta.topic || '';
       level = lessonMeta.level || 3;
       readerLangId = lessonMeta.langId || langId;
@@ -287,7 +289,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
                 Lesson {lessonMeta.lesson_number}
               </p>
               <h2 className="text-target-title reader-view__lesson-title">
-                {lessonMeta.title_zh || lessonMeta.title_target}
+                {getLessonTitle(lessonMeta, langId)}
               </h2>
               <p className="reader-view__lesson-en font-display text-muted">
                 {lessonMeta.title_en}
@@ -311,7 +313,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
                 Lesson {lessonMeta.lesson_number}
               </p>
               <h2 className="text-target-title reader-view__lesson-title">
-                {lessonMeta.title_zh || lessonMeta.title_target}
+                {getLessonTitle(lessonMeta, langId)}
               </h2>
               <p className="reader-view__lesson-en font-display text-muted">
                 {lessonMeta.title_en}
@@ -420,7 +422,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
             {reader.topic && ` · ${reader.topic}`}
           </div>
           <h1 className="reader-view__title text-target-title">
-            {reader.titleZh || lessonMeta?.title_zh || lessonMeta?.title_target || ''}
+            {reader.titleZh || getLessonTitle(lessonMeta, langId) || ''}
           </h1>
           {reader.titleEn && (
             <p className="reader-view__title-en font-display text-muted">{reader.titleEn}</p>

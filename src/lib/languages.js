@@ -200,3 +200,10 @@ export function getLanguageIds() {
 }
 
 export const DEFAULT_LANG_ID = 'zh';
+
+/** Get the target-language title from a lesson object, regardless of language. */
+export function getLessonTitle(lesson, langId) {
+  if (!lesson) return '';
+  const key = getLang(langId).prompts.titleFieldKey;
+  return lesson[key] || lesson.title_zh || lesson.title_ko || lesson.title_target || '';
+}

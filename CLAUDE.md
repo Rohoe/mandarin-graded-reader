@@ -34,7 +34,8 @@ src/
 
   lib/
     languages.js              Language config registry. Exports getLang(id), getAllLanguages(),
-                              DEFAULT_LANG_ID. Each language is a static object defining:
+                              getLessonTitle(lesson, langId), DEFAULT_LANG_ID.
+                              Each language is a static object defining:
                               proficiency levels, scriptRegex, fonts, TTS config, prompt
                               fragments, decorative chars, romanization loader. Currently
                               supports 'zh' (Mandarin Chinese) and 'ko' (Korean).
@@ -171,7 +172,7 @@ src/
     level:     number,                // 1–6
     langId:    string,                // 'zh' | 'ko' (defaults to 'zh' for legacy data)
     summary:   string,                // AI-generated 2-3 sentence overview (may be '' for old data)
-    lessons:   Array<{ lesson_number, title_zh, title_en, description, vocabulary_focus }>,
+    lessons:   Array<{ lesson_number, title_zh|title_ko, title_en, description, vocabulary_focus }>,
     createdAt: number,
   }>,
   syllabusProgress:  {                // per-syllabus progress, keyed by id

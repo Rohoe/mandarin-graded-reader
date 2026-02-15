@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { getLang } from '../../lib/languages';
+import { getLang, getLessonTitle } from '../../lib/languages';
 import LoadingIndicator from '../LoadingIndicator';
 import './SyllabusHome.css';
 
@@ -89,7 +89,7 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
                     {isCompleted ? '✓' : idx + 1}
                   </span>
                   <span className="syllabus-home__lesson-titles">
-                    <span className="syllabus-home__lesson-zh text-target">{lesson.title_zh || lesson.title_target}</span>
+                    <span className="syllabus-home__lesson-zh text-target">{getLessonTitle(lesson, langId)}</span>
                     <span className="syllabus-home__lesson-en text-muted">{lesson.title_en}</span>
                   </span>
                   <span className="syllabus-home__lesson-cta text-muted">

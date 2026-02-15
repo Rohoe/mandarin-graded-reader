@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
-import { getLang } from '../lib/languages';
+import { getLang, getLessonTitle } from '../lib/languages';
 import TopicForm from './TopicForm';
 import './SyllabusPanel.css';
 
@@ -168,7 +168,7 @@ export default function SyllabusPanel({
                     </span>
                     <span className="syllabus-panel__lesson-text">
                       <span className="syllabus-panel__lesson-zh text-chinese">
-                        {lesson.title_zh}
+                        {getLessonTitle(lesson, currentSyllabus?.langId)}
                       </span>
                       <span className="syllabus-panel__lesson-en text-muted">
                         {lesson.title_en}
