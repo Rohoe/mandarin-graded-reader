@@ -3,9 +3,14 @@
  * All functions return sensible defaults on parse failure.
  */
 
+import { getLang, DEFAULT_LANG_ID } from './languages';
+
 // ── Main reader parser ────────────────────────────────────────
 
-export function parseReaderResponse(rawText) {
+export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
+  const langConfig = getLang(langId);
+  const scriptRegex = langConfig.scriptRegex;
+
   console.log('[parser] parseReaderResponse called, length:', rawText?.length);
   const headingLines = rawText?.split('\n').filter(l => /^#{1,4}\s/.test(l));
   console.log('[parser] all headings in response:', headingLines);
@@ -20,6 +25,7 @@ export function parseReaderResponse(rawText) {
     ankiJson:     [],
     grammarNotes: [],
     parseError:   null,
+    langId,
   };
 
   if (!rawText) {
@@ -29,7 +35,6 @@ export function parseReaderResponse(rawText) {
 
   try {
     // ── 1. Title ──────────────────────────────────────────────
-    // Look for "### 1. Title" section, or just grab the first heading
     const titleSectionMatch = rawText.match(/#{2,4}\s*1\.\s*Title\s*\n+([\s\S]*?)(?=#{2,4}\s*2\.)/i);
     if (titleSectionMatch) {
       const titleBlock = titleSectionMatch[1].trim();
@@ -52,25 +57,26 @@ export function parseReaderResponse(rawText) {
       const bodyMatch = withoutTopHeadings.match(/^([\s\S]*?)(?=\n#{1,4}\s)/);
       if (bodyMatch) result.story = bodyMatch[1].trim();
       else {
-        const chineseBlock = rawText.match(/([\u4e00-\u9fff\s*_.,，。！？、；：""''（）【】]{200,})/);
-        if (chineseBlock) result.story = chineseBlock[1].trim();
+        // Build a regex for detecting 200+ target script chars
+        const scriptCharClass = scriptRegex.source;
+        const blockRegex = new RegExp(`([${scriptCharClass.slice(1, -1)}\\s*_.,，。！？、；：""''（）【】]{200,})`);
+        const scriptBlock = rawText.match(blockRegex);
+        if (scriptBlock) result.story = scriptBlock[1].trim();
       }
     }
 
-    // Strip any stray leading heading lines (e.g. "级读物：…") from the story
+    // Strip any stray leading heading lines from the story
     result.story = result.story.replace(/^(#{1,4}[^\n]*\n\n?)+/, '').trim();
 
     // ── 3. Vocabulary ─────────────────────────────────────────
-    // Matches "### 3. Vocabulary" (English numbered) or "## 词汇表" (Chinese)
     const vocabSectionMatch = rawText.match(
       /#{2,4}\s*(?:3\.[^\n]*|词汇[表列]?)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:4\.|理解|comprehension|```anki-json)|```anki-json|$)/i
     );
     if (vocabSectionMatch) {
-      result.vocabulary = parseVocabularySection(vocabSectionMatch[1]);
+      result.vocabulary = parseVocabularySection(vocabSectionMatch[1], scriptRegex);
     }
 
     // ── 4. Comprehension Questions ────────────────────────────
-    // Matches "### 4. Comprehension" (English numbered) or "## 理解题" (Chinese)
     const questionsSectionMatch = rawText.match(
       /#{2,4}\s*(?:4\.[^\n]*|理解[题问]?[^\n]*)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:5\.|anki)|```anki-json|$)/i
     );
@@ -100,11 +106,15 @@ export function parseReaderResponse(rawText) {
     }
 
     // If vocab list is empty but we have anki data, synthesise from anki
+    const targetField = langConfig.fields.target;
+    const romField = langConfig.fields.romanization;
+    const transField = langConfig.fields.translation;
+
     if (result.vocabulary.length === 0 && result.ankiJson.length > 0) {
       result.vocabulary = result.ankiJson.map(card => ({
-        chinese:        card.chinese,
-        pinyin:         card.pinyin,
-        english:        card.english,
+        chinese:        card[targetField] || card.chinese || card.korean || '',
+        pinyin:         card[romField] || card.pinyin || card.romanization || '',
+        english:        card[transField] || card.english || '',
         exampleStory:   card.example_story || '',
         exampleExtra:   card.example_extra || '',
         usageNoteStory: card.usage_note_story || '',
@@ -112,13 +122,13 @@ export function parseReaderResponse(rawText) {
       }));
     } else if (result.vocabulary.length > 0 && result.ankiJson.length > 0) {
       // Enrich vocabulary items with usage notes + fill missing pinyin from the Anki JSON block
-      const ankiByWord = new Map(result.ankiJson.map(c => [c.chinese, c]));
+      const ankiByWord = new Map(result.ankiJson.map(c => [c[targetField] || c.chinese || c.korean, c]));
       const enriched = result.vocabulary.map(word => {
         const card = ankiByWord.get(word.chinese);
         if (!card) return word;
         return {
           ...word,
-          pinyin:         word.pinyin || card.pinyin,
+          pinyin:         word.pinyin || card[romField] || card.pinyin || card.romanization || '',
           usageNoteStory: card.usage_note_story || word.usageNoteStory,
           usageNoteExtra: card.usage_note_extra || word.usageNoteExtra,
         };
@@ -126,11 +136,11 @@ export function parseReaderResponse(rawText) {
       // Append any words present in ankiJson but absent from the vocabulary section
       const vocabChinese = new Set(enriched.map(v => v.chinese));
       const missing = result.ankiJson
-        .filter(card => !vocabChinese.has(card.chinese))
+        .filter(card => !vocabChinese.has(card[targetField] || card.chinese || card.korean))
         .map(card => ({
-          chinese:        card.chinese,
-          pinyin:         card.pinyin,
-          english:        card.english,
+          chinese:        card[targetField] || card.chinese || card.korean || '',
+          pinyin:         card[romField] || card.pinyin || card.romanization || '',
+          english:        card[transField] || card.english || '',
           exampleStory:   card.example_story || '',
           exampleExtra:   card.example_extra || '',
           usageNoteStory: card.usage_note_story || '',
@@ -147,7 +157,7 @@ export function parseReaderResponse(rawText) {
 
 // ── Vocabulary section parser ─────────────────────────────────
 
-function parseVocabularySection(text) {
+function parseVocabularySection(text, scriptRegex) {
   const items = [];
   const seen  = new Set();
   if (!text) return items;
@@ -155,7 +165,7 @@ function parseVocabularySection(text) {
   function pushItem(chinese, pinyin, english, afterText) {
     if (seen.has(chinese)) return;
     seen.add(chinese);
-    const examples = extractExamples(afterText);
+    const examples = extractExamples(afterText, scriptRegex);
     items.push({
       chinese,
       pinyin,
@@ -193,7 +203,7 @@ function parseVocabularySection(text) {
   return items;
 }
 
-function extractExamples(text) {
+function extractExamples(text, scriptRegex) {
   const lines = text.split('\n');
   const examples = [];
 
@@ -204,8 +214,8 @@ function extractExamples(text) {
     if (/^\*\*/.test(trimmed) || /^\d+\./.test(trimmed)) break;
     // Skip sub-headers
     if (/^#{1,4}/.test(trimmed)) break;
-    // Only collect lines that contain Chinese characters — skip English usage notes
-    if (!/[\u4e00-\u9fff]/.test(trimmed)) continue;
+    // Only collect lines that contain target script characters — skip English usage notes
+    if (!scriptRegex.test(trimmed)) continue;
     if (examples.length < 2) examples.push(trimmed.replace(/^[-•]\s*/, ''));
     else break;
   }

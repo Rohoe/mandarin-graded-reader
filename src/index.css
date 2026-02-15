@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
 
 /* ── Design Tokens ─────────────────────────────────────────── */
 :root {
@@ -23,6 +23,7 @@
   --color-error-light:  #F5EBEB;
 
   --font-chinese: 'Noto Serif SC', 'Songti SC', 'SimSun', 'STSong', Georgia, serif;
+  --font-target:  var(--font-chinese);
   --font-display: 'Cormorant Garamond', 'Palatino Linotype', Palatino, Georgia, serif;
   --font-body:    'Cormorant Garamond', Georgia, serif;
   --font-mono:    'SF Mono', 'Fira Mono', 'Consolas', monospace;
@@ -43,6 +44,7 @@
   --leading-normal:  1.5;
   --leading-relaxed: 1.75;
   --leading-chinese: 1.9;
+  --leading-target:  var(--leading-chinese);
 
   --space-1:  0.25rem;
   --space-2:  0.5rem;
@@ -299,15 +301,23 @@ a:hover { text-decoration: underline; }
   color: var(--color-success);
 }
 
-/* ── Chinese Text ───────────────────────────────────────────── */
-.text-chinese {
-  font-family: var(--font-chinese);
-  font-size: var(--text-chinese-body);
-  line-height: var(--leading-chinese);
+/* ── Korean language overrides ──────────────────────────────── */
+[data-lang="ko"] {
+  --font-target:   'Noto Serif KR', 'Batang', 'Gungsuh', Georgia, serif;
+  --leading-target: 1.8;
 }
 
-.text-chinese-title {
-  font-family: var(--font-chinese);
+/* ── Target Language Text ──────────────────────────────────── */
+.text-chinese,
+.text-target {
+  font-family: var(--font-target);
+  font-size: var(--text-chinese-body);
+  line-height: var(--leading-target);
+}
+
+.text-chinese-title,
+.text-target-title {
+  font-family: var(--font-target);
   font-size: var(--text-chinese-title);
   font-weight: 700;
   line-height: var(--leading-tight);

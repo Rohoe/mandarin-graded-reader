@@ -4,6 +4,8 @@
  * importing from storage, so callers control where the key comes from.
  */
 
+import { getLang, DEFAULT_LANG_ID } from './languages';
+
 const API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL   = 'claude-sonnet-4-20250514';
 
@@ -43,28 +45,29 @@ async function callClaude(apiKey, systemPrompt, userMessage, maxTokens = 4096) {
 
 // ── Syllabus generation ───────────────────────────────────────
 
-const SYLLABUS_PROMPT = `You are a Mandarin Chinese curriculum designer. Generate a graded reader syllabus for the following parameters:
+function buildSyllabusPrompt(langConfig, topic, level, lessonCount) {
+  const p = langConfig.prompts;
+  return `You are a ${p.curriculumDesigner}. Generate a graded reader syllabus for the following parameters:
 
-Topic: {topic}
-HSK Level: {level}
-Number of lessons: {lessonCount}
+Topic: ${topic}
+${langConfig.proficiency.name} Level: ${level}
+Number of lessons: ${lessonCount}
 
 Return a JSON object with exactly two keys:
 - "summary": A 2-3 sentence overview (in English) of what the learner will cover across all lessons
 - "lessons": an array of lesson objects, each with:
-  - "lesson_number": integer (1-{lessonCount})
-  - "title_zh": Chinese lesson title (8-15 characters)
+  - "lesson_number": integer (1-${lessonCount})
+  - "title_zh": ${p.titleInstruction}
   - "title_en": English lesson title
   - "description": One English sentence describing what the reader covers
   - "vocabulary_focus": 3-5 English keywords describing the vocabulary theme
 
 Return ONLY valid JSON. No explanation, no markdown fences.`;
+}
 
-export async function generateSyllabus(apiKey, topic, level, lessonCount = 6) {
-  const prompt = SYLLABUS_PROMPT
-    .replace('{topic}', topic)
-    .replace('{level}', level)
-    .replace(/\{lessonCount\}/g, lessonCount);
+export async function generateSyllabus(apiKey, topic, level, lessonCount = 6, langId = DEFAULT_LANG_ID) {
+  const langConfig = getLang(langId);
+  const prompt = buildSyllabusPrompt(langConfig, topic, level, lessonCount);
 
   const raw = await callClaude(apiKey, '', prompt, 2048);
 
@@ -93,33 +96,35 @@ export async function generateSyllabus(apiKey, topic, level, lessonCount = 6) {
 
 // ── Reader generation ─────────────────────────────────────────
 
-const READER_SYSTEM = `Create an educational graded reader in Mandarin Chinese for HSK {level} learners.
+function buildReaderSystem(langConfig, level, topic, charRange) {
+  const p = langConfig.prompts;
+  const profName = langConfig.proficiency.name;
+  const targetField = langConfig.fields.target;
+  const romField = langConfig.fields.romanization;
+  const transField = langConfig.fields.translation;
+
+  return `Create an educational graded reader in ${p.targetLanguage} for ${profName} ${level} learners.
 
 If a user types in a series of words from the article, assume those are new vocabulary that should be appended to the list in the same format.
 
 ## VOCABULARY REQUIREMENTS
-- Select 12-15 new vocabulary items appropriate for the specified HSK level
-- Items may include single words, compound words, collocations, or idioms (成语/惯用语)
+- Select 12-15 new vocabulary items appropriate for the specified ${profName} level
+- Items may include single words, compound words, collocations, or idiomatic expressions
 - Vocabulary should have high utility for the target proficiency band
 - Each new item must appear at least 2 times throughout the story
-- Bold all instances of new vocabulary: **新词**
+- Bold all instances of new vocabulary: **새단어**
 
 ## STORY REQUIREMENTS
-- Length: {targetChars} Chinese characters (字)
-- Topic: {topic}
-- Calibrate language complexity to the HSK level:
-  - HSK 1-2: Simple sentences (5-10 characters), basic 是/有/在 structures, high-frequency verbs, concrete nouns, present/past with 了
-  - HSK 3-4: Compound sentences, 把/被 constructions, common complements (得、到、完), conjunctions (虽然...但是, 因为...所以), some idiomatic expressions
-  - HSK 5-6: Complex syntax, literary expressions where appropriate (之、而、则), abstract vocabulary, formal and informal register as suits the content, classical allusions or chengyu if relevant to the topic
-- Dialogue and discourse markers should reflect natural speech patterns appropriate to the context
-- Avoid vocabulary or structures above the target HSK level unless explicitly introduced as new words
+- Length: ${charRange} ${langConfig.charUnit}
+- Topic: ${topic}
+${p.storyRequirements}
 
 ## OUTPUT FORMAT
 
-IMPORTANT: Use EXACTLY these English section headings (do not translate them to Chinese):
+IMPORTANT: Use EXACTLY these English section headings (do not translate them):
 
 ### 1. Title
-Chinese characters only (no bold markers, no English, no HSK level suffix)
+${p.targetLanguage} text only (no bold markers, no English, no ${profName} level suffix)
 English subtitle on the next line
 
 ### 2. Story
@@ -127,42 +132,39 @@ With bolded vocabulary and italicized proper nouns
 
 ### 3. Vocabulary List
 For each word:
-- **Word** (pinyin) - English definition
+${p.vocabFormat}
 - Example sentence FROM STORY
 - *Brief usage note for the story example — explain the grammar pattern, collocation, register, or nuance shown (1 sentence, in English)*
 - Additional example sentence (NOT from story, demonstrating different usage context)
 - *Brief usage note for the additional example — explain what new aspect of usage this example shows (1 sentence, in English)*
 
 ### 4. Comprehension Questions
-3-5 questions in Chinese at the target level
+3-5 questions in ${p.targetLanguage} at the target level
 
 ### 5. Anki Cards Data (JSON)
 Return a JSON block tagged \`\`\`anki-json containing an array of card objects:
 [
-  {
-    "chinese": "词",
-    "pinyin": "cí",
-    "english": "n. word/term",
-    "example_story": "Story sentence using the word.",
-    "usage_note_story": "Usage note explaining what this example demonstrates.",
-    "example_extra": "Additional example sentence.",
-    "usage_note_extra": "Usage note explaining what this example demonstrates."
-  }
+  ${p.ankiFields}
 ]
 \`\`\`
 
 ### 6. Grammar Notes
-Identify 3-5 key grammar patterns used in the story. For each pattern:
+Identify 3-5 key ${p.grammarContext} used in the story. For each pattern:
 - **Pattern** (English name) — one-sentence explanation of the structure and when to use it
 - Example sentence taken directly from the story`;
+}
 
 // ── Answer grading ────────────────────────────────────────────
 
-const GRADING_SYSTEM = `You are a Chinese language teacher grading reading comprehension answers.
-The student is studying Mandarin at HSK level {level}.
+function buildGradingSystem(langConfig, level) {
+  const p = langConfig.prompts;
+  const profName = langConfig.proficiency.name;
+
+  return `You are a ${p.gradingContext} grading reading comprehension answers.
+The student is studying ${p.gradingLanguage} at ${profName} level ${level}.
 
 Evaluate each answer for accuracy and completeness. Be encouraging but honest.
-The student may answer in English or Chinese.
+The student may answer in English or ${p.targetLanguage}.
 
 Return ONLY valid JSON — no explanation, no markdown fences.
 Do NOT echo the question or answer text back. Use only ASCII characters in keys.
@@ -180,7 +182,8 @@ Do NOT echo the question or answer text back. Use only ASCII characters in keys.
 
 Score 1–5: 5=fully correct, 4=mostly correct, 3=partial, 2=mostly wrong, 1=incorrect/blank.
 Overall score = sum / (questions × 5).
-Include "suggestedAnswer" only when score < 5. It should be a concise ideal answer in the same language the student used (English or Chinese).`;
+Include "suggestedAnswer" only when score < 5. It should be a concise ideal answer in the same language the student used (English or ${p.targetLanguage}).`;
+}
 
 // Escape literal control characters inside JSON string values so JSON.parse
 // doesn't choke on responses like: "feedback": "Good.\nAlso try harder."
@@ -219,8 +222,9 @@ function repairJSON(str) {
   return result;
 }
 
-export async function gradeAnswers(apiKey, questions, userAnswers, story, level, maxTokens = 2048) {
-  const system = GRADING_SYSTEM.replace('{level}', level);
+export async function gradeAnswers(apiKey, questions, userAnswers, story, level, maxTokens = 2048, langId = DEFAULT_LANG_ID) {
+  const langConfig = getLang(langId);
+  const system = buildGradingSystem(langConfig, level);
   const answersBlock = questions
     .map((q, i) => `Q${i + 1}: ${q}\nA${i + 1}: ${userAnswers[i] || '(no answer provided)'}`)
     .join('\n\n');
@@ -246,13 +250,11 @@ export async function gradeAnswers(apiKey, questions, userAnswers, story, level,
 
 // ── Reader generation ─────────────────────────────────────────
 
-export async function generateReader(apiKey, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192, previousStory = null) {
-  // Build a range string: e.g. 1200 → "1100-1300 Chinese characters"
+export async function generateReader(apiKey, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192, previousStory = null, langId = DEFAULT_LANG_ID) {
+  const langConfig = getLang(langId);
+  // Build a range string: e.g. 1200 → "1100-1300"
   const charRange = `${targetChars - 100}-${targetChars + 100}`;
-  const system = READER_SYSTEM
-    .replace('{level}', level)
-    .replace('{topic}', topic)
-    .replace('{targetChars}', charRange);
+  const system = buildReaderSystem(langConfig, level, topic, charRange);
 
   const learnedList = Object.keys(learnedWords);
   const learnedSection = learnedList.length > 0
@@ -270,18 +272,22 @@ export async function generateReader(apiKey, topic, level, learnedWords = {}, ta
 
 // ── Syllabus extension ────────────────────────────────────────
 
-export async function extendSyllabus(apiKey, topic, level, existingLessons, additionalCount = 3) {
+export async function extendSyllabus(apiKey, topic, level, existingLessons, additionalCount = 3, langId = DEFAULT_LANG_ID) {
+  const langConfig = getLang(langId);
+  const p = langConfig.prompts;
+  const profName = langConfig.proficiency.name;
+
   const existingTitles = existingLessons
-    .map((l, i) => `${i + 1}. ${l.title_en} (${l.title_zh})`)
+    .map((l, i) => `${i + 1}. ${l.title_en} (${l.title_zh || l.title_target || ''})`)
     .join('\n');
 
   const startNumber = existingLessons.length + 1;
   const endNumber = existingLessons.length + additionalCount;
 
-  const prompt = `You are a Mandarin Chinese curriculum designer extending an existing graded reader syllabus.
+  const prompt = `You are a ${p.curriculumDesigner} extending an existing graded reader syllabus.
 
 Topic: ${topic}
-HSK Level: ${level}
+${profName} Level: ${level}
 Number of new lessons to add: ${additionalCount}
 
 Existing lessons (do NOT repeat these):
@@ -294,7 +300,7 @@ Return ONLY a JSON array of the new lesson objects (no wrapper object, no explan
 [
   {
     "lesson_number": ${startNumber},
-    "title_zh": "Chinese lesson title (8-15 characters)",
+    "title_zh": "${p.titleInstruction}",
     "title_en": "English lesson title",
     "description": "One English sentence describing what the reader covers",
     "vocabulary_focus": ["3-5 English keywords describing the vocabulary theme"]

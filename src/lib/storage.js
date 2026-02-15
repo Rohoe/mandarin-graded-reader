@@ -211,10 +211,12 @@ export function addLearnedVocabulary(wordList) {
   const existing = loadLearnedVocabulary();
   const now = new Date().toISOString();
   for (const word of wordList) {
-    if (word.chinese && !existing[word.chinese]) {
-      existing[word.chinese] = {
-        pinyin:    word.pinyin  || '',
-        english:   word.english || '',
+    const key = word.chinese || word.korean || word.target || '';
+    if (key && !existing[key]) {
+      existing[key] = {
+        pinyin:    word.pinyin  || word.romanization || '',
+        english:   word.english || word.translation  || '',
+        langId:    word.langId  || undefined,
         dateAdded: now,
       };
     }

@@ -4,15 +4,14 @@ import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
 import { generateReader } from '../lib/api';
 import { parseReaderResponse, parseStorySegments } from '../lib/parser';
-import { pinyin } from 'pinyin-pro';
+import { getLang, DEFAULT_LANG_ID } from '../lib/languages';
+import { loadRomanizer } from '../lib/romanizer';
 import VocabularyList from './VocabularyList';
 import ComprehensionQuestions from './ComprehensionQuestions';
 import AnkiExportButton from './AnkiExportButton';
 import GenerationProgress from './GenerationProgress';
 import GrammarNotes from './GrammarNotes';
 import './ReaderView.css';
-
-const HANZI_CHARS = ['读', '写', '学', '文', '语', '书'];
 
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar }) {
   const { state, dispatch } = useApp();
@@ -24,12 +23,23 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   const scrollRef = useRef(null);
   const [confirmRegen, setConfirmRegen] = useState(false);
 
-  // Cycling hanzi for empty state
-  const [hanziIndex, setHanziIndex] = useState(0);
+  // Determine langId from reader, lessonMeta, or syllabus
+  const langId = reader?.langId || lessonMeta?.langId || DEFAULT_LANG_ID;
+  const langConfig = getLang(langId);
+
+  // Set data-lang on <html> when reader changes
   useEffect(() => {
-    const id = setInterval(() => setHanziIndex(i => (i + 1) % HANZI_CHARS.length), 2000);
+    document.documentElement.setAttribute('data-lang', langId);
+    return () => document.documentElement.removeAttribute('data-lang');
+  }, [langId]);
+
+  // Cycling chars for empty state
+  const decorativeChars = langConfig.decorativeChars;
+  const [charIndex, setCharIndex] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setCharIndex(i => (i + 1) % decorativeChars.length), 2000);
     return () => clearInterval(id);
-  }, []);
+  }, [decorativeChars.length]);
 
   // Float header actions when article header scrolls off screen
   const headerRef = useRef(null);
@@ -50,36 +60,37 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   const [activeVocab, setActiveVocab] = useState(null);
   const popoverRef = useRef(null);
 
+  // Async romanizer
+  const [romanizer, setRomanizer] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    loadRomanizer(langId).then(r => { if (!cancelled) setRomanizer(r); });
+    return () => { cancelled = true; };
+  }, [langId]);
+
   // ── Text-to-speech ──────────────────────────────────────────
   const ttsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
   const [speakingKey, setSpeakingKey] = useState(null);
   const utteranceRef = useRef(null);
-  const [chineseVoices, setChineseVoices] = useState([]);
+  const [voices, setVoices] = useState([]);
 
-  function pickBestVoice(voices) {
-    const priority = [
-      v => v.name === 'Google 普通话（中国大陆）',
-      v => v.name === 'Google 国语（台灣）',
-      v => /^Tingting$/i.test(v.name),
-      v => /^Meijia$/i.test(v.name),
-      v => v.lang === 'zh-CN',
-      v => v.lang.startsWith('zh'),
-    ];
-    for (const test of priority) {
-      const match = voices.find(test);
+  function pickBestVoice(voiceList) {
+    const priorityTests = langConfig.tts.priorityVoices;
+    for (const test of priorityTests) {
+      const match = voiceList.find(test);
       if (match) return match;
     }
-    return voices[0] || null;
+    return voiceList[0] || null;
   }
 
   useEffect(() => {
     if (!ttsSupported) return;
     function loadVoices() {
-      const zh = window.speechSynthesis.getVoices().filter(v => /zh/i.test(v.lang));
-      setChineseVoices(zh);
+      const filtered = window.speechSynthesis.getVoices().filter(v => langConfig.tts.langFilter.test(v.lang));
+      setVoices(filtered);
       // Auto-set best voice in global state if none saved yet
-      if (!ttsVoiceURI && zh.length > 0) {
-        const best = pickBestVoice(zh);
+      if (!ttsVoiceURI && filtered.length > 0) {
+        const best = pickBestVoice(filtered);
         if (best) act.setTtsVoice(best.voiceURI);
       }
     }
@@ -87,7 +98,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
     return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ttsSupported]);
+  }, [ttsSupported, langId]);
 
   // Cancel speech & close popover when lesson changes
   useEffect(() => {
@@ -109,33 +120,34 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    const voice = chineseVoices.find(v => v.voiceURI === ttsVoiceURI);
+    const voice = voices.find(v => v.voiceURI === ttsVoiceURI);
     if (voice) {
       utterance.voice = voice;
       utterance.lang = voice.lang;
     } else {
-      utterance.lang = 'zh-CN';
+      utterance.lang = langConfig.tts.defaultLang;
     }
-    utterance.rate = 0.85;
+    utterance.rate = langConfig.tts.defaultRate;
     utterance.onend = () => setSpeakingKey(null);
     utterance.onerror = () => setSpeakingKey(null);
     utteranceRef.current = utterance;
     setSpeakingKey(key);
     window.speechSynthesis.speak(utterance);
-  }, [ttsSupported, speakingKey, chineseVoices, ttsVoiceURI]);
+  }, [ttsSupported, speakingKey, voices, ttsVoiceURI, langConfig.tts]);
 
   // ── Vocab lookup map (click-to-define) ──────────────────────
+  const scriptRegex = langConfig.scriptRegex;
   const vocabMap = useMemo(() => {
     const map = new Map();
     if (reader?.vocabulary) {
       for (const v of reader.vocabulary) {
         map.set(v.chinese, v);
-        const stripped = v.chinese.replace(/^[^\u4e00-\u9fff]+|[^\u4e00-\u9fff]+$/g, '');
+        const stripped = v.chinese.replace(new RegExp(`^[^${scriptRegex.source.slice(1, -1)}]+|[^${scriptRegex.source.slice(1, -1)}]+$`, 'g'), '');
         if (stripped && stripped !== v.chinese) map.set(stripped, v);
       }
     }
     return map;
-  }, [reader?.vocabulary]);
+  }, [reader?.vocabulary, scriptRegex]);
 
   const handleVocabClick = useCallback((e, vocabWord) => {
     e.stopPropagation();
@@ -181,16 +193,18 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   async function handleGenerate() {
     if (isPending) return;
 
-    let topic, level;
+    let topic, level, readerLangId;
     if (lessonMeta) {
       topic = lessonMeta.title_zh
         ? `${lessonMeta.title_zh} — ${lessonMeta.title_en || ''}: ${lessonMeta.description || ''}`
         : lessonMeta.topic || '';
       level = lessonMeta.level || 3;
+      readerLangId = lessonMeta.langId || langId;
     } else if (reader) {
       // Standalone reader — use the metadata stored on the reader object
       topic = reader.topic || '';
       level = reader.level || 3;
+      readerLangId = reader.langId || langId;
     } else {
       return;
     }
@@ -198,18 +212,18 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     act.startPendingReader(lessonKey);
     act.clearError();
     try {
-      const raw    = await generateReader(apiKey, topic, level, learnedVocabulary, 1200, maxTokens);
+      const raw    = await generateReader(apiKey, topic, level, learnedVocabulary, 1200, maxTokens, null, readerLangId);
       console.log('[ReaderView] raw response (first 500 chars):', raw?.slice(0, 500));
-      const parsed = parseReaderResponse(raw);
+      const parsed = parseReaderResponse(raw, readerLangId);
       console.log('[ReaderView] parsed.questions:', parsed.questions);
       console.log('[ReaderView] parsed.parseError:', parsed.parseError);
-      act.setReader(lessonKey, { ...parsed, topic, level, lessonKey });
+      act.setReader(lessonKey, { ...parsed, topic, level, langId: readerLangId, lessonKey });
       if (parsed.ankiJson?.length > 0) {
         act.addVocabulary(parsed.ankiJson.map(c => ({
-          chinese: c.chinese, pinyin: c.pinyin, english: c.english,
+          chinese: c.chinese, korean: c.korean, pinyin: c.pinyin, romanization: c.romanization, english: c.english, langId: readerLangId,
         })));
       }
-      act.notify('success', `Reader ready: ${lessonMeta.title_en || topic}`);
+      act.notify('success', `Reader ready: ${lessonMeta?.title_en || topic}`);
     } catch (err) {
       act.notify('error', `Generation failed: ${err.message.slice(0, 80)}`);
     } finally {
@@ -223,12 +237,15 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     await handleGenerate();
   }
 
+  // Proficiency badge text
+  const profBadge = `${langConfig.proficiency.name} ${reader?.level || lessonMeta?.level || ''}`;
+
   // ── Empty state ─────────────────────────────────────────────
   if (!lessonKey) {
     return (
       <div className="reader-view reader-view--empty">
         <div className="reader-view__empty-state">
-          <span className="reader-view__empty-hanzi">{HANZI_CHARS[hanziIndex]}</span>
+          <span className="reader-view__empty-hanzi">{decorativeChars[charIndex]}</span>
           <p className="font-display reader-view__empty-text">
             Open the sidebar to generate a reader or start a course.
           </p>
@@ -269,8 +286,8 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
               <p className="reader-view__lesson-num text-subtle font-display">
                 Lesson {lessonMeta.lesson_number}
               </p>
-              <h2 className="text-chinese-title reader-view__lesson-title">
-                {lessonMeta.title_zh}
+              <h2 className="text-target-title reader-view__lesson-title">
+                {lessonMeta.title_zh || lessonMeta.title_target}
               </h2>
               <p className="reader-view__lesson-en font-display text-muted">
                 {lessonMeta.title_en}
@@ -293,8 +310,8 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
               <p className="reader-view__lesson-num text-subtle font-display">
                 Lesson {lessonMeta.lesson_number}
               </p>
-              <h2 className="text-chinese-title reader-view__lesson-title">
-                {lessonMeta.title_zh}
+              <h2 className="text-target-title reader-view__lesson-title">
+                {lessonMeta.title_zh || lessonMeta.title_target}
               </h2>
               <p className="reader-view__lesson-en font-display text-muted">
                 {lessonMeta.title_en}
@@ -347,7 +364,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   function lookupVocab(text) {
     const exact = vocabMap.get(text);
     if (exact) return exact;
-    const stripped = text.replace(/^[^\u4e00-\u9fff]+|[^\u4e00-\u9fff]+$/g, '');
+    const stripped = text.replace(new RegExp(`^[^${scriptRegex.source.slice(1, -1)}]+|[^${scriptRegex.source.slice(1, -1)}]+$`, 'g'), '');
     if (stripped && stripped !== text) return vocabMap.get(stripped);
     return null;
   }
@@ -367,29 +384,31 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     };
   }
 
-  // Renders text with <ruby> pinyin annotations for Chinese characters
+  // Renders text with <ruby> romanization annotations for target script chars
   function renderChars(text, keyPrefix) {
-    if (!pinyinOn) return text;
+    if (!pinyinOn || !romanizer) return text;
     const chars = [...text];
-    const pinyinArr = pinyin(text, { type: 'array', toneType: 'symbol' });
+    const romArr = romanizer.romanize(text);
     const nodes = [];
-    let nonChi = '';
-    let nonChiStart = 0;
+    let nonTarget = '';
+    let nonTargetStart = 0;
     for (let i = 0; i < chars.length; i++) {
-      if (/[\u4e00-\u9fff]/.test(chars[i])) {
-        if (nonChi) {
-          nodes.push(<span key={`${keyPrefix}-t${nonChiStart}`}>{nonChi}</span>);
-          nonChi = '';
+      if (scriptRegex.test(chars[i])) {
+        if (nonTarget) {
+          nodes.push(<span key={`${keyPrefix}-t${nonTargetStart}`}>{nonTarget}</span>);
+          nonTarget = '';
         }
-        nodes.push(<ruby key={`${keyPrefix}-r${i}`}>{chars[i]}<rt>{pinyinArr[i]}</rt></ruby>);
+        nodes.push(<ruby key={`${keyPrefix}-r${i}`}>{chars[i]}<rt>{romArr[i]}</rt></ruby>);
       } else {
-        if (!nonChi) nonChiStart = i;
-        nonChi += chars[i];
+        if (!nonTarget) nonTargetStart = i;
+        nonTarget += chars[i];
       }
     }
-    if (nonChi) nodes.push(<span key={`${keyPrefix}-tend`}>{nonChi}</span>);
+    if (nonTarget) nodes.push(<span key={`${keyPrefix}-tend`}>{nonTarget}</span>);
     return nodes;
   }
+
+  const romanizationLabel = langConfig.romanizationLabel;
 
   return (
     <article className="reader-view fade-in" ref={scrollRef}>
@@ -397,11 +416,11 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       <header className="reader-view__header" ref={headerRef}>
         <div className="reader-view__header-text">
           <div className="reader-view__meta text-subtle font-display">
-            {reader.level && `HSK ${reader.level}`}
+            {reader.level && profBadge}
             {reader.topic && ` · ${reader.topic}`}
           </div>
-          <h1 className="reader-view__title text-chinese-title">
-            {reader.titleZh || lessonMeta?.title_zh || ''}
+          <h1 className="reader-view__title text-target-title">
+            {reader.titleZh || lessonMeta?.title_zh || lessonMeta?.title_target || ''}
           </h1>
           {reader.titleEn && (
             <p className="reader-view__title-en font-display text-muted">{reader.titleEn}</p>
@@ -412,10 +431,10 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
             <button
               className={`btn btn-ghost btn-sm reader-view__tts-btn ${pinyinOn ? 'reader-view__tts-btn--active' : ''}`}
               onClick={() => setPinyinOn(v => !v)}
-              title={pinyinOn ? 'Hide pinyin' : 'Show pinyin'}
-              aria-label={pinyinOn ? 'Hide pinyin' : 'Show pinyin'}
+              title={pinyinOn ? `Hide ${langConfig.romanizationName}` : `Show ${langConfig.romanizationName}`}
+              aria-label={pinyinOn ? `Hide ${langConfig.romanizationName}` : `Show ${langConfig.romanizationName}`}
             >
-              拼
+              {romanizationLabel}
             </button>
             {ttsSupported && (
               <button
@@ -435,10 +454,10 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
           <button
             className={`btn btn-ghost btn-sm reader-view__tts-btn ${pinyinOn ? 'reader-view__tts-btn--active' : ''}`}
             onClick={() => setPinyinOn(v => !v)}
-            title={pinyinOn ? 'Hide pinyin' : 'Show pinyin'}
-            aria-label={pinyinOn ? 'Hide pinyin' : 'Show pinyin'}
+            title={pinyinOn ? `Hide ${langConfig.romanizationName}` : `Show ${langConfig.romanizationName}`}
+            aria-label={pinyinOn ? `Hide ${langConfig.romanizationName}` : `Show ${langConfig.romanizationName}`}
           >
-            拼
+            {romanizationLabel}
           </button>
           {ttsSupported && (
             <button
@@ -458,7 +477,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
 
       {/* Story */}
       <div className="reader-view__story-section">
-        <div className={`reader-view__story text-chinese ${pinyinOn ? 'reader-view__story--pinyin' : ''}`}>
+        <div className={`reader-view__story text-target ${pinyinOn ? 'reader-view__story--pinyin' : ''}`}>
           {storyParagraphs.map((para, pi) => {
             const paraKey = `para-${pi}`;
             const isSpeaking = speakingKey === paraKey;
@@ -496,7 +515,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         </div>
         {activeVocab && createPortal(
           <div ref={popoverRef} className="reader-view__popover" style={getPopoverPosition(activeVocab.rect)}>
-            <span className="reader-view__popover-chinese text-chinese">{activeVocab.word.chinese}</span>
+            <span className="reader-view__popover-chinese text-target">{activeVocab.word.chinese}</span>
             <span className="reader-view__popover-pinyin">{activeVocab.word.pinyin}</span>
             <span className="reader-view__popover-english">{activeVocab.word.english}</span>
           </div>,
@@ -513,6 +532,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         reader={reader}
         story={reader.story}
         level={reader.level || lessonMeta?.level || 3}
+        langId={langId}
       />
 
       {/* Vocabulary */}
@@ -528,6 +548,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
           topic={reader.topic || lessonMeta?.title_en || 'lesson'}
           level={reader.level || 3}
           grammarNotes={reader.grammarNotes}
+          langId={langId}
         />
       )}
 
@@ -574,7 +595,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         <div className="reader-view__continue-row">
           <button
             className="btn btn-primary"
-            onClick={() => onContinueStory({ story: reader.story, topic: reader.topic || lessonMeta?.title_en || 'story', level: reader.level || lessonMeta?.level || 3 })}
+            onClick={() => onContinueStory({ story: reader.story, topic: reader.topic || lessonMeta?.title_en || 'story', level: reader.level || lessonMeta?.level || 3, langId })}
           >
             Next episode →
           </button>

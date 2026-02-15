@@ -1,10 +1,10 @@
-# CLAUDE.md — Mandarin Graded Reader App
+# CLAUDE.md — Multi-Language Graded Reader App
 
 Project context and architecture notes for Claude Code sessions.
 
 ## What this app does
 
-Single-page React + Vite app that generates Mandarin Chinese graded readers using the Anthropic Claude API. Users provide a topic and HSK level (1–6); the app generates structured stories with vocabulary, comprehension questions, and Anki flashcard exports.
+Single-page React + Vite app that generates graded readers in **Mandarin Chinese** and **Korean** using the Anthropic Claude API. Users select a language and proficiency level (HSK 1–6 for Chinese, TOPIK 1–6 for Korean); the app generates structured stories with vocabulary, comprehension questions, and Anki flashcard exports. Chinese and Korean content can coexist side-by-side.
 
 ## Running the app
 
@@ -33,12 +33,22 @@ src/
     actions.js                actions() helper factory (separate file — same reason)
 
   lib/
+    languages.js              Language config registry. Exports getLang(id), getAllLanguages(),
+                              DEFAULT_LANG_ID. Each language is a static object defining:
+                              proficiency levels, scriptRegex, fonts, TTS config, prompt
+                              fragments, decorative chars, romanization loader. Currently
+                              supports 'zh' (Mandarin Chinese) and 'ko' (Korean).
+    romanizer.js              Async romanization loader. Lazy-loads pinyin-pro (Chinese) or
+                              hangul-romanization (Korean) via the language config's
+                              getRomanizer() method. Returns { romanize(text): string[] }.
+    vocabNormalizer.js        Migration helpers: normalizeSyllabus() adds langId + title_target
+                              to legacy data. normalizeVocabWord() maps chinese/pinyin/english
+                              ↔ generic target/romanization/translation fields.
     api.js                    Claude API calls: generateSyllabus(), generateReader(),
-                              extendSyllabus(), gradeAnswers()
-                              generateReader() accepts optional previousStory (7th arg) for
-                              story continuation. extendSyllabus() takes existing lessons and
-                              returns only new lessons as a JSON array.
-                              Uses anthropic-dangerous-direct-browser-access header
+                              extendSyllabus(), gradeAnswers(). All accept optional langId
+                              (last param, defaults to 'zh'). Prompt templates are built
+                              from langConfig.prompts fragments — highly specific per language.
+                              Uses anthropic-dangerous-direct-browser-access header.
                               Model: claude-sonnet-4-20250514
     storage.js                localStorage helpers — load/save for all persisted state.
                               Also fans writes to disk when a FileSystemDirectoryHandle
@@ -54,8 +64,11 @@ src/
                                 graded-reader-exported.json   (exportedWords array)
     parser.js                 Parses Claude's markdown response into structured data:
                               titleZh, titleEn, story, vocabulary[], questions[], ankiJson[],
-                              grammarNotes[]
-    anki.js                   Generates tab-separated Anki .txt export; duplicate prevention
+                              grammarNotes[]. Accepts langId param — uses langConfig.scriptRegex
+                              and langConfig.fields for language-aware parsing.
+    anki.js                   Generates tab-separated Anki .txt export; duplicate prevention.
+                              Accepts langId — uses langConfig.fields for column mapping and
+                              langConfig.proficiency.name for tags/filename.
     supabase.js               Supabase client singleton (reads VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY)
     cloudSync.js              Cloud sync helpers: signInWithGoogle(), signInWithApple(), signOut(),
                               pushToCloud(state), pullFromCloud(). Auth uses Supabase OAuth with
@@ -65,10 +78,11 @@ src/
 
   components/
     ApiKeySetup               First-run screen; validates key starts with "sk-ant-"
-    TopicForm                 Topic input + HSK pill selector (6 numbered buttons replacing
-                              the old <select>); two modes: syllabus / standalone.
-                              Sliders: lesson count (2–12, syllabus mode only) and reader
-                              length (500–2000 chars, step 100). Both passed to API calls.
+    TopicForm                 Topic input + language selector (pill toggle: 中文 / 한국어)
+                              + proficiency level pills (read from langConfig). Two modes:
+                              syllabus / standalone. Sliders: lesson count (2–12, syllabus
+                              mode only) and reader length (500–2000 chars, step 100).
+                              Passes langId through to all API calls and reader creation.
                               Hint text below disabled Generate button when topic is empty.
     SyllabusPanel             Left sidebar; syllabus dropdown, lesson list, standalone
                               readers list, progress bar, settings link.
@@ -90,15 +104,17 @@ src/
                               calls onExtend(additionalCount). Shows a fixed LoadingIndicator
                               overlay while state.loading is true.
     ReaderView                Main content area; empty/pre-generate/error/reading states.
-                              Empty state cycles through 读写学文语书 characters every 2s;
+                              Determines langId from reader.langId || lessonMeta.langId.
+                              Sets data-lang attribute on <html> for CSS font overrides.
+                              Empty state cycles through langConfig.decorativeChars every 2s;
                               dark mode override uses --color-accent at 0.45 opacity.
                               Shows "☰ Open menu" button (mobile-only, hidden on desktop
                               via CSS) that calls onOpenSidebar prop to open the sidebar.
                               Section order: story → comprehension questions → vocabulary
                               → grammar notes → Anki export.
                               "Next episode →" button at the bottom calls onContinueStory with
-                              the current story text, topic, and level.
-                              Reader controls (拼 pinyin toggle + 🔊 TTS) sit as icon-only
+                              the current story text, topic, level, and langId.
+                              Reader controls (romanization toggle + 🔊 TTS) sit as icon-only
                               buttons in the article header top-right. An IntersectionObserver
                               on the header detects when it scrolls off screen; buttons then
                               render via createPortal to document.body as a fixed floating
@@ -106,15 +122,16 @@ src/
                               a containing block that breaks position:fixed).
                               Text-to-speech: 🔊 icon reads full story; each paragraph
                               is clickable to read individually (highlighted while speaking).
-                              Voices loaded via Web Speech API voiceschanged event; auto-selects
-                              best Chinese voice (Google neural > Tingting/Meijia > zh-CN).
-                              Voice picker shows Recommended / Other voices as optgroups.
-                              Pinyin toggle: 拼 icon wraps Chinese characters in <ruby> tags
-                              using pinyin-pro. Line-height increases to 2.8 when active.
-                              renderChars() helper handles mixed Chinese/non-Chinese text.
+                              Voices loaded via Web Speech API voiceschanged event; filtered
+                              by langConfig.tts.langFilter; best voice selected via
+                              langConfig.tts.priorityVoices.
+                              Romanization toggle: uses async romanizer loaded via
+                              loadRomanizer(langId). Label from langConfig.romanizationLabel
+                              (拼 for Chinese, Aa for Korean). Wraps chars in <ruby> tags.
+                              renderChars() uses langConfig.scriptRegex for detection.
                               Click-to-define: bold vocab words are clickable (looked up via
-                              vocabMap). Click shows a fixed-position popover with pinyin +
-                              definition. Closes on Escape, outside click, or scroll.
+                              vocabMap). Click shows a fixed-position popover with romanization
+                              + definition. Closes on Escape, outside click, or scroll.
     VocabularyList            Collapsible accordion of vocab cards with examples
     ComprehensionQuestions    Collapsible question list with interactive answer input and AI grading.
                               Input mode: textarea per question + "Grade My Answers" button.
@@ -152,6 +169,7 @@ src/
     id:        string,                // "syllabus_<timestamp36>"
     topic:     string,
     level:     number,                // 1–6
+    langId:    string,                // 'zh' | 'ko' (defaults to 'zh' for legacy data)
     summary:   string,                // AI-generated 2-3 sentence overview (may be '' for old data)
     lessons:   Array<{ lesson_number, title_zh, title_en, description, vocabulary_focus }>,
     createdAt: number,
@@ -163,13 +181,14 @@ src/
     key:       string,                // "standalone_<timestamp>"
     topic:     string,
     level:     number,
+    langId:    string,                // 'zh' | 'ko'
     createdAt: number,
   }>,
   generatedReaders:  { [lessonKey]: parsedReaderData },  // in-memory + localStorage + file
                      // parsedReaderData fields: raw, titleZh, titleEn, story, vocabulary[],
                      //   questions[], ankiJson[], grammarNotes[], parseError,
-                     //   userAnswers, gradingResults, topic, level, lessonKey
-  learnedVocabulary: { [chineseWord]: { pinyin, english, dateAdded } },
+                     //   userAnswers, gradingResults, topic, level, langId, lessonKey
+  learnedVocabulary: { [targetWord]: { pinyin, english, langId?, dateAdded } },
   exportedWords:     Set<string>,     // serialised as array in localStorage + file
   loading:           boolean,
   loadingMessage:    string,
@@ -194,13 +213,22 @@ src/
 
 Lesson keys: `lesson_<syllabusId>_<lessonIndex>` for syllabus lessons, `standalone_<timestamp>` for one-off readers.
 
+## Multi-language architecture
+
+Language support is implemented via a config registry in `src/lib/languages.js`. Each language config defines: proficiency system (HSK/TOPIK), script detection regex, font stack, TTS config, romanization loader, decorative characters, and prompt fragments. All API calls, the parser, and the Anki exporter accept `langId` as a parameter.
+
+**Adding a new language:** Add a config object to `languages.js` following the existing `zh`/`ko` shape. Install any romanization library needed. Add font import to `index.css` and a `[data-lang="xx"]` override block.
+
+**Migration:** Legacy data (missing `langId`) is automatically normalized to `langId: 'zh'` at hydration via `vocabNormalizer.js`.
+
 ## Claude API integration
 
 - **Model:** `claude-sonnet-4-20250514`
 - **Endpoint:** `POST https://api.anthropic.com/v1/messages`
 - **Required browser header:** `anthropic-dangerous-direct-browser-access: true`
+- **All 4 API functions** (`generateSyllabus`, `generateReader`, `extendSyllabus`, `gradeAnswers`) accept `langId` as the last parameter (defaults to `'zh'`). Prompt templates are built from `langConfig.prompts` fragments.
 - **Syllabus prompt:** Returns a JSON object `{ summary: string, lessons: [] }` (no markdown fences). Falls back gracefully if Claude returns a plain array (old format).
-- **Reader prompt:** Returns structured markdown with sections 1–5; section 5 is an ` ```anki-json ``` ` block
+- **Reader prompt:** Returns structured markdown with sections 1–6; section 5 is an ` ```anki-json ``` ` block
 
 The `learnedVocabulary` object keys are passed to Claude in each new reader request so it avoids re-introducing already-covered words.
 
@@ -231,11 +259,15 @@ All tokens are CSS custom properties in `src/index.css`:
 | `--color-text` | `#1A1814` (ink black) |
 | `--color-accent` | `#4A7C7E` (ink-wash teal) |
 | `--font-chinese` | Noto Serif SC → Songti SC → SimSun → serif |
+| `--font-target` | `var(--font-chinese)` (overridden by `[data-lang]`) |
 | `--font-display` | Cormorant Garamond → Georgia → serif |
 | `--text-chinese-body` | 1.25rem (20px) |
 | `--leading-chinese` | 1.9 |
+| `--leading-target` | `var(--leading-chinese)` (overridden by `[data-lang]`) |
 
-Fonts loaded from Google Fonts. Layout: two-column on desktop (280px sidebar + flex main), single column with slide-in sidebar on mobile (≤768px).
+Fonts loaded from Google Fonts (Noto Serif SC + Noto Serif KR + Cormorant Garamond). Layout: two-column on desktop (280px sidebar + flex main), single column with slide-in sidebar on mobile (≤768px).
+
+**Language-specific typography:** `[data-lang="ko"]` on `<html>` overrides `--font-target` to Noto Serif KR and `--leading-target` to 1.8. The attribute is set by `ReaderView` based on the reader's `langId`. CSS classes `.text-target` and `.text-target-title` use these tokens; `.text-chinese` is kept as an alias for backwards compatibility.
 
 Dark mode is implemented via `[data-theme="dark"]` on `<html>`. The selector overrides all colour tokens plus `.card` and `.form-input` backgrounds (which use hardcoded `#fff` in light mode). Toggled by `state.darkMode` (persisted to `gradedReader_darkMode` in localStorage); a `useEffect` in `AppProvider` applies/removes the attribute.
 

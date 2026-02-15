@@ -11,7 +11,7 @@ function scoreBadgeClass(scoreStr) {
   return 'comprehension__score-badge--poor';
 }
 
-export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level }) {
+export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
   const { apiKey } = state;
@@ -41,7 +41,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
     setGradingError(null);
     try {
       const answersArray = questions.map((_, i) => answers[i] || '');
-      const result = await gradeAnswers(apiKey, questions, answersArray, story, level);
+      const result = await gradeAnswers(apiKey, questions, answersArray, story, level, 2048, langId);
       setResults(result);
       if (lessonKey) {
         act.setReader(lessonKey, {

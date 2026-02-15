@@ -119,19 +119,19 @@ function AppShell() {
     setStandaloneKey('standalone_pending');
   }
 
-  async function handleContinueStory({ story, topic, level }) {
+  async function handleContinueStory({ story, topic, level, langId }) {
     const newKey = `standalone_${Date.now()}`;
     const continuationTopic = `Continuation: ${topic}`;
-    act.addStandaloneReader({ key: newKey, topic: continuationTopic, level, createdAt: Date.now() });
+    act.addStandaloneReader({ key: newKey, topic: continuationTopic, level, langId, createdAt: Date.now() });
     act.startPendingReader(newKey);
     setStandaloneKey(newKey);
     setSidebarOpen(false);
     try {
-      const raw    = await generateReader(state.apiKey, continuationTopic, level, state.learnedVocabulary, 1200, state.maxTokens, story);
-      const parsed = parseReaderResponse(raw);
-      act.setReader(newKey, { ...parsed, topic: continuationTopic, level, lessonKey: newKey });
+      const raw    = await generateReader(state.apiKey, continuationTopic, level, state.learnedVocabulary, 1200, state.maxTokens, story, langId);
+      const parsed = parseReaderResponse(raw, langId);
+      act.setReader(newKey, { ...parsed, topic: continuationTopic, level, langId, lessonKey: newKey });
       if (parsed.ankiJson?.length > 0) {
-        act.addVocabulary(parsed.ankiJson.map(c => ({ chinese: c.chinese, pinyin: c.pinyin, english: c.english })));
+        act.addVocabulary(parsed.ankiJson.map(c => ({ chinese: c.chinese, korean: c.korean, pinyin: c.pinyin, romanization: c.romanization, english: c.english, langId })));
       }
       act.notify('success', 'Continuation reader ready!');
     } catch (err) {
@@ -152,6 +152,7 @@ function AppShell() {
         currentSyllabus.level,
         currentSyllabus.lessons,
         additionalCount,
+        currentSyllabus.langId,
       );
       act.extendSyllabusLessons(activeSyllabusId, newLessons);
       act.notify('success', `Added ${newLessons.length} new lesson${newLessons.length !== 1 ? 's' : ''}`);
@@ -227,7 +228,7 @@ function AppShell() {
             <ReaderView
               lessonKey={activeLessonKey}
               lessonMeta={standaloneKey ? null : (activeMeta
-                ? { ...activeMeta, level: currentSyllabus?.level, lesson_number: lessonIndex + 1 }
+                ? { ...activeMeta, level: currentSyllabus?.level, langId: currentSyllabus?.langId, lesson_number: lessonIndex + 1 }
                 : null)}
               onMarkComplete={handleMarkComplete}
               onUnmarkComplete={handleUnmarkComplete}

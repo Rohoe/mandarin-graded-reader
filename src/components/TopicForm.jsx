@@ -3,27 +3,24 @@ import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
 import { generateSyllabus, generateReader } from '../lib/api';
 import { parseReaderResponse } from '../lib/parser';
+import { getLang, getAllLanguages, DEFAULT_LANG_ID } from '../lib/languages';
 import GenerationProgress from './GenerationProgress';
 import './TopicForm.css';
-
-const HSK_LEVELS = [
-  { value: 1, label: 'HSK 1', desc: 'Absolute beginner (~150 words)' },
-  { value: 2, label: 'HSK 2', desc: 'Elementary (~300 words)' },
-  { value: 3, label: 'HSK 3', desc: 'Pre-intermediate (~600 words)' },
-  { value: 4, label: 'HSK 4', desc: 'Intermediate (~1,200 words)' },
-  { value: 5, label: 'HSK 5', desc: 'Upper-intermediate (~2,500 words)' },
-  { value: 6, label: 'HSK 6', desc: 'Advanced (~5,000 words)' },
-];
 
 export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStandaloneGenerating, onCancel }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
 
   const [topic, setTopic]         = useState('');
+  const [langId, setLangId]       = useState(DEFAULT_LANG_ID);
   const [level, setLevel]         = useState(state.defaultLevel ?? 3);
   const [mode, setMode]           = useState('syllabus'); // 'syllabus' | 'standalone'
   const [lessonCount, setLessonCount] = useState(6);
   const [readerLength, setReaderLength] = useState(1200);
+
+  const langConfig = getLang(langId);
+  const languages = getAllLanguages();
+  const profLevels = langConfig.proficiency.levels;
 
   async function handleGenerateSyllabus(e) {
     e.preventDefault();
@@ -32,11 +29,12 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
     act.setLoading(true, '正在生成课程大纲…');
     act.clearError();
     try {
-      const { summary, lessons } = await generateSyllabus(state.apiKey, topic.trim(), level, lessonCount);
+      const { summary, lessons } = await generateSyllabus(state.apiKey, topic.trim(), level, lessonCount, langId);
       const newSyllabus = {
         id:        `syllabus_${Date.now().toString(36)}`,
         topic:     topic.trim(),
         level,
+        langId,
         summary,
         lessons,
         createdAt: Date.now(),
@@ -59,7 +57,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
     const topicStr  = topic.trim();
 
     // Register in sidebar and navigate to the reader view immediately
-    act.addStandaloneReader({ key: lessonKey, topic: topicStr, level, createdAt: Date.now() });
+    act.addStandaloneReader({ key: lessonKey, topic: topicStr, level, langId, createdAt: Date.now() });
     act.startPendingReader(lessonKey);
     act.clearError();
     onStandaloneGenerating?.();
@@ -67,12 +65,12 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
 
     // Generate in background — form can close, user can navigate away
     try {
-      const raw    = await generateReader(state.apiKey, topicStr, level, state.learnedVocabulary, readerLength, state.maxTokens);
-      const parsed = parseReaderResponse(raw);
-      act.setReader(lessonKey, { ...parsed, topic: topicStr, level, lessonKey, isStandalone: true });
+      const raw    = await generateReader(state.apiKey, topicStr, level, state.learnedVocabulary, readerLength, state.maxTokens, null, langId);
+      const parsed = parseReaderResponse(raw, langId);
+      act.setReader(lessonKey, { ...parsed, topic: topicStr, level, langId, lessonKey, isStandalone: true });
       if (parsed.ankiJson?.length > 0) {
         act.addVocabulary(parsed.ankiJson.map(c => ({
-          chinese: c.chinese, pinyin: c.pinyin, english: c.english,
+          chinese: c.chinese, korean: c.korean, pinyin: c.pinyin, romanization: c.romanization, english: c.english, langId,
         })));
       }
       act.notify('success', `Reader ready: "${topicStr}"`);
@@ -105,6 +103,26 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
         </button>
       </div>
 
+      {/* Language selector */}
+      {languages.length > 1 && (
+        <div className="form-group">
+          <label className="form-label">Language</label>
+          <div className="topic-form__lang-pills">
+            {languages.map(lang => (
+              <button
+                key={lang.id}
+                type="button"
+                className={`topic-form__lang-pill ${langId === lang.id ? 'active' : ''}`}
+                onClick={() => { setLangId(lang.id); setLevel(Math.min(level, lang.proficiency.levels.length)); }}
+                disabled={state.loading}
+              >
+                {lang.nameNative}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="form-group">
         <label className="form-label" htmlFor="topic-input">Topic</label>
         <input
@@ -121,9 +139,9 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
       </div>
 
       <div className="form-group">
-        <label className="form-label">HSK Level</label>
+        <label className="form-label">{langConfig.proficiency.name} Level</label>
         <div className="topic-form__hsk-pills">
-          {HSK_LEVELS.map(l => (
+          {profLevels.map(l => (
             <button
               key={l.value}
               type="button"
@@ -137,7 +155,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
           ))}
         </div>
         <p className="topic-form__hsk-desc">
-          {HSK_LEVELS.find(l => l.value === level)?.desc}
+          {profLevels.find(l => l.value === level)?.desc}
         </p>
       </div>
 

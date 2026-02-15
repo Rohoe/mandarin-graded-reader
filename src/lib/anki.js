@@ -3,16 +3,21 @@
  * Generates tab-separated .txt files for Anki import.
  */
 
+import { getLang, DEFAULT_LANG_ID } from './languages';
+
 // ── Duplicate filtering ───────────────────────────────────────
 
-export function prepareExport(ankiJson, exportedWords) {
+export function prepareExport(ankiJson, exportedWords, langId = DEFAULT_LANG_ID) {
+  const langConfig = getLang(langId);
+  const targetField = langConfig.fields.target;
   const toExport  = [];
   const skipped   = [];
 
   for (const card of ankiJson) {
-    if (!card.chinese) continue;
-    if (exportedWords.has(card.chinese)) {
-      skipped.push(card.chinese);
+    const targetWord = card[targetField] || card.chinese || card.korean || '';
+    if (!targetWord) continue;
+    if (exportedWords.has(targetWord)) {
+      skipped.push(targetWord);
     } else {
       toExport.push(card);
     }
@@ -37,19 +42,25 @@ function grammarNotesToCards(grammarNotes) {
   }));
 }
 
-export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forceAll = false, grammarNotes = [] } = {}) {
+export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forceAll = false, grammarNotes = [], langId = DEFAULT_LANG_ID } = {}) {
+  const langConfig = getLang(langId);
+  const targetField = langConfig.fields.target;
+  const romField = langConfig.fields.romanization;
+  const transField = langConfig.fields.translation;
+  const profName = langConfig.proficiency.name;
+
   const allCards = [...ankiJson, ...grammarNotesToCards(grammarNotes)];
-  const { toExport: newCards, skipped } = prepareExport(allCards, exportedWords);
+  const { toExport: newCards, skipped } = prepareExport(allCards, exportedWords, langId);
 
   const today     = new Date().toISOString().split('T')[0];
   const topicTag  = topic.replace(/[\s/\\:*?"<>|]+/g, '_').replace(/_+/g, '_');
-  const filename  = `anki_cards_${topicTag}_HSK${level}_${today}.txt`;
+  const filename  = `anki_cards_${topicTag}_${profName}${level}_${today}.txt`;
 
-  const toExport = forceAll ? allCards.filter(c => c.chinese) : newCards;
+  const toExport = forceAll ? allCards.filter(c => (c[targetField] || c.chinese || c.korean)) : newCards;
 
   let content = null;
   if (toExport.length > 0) {
-    const lines = toExport.map(card => formatRow(card, level, topicTag, today));
+    const lines = toExport.map(card => formatRow(card, level, topicTag, today, langConfig));
     content = lines.join('\n');
   }
 
@@ -57,11 +68,16 @@ export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forc
     content,
     filename,
     stats:          { exported: toExport.length, skipped: forceAll ? 0 : skipped.length },
-    exportedChinese: new Set(toExport.map(c => c.chinese)),
+    exportedChinese: new Set(toExport.map(c => c[targetField] || c.chinese || c.korean)),
   };
 }
 
-function formatRow(card, level, topicTag, date) {
+function formatRow(card, level, topicTag, date, langConfig) {
+  const targetField = langConfig.fields.target;
+  const romField = langConfig.fields.romanization;
+  const transField = langConfig.fields.translation;
+  const profName = langConfig.proficiency.name;
+
   const exampleParts = [];
   if (card.example_story) {
     exampleParts.push(card.example_story);
@@ -75,13 +91,13 @@ function formatRow(card, level, topicTag, date) {
   const examples = exampleParts.join('<br>');
 
   const tags = card._isGrammar
-    ? `HSK${level} ${topicTag} ${date} Grammar`
-    : `HSK${level} ${topicTag} ${date}`;
+    ? `${profName}${level} ${topicTag} ${date} Grammar`
+    : `${profName}${level} ${topicTag} ${date}`;
 
   return [
-    sanitize(card.chinese),
-    sanitize(card.pinyin),
-    sanitize(card.english),
+    sanitize(card[targetField] || card.chinese || card.korean || ''),
+    sanitize(card[romField] || card.pinyin || card.romanization || ''),
+    sanitize(card[transField] || card.english || ''),
     sanitize(examples),
     sanitize(tags),
   ].join('\t');

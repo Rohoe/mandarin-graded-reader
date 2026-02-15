@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { getLang } from '../../lib/languages';
 import LoadingIndicator from '../LoadingIndicator';
 import './SyllabusHome.css';
 
@@ -11,7 +12,8 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
 
   if (!syllabus) return null;
 
-  const { topic, level, summary, lessons = [], createdAt } = syllabus;
+  const { topic, level, langId, summary, lessons = [], createdAt } = syllabus;
+  const langConfig = getLang(langId);
   const completedSet = new Set(progress?.completedLessons || []);
   const completedCount = completedSet.size;
 
@@ -42,7 +44,7 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
       <header className="syllabus-home__header">
         <div className="syllabus-home__title-row">
           <h1 className="syllabus-home__topic font-display">{topic}</h1>
-          <span className="syllabus-home__level-badge">HSK {level}</span>
+          <span className="syllabus-home__level-badge">{langConfig.proficiency.name} {level}</span>
         </div>
         {createdDate && (
           <p className="syllabus-home__date text-muted">Created {createdDate}</p>
@@ -87,7 +89,7 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
                     {isCompleted ? '✓' : idx + 1}
                   </span>
                   <span className="syllabus-home__lesson-titles">
-                    <span className="syllabus-home__lesson-zh text-chinese">{lesson.title_zh}</span>
+                    <span className="syllabus-home__lesson-zh text-target">{lesson.title_zh || lesson.title_target}</span>
                     <span className="syllabus-home__lesson-en text-muted">{lesson.title_en}</span>
                   </span>
                   <span className="syllabus-home__lesson-cta text-muted">

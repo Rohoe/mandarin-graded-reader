@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useReducer, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { normalizeSyllabi, normalizeStandaloneReaders } from '../lib/vocabNormalizer';
 import {
   loadApiKey,
   saveApiKey,
@@ -48,9 +49,9 @@ import {
 function buildInitialState() {
   return {
     apiKey:            loadApiKey(),
-    syllabi:           loadSyllabi(),
+    syllabi:           normalizeSyllabi(loadSyllabi()),
     syllabusProgress:  loadSyllabusProgress(),
-    standaloneReaders: loadStandaloneReaders(),
+    standaloneReaders: normalizeStandaloneReaders(loadStandaloneReaders()),
     generatedReaders:  loadAllReaders(),
     learnedVocabulary: loadLearnedVocabulary(),
     exportedWords:     loadExportedWords(),
@@ -269,9 +270,9 @@ function reducer(state, action) {
       const d = action.payload;
       return {
         ...state,
-        syllabi:           d.syllabi,
+        syllabi:           normalizeSyllabi(d.syllabi),
         syllabusProgress:  d.syllabusProgress,
-        standaloneReaders: d.standaloneReaders,
+        standaloneReaders: normalizeStandaloneReaders(d.standaloneReaders),
         generatedReaders:  d.generatedReaders,
         learnedVocabulary: d.learnedVocabulary,
         exportedWords:     d.exportedWords,
@@ -315,16 +316,18 @@ function reducer(state, action) {
 
     case 'HYDRATE_FROM_CLOUD': {
       const d = action.payload;
+      const normalizedSyllabi = normalizeSyllabi(d.syllabi);
+      const normalizedStandalone = normalizeStandaloneReaders(d.standalone_readers);
       // Mirror to localStorage
-      saveSyllabi(d.syllabi);
+      saveSyllabi(normalizedSyllabi);
       saveSyllabusProgress(d.syllabus_progress);
-      saveStandaloneReaders(d.standalone_readers);
+      saveStandaloneReaders(normalizedStandalone);
       for (const [k, v] of Object.entries(d.generated_readers)) saveReader(k, v);
       return {
         ...state,
-        syllabi:           d.syllabi,
+        syllabi:           normalizedSyllabi,
         syllabusProgress:  d.syllabus_progress,
-        standaloneReaders: d.standalone_readers,
+        standaloneReaders: normalizedStandalone,
         generatedReaders:  d.generated_readers,
         learnedVocabulary: d.learned_vocabulary,
         exportedWords:     new Set(d.exported_words),

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
+import { getLang } from '../lib/languages';
 import TopicForm from './TopicForm';
 import './SyllabusPanel.css';
 
@@ -82,11 +83,14 @@ export default function SyllabusPanel({
             onChange={e => { onSwitchSyllabus?.(e.target.value); setFormOpen(false); }}
             aria-label="Switch syllabus"
           >
-            {syllabi.map(s => (
-              <option key={s.id} value={s.id}>
-                {s.topic} · HSK {s.level}
-              </option>
-            ))}
+            {syllabi.map(s => {
+              const sLang = getLang(s.langId);
+              return (
+                <option key={s.id} value={s.id}>
+                  {s.topic} · {sLang.proficiency.name} {s.level}
+                </option>
+              );
+            })}
           </select>
           <button
             className="btn btn-ghost btn-sm"
@@ -120,7 +124,7 @@ export default function SyllabusPanel({
               title="Syllabus overview"
             >
               <span className="form-label">
-                {currentSyllabus.topic} · HSK {currentSyllabus.level}
+                {currentSyllabus.topic} · {getLang(currentSyllabus.langId).proficiency.name} {currentSyllabus.level}
               </span>
               <span className="syllabus-panel__progress text-subtle">
                 {completedLessons.size}/{lessons.length}
@@ -208,7 +212,7 @@ export default function SyllabusPanel({
                         {generatedReaders[r.key]?.titleZh || r.topic}
                       </span>
                       <span className="syllabus-panel__lesson-en text-muted">
-                        {generatedReaders[r.key]?.titleEn || `HSK ${r.level}`}
+                        {generatedReaders[r.key]?.titleEn || `${getLang(r.langId).proficiency.name} ${r.level}`}
                       </span>
                     </span>
                   </button>
