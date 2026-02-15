@@ -41,6 +41,8 @@ import {
   saveTtsYueVoiceURI,
   loadCloudLastSynced,
   saveCloudLastSynced,
+  loadVerboseVocab,
+  saveVerboseVocab,
 } from '../lib/storage';
 import {
   loadDirectoryHandle,
@@ -79,6 +81,7 @@ function buildInitialState() {
     ttsVoiceURI:       loadTtsVoiceURI(),
     ttsKoVoiceURI:     loadTtsKoVoiceURI(),
     ttsYueVoiceURI:    loadTtsYueVoiceURI(),
+    verboseVocab:      loadVerboseVocab(),
     // Background generation tracking (ephemeral, not persisted)
     pendingReaders:    {},
     // Cloud sync
@@ -281,6 +284,7 @@ function baseReducer(state, action) {
         defaultLevel:  state.defaultLevel,
         defaultTopikLevel: state.defaultTopikLevel,
         ttsYueVoiceURI: state.ttsYueVoiceURI,
+        verboseVocab:   state.verboseVocab,
       };
 
     // ── File storage actions ──────────────────────────────────
@@ -333,6 +337,10 @@ function baseReducer(state, action) {
     case 'SET_TTS_YUE_VOICE':
       saveTtsYueVoiceURI(action.payload);
       return { ...state, ttsYueVoiceURI: action.payload };
+
+    case 'SET_VERBOSE_VOCAB':
+      saveVerboseVocab(action.payload);
+      return { ...state, verboseVocab: action.payload };
 
     case 'START_PENDING_READER':
       return { ...state, pendingReaders: { ...state.pendingReaders, [action.payload]: true } };

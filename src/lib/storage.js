@@ -42,6 +42,7 @@ const KEYS = {
   TTS_KO_VOICE_URI:   'gradedReader_ttsKoVoiceURI',
   TTS_YUE_VOICE_URI:  'gradedReader_ttsYueVoiceURI',
   CLOUD_LAST_SYNCED:  'gradedReader_cloudLastSynced',
+  VERBOSE_VOCAB:      'gradedReader_verboseVocab',
 };
 
 // ── Generic localStorage helpers ──────────────────────────────
@@ -327,6 +328,16 @@ export function loadTtsYueVoiceURI() {
 
 export function saveTtsYueVoiceURI(uri) {
   save(KEYS.TTS_YUE_VOICE_URI, uri);
+}
+
+// ── Verbose vocabulary preference ────────────────────────────
+
+export function loadVerboseVocab() {
+  return load(KEYS.VERBOSE_VOCAB, false);
+}
+
+export function saveVerboseVocab(val) {
+  save(KEYS.VERBOSE_VOCAB, val);
 }
 
 // ── Cloud last-synced timestamp ───────────────────────────────

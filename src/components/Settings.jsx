@@ -143,6 +143,26 @@ export default function Settings({ onClose }) {
 
         <hr className="divider" />
 
+        {/* Verbose Vocabulary */}
+        <section className="settings-section">
+          <div className="settings-toggle-row">
+            <div>
+              <h3 className="settings-section__title form-label">Verbose Vocabulary</h3>
+              <p className="settings-section__desc text-muted">Show English translations for example sentences in the vocabulary section and include them in Anki exports.</p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={state.verboseVocab}
+              className={`settings-toggle ${state.verboseVocab ? 'settings-toggle--on' : ''}`}
+              onClick={() => act.setVerboseVocab(!state.verboseVocab)}
+            >
+              <span className="settings-toggle__thumb" />
+            </button>
+          </div>
+        </section>
+
+        <hr className="divider" />
+
         {/* Cloud Sync */}
         <section className="settings-section">
           <h3 className="settings-section__title form-label">Cloud Sync</h3>

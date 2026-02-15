@@ -15,7 +15,7 @@ function renderInline(text) {
   return parts;
 }
 
-function VocabCard({ word, index }) {
+function VocabCard({ word, index, renderChars, verboseVocab }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -26,7 +26,9 @@ function VocabCard({ word, index }) {
         aria-expanded={open}
       >
         <span className="vocab-card__num text-subtle">{index + 1}</span>
-        <span className="vocab-card__chinese text-chinese">{word.chinese}</span>
+        <span className="vocab-card__chinese text-chinese">
+          {renderChars ? renderChars(word.chinese, `vc-${index}`) : word.chinese}
+        </span>
         <span className="vocab-card__pinyin text-muted">{word.pinyin}</span>
         <span className="vocab-card__english">{word.english}</span>
         <span className="vocab-card__chevron">{open ? '▲' : '▼'}</span>
@@ -37,7 +39,12 @@ function VocabCard({ word, index }) {
           {word.exampleStory && (
             <div className="vocab-card__example">
               <span className="vocab-card__example-label text-subtle">From story</span>
-              <p className="vocab-card__example-text text-chinese">{renderInline(word.exampleStory)}</p>
+              <p className="vocab-card__example-text text-chinese">
+                {renderChars ? renderChars(word.exampleStory, `ves-${index}`) : renderInline(word.exampleStory)}
+              </p>
+              {verboseVocab && word.exampleStoryTranslation && (
+                <p className="vocab-card__example-translation text-muted">{word.exampleStoryTranslation}</p>
+              )}
               {word.usageNoteStory && (
                 <p className="vocab-card__usage-note text-subtle">{renderInline(word.usageNoteStory)}</p>
               )}
@@ -46,7 +53,12 @@ function VocabCard({ word, index }) {
           {word.exampleExtra && (
             <div className="vocab-card__example">
               <span className="vocab-card__example-label text-subtle">Additional example</span>
-              <p className="vocab-card__example-text text-chinese">{renderInline(word.exampleExtra)}</p>
+              <p className="vocab-card__example-text text-chinese">
+                {renderChars ? renderChars(word.exampleExtra, `vee-${index}`) : renderInline(word.exampleExtra)}
+              </p>
+              {verboseVocab && word.exampleExtraTranslation && (
+                <p className="vocab-card__example-translation text-muted">{word.exampleExtraTranslation}</p>
+              )}
               {word.usageNoteExtra && (
                 <p className="vocab-card__usage-note text-subtle">{renderInline(word.usageNoteExtra)}</p>
               )}
@@ -58,7 +70,7 @@ function VocabCard({ word, index }) {
   );
 }
 
-export default function VocabularyList({ vocabulary }) {
+export default function VocabularyList({ vocabulary, renderChars, verboseVocab }) {
   const [collapsed, setCollapsed] = useState(false);
 
   if (!vocabulary || vocabulary.length === 0) return null;
@@ -79,7 +91,13 @@ export default function VocabularyList({ vocabulary }) {
       {!collapsed && (
         <div className="vocabulary-list__cards fade-in">
           {vocabulary.map((word, i) => (
-            <VocabCard key={word.chinese + i} word={word} index={i} />
+            <VocabCard
+              key={word.chinese + i}
+              word={word}
+              index={i}
+              renderChars={renderChars}
+              verboseVocab={verboseVocab}
+            />
           ))}
         </div>
       )}

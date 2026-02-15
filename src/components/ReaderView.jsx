@@ -16,7 +16,7 @@ import './ReaderView.css';
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
-  const { generatedReaders, learnedVocabulary, error, pendingReaders, apiKey, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI } = state;
+  const { generatedReaders, learnedVocabulary, error, pendingReaders, apiKey, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, verboseVocab } = state;
   const isPending = !!(lessonKey && pendingReaders[lessonKey]);
 
   const reader = generatedReaders[lessonKey];
@@ -545,10 +545,14 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       />
 
       {/* Vocabulary */}
-      <VocabularyList vocabulary={reader.vocabulary} />
+      <VocabularyList
+        vocabulary={reader.vocabulary}
+        renderChars={renderChars}
+        verboseVocab={verboseVocab}
+      />
 
       {/* Grammar notes */}
-      <GrammarNotes grammarNotes={reader.grammarNotes} />
+      <GrammarNotes grammarNotes={reader.grammarNotes} renderChars={renderChars} />
 
       {/* Anki export */}
       {reader.ankiJson?.length > 0 && (
@@ -558,6 +562,8 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
           level={reader.level || 3}
           grammarNotes={reader.grammarNotes}
           langId={langId}
+          verboseVocab={verboseVocab}
+          romanizer={romanizer}
         />
       )}
 

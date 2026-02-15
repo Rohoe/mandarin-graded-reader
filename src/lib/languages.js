@@ -81,8 +81,10 @@ const zhConfig = {
     "pinyin": "cí",
     "english": "n. word/term",
     "example_story": "Story sentence using the word.",
+    "example_story_translation": "English translation of the story example sentence.",
     "usage_note_story": "Usage note explaining what this example demonstrates.",
     "example_extra": "Additional example sentence.",
+    "example_extra_translation": "English translation of the additional example sentence.",
     "usage_note_extra": "Usage note explaining what this example demonstrates."
   }`,
     grammarContext: 'Mandarin grammar patterns',
@@ -173,8 +175,10 @@ const koConfig = {
     "romanization": "dan-eo",
     "english": "n. word/term",
     "example_story": "Story sentence using the word.",
+    "example_story_translation": "English translation of the story example sentence.",
     "usage_note_story": "Usage note explaining what this example demonstrates.",
     "example_extra": "Additional example sentence.",
+    "example_extra_translation": "English translation of the additional example sentence.",
     "usage_note_extra": "Usage note explaining what this example demonstrates."
   }`,
     grammarContext: 'Korean grammar patterns',
@@ -265,8 +269,10 @@ const yueConfig = {
     "jyutping": "ci4",
     "english": "n. word/term",
     "example_story": "Story sentence using the word.",
+    "example_story_translation": "English translation of the story example sentence.",
     "usage_note_story": "Usage note explaining what this example demonstrates.",
     "example_extra": "Additional example sentence.",
+    "example_extra_translation": "English translation of the additional example sentence.",
     "usage_note_extra": "Usage note explaining what this example demonstrates."
   }`,
     grammarContext: 'Cantonese grammar patterns',

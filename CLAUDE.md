@@ -141,7 +141,11 @@ src/
                               Click-to-define: bold vocab words are clickable (looked up via
                               vocabMap). Click shows a fixed-position popover with romanization
                               + definition. Closes on Escape, outside click, or scroll.
-    VocabularyList            Collapsible accordion of vocab cards with examples
+    VocabularyList            Collapsible accordion of vocab cards with examples.
+                              Accepts `renderChars` prop — applies ruby romanization to word headers
+                              and example sentences when romanization toggle is on.
+                              Accepts `verboseVocab` prop — shows English translations below example
+                              sentences (stored as `exampleStoryTranslation`/`exampleExtraTranslation`).
     ComprehensionQuestions    Collapsible question list with interactive answer input and AI grading.
                               Input mode: textarea per question + "Grade My Answers" button.
                               Results mode: per-question score badge (1–5) + feedback + optional
@@ -153,6 +157,8 @@ src/
                               is on), question text is rendered with <ruby> romanization annotations
                               instead of plain renderInline().
     GrammarNotes              Collapsible section showing 3–5 grammar pattern cards per reader.
+                              Accepts `renderChars` prop — applies ruby romanization to `note.pattern`
+                              and `note.example` when romanization toggle is on.
                               Each card shows: pattern (Chinese), label (English name),
                               explanation, and an example sentence from the story.
                               Renders nothing if grammarNotes is empty (old readers).
@@ -215,6 +221,7 @@ src/
   defaultTopikLevel: number,          // Default TOPIK level for TopicForm, default 2
   ttsKoVoiceURI:     string | null,   // Preferred Korean TTS voice URI, or null
   ttsYueVoiceURI:    string | null,   // Preferred Cantonese TTS voice URI, or null
+  verboseVocab:      boolean,         // Show example translations in vocab + Anki export (default false)
   // Background generation (ephemeral, not persisted)
   pendingReaders:    { [lessonKey]: true },  // keys currently being generated
   // File storage

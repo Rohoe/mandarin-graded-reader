@@ -36,6 +36,7 @@ export function actions(dispatch) {
     setTtsVoice:           uri    => dispatch({ type: 'SET_TTS_VOICE', payload: uri }),
     setTtsKoVoice:         uri    => dispatch({ type: 'SET_TTS_KO_VOICE', payload: uri }),
     setTtsYueVoice:        uri    => dispatch({ type: 'SET_TTS_YUE_VOICE', payload: uri }),
+    setVerboseVocab:       val    => dispatch({ type: 'SET_VERBOSE_VOCAB', payload: Boolean(val) }),
     // Background generation tracking
     startPendingReader:    key    => dispatch({ type: 'START_PENDING_READER', payload: key }),
     clearPendingReader:    key    => dispatch({ type: 'CLEAR_PENDING_READER', payload: key }),

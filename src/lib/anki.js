@@ -42,7 +42,21 @@ function grammarNotesToCards(grammarNotes) {
   }));
 }
 
-export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forceAll = false, grammarNotes = [], langId = DEFAULT_LANG_ID } = {}) {
+// Returns space-joined romanization of target-script characters only (for Anki plain text).
+function romanizeForExport(text, romanizer, scriptRegex) {
+  if (!romanizer || !text) return '';
+  const chars = [...text];
+  const romArr = romanizer.romanize(text);
+  const parts = [];
+  for (let i = 0; i < chars.length; i++) {
+    if (scriptRegex.test(chars[i]) && romArr[i]) {
+      parts.push(romArr[i]);
+    }
+  }
+  return parts.join(' ');
+}
+
+export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forceAll = false, grammarNotes = [], langId = DEFAULT_LANG_ID, verboseVocab = false, romanizer = null } = {}) {
   const langConfig = getLang(langId);
   const targetField = langConfig.fields.target;
   const romField = langConfig.fields.romanization;
@@ -58,9 +72,11 @@ export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forc
 
   const toExport = forceAll ? allCards.filter(c => (c[targetField] || c.chinese || c.korean)) : newCards;
 
+  const scriptRegex = langConfig.scriptRegex;
+
   let content = null;
   if (toExport.length > 0) {
-    const lines = toExport.map(card => formatRow(card, level, topicTag, today, langConfig));
+    const lines = toExport.map(card => formatRow(card, level, topicTag, today, langConfig, verboseVocab, romanizer, scriptRegex));
     content = lines.join('\n');
   }
 
@@ -72,7 +88,7 @@ export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forc
   };
 }
 
-function formatRow(card, level, topicTag, date, langConfig) {
+function formatRow(card, level, topicTag, date, langConfig, verboseVocab = false, romanizer = null, scriptRegex = null) {
   const targetField = langConfig.fields.target;
   const romField = langConfig.fields.romanization;
   const transField = langConfig.fields.translation;
@@ -81,11 +97,21 @@ function formatRow(card, level, topicTag, date, langConfig) {
   const exampleParts = [];
   if (card.example_story) {
     exampleParts.push(card.example_story);
+    if (verboseVocab && romanizer && scriptRegex) {
+      const rom = romanizeForExport(card.example_story, romanizer, scriptRegex);
+      if (rom) exampleParts.push(`<i>${rom}</i>`);
+    }
+    if (verboseVocab && card.example_story_translation) exampleParts.push(`<i>${card.example_story_translation}</i>`);
     if (card.usage_note_story) exampleParts.push(`<i>${card.usage_note_story}</i>`);
   }
   if (card.example_extra) {
     if (exampleParts.length > 0) exampleParts.push('');
     exampleParts.push(card.example_extra);
+    if (verboseVocab && romanizer && scriptRegex) {
+      const rom = romanizeForExport(card.example_extra, romanizer, scriptRegex);
+      if (rom) exampleParts.push(`<i>${rom}</i>`);
+    }
+    if (verboseVocab && card.example_extra_translation) exampleParts.push(`<i>${card.example_extra_translation}</i>`);
     if (card.usage_note_extra) exampleParts.push(`<i>${card.usage_note_extra}</i>`);
   }
   const examples = exampleParts.join('<br>');

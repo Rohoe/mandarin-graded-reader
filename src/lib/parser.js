@@ -112,13 +112,15 @@ export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
 
     if (result.vocabulary.length === 0 && result.ankiJson.length > 0) {
       result.vocabulary = result.ankiJson.map(card => ({
-        chinese:        card[targetField] || card.chinese || card.korean || '',
-        pinyin:         card[romField] || card.pinyin || card.romanization || '',
-        english:        card[transField] || card.english || '',
-        exampleStory:   card.example_story || '',
-        exampleExtra:   card.example_extra || '',
-        usageNoteStory: card.usage_note_story || '',
-        usageNoteExtra: card.usage_note_extra || '',
+        chinese:                  card[targetField] || card.chinese || card.korean || '',
+        pinyin:                   card[romField] || card.pinyin || card.romanization || '',
+        english:                  card[transField] || card.english || '',
+        exampleStory:             card.example_story || '',
+        exampleStoryTranslation:  card.example_story_translation || '',
+        exampleExtra:             card.example_extra || '',
+        exampleExtraTranslation:  card.example_extra_translation || '',
+        usageNoteStory:           card.usage_note_story || '',
+        usageNoteExtra:           card.usage_note_extra || '',
       }));
     } else if (result.vocabulary.length > 0 && result.ankiJson.length > 0) {
       // Enrich vocabulary items with usage notes + fill missing pinyin from the Anki JSON block
@@ -128,9 +130,11 @@ export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
         if (!card) return word;
         return {
           ...word,
-          pinyin:         word.pinyin || card[romField] || card.pinyin || card.romanization || '',
-          usageNoteStory: card.usage_note_story || word.usageNoteStory,
-          usageNoteExtra: card.usage_note_extra || word.usageNoteExtra,
+          pinyin:                  word.pinyin || card[romField] || card.pinyin || card.romanization || '',
+          exampleStoryTranslation: card.example_story_translation || word.exampleStoryTranslation || '',
+          exampleExtraTranslation: card.example_extra_translation || word.exampleExtraTranslation || '',
+          usageNoteStory:          card.usage_note_story || word.usageNoteStory,
+          usageNoteExtra:          card.usage_note_extra || word.usageNoteExtra,
         };
       });
       // Append any words present in ankiJson but absent from the vocabulary section
@@ -138,13 +142,15 @@ export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
       const missing = result.ankiJson
         .filter(card => !vocabChinese.has(card[targetField] || card.chinese || card.korean))
         .map(card => ({
-          chinese:        card[targetField] || card.chinese || card.korean || '',
-          pinyin:         card[romField] || card.pinyin || card.romanization || '',
-          english:        card[transField] || card.english || '',
-          exampleStory:   card.example_story || '',
-          exampleExtra:   card.example_extra || '',
-          usageNoteStory: card.usage_note_story || '',
-          usageNoteExtra: card.usage_note_extra || '',
+          chinese:                  card[targetField] || card.chinese || card.korean || '',
+          pinyin:                   card[romField] || card.pinyin || card.romanization || '',
+          english:                  card[transField] || card.english || '',
+          exampleStory:             card.example_story || '',
+          exampleStoryTranslation:  card.example_story_translation || '',
+          exampleExtra:             card.example_extra || '',
+          exampleExtraTranslation:  card.example_extra_translation || '',
+          usageNoteStory:           card.usage_note_story || '',
+          usageNoteExtra:           card.usage_note_extra || '',
         }));
       result.vocabulary = missing.length > 0 ? [...enriched, ...missing] : enriched;
     }

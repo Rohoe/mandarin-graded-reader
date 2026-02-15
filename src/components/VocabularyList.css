@@ -129,6 +129,13 @@
   color: var(--color-text);
 }
 
+.vocab-card__example-translation {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  margin-top: var(--space-1);
+  font-style: italic;
+}
+
 .vocab-card__usage-note {
   font-family: var(--font-display);
   font-style: italic;

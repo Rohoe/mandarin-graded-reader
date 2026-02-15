@@ -4,7 +4,7 @@ import { actions } from '../context/actions';
 import { generateAnkiExport, downloadFile } from '../lib/anki';
 import './AnkiExportButton.css';
 
-export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes, langId }) {
+export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes, langId, verboseVocab, romanizer }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
   const { exportedWords } = state;
@@ -22,7 +22,7 @@ export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes,
   const allExported = newCount === 0;
 
   function handleExport() {
-    const result = generateAnkiExport(ankiJson, topic, level, exportedWords, { forceAll: allExported, grammarNotes, langId });
+    const result = generateAnkiExport(ankiJson, topic, level, exportedWords, { forceAll: allExported, grammarNotes, langId, verboseVocab, romanizer });
 
     if (result.content) {
       downloadFile(result.content, result.filename);
