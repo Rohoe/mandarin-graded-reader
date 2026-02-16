@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { useApp } from '../context/AppContext';
+import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { generateAnkiExport, downloadFile } from '../lib/anki';
 import './AnkiExportButton.css';
 
 export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes, langId, verboseVocab, romanizer }) {
-  const { state, dispatch } = useApp();
+  const exportedWords = useAppSelector(s => s.exportedWords);
+  const dispatch = useAppDispatch();
   const act = actions(dispatch);
-  const { exportedWords } = state;
 
   const [exported, setExported] = useState(false);
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
+import { useAppSelector } from './context/useAppSelector';
 import { actions } from './context/actions';
 import { generateReader, extendSyllabus } from './lib/api';
 import { loadLastSession, saveLastSession } from './lib/storage';
@@ -9,14 +10,14 @@ import SyllabusHome from './components/SyllabusHome';
 import ReaderView from './components/ReaderView';
 import Settings from './components/Settings';
 import SyncConflictDialog from './components/SyncConflictDialog';
+import ErrorBoundary from './components/ErrorBoundary';
 import LoadingIndicator from './components/LoadingIndicator';
 import './App.css';
 
 // ── Notification toast ─────────────────────────────────────────
 
 function Notification() {
-  const { state } = useApp();
-  const { notification } = state;
+  const notification = useAppSelector(s => s.notification);
   if (!notification) return null;
   return (
     <div className={`app-notification app-notification--${notification.type} fade-in`}>
@@ -215,23 +216,26 @@ function AppShell() {
 
       {/* ─ Left sidebar ──────────────────────────────────── */}
       <div className={`app-sidebar ${sidebarOpen ? 'app-sidebar--open' : ''}`}>
-        <SyllabusPanel
-          activeSyllabusId={activeSyllabusId}
-          standaloneKey={standaloneKey}
-          syllabusView={syllabusView}
-          onSelectLesson={handleSelectLesson}
-          onNewSyllabus={handleNewSyllabus}
-          onShowSettings={() => setShowSettings(true)}
-          onStandaloneGenerated={onStandaloneGenerated}
-          onSwitchSyllabus={handleSwitchSyllabus}
-          onSelectStandalone={handleSelectStandalone}
-          onStandaloneGenerating={handleStandaloneGenerating}
-          onGoSyllabusHome={handleGoSyllabusHome}
-        />
+        <ErrorBoundary name="sidebar">
+          <SyllabusPanel
+            activeSyllabusId={activeSyllabusId}
+            standaloneKey={standaloneKey}
+            syllabusView={syllabusView}
+            onSelectLesson={handleSelectLesson}
+            onNewSyllabus={handleNewSyllabus}
+            onShowSettings={() => setShowSettings(true)}
+            onStandaloneGenerated={onStandaloneGenerated}
+            onSwitchSyllabus={handleSwitchSyllabus}
+            onSelectStandalone={handleSelectStandalone}
+            onStandaloneGenerating={handleStandaloneGenerating}
+            onGoSyllabusHome={handleGoSyllabusHome}
+          />
+        </ErrorBoundary>
       </div>
 
       {/* ─ Main content ──────────────────────────────────── */}
       <main className="app-main">
+        <ErrorBoundary name="reader">
         {activeSyllabusId && syllabusView === 'home' && !standaloneKey
           ? (
             <SyllabusHome
@@ -262,10 +266,15 @@ function AppShell() {
             />
           )
         }
+        </ErrorBoundary>
       </main>
 
       {/* ─ Settings modal ────────────────────────────────── */}
-      {showSettings && <Settings onClose={() => setShowSettings(false)} />}
+      {showSettings && (
+        <ErrorBoundary name="settings">
+          <Settings onClose={() => setShowSettings(false)} />
+        </ErrorBoundary>
+      )}
 
       {/* ─ Sync conflict dialog ──────────────────────────── */}
       {state.syncConflict && (

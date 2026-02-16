@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useApp } from '../context/AppContext';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { gradeAnswers } from '../lib/api';
 import './ComprehensionQuestions.css';
@@ -25,25 +25,57 @@ function scoreBadgeClass(scoreStr) {
   return 'comprehension__score-badge--poor';
 }
 
+const AUTO_SAVE_DELAY = 1500;
+
 export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars }) {
-  const { state, dispatch } = useApp();
+  const apiKey = useAppSelector(s => s.apiKey);
+  const dispatch = useAppDispatch();
   const act = actions(dispatch);
-  const { apiKey } = state;
 
   const [collapsed, setCollapsed] = useState(false);
   const [answers, setAnswers] = useState(() => reader?.userAnswers ?? {});
-  const [isDirty, setIsDirty] = useState(false);
   const [results, setResults] = useState(() => reader?.gradingResults ?? null);
   const [grading, setGrading] = useState(false);
   const [gradingError, setGradingError] = useState(null);
 
-  // Reset local state when switching to a different reader
+  // Refs for debounced auto-save — read current values without stale closures
+  const debounceRef = useRef(null);
+  const answersRef = useRef(answers);
+  const readerRef = useRef(reader);
+  const lessonKeyRef = useRef(lessonKey);
+  answersRef.current = answers;
+  readerRef.current = reader;
+  lessonKeyRef.current = lessonKey;
+
+  const flushSave = useCallback(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    const key = lessonKeyRef.current;
+    if (!key) return;
+    const current = readerRef.current;
+    const currentAnswers = answersRef.current;
+    // Only save if answers actually differ from what's persisted
+    const saved = current?.userAnswers ?? {};
+    const dirty = Object.keys(currentAnswers).some(i => (currentAnswers[i] ?? '') !== (saved[i] ?? ''));
+    if (dirty) {
+      act.setReader(key, { ...current, userAnswers: currentAnswers });
+    }
+  }, [act]);
+
+  // Reset local state when switching to a different reader; flush pending save first
   useEffect(() => {
+    flushSave();
     setAnswers(reader?.userAnswers ?? {});
-    setIsDirty(false);
     setResults(reader?.gradingResults ?? null);
     setGradingError(null);
   }, [lessonKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Flush pending save on unmount
+  useEffect(() => {
+    return () => flushSave();
+  }, [flushSave]);
 
   if (!questions || questions.length === 0) {
     return (
@@ -61,22 +93,22 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
   function handleAnswerChange(i, val) {
     const next = { ...answers, [i]: val };
     setAnswers(next);
-    const savedAnswers = reader?.userAnswers ?? {};
-    const dirty = questions.some((_, idx) => (next[idx] ?? '') !== (savedAnswers[idx] ?? ''));
-    setIsDirty(dirty);
-  }
-
-  function handleSaveDraft() {
-    if (!lessonKey) return;
-    act.setReader(lessonKey, { ...reader, userAnswers: answers });
-    setIsDirty(false);
+    // Schedule debounced auto-save
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null;
+      const key = lessonKeyRef.current;
+      if (!key) return;
+      act.setReader(key, { ...readerRef.current, userAnswers: answersRef.current });
+    }, AUTO_SAVE_DELAY);
   }
 
   async function handleGrade() {
     if (!story) { setGradingError('Story text unavailable.'); return; }
-    // Implicitly save draft before grading
+    // Flush any pending debounce and save immediately
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = null;
     if (lessonKey) act.setReader(lessonKey, { ...reader, userAnswers: answers });
-    setIsDirty(false);
     setGrading(true);
     setGradingError(null);
     try {
@@ -179,15 +211,6 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                 <p className="comprehension__error">{gradingError}</p>
               )}
               <div className="comprehension__actions">
-                {isDirty && (
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={handleSaveDraft}
-                    disabled={grading}
-                  >
-                    Save Draft
-                  </button>
-                )}
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={handleGrade}
@@ -198,7 +221,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
               </div>
               {!apiKey && (
                 <p className="comprehension__hint" style={{ marginTop: '0.75rem', fontSize: '0.9rem', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
-                  ⚠️ API key required for grading. Open Settings to add your key.
+                  API key required for grading. Open Settings to add your key.
                 </p>
               )}
             </>

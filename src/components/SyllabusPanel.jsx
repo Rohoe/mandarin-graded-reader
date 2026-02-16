@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useApp } from '../context/AppContext';
+import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { getLang, getLessonTitle } from '../lib/languages';
 import TopicForm from './TopicForm';
@@ -18,9 +18,13 @@ export default function SyllabusPanel({
   onSelectStandalone,
   onGoSyllabusHome,
 }) {
-  const { state, dispatch } = useApp();
+  const { syllabi, syllabusProgress, standaloneReaders, generatedReaders, loading, pendingReaders, cloudUser, cloudSyncing, cloudLastSynced, lastModified } = useAppSelector(s => ({
+    syllabi: s.syllabi, syllabusProgress: s.syllabusProgress, standaloneReaders: s.standaloneReaders,
+    generatedReaders: s.generatedReaders, loading: s.loading, pendingReaders: s.pendingReaders,
+    cloudUser: s.cloudUser, cloudSyncing: s.cloudSyncing, cloudLastSynced: s.cloudLastSynced, lastModified: s.lastModified,
+  }));
+  const dispatch = useAppDispatch();
   const act = actions(dispatch);
-  const { syllabi, syllabusProgress, standaloneReaders, generatedReaders, loading, pendingReaders, cloudUser, cloudSyncing, cloudLastSynced, lastModified } = state;
   const pendingCount = Object.keys(pendingReaders).length;
 
   const activeSyllabi    = syllabi.filter(s => !s.archived);

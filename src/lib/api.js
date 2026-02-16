@@ -11,36 +11,72 @@ const MODEL   = 'claude-sonnet-4-20250514';
 
 // ── Core fetch wrapper ────────────────────────────────────────
 
+const MAX_RETRIES   = 2;   // up to 3 total attempts
+const BASE_DELAY_MS = 1000;
+
+function isRetryable(status) {
+  // Retry on server errors and rate limits; never retry client errors (400, 401, 403, etc.)
+  return status >= 500 || status === 429;
+}
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function callClaude(apiKey, systemPrompt, userMessage, maxTokens = 4096) {
   if (!apiKey) throw new Error('No API key provided. Please enter your Anthropic API key in Settings.');
 
-  const response = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: maxTokens,
-      ...(systemPrompt ? { system: systemPrompt } : {}),
-      messages: [{ role: 'user', content: userMessage }],
-    }),
-  });
+  let lastError;
 
-  if (!response.ok) {
-    let msg = `API error ${response.status}`;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const err = await response.json();
-      msg = err.error?.message || msg;
-    } catch { /* ignore */ }
-    throw new Error(msg);
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: maxTokens,
+          ...(systemPrompt ? { system: systemPrompt } : {}),
+          messages: [{ role: 'user', content: userMessage }],
+        }),
+      });
+
+      if (!response.ok) {
+        let msg = `API error ${response.status}`;
+        try {
+          const err = await response.json();
+          msg = err.error?.message || msg;
+        } catch { /* ignore */ }
+        const error = new Error(msg);
+        error.status = response.status;
+
+        if (!isRetryable(response.status) || attempt === MAX_RETRIES) throw error;
+        lastError = error;
+        const backoff = BASE_DELAY_MS * Math.pow(2, attempt);
+        console.warn(`[callClaude] ${response.status} on attempt ${attempt + 1}, retrying in ${backoff}ms…`);
+        await delay(backoff);
+        continue;
+      }
+
+      const data = await response.json();
+      return data.content[0].text;
+    } catch (err) {
+      // Network errors (TypeError: Failed to fetch) are retryable
+      if (err.status !== undefined) throw err; // Already an API error we decided not to retry
+      if (attempt === MAX_RETRIES) throw err;
+      lastError = err;
+      const backoff = BASE_DELAY_MS * Math.pow(2, attempt);
+      console.warn(`[callClaude] Network error on attempt ${attempt + 1}, retrying in ${backoff}ms…`, err.message);
+      await delay(backoff);
+    }
   }
 
-  const data = await response.json();
-  return data.content[0].text;
+  throw lastError;
 }
 
 // ── Syllabus generation ───────────────────────────────────────

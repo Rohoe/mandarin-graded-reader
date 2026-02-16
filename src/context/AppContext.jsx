@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useReducer, useEffect, useRef } from 'react';
+import { createContext, useReducer, useEffect, useRef, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { normalizeSyllabi, normalizeStandaloneReaders } from '../lib/vocabNormalizer';
 import {
@@ -491,7 +491,20 @@ export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, null, buildInitialState);
   const stateRef = useRef(state);
   const startupSyncDoneRef = useRef(false);
-  useEffect(() => { stateRef.current = state; }, [state]);
+  const listenersRef = useRef(new Set());
+  stateRef.current = state; // synchronous update for useSyncExternalStore
+
+  // Notify subscribers after every state change
+  useEffect(() => {
+    listenersRef.current.forEach(fn => fn());
+  }, [state]);
+
+  const subscribe = useCallback((listener) => {
+    listenersRef.current.add(listener);
+    return () => listenersRef.current.delete(listener);
+  }, []);
+
+  const getSnapshot = useCallback(() => stateRef.current, []);
 
   // ── Async file storage initialisation (runs once on mount) ──
   useEffect(() => {
@@ -682,11 +695,25 @@ export function AppProvider({ children }) {
     return () => clearTimeout(id);
   }, [state.notification]);
 
+  // Stabilize context value — reference never changes, so useContext(AppContext)
+  // alone won't trigger re-renders. Consumers use useAppSelector for fine-grained
+  // subscriptions, or useApp() which reads via getSnapshot() for backward compat.
+  const ctxValue = useMemo(() => ({
+    dispatch,
+    subscribe,
+    getSnapshot,
+    pickSaveFolder,
+    removeSaveFolder,
+    pushGeneratedReader,
+    resolveSyncConflict,
+  }), []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
-    <AppContext.Provider value={{ state, dispatch, pickSaveFolder, removeSaveFolder, pushGeneratedReader, resolveSyncConflict }}>
+    <AppContext.Provider value={ctxValue}>
       {children}
     </AppContext.Provider>
   );
 }
 
 export { useApp } from './useApp';
+export { useAppSelector, useAppDispatch } from './useAppSelector';

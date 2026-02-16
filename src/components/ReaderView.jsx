@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useApp } from '../context/AppContext';
+import { AppContext } from '../context/AppContext';
+import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { generateReader } from '../lib/api';
 import { parseReaderResponse, parseStorySegments } from '../lib/parser';
@@ -14,9 +15,15 @@ import GrammarNotes from './GrammarNotes';
 import './ReaderView.css';
 
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar }) {
-  const { state, dispatch, pushGeneratedReader } = useApp();
+  const { generatedReaders, learnedVocabulary, error, pendingReaders, apiKey, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, verboseVocab, quotaWarning } = useAppSelector(s => ({
+    generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, error: s.error,
+    pendingReaders: s.pendingReaders, apiKey: s.apiKey, maxTokens: s.maxTokens,
+    ttsVoiceURI: s.ttsVoiceURI, ttsKoVoiceURI: s.ttsKoVoiceURI, ttsYueVoiceURI: s.ttsYueVoiceURI,
+    verboseVocab: s.verboseVocab, quotaWarning: s.quotaWarning,
+  }));
+  const dispatch = useAppDispatch();
+  const { pushGeneratedReader } = useContext(AppContext);
   const act = actions(dispatch);
-  const { generatedReaders, learnedVocabulary, error, pendingReaders, apiKey, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, verboseVocab, quotaWarning } = state;
   const isPending = !!(lessonKey && pendingReaders[lessonKey]);
 
   const reader = generatedReaders[lessonKey];

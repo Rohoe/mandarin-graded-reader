@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { useApp } from '../context/AppContext';
+import { useState, useContext } from 'react';
+import { AppContext } from '../context/AppContext';
+import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { generateSyllabus, generateReader } from '../lib/api';
 import { parseReaderResponse } from '../lib/parser';
@@ -8,12 +9,17 @@ import GenerationProgress from './GenerationProgress';
 import './TopicForm.css';
 
 export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStandaloneGenerating, onCancel }) {
-  const { state, dispatch, pushGeneratedReader } = useApp();
+  const { apiKey, defaultLevel, defaultTopikLevel, learnedVocabulary, maxTokens, loading } = useAppSelector(s => ({
+    apiKey: s.apiKey, defaultLevel: s.defaultLevel, defaultTopikLevel: s.defaultTopikLevel,
+    learnedVocabulary: s.learnedVocabulary, maxTokens: s.maxTokens, loading: s.loading,
+  }));
+  const dispatch = useAppDispatch();
+  const { pushGeneratedReader } = useContext(AppContext);
   const act = actions(dispatch);
 
   const [topic, setTopic]         = useState('');
   const [langId, setLangId]       = useState(DEFAULT_LANG_ID);
-  const defaultLevelForLang = langId === 'ko' ? (state.defaultTopikLevel ?? 2) : (state.defaultLevel ?? 3);
+  const defaultLevelForLang = langId === 'ko' ? (defaultTopikLevel ?? 2) : (defaultLevel ?? 3);
   const [level, setLevel]         = useState(defaultLevelForLang);
   const [mode, setMode]           = useState('syllabus'); // 'syllabus' | 'standalone'
   const [lessonCount, setLessonCount] = useState(6);
@@ -30,7 +36,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
     act.setLoading(true, '正在生成课程大纲…');
     act.clearError();
     try {
-      const { summary, lessons } = await generateSyllabus(state.apiKey, topic.trim(), level, lessonCount, langId);
+      const { summary, lessons } = await generateSyllabus(apiKey, topic.trim(), level, lessonCount, langId);
       const newSyllabus = {
         id:        `syllabus_${Date.now().toString(36)}`,
         topic:     topic.trim(),
@@ -66,7 +72,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
 
     // Generate in background — form can close, user can navigate away
     try {
-      const raw    = await generateReader(state.apiKey, topicStr, level, state.learnedVocabulary, readerLength, state.maxTokens, null, langId);
+      const raw    = await generateReader(apiKey, topicStr, level, learnedVocabulary, readerLength, maxTokens, null, langId);
       const parsed = parseReaderResponse(raw, langId);
       pushGeneratedReader(lessonKey, { ...parsed, topic: topicStr, level, langId: langId, lessonKey, isStandalone: true });
       if (parsed.ankiJson?.length > 0) {
@@ -114,8 +120,8 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
                 key={lang.id}
                 type="button"
                 className={`topic-form__lang-pill ${langId === lang.id ? 'active' : ''}`}
-                onClick={() => { setLangId(lang.id); setLevel(lang.id === 'ko' ? (state.defaultTopikLevel ?? 2) : (state.defaultLevel ?? 3)); }}
-                disabled={state.loading}
+                onClick={() => { setLangId(lang.id); setLevel(lang.id === 'ko' ? (defaultTopikLevel ?? 2) : (defaultLevel ?? 3)); }}
+                disabled={loading}
               >
                 {lang.nameNative}
               </button>
@@ -135,7 +141,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
             : 'e.g. A day at a Beijing market…'}
           value={topic}
           onChange={e => setTopic(e.target.value)}
-          disabled={state.loading}
+          disabled={loading}
         />
       </div>
 
@@ -148,7 +154,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
               type="button"
               className={`topic-form__hsk-pill ${level === l.value ? 'active' : ''}`}
               onClick={() => setLevel(l.value)}
-              disabled={state.loading}
+              disabled={loading}
               title={`${l.label} — ${l.desc}`}
             >
               {l.value}
@@ -173,7 +179,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
             min={2} max={12} step={1}
             value={lessonCount}
             onChange={e => setLessonCount(Number(e.target.value))}
-            disabled={state.loading}
+            disabled={loading}
           />
           <div className="topic-form__slider-ticks">
             <span>2</span><span>12</span>
@@ -194,7 +200,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
             min={300} max={2000} step={100}
             value={readerLength}
             onChange={e => setReaderLength(Number(e.target.value))}
-            disabled={state.loading}
+            disabled={loading}
           />
           <div className="topic-form__slider-ticks">
             <span>Short</span><span>Long</span>
@@ -205,28 +211,28 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
       <button
         type="submit"
         className="btn btn-primary btn-lg topic-form__submit"
-        disabled={state.loading || !topic.trim() || !state.apiKey}
+        disabled={loading || !topic.trim() || !apiKey}
       >
-        {state.loading
+        {loading
           ? '生成中…'
           : mode === 'syllabus'
             ? 'Generate Syllabus'
             : 'Generate Reader'}
       </button>
 
-      {!state.loading && !state.apiKey && (
+      {!loading && !apiKey && (
         <p className="topic-form__hint">⚠️ API key required. Open Settings to add your key.</p>
       )}
 
-      {!state.loading && state.apiKey && !topic.trim() && (
+      {!loading && apiKey && !topic.trim() && (
         <p className="topic-form__hint">Enter a topic above to get started</p>
       )}
 
-      {state.loading && mode === 'syllabus' && (
+      {loading && mode === 'syllabus' && (
         <GenerationProgress type="syllabus" />
       )}
 
-      {onCancel && !state.loading && (
+      {onCancel && !loading && (
         <div className="topic-form__footer-row">
           <button
             type="button"
