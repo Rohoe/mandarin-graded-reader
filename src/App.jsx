@@ -4,7 +4,6 @@ import { actions } from './context/actions';
 import { generateReader, extendSyllabus } from './lib/api';
 import { loadLastSession, saveLastSession } from './lib/storage';
 import { parseReaderResponse } from './lib/parser';
-import ApiKeySetup from './components/ApiKeySetup';
 import SyllabusPanel from './components/SyllabusPanel';
 import SyllabusHome from './components/SyllabusHome';
 import ReaderView from './components/ReaderView';
@@ -191,8 +190,6 @@ function AppShell() {
       </div>
     );
   }
-
-  if (!apiKey) return <ApiKeySetup />;
 
   return (
     <div className="app-layout">

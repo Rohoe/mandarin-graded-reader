@@ -14,7 +14,7 @@ npm run dev        # starts at http://localhost:5173 (or 5174 if port taken)
 npm run build      # production build to dist/
 ```
 
-No `.env` file is required for basic use. On first load the app shows a setup screen prompting the user to enter their Anthropic API key (`sk-ant-...`). The key is stored in `localStorage`. For cloud sync, a `.env` file with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` is needed (see README for setup).
+No `.env` file is required for basic use. The app can be used without an Anthropic API key to browse existing readers, review vocabulary, and access all non-generative features. To generate new readers or grade comprehension questions, users add their API key (`sk-ant-...`) in Settings. The key is stored in `localStorage`. For cloud sync, a `.env` file with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` is needed (see README for setup).
 
 ## Architecture
 
@@ -80,13 +80,13 @@ src/
                               (PGRST116 = no row, not an error).
 
   components/
-    ApiKeySetup               First-run screen; validates key starts with "sk-ant-"
     TopicForm                 Topic input + language selector (pill toggle: 中文 / 粵語 / 한국어)
                               + proficiency level pills (read from langConfig). Two modes:
                               syllabus / standalone. Sliders: lesson count (2–12, syllabus
                               mode only) and reader length (500–2000 chars, step 100).
                               Passes langId through to all API calls and reader creation.
-                              Hint text below disabled Generate button when topic is empty.
+                              Generate button is disabled if no API key is set; shows warning
+                              message directing user to Settings. Hint text when topic is empty.
     SyllabusPanel             Left sidebar; syllabus dropdown, lesson list, standalone
                               readers list, progress bar, settings link.
                               Home (⌂) button in switcher row calls onGoSyllabusHome.
@@ -147,15 +147,15 @@ src/
                               Accepts `verboseVocab` prop — shows English translations below example
                               sentences (stored as `exampleStoryTranslation`/`exampleExtraTranslation`).
     ComprehensionQuestions    Collapsible question list with interactive answer input and AI grading.
-                              Input mode: textarea per question + "Grade My Answers" button.
-                              Results mode: per-question score badge (1–5) + feedback + optional
-                              suggested answer (shown when score < 5/5) + overall score panel.
-                              Calls gradeAnswers() from api.js; persists userAnswers + gradingResults
-                              into the reader object via act.setReader(). State initialised from
-                              reader.userAnswers / reader.gradingResults so results survive page reload.
-                              Accepts renderChars prop from ReaderView; when set (romanization toggle
-                              is on), question text is rendered with <ruby> romanization annotations
-                              instead of plain renderInline().
+                              Input mode: textarea per question + "Grade My Answers" button (disabled
+                              if no API key; shows warning). Results mode: per-question score badge
+                              (1–5) + feedback + optional suggested answer (shown when score < 5/5)
+                              + overall score panel. Calls gradeAnswers() from api.js; persists
+                              userAnswers + gradingResults into the reader object via act.setReader().
+                              State initialised from reader.userAnswers / reader.gradingResults so
+                              results survive page reload. Accepts renderChars prop from ReaderView;
+                              when set (romanization toggle is on), question text is rendered with
+                              <ruby> romanization annotations instead of plain renderInline().
     GrammarNotes              Collapsible section showing 3–5 grammar pattern cards per reader.
                               Accepts `renderChars` prop — applies ruby romanization to `note.pattern`
                               and `note.example` when romanization toggle is on.

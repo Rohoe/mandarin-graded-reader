@@ -445,7 +445,8 @@ export default function Settings({ onClose }) {
         <section className="settings-section">
           <h3 className="settings-section__title form-label">Anthropic API Key</h3>
           <p className="settings-section__desc text-muted">
-            Current key: <code className="settings-key-preview">
+            Required for generating new readers and grading comprehension questions.
+            {' '}Current key: <code className="settings-key-preview">
               {state.apiKey ? `${state.apiKey.slice(0, 12)}…` : 'Not set'}
             </code>
           </p>

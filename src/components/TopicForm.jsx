@@ -205,7 +205,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
       <button
         type="submit"
         className="btn btn-primary btn-lg topic-form__submit"
-        disabled={state.loading || !topic.trim()}
+        disabled={state.loading || !topic.trim() || !state.apiKey}
       >
         {state.loading
           ? '生成中…'
@@ -214,7 +214,11 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
             : 'Generate Reader'}
       </button>
 
-      {!state.loading && !topic.trim() && (
+      {!state.loading && !state.apiKey && (
+        <p className="topic-form__hint">⚠️ API key required. Open Settings to add your key.</p>
+      )}
+
+      {!state.loading && state.apiKey && !topic.trim() && (
         <p className="topic-form__hint">Enter a topic above to get started</p>
       )}
 

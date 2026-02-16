@@ -191,11 +191,16 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={handleGrade}
-                  disabled={!hasAnyAnswer || grading}
+                  disabled={!hasAnyAnswer || grading || !apiKey}
                 >
                   {grading ? 'Grading…' : 'Grade My Answers'}
                 </button>
               </div>
+              {!apiKey && (
+                <p className="comprehension__hint" style={{ marginTop: '0.75rem', fontSize: '0.9rem', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
+                  ⚠️ API key required for grading. Open Settings to add your key.
+                </p>
+              )}
             </>
           )}
         </>
