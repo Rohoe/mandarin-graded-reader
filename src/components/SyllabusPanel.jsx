@@ -367,7 +367,7 @@ export default function SyllabusPanel({
           onClick={onShowStats}
           title="Learning stats"
         >
-          📊 Stats
+          ▦ Stats
         </button>
         <button
           className="btn btn-ghost btn-sm"
