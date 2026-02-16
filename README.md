@@ -25,6 +25,8 @@ A single-page web app for generating graded readers in **Mandarin Chinese**, **C
 - **Floating reader controls** — Pinyin and TTS icon buttons sit in the article header top-right; when the header scrolls off screen they float as a fixed pill via React portal (bypassing `fadeIn` transform containment)
 - **Disk persistence** — Optionally save all data as JSON files to a folder on your computer (Chrome/Edge only)
 - **Cloud Sync** — Sign in with Google or Apple to push/pull all your data to/from Supabase. Manual sync via explicit Push/Pull buttons in Settings; API key stays local. The sidebar footer shows sync status: signed-in state, "Synced"/"Unsynced" indicator based on whether local data has changed since the last push
+- **Learning Stats Dashboard** — Track vocabulary growth, quiz scores, day streaks, and per-language breakdowns. CSS-only bar charts show words learned over time. Accessible via the "Stats" button in the sidebar footer
+- **PWA / Offline Support** — Install the app on your home screen; cached readers and the full UI work offline. Service worker powered by Workbox with runtime caching for Google Fonts
 
 ## Setup
 

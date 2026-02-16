@@ -31,7 +31,8 @@ const KEYS = {
   SYLLABI:            'gradedReader_syllabi',
   SYLLABUS_PROGRESS:  'gradedReader_syllabusProgress',
   STANDALONE_READERS: 'gradedReader_standaloneReaders',
-  READERS:            'gradedReader_readers',
+  READERS:            'gradedReader_readers',           // legacy monolithic key
+  READER_INDEX:       'gradedReader_readerIndex',       // per-reader index
   VOCABULARY:         'gradedReader_learnedVocabulary',
   EXPORTED:           'gradedReader_exportedWords',
   MAX_TOKENS:         'gradedReader_maxTokens',
@@ -43,7 +44,10 @@ const KEYS = {
   TTS_YUE_VOICE_URI:  'gradedReader_ttsYueVoiceURI',
   CLOUD_LAST_SYNCED:  'gradedReader_cloudLastSynced',
   VERBOSE_VOCAB:      'gradedReader_verboseVocab',
+  LEARNING_ACTIVITY:  'gradedReader_learningActivity',
 };
+
+const READER_KEY_PREFIX = 'gradedReader_reader_';
 
 // ── Generic localStorage helpers ──────────────────────────────
 
@@ -176,22 +180,94 @@ export function saveStandaloneReaders(arr) {
   saveSyllabiFile();
 }
 
-// ── Generated Readers (cache) ─────────────────────────────────
+// ── Generated Readers (cache) — per-reader lazy storage ───────
+
+// Migrate from monolithic key to per-reader keys on first access
+let _migrationDone = false;
+
+function migrateReadersIfNeeded() {
+  if (_migrationDone) return;
+  _migrationDone = true;
+
+  const raw = localStorage.getItem(KEYS.READERS);
+  if (!raw) return;
+
+  try {
+    const allReaders = JSON.parse(raw);
+    const keys = Object.keys(allReaders);
+    if (keys.length === 0) {
+      localStorage.removeItem(KEYS.READERS);
+      return;
+    }
+
+    // Write each reader to its own key
+    for (const key of keys) {
+      try {
+        localStorage.setItem(READER_KEY_PREFIX + key, JSON.stringify(allReaders[key]));
+      } catch (e) {
+        console.warn('[storage] migration: failed to write reader', key, e);
+      }
+    }
+
+    // Write the index
+    save(KEYS.READER_INDEX, keys);
+
+    // Remove the old monolithic key
+    localStorage.removeItem(KEYS.READERS);
+  } catch {
+    // If parsing fails, just remove the corrupt key
+    localStorage.removeItem(KEYS.READERS);
+  }
+}
+
+export function loadReaderIndex() {
+  migrateReadersIfNeeded();
+  return load(KEYS.READER_INDEX, []);
+}
+
+function saveReaderIndex(index) {
+  save(KEYS.READER_INDEX, index);
+}
 
 export function loadAllReaders() {
-  return load(KEYS.READERS, {});
+  migrateReadersIfNeeded();
+  const index = load(KEYS.READER_INDEX, []);
+  const readers = {};
+  for (const key of index) {
+    const data = load(READER_KEY_PREFIX + key, null);
+    if (data) readers[key] = data;
+  }
+  return readers;
 }
 
 export function saveReader(lessonKey, readerData) {
-  const readers = loadAllReaders();
-  readers[lessonKey] = readerData;
-  saveWithFile(KEYS.READERS, readers, 'readers');
+  migrateReadersIfNeeded();
+  save(READER_KEY_PREFIX + lessonKey, readerData);
+  // Update index
+  const index = loadReaderIndex();
+  if (!index.includes(lessonKey)) {
+    index.push(lessonKey);
+    saveReaderIndex(index);
+  }
+  // Fan out to file (file still uses monolithic format for compatibility)
+  if (_dirHandle) {
+    const allReaders = loadAllReaders();
+    writeJSON(_dirHandle, FILES.readers, allReaders)
+      .catch(e => console.warn('[storage] file write failed: readers', e));
+  }
 }
 
 export function deleteReader(lessonKey) {
-  const readers = loadAllReaders();
-  delete readers[lessonKey];
-  saveWithFile(KEYS.READERS, readers, 'readers');
+  migrateReadersIfNeeded();
+  localStorage.removeItem(READER_KEY_PREFIX + lessonKey);
+  const index = loadReaderIndex().filter(k => k !== lessonKey);
+  saveReaderIndex(index);
+  // Fan out to file
+  if (_dirHandle) {
+    const allReaders = loadAllReaders();
+    writeJSON(_dirHandle, FILES.readers, allReaders)
+      .catch(e => console.warn('[storage] file write failed: readers', e));
+  }
 }
 
 /**
@@ -199,12 +275,18 @@ export function deleteReader(lessonKey) {
  */
 export function saveReaderSafe(lessonKey, readerData) {
   try {
-    const readers = loadAllReaders();
-    readers[lessonKey] = readerData;
-    localStorage.setItem(KEYS.READERS, JSON.stringify(readers));
+    migrateReadersIfNeeded();
+    localStorage.setItem(READER_KEY_PREFIX + lessonKey, JSON.stringify(readerData));
+    // Update index
+    const index = loadReaderIndex();
+    if (!index.includes(lessonKey)) {
+      index.push(lessonKey);
+      saveReaderIndex(index);
+    }
     // Fan out to file (fire-and-forget, no quota concern)
     if (_dirHandle) {
-      writeJSON(_dirHandle, FILES.readers, readers)
+      const allReaders = loadAllReaders();
+      writeJSON(_dirHandle, FILES.readers, allReaders)
         .catch(e => console.warn('[storage] file write failed: readers', e));
     }
     return { ok: true, quotaExceeded: false };
@@ -219,11 +301,18 @@ export function saveReaderSafe(lessonKey, readerData) {
 }
 
 export function loadReader(lessonKey) {
-  return loadAllReaders()[lessonKey] ?? null;
+  migrateReadersIfNeeded();
+  return load(READER_KEY_PREFIX + lessonKey, null);
 }
 
 export function clearReaders() {
-  localStorage.removeItem(KEYS.READERS);
+  migrateReadersIfNeeded();
+  const index = loadReaderIndex();
+  for (const key of index) {
+    localStorage.removeItem(READER_KEY_PREFIX + key);
+  }
+  saveReaderIndex([]);
+  localStorage.removeItem(KEYS.READERS); // clean up legacy key if still present
   if (_dirHandle) {
     writeJSON(_dirHandle, FILES.readers, {})
       .catch(e => console.warn('[storage] file write failed: readers', e));
@@ -397,6 +486,16 @@ export function saveLastSession(session) {
   save(SESSION_KEY, session);
 }
 
+// ── Learning Activity ─────────────────────────────────────────
+
+export function loadLearningActivity() {
+  return load(KEYS.LEARNING_ACTIVITY, []);
+}
+
+export function saveLearningActivity(activity) {
+  save(KEYS.LEARNING_ACTIVITY, activity);
+}
+
 // ── Storage usage estimate ────────────────────────────────────
 
 export function getStorageUsage() {
@@ -417,7 +516,13 @@ export function getStorageUsage() {
 // ── Clear everything ──────────────────────────────────────────
 
 export function clearAllAppData() {
+  // Clear per-reader keys
+  const index = load(KEYS.READER_INDEX, []);
+  for (const key of index) {
+    localStorage.removeItem(READER_KEY_PREFIX + key);
+  }
   Object.values(KEYS).forEach(k => localStorage.removeItem(k));
+  localStorage.removeItem(KEYS.READERS); // legacy monolithic key
   // Files are left on disk intentionally — user can delete the folder manually
 }
 
@@ -436,7 +541,7 @@ export function exportAllData() {
     syllabi:          load(KEYS.SYLLABI, []),
     syllabusProgress: load(KEYS.SYLLABUS_PROGRESS, {}),
     standaloneReaders:load(KEYS.STANDALONE_READERS, []),
-    generatedReaders: load(KEYS.READERS, {}),
+    generatedReaders: loadAllReaders(),
     learnedVocabulary:load(KEYS.VOCABULARY, {}),
     exportedWords:    load(KEYS.EXPORTED, []),
   };

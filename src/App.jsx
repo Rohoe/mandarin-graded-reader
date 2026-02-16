@@ -9,6 +9,7 @@ import SyllabusPanel from './components/SyllabusPanel';
 import SyllabusHome from './components/SyllabusHome';
 import ReaderView from './components/ReaderView';
 import Settings from './components/Settings';
+import StatsDashboard from './components/StatsDashboard';
 import SyncConflictDialog from './components/SyncConflictDialog';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingIndicator from './components/LoadingIndicator';
@@ -32,9 +33,10 @@ function Notification() {
 function AppShell() {
   const { state, dispatch, pushGeneratedReader, resolveSyncConflict } = useApp();
   const act = actions(dispatch);
-  const { apiKey, syllabi, syllabusProgress } = state;
+  const { syllabi, syllabusProgress } = state;
 
   const [showSettings, setShowSettings]     = useState(false);
+  const [showStats,    setShowStats]        = useState(false);
   const [sidebarOpen,  setSidebarOpen]      = useState(false);
 
   // Restore last session, falling back to first non-archived syllabus
@@ -224,6 +226,7 @@ function AppShell() {
             onSelectLesson={handleSelectLesson}
             onNewSyllabus={handleNewSyllabus}
             onShowSettings={() => setShowSettings(true)}
+            onShowStats={() => setShowStats(true)}
             onStandaloneGenerated={onStandaloneGenerated}
             onSwitchSyllabus={handleSwitchSyllabus}
             onSelectStandalone={handleSelectStandalone}
@@ -273,6 +276,13 @@ function AppShell() {
       {showSettings && (
         <ErrorBoundary name="settings">
           <Settings onClose={() => setShowSettings(false)} />
+        </ErrorBoundary>
+      )}
+
+      {/* ─ Stats modal ──────────────────────────────────── */}
+      {showStats && (
+        <ErrorBoundary name="stats">
+          <StatsDashboard onClose={() => setShowStats(false)} />
         </ErrorBoundary>
       )}
 

@@ -140,6 +140,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
         className="comprehension__toggle"
         onClick={() => setCollapsed(c => !c)}
         aria-expanded={!collapsed}
+        aria-controls="comprehension-content"
       >
         <h2 className="comprehension__title font-display">
           Comprehension Questions
@@ -148,7 +149,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
       </button>
 
       {!collapsed && (
-        <>
+        <div id="comprehension-content">
           <ol className="comprehension__list fade-in">
             {questions.map((q, i) => (
               <li key={i} className="comprehension__item">
@@ -226,7 +227,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
               )}
             </>
           )}
-        </>
+        </div>
       )}
     </section>
   );

@@ -21,8 +21,8 @@ No `.env` file is required for basic use. The app can be used without an Anthrop
 ```
 src/
   App.jsx                     Root layout; manages UI-only state (sidebar open,
-                              settings modal, activeSyllabusId, standaloneKey,
-                              syllabusView 'home'|'lesson')
+                              settings modal, stats modal, activeSyllabusId,
+                              standaloneKey, syllabusView 'home'|'lesson')
   App.css                     Two-column layout, mobile header, toast notification
   index.css                   Design system: tokens, reset, shared primitives
 
@@ -49,14 +49,15 @@ src/
                               ↔ generic target/romanization/translation fields.
     api.js                    Claude API calls: generateSyllabus(), generateReader(),
                               extendSyllabus(), gradeAnswers(). All accept optional langId
-                              (last param, defaults to 'zh'). Prompt templates are built
-                              from langConfig.prompts fragments — highly specific per language.
-                              Uses anthropic-dangerous-direct-browser-access header.
-                              Model: claude-sonnet-4-20250514
+                              (last param, defaults to 'zh'). Prompt templates imported from
+                              src/prompts/. Uses anthropic-dangerous-direct-browser-access
+                              header. Model: claude-sonnet-4-20250514
+    stats.js                  Derives learning statistics: computeStats(state), getStreak(),
+                              getWordsByPeriod(). Used by StatsDashboard component.
     storage.js                localStorage helpers — load/save for all persisted state.
-                              Also fans writes to disk when a FileSystemDirectoryHandle
-                              is registered via setDirectoryHandle(). API key is NOT
-                              synced to file (stays local only).
+                              Per-reader lazy storage with index key. Also fans writes to
+                              disk when a FileSystemDirectoryHandle is registered via
+                              setDirectoryHandle(). API key is NOT synced to file.
     fileStorage.js            File System Access API layer. Persists app data as JSON
                               files in a user-chosen folder. Stores the directory handle
                               in IndexedDB (localStorage can't hold object handles).
@@ -78,6 +79,18 @@ src/
                               redirectTo: window.location.origin. pushToCloud upserts all syncable
                               state to user_data table; pullFromCloud returns the row or null
                               (PGRST116 = no row, not an error).
+
+  prompts/
+    syllabusPrompt.js         buildSyllabusPrompt(langConfig, topic, level, lessonCount)
+    readerSystemPrompt.js     buildReaderSystem(langConfig, level, topic, charRange)
+    gradingPrompt.js          buildGradingSystem(langConfig, level)
+    extendSyllabusPrompt.js   buildExtendSyllabusPrompt(langConfig, topic, level, existingLessons, additionalCount)
+
+  hooks/
+    useTTS.js                 Voice loading, speech synthesis, per-paragraph speak
+    useRomanization.jsx       Async romanizer loading, renderChars() with ruby tags
+    useVocabPopover.js        Vocab map, click handler, popover positioning, close logic
+    useReaderGeneration.js    Generate/regenerate API calls + state updates
 
   components/
     TopicForm                 Topic input + language selector (pill toggle: 中文 / 粵語 / 한국어)
@@ -103,6 +116,7 @@ src/
                               "Not yet synced". Dirty detection compares lastModified
                               vs cloudLastSynced timestamps. When not signed in, a
                               "Sign in" link appears below the label and opens Settings.
+                              Also shows "Stats" button to open the StatsDashboard modal.
     SyllabusHome              Overview page for a syllabus (shown when syllabusView='home').
                               Displays: topic, HSK badge, date, AI-generated summary, lesson
                               list with completion status and Start/Review CTAs, Continue
@@ -111,36 +125,18 @@ src/
                               "Add more lessons" collapsible panel: slider 2–6, Generate button
                               calls onExtend(additionalCount). Shows a fixed LoadingIndicator
                               overlay while state.loading is true.
-    ReaderView                Main content area; empty/pre-generate/error/reading states.
-                              Determines langId from reader.langId || lessonMeta.langId.
-                              Sets data-lang attribute on <html> for CSS font overrides.
-                              Empty state cycles through langConfig.decorativeChars every 2s;
-                              dark mode override uses --color-accent at 0.45 opacity.
-                              Shows "☰ Open menu" button (mobile-only, hidden on desktop
-                              via CSS) that calls onOpenSidebar prop to open the sidebar.
-                              Section order: story → comprehension questions → vocabulary
-                              → grammar notes → Anki export.
-                              "Next episode →" button at the bottom calls onContinueStory with
-                              the current story text, topic, level, and langId.
-                              Reader controls (romanization toggle + 🔊 TTS) sit as icon-only
-                              buttons in the article header top-right. An IntersectionObserver
-                              on the header detects when it scrolls off screen; buttons then
-                              render via createPortal to document.body as a fixed floating
-                              pill (needed because the fadeIn animation's transform creates
-                              a containing block that breaks position:fixed).
-                              Text-to-speech: 🔊 icon reads full story; each paragraph
-                              is clickable to read individually (highlighted while speaking).
-                              Voices loaded via Web Speech API voiceschanged event; filtered
-                              by langConfig.tts.langFilter; best voice selected via
-                              langConfig.tts.priorityVoices.
-                              Romanization toggle: uses async romanizer loaded via
-                              loadRomanizer(langId). Label from langConfig.romanizationLabel
-                              (拼 for Chinese, 粵 for Cantonese, Aa for Korean). Wraps chars
-                              in <ruby> tags. renderChars() uses langConfig.scriptRegex for
-                              detection.
-                              Click-to-define: bold vocab words are clickable (looked up via
-                              vocabMap). Click shows a fixed-position popover with romanization
-                              + definition. Closes on Escape, outside click, or scroll.
+    ReaderView                Main content area (~350 lines); orchestrates hooks and
+                              sub-components. Determines langId, sets data-lang attribute.
+                              Uses custom hooks: useTTS, useRomanization, useVocabPopover,
+                              useReaderGeneration. Delegates story rendering to StorySection
+                              and control buttons to ReaderControls.
+    StorySection              Renders story paragraphs with vocab buttons, TTS click-to-read,
+                              and popover portal for vocab definitions.
+    ReaderControls            Romanization toggle + TTS buttons (inline in header + floating
+                              portal when header scrolls off via IntersectionObserver).
+    StatsDashboard/           Modal showing learning stats: vocab growth bar chart, per-language
+                              breakdown, quiz scores, streak counter, activity counts.
+                              Uses computeStats() from lib/stats.js. CSS-only charts.
     VocabularyList            Collapsible accordion of vocab cards with examples.
                               Accepts `renderChars` prop — applies ruby romanization to word headers
                               and example sentences when romanization toggle is on.
@@ -230,6 +226,8 @@ src/
   verboseVocab:      boolean,         // Show example translations in vocab + Anki export (default false)
   // Background generation (ephemeral, not persisted)
   pendingReaders:    { [lessonKey]: true },  // keys currently being generated
+  // Learning activity log (persisted to localStorage)
+  learningActivity:  Array<{ type: string, timestamp: number, ... }>,
   // File storage
   fsInitialized:     boolean,         // true once async FS init completes on mount
   saveFolder:        { name: string } | null,  // active folder name, or null

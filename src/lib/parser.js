@@ -11,10 +11,6 @@ export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
   const langConfig = getLang(langId);
   const scriptRegex = langConfig.scriptRegex;
 
-  console.log('[parser] parseReaderResponse called, length:', rawText?.length);
-  const headingLines = rawText?.split('\n').filter(l => /^#{1,4}\s/.test(l));
-  console.log('[parser] all headings in response:', headingLines);
-
   const result = {
     raw:          rawText,
     titleZh:      '',
@@ -80,12 +76,9 @@ export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
     const questionsSectionMatch = rawText.match(
       /#{2,4}\s*(?:4\.[^\n]*|理解[题问]?[^\n]*)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:5\.|anki)|```anki-json|$)/i
     );
-    console.log('[parser] section4 match:', questionsSectionMatch ? 'YES' : 'NO');
     if (questionsSectionMatch) {
-      console.log('[parser] section4 text:', JSON.stringify(questionsSectionMatch[1]));
       result.questions = parseQuestions(questionsSectionMatch[1]);
     }
-    console.log('[parser] questions result:', result.questions);
 
     // ── 5. Anki JSON ──────────────────────────────────────────
     const ankiMatch = rawText.match(/```anki-json\s*\n([\s\S]*?)\n```/);
@@ -184,7 +177,7 @@ function parseVocabularySection(text, scriptRegex) {
   }
 
   // Pattern A: **word** (pinyin) — definition  [() or [], any dash/colon separator]
-  const patternA = /\*\*([^*\n]+)\*\*\s*[(\[]([^)\]\n]{1,40})[)\]]\s*[-–—:]\s*([^\n]+)/g;
+  const patternA = /\*\*([^*\n]+)\*\*\s*[([]([^)\]\n]{1,40})[)\]]\s*[-–—:]\s*([^\n]+)/g;
   let match;
   while ((match = patternA.exec(text)) !== null) {
     pushItem(

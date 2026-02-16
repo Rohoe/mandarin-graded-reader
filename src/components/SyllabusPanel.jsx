@@ -12,6 +12,7 @@ export default function SyllabusPanel({
   onSelectLesson,
   onNewSyllabus,
   onShowSettings,
+  onShowStats,
   onStandaloneGenerated,
   onStandaloneGenerating,
   onSwitchSyllabus,
@@ -148,6 +149,8 @@ export default function SyllabusPanel({
             <button
               className="syllabus-panel__caret-btn"
               onClick={() => setLessonsOpen(o => !o)}
+              aria-expanded={lessonsOpen}
+              aria-controls="syllabus-lessons-list"
               aria-label={lessonsOpen ? 'Collapse lessons' : 'Expand lessons'}
             >
               {lessonsOpen ? '▾' : '▸'}
@@ -155,7 +158,7 @@ export default function SyllabusPanel({
           </div>
 
           {lessonsOpen && (
-          <>
+          <div id="syllabus-lessons-list">
           <div className="syllabus-panel__progress-bar">
             <div
               className="syllabus-panel__progress-fill"
@@ -194,7 +197,7 @@ export default function SyllabusPanel({
               );
             })}
           </ul>
-          </>
+          </div>
           )}
         </div>
       )}
@@ -206,12 +209,13 @@ export default function SyllabusPanel({
             className="syllabus-panel__standalone-header"
             onClick={() => setStandaloneOpen(o => !o)}
             aria-expanded={standaloneOpen}
+            aria-controls="standalone-readers-list"
           >
             <span className="form-label">Standalone Readers</span>
             <span className="syllabus-panel__caret-btn">{standaloneOpen ? '▾' : '▸'}</span>
           </button>
           {standaloneOpen && (
-          <ul className="syllabus-panel__list" role="list">
+          <ul id="standalone-readers-list" className="syllabus-panel__list" role="list">
             {activeStandalone.map(r => (
               <li key={r.key}>
                 <div
@@ -262,12 +266,13 @@ export default function SyllabusPanel({
             className="syllabus-panel__standalone-header"
             onClick={() => setArchivedOpen(o => !o)}
             aria-expanded={archivedOpen}
+            aria-controls="archived-items-list"
           >
             <span className="form-label text-muted">Archived ({archivedCount})</span>
             <span className="syllabus-panel__caret-btn">{archivedOpen ? '▾' : '▸'}</span>
           </button>
           {archivedOpen && (
-            <ul className="syllabus-panel__list" role="list">
+            <ul id="archived-items-list" className="syllabus-panel__list" role="list">
               {archivedSyllabi.map(s => (
                 <li key={s.id}>
                   <div className="syllabus-panel__lesson-btn syllabus-panel__standalone-item syllabus-panel__archived-item">
@@ -357,6 +362,13 @@ export default function SyllabusPanel({
             </>
           )}
         </div>
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={onShowStats}
+          title="Learning stats"
+        >
+          📊 Stats
+        </button>
         <button
           className="btn btn-ghost btn-sm"
           onClick={onShowSettings}

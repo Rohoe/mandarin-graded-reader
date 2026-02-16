@@ -266,6 +266,11 @@
   flex-direction: column;
 }
 
+.reader-view__tts-btn {
+  min-height: 44px;
+  min-width: 44px;
+}
+
 .reader-view__tts-btn--active {
   color: var(--color-accent);
   border-color: var(--color-accent-dim);
@@ -325,21 +330,25 @@ rt {
   font-weight: 700;
 }
 
-.reader-view__vocab--clickable {
+.reader-view__vocab-btn {
+  all: unset;
+  cursor: pointer;
+  display: inline;
+  font: inherit;
+  font-weight: 700;
   color: var(--color-accent-hover);
   text-decoration: underline;
   text-decoration-color: var(--color-accent-dim);
   text-underline-offset: 3px;
-  cursor: pointer;
   border-radius: var(--radius-sm);
   transition: background var(--transition);
 }
 
-.reader-view__vocab--clickable:hover {
+.reader-view__vocab-btn:hover {
   background: rgba(74, 124, 126, 0.10);
 }
 
-.reader-view__vocab--clickable:focus-visible {
+.reader-view__vocab-btn:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }

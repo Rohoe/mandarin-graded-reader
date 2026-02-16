@@ -11,12 +11,13 @@ export default function GrammarNotes({ grammarNotes, renderChars }) {
         className="grammar-notes__toggle"
         onClick={() => setCollapsed(c => !c)}
         aria-expanded={!collapsed}
+        aria-controls="grammar-notes-content"
       >
         <h2 className="grammar-notes__title font-display">Grammar Notes</h2>
         <span className="grammar-notes__icon">{collapsed ? '▼' : '▲'}</span>
       </button>
       {!collapsed && (
-        <div className="grammar-notes__cards fade-in">
+        <div id="grammar-notes-content" className="grammar-notes__cards fade-in">
           {grammarNotes.map((note, i) => (
             <GrammarCard key={i} note={note} index={i} renderChars={renderChars} />
           ))}

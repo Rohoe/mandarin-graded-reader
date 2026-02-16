@@ -12,8 +12,8 @@ import {
   saveSyllabusProgress,
   loadStandaloneReaders,
   saveStandaloneReaders,
-  loadAllReaders,
   loadReader,
+  loadReaderIndex,
   saveReader,
   saveReaderSafe,
   deleteReader,
@@ -46,6 +46,8 @@ import {
   saveVerboseVocab,
   loadLastModified,
   saveLastModified,
+  loadLearningActivity,
+  saveLearningActivity,
 } from '../lib/storage';
 import {
   loadDirectoryHandle,
@@ -89,6 +91,8 @@ function buildInitialState() {
     verboseVocab:      loadVerboseVocab(),
     // Background generation tracking (ephemeral, not persisted)
     pendingReaders:    {},
+    // Learning activity log (persisted)
+    learningActivity:  loadLearningActivity(),
     // Cloud sync
     cloudUser:         null,
     cloudSyncing:      false,
@@ -157,9 +161,9 @@ function baseReducer(state, action) {
       const newProgress = { ...state.syllabusProgress };
       delete newProgress[id];
       saveSyllabusProgress(newProgress);
-      // Remove cached readers from localStorage (all keys, not just in-memory state)
-      const allReaders = loadAllReaders();
-      Object.keys(allReaders).forEach(k => {
+      // Remove cached readers from localStorage using the index (avoids loading all reader data)
+      const readerKeys = loadReaderIndex();
+      readerKeys.forEach(k => {
         if (k.startsWith(`lesson_${id}_`)) deleteReader(k);
       });
       const newReaders = { ...state.generatedReaders };
@@ -186,7 +190,10 @@ function baseReducer(state, action) {
       const newEntry = { ...entry, completedLessons: [...entry.completedLessons, lessonIndex] };
       const newProgress = { ...state.syllabusProgress, [syllabusId]: newEntry };
       saveSyllabusProgress(newProgress);
-      return { ...state, syllabusProgress: newProgress };
+      const actEntry = { type: 'lesson_completed', syllabusId, lessonIndex, timestamp: Date.now() };
+      const newActivity = [...state.learningActivity, actEntry];
+      saveLearningActivity(newActivity);
+      return { ...state, syllabusProgress: newProgress, learningActivity: newActivity };
     }
 
     case 'UNMARK_LESSON_COMPLETE': {
@@ -221,9 +228,25 @@ function baseReducer(state, action) {
     case 'SET_READER': {
       const { lessonKey, data } = action.payload;
       const { quotaExceeded } = saveReaderSafe(lessonKey, data);
+      let newActivity = state.learningActivity;
+      // Log quiz grading when gradingResults are saved for the first time
+      const prev = state.generatedReaders[lessonKey];
+      if (data.gradingResults && (!prev || !prev.gradingResults)) {
+        const score = data.gradingResults.overallScore ?? null;
+        const actEntry = { type: 'quiz_graded', lessonKey, score, timestamp: Date.now() };
+        newActivity = [...newActivity, actEntry];
+        saveLearningActivity(newActivity);
+      }
+      // Log reader generation when story appears for the first time
+      if (data.story && (!prev || !prev.story)) {
+        const actEntry = { type: 'reader_generated', lessonKey, timestamp: Date.now() };
+        newActivity = [...newActivity, actEntry];
+        saveLearningActivity(newActivity);
+      }
       return {
         ...state,
         generatedReaders: { ...state.generatedReaders, [lessonKey]: data },
+        learningActivity: newActivity,
         ...(quotaExceeded ? { quotaWarning: true } : {}),
       };
     }
@@ -311,9 +334,20 @@ function baseReducer(state, action) {
 
     // ── Vocabulary actions ────────────────────────────────────
 
+    case 'LOG_ACTIVITY': {
+      const entry = { ...action.payload, timestamp: Date.now() };
+      const newActivity = [...state.learningActivity, entry];
+      saveLearningActivity(newActivity);
+      return { ...state, learningActivity: newActivity };
+    }
+
     case 'ADD_VOCABULARY': {
       const updated = addLearnedVocabulary(action.payload);
-      return { ...state, learnedVocabulary: updated };
+      const wordCount = Array.isArray(action.payload) ? action.payload.length : Object.keys(action.payload).length;
+      const entry = { type: 'vocab_added', count: wordCount, timestamp: Date.now() };
+      const newActivity = [...state.learningActivity, entry];
+      saveLearningActivity(newActivity);
+      return { ...state, learnedVocabulary: updated, learningActivity: newActivity };
     }
 
     case 'CLEAR_VOCABULARY':
@@ -580,7 +614,10 @@ export function AppProvider({ children }) {
     dispatch({ type: 'SET_READER', payload: { lessonKey, data: readerData } });
     if (stateRef.current.cloudUser) {
       pushReaderToCloud(lessonKey, readerData)
-        .catch(e => console.warn('[AppContext] Reader push failed:', e.message));
+        .catch(e => {
+          console.warn('[AppContext] Reader push failed:', e.message);
+          dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'error', message: 'Reader saved locally but cloud sync failed.' } });
+        });
     }
   }
 
@@ -665,6 +702,7 @@ export function AppProvider({ children }) {
         }
       } catch (e) {
         console.warn('[AppContext] Startup sync failed:', e.message);
+        dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'error', message: 'Cloud sync failed. Your data may be out of date.' } });
       } finally {
         dispatch({ type: 'SET_CLOUD_SYNCING', payload: false });
         startupSyncDoneRef.current = true;
@@ -672,7 +710,7 @@ export function AppProvider({ children }) {
     }
 
     doStartupSync();
-  }, [state.cloudUser, state.fsInitialized]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.cloudUser, state.fsInitialized]);
 
   // Debounced auto-push: 3s after any data change, once startup sync is done
   useEffect(() => {
@@ -683,10 +721,15 @@ export function AppProvider({ children }) {
         dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: Date.now() });
       } catch (e) {
         console.warn('[AppContext] Auto-sync failed:', e.message);
+        // Only show notification if the last one wasn't also a sync failure (avoid spam from 3s debounce)
+        const current = stateRef.current.notification;
+        if (!current || !current.message?.includes('cloud sync failed')) {
+          dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'error', message: 'Auto-sync to cloud failed. Changes saved locally.' } });
+        }
       }
     }, 3000);
     return () => clearTimeout(timer);
-  }, [state.lastModified]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.lastModified, state.cloudUser]);
 
   // Auto-clear notifications after 5 s
   useEffect(() => {

@@ -5,6 +5,10 @@
  */
 
 import { getLang, DEFAULT_LANG_ID } from './languages';
+import { buildSyllabusPrompt } from '../prompts/syllabusPrompt';
+import { buildReaderSystem } from '../prompts/readerSystemPrompt';
+import { buildGradingSystem } from '../prompts/gradingPrompt';
+import { buildExtendSyllabusPrompt } from '../prompts/extendSyllabusPrompt';
 
 const API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL   = 'claude-sonnet-4-20250514';
@@ -81,26 +85,6 @@ async function callClaude(apiKey, systemPrompt, userMessage, maxTokens = 4096) {
 
 // ── Syllabus generation ───────────────────────────────────────
 
-function buildSyllabusPrompt(langConfig, topic, level, lessonCount) {
-  const p = langConfig.prompts;
-  return `You are a ${p.curriculumDesigner}. Generate a graded reader syllabus for the following parameters:
-
-Topic: ${topic}
-${langConfig.proficiency.name} Level: ${level}
-Number of lessons: ${lessonCount}
-
-Return a JSON object with exactly two keys:
-- "summary": A 2-3 sentence overview (in English) of what the learner will cover across all lessons
-- "lessons": an array of lesson objects, each with:
-  - "lesson_number": integer (1-${lessonCount})
-  - "${p.titleFieldKey}": ${p.titleInstruction}
-  - "title_en": English lesson title
-  - "description": One English sentence describing what the reader covers
-  - "vocabulary_focus": 3-5 English keywords describing the vocabulary theme
-
-Return ONLY valid JSON. No explanation, no markdown fences.`;
-}
-
 export async function generateSyllabus(apiKey, topic, level, lessonCount = 6, langId = DEFAULT_LANG_ID) {
   const langConfig = getLang(langId);
   const prompt = buildSyllabusPrompt(langConfig, topic, level, lessonCount);
@@ -130,96 +114,7 @@ export async function generateSyllabus(apiKey, topic, level, lessonCount = 6, la
   return { summary: result.summary || '', lessons: result.lessons || [] };
 }
 
-// ── Reader generation ─────────────────────────────────────────
-
-function buildReaderSystem(langConfig, level, topic, charRange) {
-  const p = langConfig.prompts;
-  const profName = langConfig.proficiency.name;
-  const targetField = langConfig.fields.target;
-  const romField = langConfig.fields.romanization;
-  const transField = langConfig.fields.translation;
-
-  return `Create an educational graded reader in ${p.targetLanguage} for ${profName} ${level} learners.
-
-If a user types in a series of words from the article, assume those are new vocabulary that should be appended to the list in the same format.
-
-## VOCABULARY REQUIREMENTS
-- Select 12-15 new vocabulary items appropriate for the specified ${profName} level
-- Items may include single words, compound words, collocations, or idiomatic expressions
-- Vocabulary should have high utility for the target proficiency band
-- Each new item must appear at least 2 times throughout the story
-- Bold all instances of new vocabulary: **새단어**
-
-## STORY REQUIREMENTS
-- Length: ${charRange} ${langConfig.charUnit}
-- Topic: ${topic}
-${p.storyRequirements}
-
-## OUTPUT FORMAT
-
-IMPORTANT: Use EXACTLY these English section headings (do not translate them):
-
-### 1. Title
-${p.targetLanguage} text only (no bold markers, no English, no ${profName} level suffix)
-English subtitle on the next line
-
-### 2. Story
-With bolded vocabulary and italicized proper nouns
-
-### 3. Vocabulary List
-For each word:
-${p.vocabFormat}
-- Example sentence FROM STORY
-- *Brief usage note for the story example — explain the grammar pattern, collocation, register, or nuance shown (1 sentence, in English)*
-- Additional example sentence (NOT from story, demonstrating different usage context)
-- *Brief usage note for the additional example — explain what new aspect of usage this example shows (1 sentence, in English)*
-
-### 4. Comprehension Questions
-3-5 questions in ${p.targetLanguage} at the target level
-
-### 5. Anki Cards Data (JSON)
-Return a JSON block tagged \`\`\`anki-json containing an array of card objects:
-[
-  ${p.ankiFields}
-]
-\`\`\`
-
-### 6. Grammar Notes
-Identify 3-5 key ${p.grammarContext} used in the story. For each pattern:
-- **Pattern** (English name) — one-sentence explanation of the structure and when to use it
-- Example sentence taken directly from the story`;
-}
-
 // ── Answer grading ────────────────────────────────────────────
-
-function buildGradingSystem(langConfig, level) {
-  const p = langConfig.prompts;
-  const profName = langConfig.proficiency.name;
-
-  return `You are a ${p.gradingContext} grading reading comprehension answers.
-The student is studying ${p.gradingLanguage} at ${profName} level ${level}.
-
-Evaluate each answer for accuracy and completeness. Be encouraging but honest.
-The student may answer in English or ${p.targetLanguage}.
-
-Return ONLY valid JSON — no explanation, no markdown fences.
-Do NOT echo the question or answer text back. Use only ASCII characters in keys.
-{
-  "overallScore": "X/Y",
-  "overallFeedback": "1-2 sentences of general feedback.",
-  "feedback": [
-    {
-      "score": "X/5",
-      "feedback": "Specific feedback.",
-      "suggestedAnswer": "A model answer (omit this field or leave empty string if score is 5/5)."
-    }
-  ]
-}
-
-Score 1–5: 5=fully correct, 4=mostly correct, 3=partial, 2=mostly wrong, 1=incorrect/blank.
-Overall score = sum / (questions × 5).
-Include "suggestedAnswer" only when score < 5. It should be a concise ideal answer in the same language the student used (English or ${p.targetLanguage}).`;
-}
 
 // Escape literal control characters inside JSON string values so JSON.parse
 // doesn't choke on responses like: "feedback": "Good.\nAlso try harder."
@@ -266,19 +161,15 @@ export async function gradeAnswers(apiKey, questions, userAnswers, story, level,
     .join('\n\n');
   const userMessage = `Story (for reference):\n${story}\n\n---\n\nQuestions and Student Answers:\n${answersBlock}`;
   const raw = await callClaude(apiKey, system, userMessage, maxTokens);
-  console.log('[gradeAnswers] raw response:', raw);
   const cleaned = repairJSON(raw.trim());
   try {
     return JSON.parse(cleaned);
-  } catch (e1) {
-    console.log('[gradeAnswers] first parse failed:', e1.message, '\ncleaned:', cleaned);
+  } catch {
     const match = cleaned.match(/\{[\s\S]*\}/);
     if (match) {
       try {
         return JSON.parse(match[0]);
-      } catch (e2) {
-        console.log('[gradeAnswers] second parse failed:', e2.message);
-      }
+      } catch { /* fall through */ }
     }
     throw new Error('Grading response could not be parsed. Please try again.');
   }
@@ -310,38 +201,7 @@ export async function generateReader(apiKey, topic, level, learnedWords = {}, ta
 
 export async function extendSyllabus(apiKey, topic, level, existingLessons, additionalCount = 3, langId = DEFAULT_LANG_ID) {
   const langConfig = getLang(langId);
-  const p = langConfig.prompts;
-  const profName = langConfig.proficiency.name;
-
-  const existingTitles = existingLessons
-    .map((l, i) => `${i + 1}. ${l.title_en} (${l[p.titleFieldKey] || l.title_zh || l.title_target || ''})`)
-    .join('\n');
-
-  const startNumber = existingLessons.length + 1;
-  const endNumber = existingLessons.length + additionalCount;
-
-  const prompt = `You are a ${p.curriculumDesigner} extending an existing graded reader syllabus.
-
-Topic: ${topic}
-${profName} Level: ${level}
-Number of new lessons to add: ${additionalCount}
-
-Existing lessons (do NOT repeat these):
-${existingTitles}
-
-Generate ${additionalCount} NEW lessons that continue the curriculum, numbered ${startNumber}–${endNumber}.
-Each new lesson should build on the existing ones and introduce new aspects of the topic.
-
-Return ONLY a JSON array of the new lesson objects (no wrapper object, no explanation, no markdown fences):
-[
-  {
-    "lesson_number": ${startNumber},
-    "${p.titleFieldKey}": "${p.titleInstruction}",
-    "title_en": "English lesson title",
-    "description": "One English sentence describing what the reader covers",
-    "vocabulary_focus": ["3-5 English keywords describing the vocabulary theme"]
-  }
-]`;
+  const prompt = buildExtendSyllabusPrompt(langConfig, topic, level, existingLessons, additionalCount);
 
   const raw = await callClaude(apiKey, '', prompt, 2048);
 

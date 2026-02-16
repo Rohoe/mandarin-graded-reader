@@ -81,6 +81,7 @@ export default function VocabularyList({ vocabulary, renderChars, verboseVocab }
         className="vocabulary-list__toggle"
         onClick={() => setCollapsed(c => !c)}
         aria-expanded={!collapsed}
+        aria-controls="vocabulary-list-content"
       >
         <h2 className="vocabulary-list__title font-display">
           Vocabulary <span className="vocabulary-list__count">({vocabulary.length})</span>
@@ -89,7 +90,7 @@ export default function VocabularyList({ vocabulary, renderChars, verboseVocab }
       </button>
 
       {!collapsed && (
-        <div className="vocabulary-list__cards fade-in">
+        <div id="vocabulary-list-content" className="vocabulary-list__cards fade-in">
           {vocabulary.map((word, i) => (
             <VocabCard
               key={word.chinese + i}

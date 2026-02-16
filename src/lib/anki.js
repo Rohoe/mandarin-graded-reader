@@ -59,8 +59,6 @@ function romanizeForExport(text, romanizer, scriptRegex) {
 export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forceAll = false, grammarNotes = [], langId = DEFAULT_LANG_ID, verboseVocab = false, romanizer = null } = {}) {
   const langConfig = getLang(langId);
   const targetField = langConfig.fields.target;
-  const romField = langConfig.fields.romanization;
-  const transField = langConfig.fields.translation;
   const profName = langConfig.proficiency.name;
 
   const allCards = [...ankiJson, ...grammarNotesToCards(grammarNotes)];
