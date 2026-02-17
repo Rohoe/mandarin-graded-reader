@@ -52,6 +52,7 @@ const KEYS = {
   CUSTOM_MODEL_NAME:  'gradedReader_customModelName',
   COMPAT_PRESET:      'gradedReader_compatPreset',
   TTS_SPEECH_RATE:    'gradedReader_ttsSpeechRate',
+  ROMANIZATION_ON:    'gradedReader_romanizationOn',
 };
 
 const READER_KEY_PREFIX = 'gradedReader_reader_';
@@ -530,6 +531,16 @@ export function loadTtsSpeechRate() {
 
 export function saveTtsSpeechRate(rate) {
   save(KEYS.TTS_SPEECH_RATE, rate);
+}
+
+// ── Romanization toggle preference ───────────────────────────
+
+export function loadRomanizationOn() {
+  return load(KEYS.ROMANIZATION_ON, false);
+}
+
+export function saveRomanizationOn(val) {
+  save(KEYS.ROMANIZATION_ON, val);
 }
 
 // ── Verbose vocabulary preference ────────────────────────────

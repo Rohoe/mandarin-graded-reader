@@ -220,27 +220,6 @@
   padding-top: var(--space-1);
 }
 
-.reader-view__header-actions--floating {
-  position: fixed;
-  top: var(--space-4);
-  right: var(--space-8);
-  z-index: 20;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: var(--space-1);
-  box-shadow: var(--shadow-sm);
-  animation: popoverFadeIn 0.15s ease;
-  flex-direction: column;
-}
-
-@media (max-width: 768px) {
-  .reader-view__header-actions--floating {
-    top: 60px;
-    right: var(--space-4);
-  }
-}
-
 .reader-view__meta {
   font-size: var(--text-sm);
   letter-spacing: 0.04em;

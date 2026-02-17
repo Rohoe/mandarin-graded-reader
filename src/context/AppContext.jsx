@@ -53,6 +53,8 @@ import {
   saveCloudLastSynced,
   loadTtsSpeechRate,
   saveTtsSpeechRate,
+  loadRomanizationOn,
+  saveRomanizationOn,
   loadVerboseVocab,
   saveVerboseVocab,
   loadLastModified,
@@ -108,6 +110,7 @@ function buildInitialState() {
     ttsKoVoiceURI:     loadTtsKoVoiceURI(),
     ttsYueVoiceURI:    loadTtsYueVoiceURI(),
     ttsSpeechRate:     loadTtsSpeechRate(),
+    romanizationOn:    loadRomanizationOn(),
     verboseVocab:      loadVerboseVocab(),
     // Background generation tracking (ephemeral, not persisted)
     pendingReaders:    {},
@@ -519,6 +522,10 @@ function baseReducer(state, action) {
     case 'SET_TTS_SPEECH_RATE':
       saveTtsSpeechRate(action.payload);
       return { ...state, ttsSpeechRate: action.payload };
+
+    case 'SET_ROMANIZATION_ON':
+      saveRomanizationOn(action.payload);
+      return { ...state, romanizationOn: action.payload };
 
     case 'START_PENDING_READER':
       return { ...state, pendingReaders: { ...state.pendingReaders, [action.payload]: true } };

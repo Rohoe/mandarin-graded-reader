@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { loadRomanizer } from '../lib/romanizer';
 
-export function useRomanization(langId, langConfig) {
-  const [pinyinOn, setPinyinOn] = useState(false);
+export function useRomanization(langId, langConfig, pinyinOn) {
   const [romanizer, setRomanizer] = useState(null);
   const scriptRegex = langConfig.scriptRegex;
 
@@ -67,5 +66,5 @@ export function useRomanization(langId, langConfig) {
     return nodes.length > 0 ? nodes : null;
   }, [pinyinOn, romanizer, romanizeText]);
 
-  return { pinyinOn, setPinyinOn, romanizer, renderChars };
+  return { pinyinOn, romanizer, renderChars };
 }

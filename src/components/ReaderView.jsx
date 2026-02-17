@@ -9,7 +9,6 @@ import { useRomanization } from '../hooks/useRomanization';
 import { useVocabPopover } from '../hooks/useVocabPopover';
 import { useReaderGeneration } from '../hooks/useReaderGeneration';
 import StorySection from './StorySection';
-import ReaderControls from './ReaderControls';
 import VocabularyList from './VocabularyList';
 import ComprehensionQuestions from './ComprehensionQuestions';
 import AnkiExportButton from './AnkiExportButton';
@@ -22,11 +21,11 @@ import './ReaderView.css';
 const _loadedKeys = new Set();
 
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar }) {
-  const { generatedReaders, learnedVocabulary, error, pendingReaders, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate, verboseVocab, quotaWarning, providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
+  const { generatedReaders, learnedVocabulary, error, pendingReaders, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate, romanizationOn, verboseVocab, quotaWarning, providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
     generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, error: s.error,
     pendingReaders: s.pendingReaders, maxTokens: s.maxTokens,
     ttsVoiceURI: s.ttsVoiceURI, ttsKoVoiceURI: s.ttsKoVoiceURI, ttsYueVoiceURI: s.ttsYueVoiceURI, ttsSpeechRate: s.ttsSpeechRate,
-    verboseVocab: s.verboseVocab, quotaWarning: s.quotaWarning,
+    romanizationOn: s.romanizationOn, verboseVocab: s.verboseVocab, quotaWarning: s.quotaWarning,
     providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
   }));
   const dispatch = useAppDispatch();
@@ -56,21 +55,6 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     return () => clearInterval(id);
   }, [decorativeChars.length]);
 
-  // Float header actions when article header scrolls off screen
-  const headerRef = useRef(null);
-  const [headerVisible, setHeaderVisible] = useState(true);
-  useEffect(() => {
-    setHeaderVisible(true);
-    const el = headerRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => setHeaderVisible(entry.isIntersecting),
-      { root: null, threshold: 0 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [lessonKey]);
-
   // ── Custom hooks ─────────────────────────────────────────────
   const setTtsVoice = (lid, uri) => {
     if (lid === 'yue') act.setTtsYueVoice(uri);
@@ -82,7 +66,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     langConfig, langId, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, setTtsVoice, ttsSpeechRate
   );
 
-  const { pinyinOn, setPinyinOn, romanizer, renderChars } = useRomanization(langId, langConfig);
+  const { pinyinOn, romanizer, renderChars } = useRomanization(langId, langConfig, romanizationOn);
 
   const { activeVocab, setActiveVocab, popoverRef, handleVocabClick, lookupVocab, getPopoverPosition } = useVocabPopover(reader, langConfig);
 
@@ -244,8 +228,8 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         </div>
       )}
 
-      {/* Title + controls */}
-      <header className="reader-view__header" ref={headerRef}>
+      {/* Title + TTS */}
+      <header className="reader-view__header">
         <div className="reader-view__header-text">
           <div className="reader-view__meta text-subtle font-display">
             {reader.level && profBadge}
@@ -256,17 +240,18 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
           </h1>
           {reader.titleEn && <p className="reader-view__title-en font-display text-muted">{reader.titleEn}</p>}
         </div>
-        <ReaderControls
-          headerVisible={headerVisible}
-          pinyinOn={pinyinOn}
-          setPinyinOn={setPinyinOn}
-          ttsSupported={ttsSupported}
-          speakingKey={speakingKey}
-          speakText={speakText}
-          stopSpeaking={stopSpeaking}
-          storyText={storyText}
-          langConfig={langConfig}
-        />
+        {ttsSupported && (
+          <div className="reader-view__header-actions">
+            <button
+              className={`btn btn-ghost btn-sm reader-view__tts-btn ${speakingKey === 'story' ? 'reader-view__tts-btn--active' : ''}`}
+              onClick={() => speakingKey ? (window.speechSynthesis.cancel(), stopSpeaking()) : speakText(storyText.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1'), 'story')}
+              title={speakingKey ? 'Stop' : 'Listen to story'}
+              aria-label={speakingKey ? 'Stop' : 'Listen to story'}
+            >
+              {speakingKey ? '⏹' : '🔊'}
+            </button>
+          </div>
+        )}
       </header>
 
       <hr className="divider" />

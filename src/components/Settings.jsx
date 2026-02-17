@@ -173,6 +173,26 @@ export default function Settings({ onClose }) {
 
         <hr className="divider" />
 
+        {/* Show Romanization */}
+        <section className="settings-section">
+          <div className="settings-toggle-row">
+            <div>
+              <h3 className="settings-section__title form-label">Show Romanization</h3>
+              <p className="settings-section__desc text-muted">Display pinyin, jyutping, or romanized Korean above characters in stories and vocabulary.</p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={state.romanizationOn}
+              className={`settings-toggle ${state.romanizationOn ? 'settings-toggle--on' : ''}`}
+              onClick={() => act.setRomanizationOn(!state.romanizationOn)}
+            >
+              <span className="settings-toggle__thumb" />
+            </button>
+          </div>
+        </section>
+
+        <hr className="divider" />
+
         {/* Verbose Vocabulary */}
         <section className="settings-section">
           <div className="settings-toggle-row">
@@ -193,96 +213,30 @@ export default function Settings({ onClose }) {
 
         <hr className="divider" />
 
-        {/* Cloud Sync */}
-        <section className="settings-section">
-          <h3 className="settings-section__title form-label">Cloud Sync</h3>
-          {state.cloudUser ? (
-            <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <p className="settings-section__desc text-muted" style={{ margin: 0 }}>
-                  Signed in as <strong>{state.cloudUser.email || state.cloudUser.user_metadata?.full_name || state.cloudUser.id}</strong>
-                </p>
-                <button
-                  className="btn btn-ghost btn-sm"
-                  style={{ color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}
-                  onClick={() => signOut()}
-                >
-                  Sign out
-                </button>
-              </div>
-              <div style={{ marginTop: 'var(--space-3)' }}>
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={handleSyncNow}
-                  disabled={state.cloudSyncing}
-                >
-                  {state.cloudSyncing ? 'Syncing…' : 'Sync now'}
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
+        {/* Reading speed */}
+        {'speechSynthesis' in window && (
+          <>
+            <section className="settings-section">
+              <h3 className="settings-section__title form-label">Reading Speed</h3>
               <p className="settings-section__desc text-muted">
-                Sign in to sync your syllabi, readers, and vocabulary across devices.
+                Adjust the text-to-speech playback speed.
               </p>
-              <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', marginTop: 'var(--space-3)' }}>
-                <button className="btn btn-secondary btn-sm" onClick={() => signInWithGoogle()}>
-                  Sign in with Google
-                </button>
-                <button className="btn btn-secondary btn-sm" onClick={() => signInWithApple()}>
-                  Sign in with Apple
-                </button>
+              <div className="settings-slider-row">
+                <span className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>0.5x</span>
+                <span className="settings-slider-value">{state.ttsSpeechRate.toFixed(1)}x</span>
+                <span className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>2.0x</span>
               </div>
-            </>
-          )}
-        </section>
-
-        <hr className="divider" />
-
-        {/* Save folder */}
-        <section className="settings-section">
-          <h3 className="settings-section__title form-label">Save Folder</h3>
-
-          {!fsSupported ? (
-            <p className="settings-section__desc text-muted">
-              File System Access API is not supported in this browser.
-              Use Chrome or Edge to enable disk persistence.
-            </p>
-          ) : saveFolder ? (
-            <>
-              <div className="settings-folder-active">
-                <span className="settings-folder-icon">📁</span>
-                <div>
-                  <p className="settings-folder-name">{saveFolder.name}</p>
-                  <p className="settings-section__desc text-muted" style={{ marginTop: 2 }}>
-                    Data is being saved to this folder on every change.
-                  </p>
-                </div>
-              </div>
-              <div className="settings-section__form">
-                <button className="btn btn-secondary btn-sm" onClick={pickSaveFolder}>
-                  Change folder
-                </button>
-                <button className="btn btn-ghost btn-sm" onClick={removeSaveFolder}>
-                  Remove folder
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="settings-section__desc text-muted">
-                Choose a folder on your computer where the app will save your syllabi,
-                readers, and vocabulary as JSON files. This is in addition to browser
-                storage and survives clearing browser data.
-              </p>
-              <button className="btn btn-secondary btn-sm" onClick={pickSaveFolder}>
-                📁 Choose save folder…
-              </button>
-            </>
-          )}
-        </section>
-
-        <hr className="divider" />
+              <input
+                type="range"
+                className="settings-slider"
+                min={0.5} max={2} step={0.1}
+                value={state.ttsSpeechRate}
+                onChange={e => act.setTtsSpeechRate(e.target.value)}
+              />
+            </section>
+            <hr className="divider" />
+          </>
+        )}
 
         {/* TTS voices */}
         {'speechSynthesis' in window && (chineseVoices.length > 0 || koreanVoices.length > 0 || cantoneseVoices.length > 0) && (
@@ -397,31 +351,6 @@ export default function Settings({ onClose }) {
                   </select>
                 </>
               )}
-            </section>
-            <hr className="divider" />
-          </>
-        )}
-
-        {/* Reading speed */}
-        {'speechSynthesis' in window && (
-          <>
-            <section className="settings-section">
-              <h3 className="settings-section__title form-label">Reading Speed</h3>
-              <p className="settings-section__desc text-muted">
-                Adjust the text-to-speech playback speed.
-              </p>
-              <div className="settings-slider-row">
-                <span className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>0.5x</span>
-                <span className="settings-slider-value">{state.ttsSpeechRate.toFixed(1)}x</span>
-                <span className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>2.0x</span>
-              </div>
-              <input
-                type="range"
-                className="settings-slider"
-                min={0.5} max={2} step={0.1}
-                value={state.ttsSpeechRate}
-                onChange={e => act.setTtsSpeechRate(e.target.value)}
-              />
             </section>
             <hr className="divider" />
           </>
@@ -742,6 +671,99 @@ export default function Settings({ onClose }) {
             </p>
           )}
         </section>
+
+        <hr className="divider" />
+
+        {/* Cloud Sync */}
+        <section className="settings-section">
+          <h3 className="settings-section__title form-label">Cloud Sync</h3>
+          {state.cloudUser ? (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <p className="settings-section__desc text-muted" style={{ margin: 0 }}>
+                  Signed in as <strong>{state.cloudUser.email || state.cloudUser.user_metadata?.full_name || state.cloudUser.id}</strong>
+                </p>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}
+                  onClick={() => signOut()}
+                >
+                  Sign out
+                </button>
+              </div>
+              <div style={{ marginTop: 'var(--space-3)' }}>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={handleSyncNow}
+                  disabled={state.cloudSyncing}
+                >
+                  {state.cloudSyncing ? 'Syncing…' : 'Sync now'}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="settings-section__desc text-muted">
+                Sign in to sync your syllabi, readers, and vocabulary across devices.
+              </p>
+              <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', marginTop: 'var(--space-3)' }}>
+                <button className="btn btn-secondary btn-sm" onClick={() => signInWithGoogle()}>
+                  Sign in with Google
+                </button>
+                <button className="btn btn-secondary btn-sm" onClick={() => signInWithApple()}>
+                  Sign in with Apple
+                </button>
+              </div>
+            </>
+          )}
+        </section>
+
+        <hr className="divider" />
+
+        {/* Save folder */}
+        <section className="settings-section">
+          <h3 className="settings-section__title form-label">Save Folder</h3>
+
+          {!fsSupported ? (
+            <p className="settings-section__desc text-muted">
+              File System Access API is not supported in this browser.
+              Use Chrome or Edge to enable disk persistence.
+            </p>
+          ) : saveFolder ? (
+            <>
+              <div className="settings-folder-active">
+                <span className="settings-folder-icon">📁</span>
+                <div>
+                  <p className="settings-folder-name">{saveFolder.name}</p>
+                  <p className="settings-section__desc text-muted" style={{ marginTop: 2 }}>
+                    Data is being saved to this folder on every change.
+                  </p>
+                </div>
+              </div>
+              <div className="settings-section__form">
+                <button className="btn btn-secondary btn-sm" onClick={pickSaveFolder}>
+                  Change folder
+                </button>
+                <button className="btn btn-ghost btn-sm" onClick={removeSaveFolder}>
+                  Remove folder
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="settings-section__desc text-muted">
+                Choose a folder on your computer where the app will save your syllabi,
+                readers, and vocabulary as JSON files. This is in addition to browser
+                storage and survives clearing browser data.
+              </p>
+              <button className="btn btn-secondary btn-sm" onClick={pickSaveFolder}>
+                📁 Choose save folder…
+              </button>
+            </>
+          )}
+        </section>
+
+        <hr className="divider" />
 
         {/* Danger zone */}
         <section className="settings-section">
