@@ -7,7 +7,7 @@ export function actions(dispatch) {
     clearApiKey:           ()     => dispatch({ type: 'CLEAR_API_KEY' }),
     setProviderKey:        (provider, key) => dispatch({ type: 'SET_PROVIDER_KEY', payload: { provider, key } }),
     setActiveProvider:     id     => dispatch({ type: 'SET_ACTIVE_PROVIDER', payload: id }),
-    setActiveModel:        model  => dispatch({ type: 'SET_ACTIVE_MODEL', payload: model }),
+    setActiveModel:        (provider, model) => dispatch({ type: 'SET_ACTIVE_MODEL', payload: { provider, model } }),
     setCustomBaseUrl:      url    => dispatch({ type: 'SET_CUSTOM_BASE_URL', payload: url }),
     setCustomModelName:    name   => dispatch({ type: 'SET_CUSTOM_MODEL_NAME', payload: name }),
     setCompatPreset:       preset => dispatch({ type: 'SET_COMPAT_PRESET', payload: preset }),

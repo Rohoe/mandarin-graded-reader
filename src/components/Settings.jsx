@@ -19,7 +19,8 @@ export default function Settings({ onClose }) {
   const [showModelPicker, setShowModelPicker] = useState(() => {
     if (state.activeProvider === 'openai_compatible') return true;
     const prov = getProvider(state.activeProvider);
-    return !!(state.activeModel && state.activeModel !== prov.defaultModel);
+    const provModel = state.activeModels?.[state.activeProvider];
+    return !!(provModel && provModel !== prov.defaultModel);
   });
   const [confirmClear, setConfirmClear] = useState(false);
   const [confirmRestore, setConfirmRestore] = useState(false);
@@ -477,7 +478,8 @@ export default function Settings({ onClose }) {
           {/* Model selector */}
           {(() => {
             const prov = getProvider(state.activeProvider);
-            const currentModel = state.activeModel || prov.defaultModel;
+            const provModel = state.activeModels?.[state.activeProvider] || null;
+            const currentModel = provModel || prov.defaultModel;
             const modelLabel = prov.models.find(m => m.id === currentModel)?.label || currentModel;
 
             if (state.activeProvider === 'openai_compatible') {
@@ -499,7 +501,7 @@ export default function Settings({ onClose }) {
                           if (preset.defaultModel) {
                             act.setCustomModelName(preset.defaultModel);
                             setCustomModelInput(preset.defaultModel);
-                            act.setActiveModel(preset.defaultModel);
+                            act.setActiveModel('openai_compatible', preset.defaultModel);
                           }
                           if (preset.baseUrl) setCustomUrlInput(preset.baseUrl);
                         }}
@@ -519,7 +521,7 @@ export default function Settings({ onClose }) {
                     onChange={e => {
                       setCustomModelInput(e.target.value);
                       act.setCustomModelName(e.target.value);
-                      act.setActiveModel(e.target.value);
+                      act.setActiveModel('openai_compatible', e.target.value);
                     }}
                     style={{ maxWidth: '18rem', marginBottom: 'var(--space-3)' }}
                   />
@@ -567,27 +569,22 @@ export default function Settings({ onClose }) {
                 <p className="settings-section__desc text-muted" style={{ marginBottom: 'var(--space-2)' }}>
                   Model
                 </p>
-                <input
-                  type="text"
-                  className="form-input"
-                  list={`models-${prov.id}`}
+                <select
+                  className="form-select"
                   value={currentModel}
-                  onChange={e => act.setActiveModel(e.target.value)}
-                  placeholder={prov.defaultModel}
+                  onChange={e => act.setActiveModel(state.activeProvider, e.target.value)}
                   style={{ maxWidth: '18rem', marginBottom: 'var(--space-2)' }}
-                />
-                <datalist id={`models-${prov.id}`}>
+                >
                   {prov.models.map(m => (
                     <option key={m.id} value={m.id}>{m.label}</option>
                   ))}
-                </datalist>
+                </select>
                 <p className="settings-section__desc text-muted" style={{ fontSize: 'var(--text-xs)', marginBottom: 'var(--space-3)' }}>
-                  Select a suggested model or type any model ID.
                   {' '}<button
                     type="button"
                     className="btn btn-ghost btn-sm"
                     style={{ fontSize: 'var(--text-xs)', padding: '0 var(--space-2)' }}
-                    onClick={() => { act.setActiveModel(null); setShowModelPicker(false); }}
+                    onClick={() => { act.setActiveModel(state.activeProvider, null); setShowModelPicker(false); }}
                   >
                     Reset to default
                   </button>

@@ -7,8 +7,8 @@ import {
   saveProviderKeys,
   loadActiveProvider,
   saveActiveProvider,
-  loadActiveModel,
-  saveActiveModel,
+  loadActiveModels,
+  saveActiveModels,
   loadCustomBaseUrl,
   saveCustomBaseUrl,
   loadCustomModelName,
@@ -78,7 +78,7 @@ function buildInitialState() {
     apiKey:            providerKeys[activeProvider] || '',
     providerKeys,
     activeProvider,
-    activeModel:       loadActiveModel(),
+    activeModels:      loadActiveModels(),
     customBaseUrl:     loadCustomBaseUrl(),
     customModelName:   loadCustomModelName(),
     compatPreset:      loadCompatPreset(),
@@ -162,9 +162,12 @@ function baseReducer(state, action) {
       return { ...state, activeProvider: action.payload, apiKey: state.providerKeys[action.payload] || '' };
     }
 
-    case 'SET_ACTIVE_MODEL':
-      saveActiveModel(action.payload);
-      return { ...state, activeModel: action.payload };
+    case 'SET_ACTIVE_MODEL': {
+      const { provider: prov, model } = action.payload;
+      const newModels = { ...state.activeModels, [prov]: model };
+      saveActiveModels(newModels);
+      return { ...state, activeModels: newModels };
+    }
 
     case 'SET_CUSTOM_BASE_URL':
       saveCustomBaseUrl(action.payload);
@@ -441,7 +444,7 @@ function baseReducer(state, action) {
         apiKey:          state.apiKey,
         providerKeys:    state.providerKeys,
         activeProvider:  state.activeProvider,
-        activeModel:     state.activeModel,
+        activeModels:    state.activeModels,
         customBaseUrl:   state.customBaseUrl,
         customModelName: state.customModelName,
         compatPreset:    state.compatPreset,

@@ -161,12 +161,23 @@ export function saveActiveProvider(id) {
   save(KEYS.ACTIVE_PROVIDER, id);
 }
 
-export function loadActiveModel() {
-  return load(KEYS.ACTIVE_MODEL, null);
+export function loadActiveModels() {
+  const map = load(KEYS.ACTIVE_MODEL, null);
+  if (map && typeof map === 'object' && !Array.isArray(map)) return map;
+  // Migrate from old single-string activeModel
+  const legacy = typeof map === 'string' ? map : null;
+  const fresh = { anthropic: null, openai: null, gemini: null, openai_compatible: null };
+  if (legacy) {
+    // Assign legacy model to current active provider (best guess)
+    const provider = loadActiveProvider();
+    fresh[provider] = legacy;
+    save(KEYS.ACTIVE_MODEL, fresh);
+  }
+  return fresh;
 }
 
-export function saveActiveModel(model) {
-  save(KEYS.ACTIVE_MODEL, model);
+export function saveActiveModels(map) {
+  save(KEYS.ACTIVE_MODEL, map);
 }
 
 export function loadCustomBaseUrl() {

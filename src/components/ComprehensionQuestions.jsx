@@ -29,8 +29,8 @@ function scoreBadgeClass(scoreStr) {
 const AUTO_SAVE_DELAY = 1500;
 
 export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars }) {
-  const { apiKey, providerKeys, activeProvider, activeModel, customBaseUrl } = useAppSelector(s => ({
-    apiKey: s.apiKey, providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModel: s.activeModel, customBaseUrl: s.customBaseUrl,
+  const { apiKey, providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
+    apiKey: s.apiKey, providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
   }));
   const dispatch = useAppDispatch();
   const act = actions(dispatch);
@@ -116,7 +116,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
     setGradingError(null);
     try {
       const answersArray = questions.map((_, i) => answers[i] || '');
-      const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModel, customBaseUrl });
+      const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModels, customBaseUrl });
       const result = await gradeAnswers(llmConfig, questions, answersArray, story, level, 2048, langId);
       setResults(result);
       if (lessonKey) {

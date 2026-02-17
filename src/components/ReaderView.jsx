@@ -22,12 +22,12 @@ import './ReaderView.css';
 const _loadedKeys = new Set();
 
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar }) {
-  const { generatedReaders, learnedVocabulary, error, pendingReaders, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, verboseVocab, quotaWarning, providerKeys, activeProvider, activeModel, customBaseUrl } = useAppSelector(s => ({
+  const { generatedReaders, learnedVocabulary, error, pendingReaders, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, verboseVocab, quotaWarning, providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
     generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, error: s.error,
     pendingReaders: s.pendingReaders, maxTokens: s.maxTokens,
     ttsVoiceURI: s.ttsVoiceURI, ttsKoVoiceURI: s.ttsKoVoiceURI, ttsYueVoiceURI: s.ttsYueVoiceURI,
     verboseVocab: s.verboseVocab, quotaWarning: s.quotaWarning,
-    providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModel: s.activeModel, customBaseUrl: s.customBaseUrl,
+    providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
   }));
   const dispatch = useAppDispatch();
   const act = actions(dispatch);
@@ -86,7 +86,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
 
   const { activeVocab, setActiveVocab, popoverRef, handleVocabClick, lookupVocab, getPopoverPosition } = useVocabPopover(reader, langConfig);
 
-  const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModel, customBaseUrl });
+  const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModels, customBaseUrl });
   const { handleGenerate } = useReaderGeneration(
     lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength
   );

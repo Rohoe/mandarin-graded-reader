@@ -9,7 +9,7 @@ export function buildLLMConfig(state) {
   return {
     provider,
     apiKey: state.providerKeys?.[provider] || '',
-    model: state.activeModel || providerDef.defaultModel,
+    model: (state.activeModels && state.activeModels[provider]) || providerDef.defaultModel,
     baseUrl: provider === 'openai_compatible' ? state.customBaseUrl : null,
   };
 }
