@@ -40,7 +40,7 @@ function VocabCard({ word, index, renderChars, verboseVocab }) {
             <div className="vocab-card__example">
               <span className="vocab-card__example-label text-subtle">From story</span>
               <p className="vocab-card__example-text text-chinese">
-                {renderChars ? renderChars(word.exampleStory, `ves-${index}`) : renderInline(word.exampleStory)}
+                {renderChars?.(word.exampleStory, `ves-${index}`) || renderInline(word.exampleStory)}
               </p>
               {verboseVocab && word.exampleStoryTranslation && (
                 <p className="vocab-card__example-translation text-muted">{word.exampleStoryTranslation}</p>
@@ -54,7 +54,7 @@ function VocabCard({ word, index, renderChars, verboseVocab }) {
             <div className="vocab-card__example">
               <span className="vocab-card__example-label text-subtle">Additional example</span>
               <p className="vocab-card__example-text text-chinese">
-                {renderChars ? renderChars(word.exampleExtra, `vee-${index}`) : renderInline(word.exampleExtra)}
+                {renderChars?.(word.exampleExtra, `vee-${index}`) || renderInline(word.exampleExtra)}
               </p>
               {verboseVocab && word.exampleExtraTranslation && (
                 <p className="vocab-card__example-translation text-muted">{word.exampleExtraTranslation}</p>
