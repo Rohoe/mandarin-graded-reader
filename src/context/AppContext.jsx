@@ -540,14 +540,14 @@ function baseReducer(state, action) {
       saveSyllabi(normalizedSyllabi);
       saveSyllabusProgress(d.syllabus_progress);
       saveStandaloneReaders(normalizedStandalone);
-      for (const [k, v] of Object.entries(d.generated_readers)) saveReader(k, v);
+      for (const [k, v] of Object.entries(d.generated_readers || {})) saveReader(k, v);
       saveLastModified(cloudTs);
       return {
         ...state,
         syllabi:           normalizedSyllabi,
         syllabusProgress:  d.syllabus_progress,
         standaloneReaders: normalizedStandalone,
-        generatedReaders:  {},
+        generatedReaders:  d.generated_readers || {},
         learnedVocabulary: d.learned_vocabulary,
         exportedWords:     new Set(d.exported_words),
         lastModified:      cloudTs,
