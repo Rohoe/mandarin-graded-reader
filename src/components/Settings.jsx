@@ -404,6 +404,30 @@ export default function Settings({ onClose }) {
 
         <hr className="divider" />
 
+        {/* Default YUE level */}
+        <section className="settings-section">
+          <h3 className="settings-section__title form-label">Default YUE Level</h3>
+          <p className="settings-section__desc text-muted">
+            Pre-selected level when creating Cantonese content.
+          </p>
+          <select
+            className="form-select"
+            value={state.defaultYueLevel}
+            onChange={e => act.setDefaultYueLevel(e.target.value)}
+            style={{ maxWidth: '18rem' }}
+          >
+            <option value={0}>YUE 0 — Total beginner (~30 words, jyutping focus)</option>
+            <option value={1}>YUE 1 — Absolute beginner (~150 words)</option>
+            <option value={2}>YUE 2 — Elementary (~300 words)</option>
+            <option value={3}>YUE 3 — Pre-intermediate (~600 words)</option>
+            <option value={4}>YUE 4 — Intermediate (~1,200 words)</option>
+            <option value={5}>YUE 5 — Upper-intermediate (~2,500 words)</option>
+            <option value={6}>YUE 6 — Advanced (~5,000 words)</option>
+          </select>
+        </section>
+
+        <hr className="divider" />
+
         {/* AI Provider */}
         <section className="settings-section">
           <h3 className="settings-section__title form-label">AI Provider</h3>

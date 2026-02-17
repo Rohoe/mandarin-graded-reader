@@ -43,6 +43,7 @@ export function actions(dispatch) {
     setMaxTokens:          n      => dispatch({ type: 'SET_MAX_TOKENS', payload: Number(n) }),
     setDefaultLevel:       n      => dispatch({ type: 'SET_DEFAULT_LEVEL', payload: Number(n) }),
     setDefaultTopikLevel:  n      => dispatch({ type: 'SET_DEFAULT_TOPIK_LEVEL', payload: Number(n) }),
+    setDefaultYueLevel:    n      => dispatch({ type: 'SET_DEFAULT_YUE_LEVEL', payload: Number(n) }),
     setDarkMode:           val    => dispatch({ type: 'SET_DARK_MODE', payload: Boolean(val) }),
     setTtsVoice:           uri    => dispatch({ type: 'SET_TTS_VOICE', payload: uri }),
     setTtsKoVoice:         uri    => dispatch({ type: 'SET_TTS_KO_VOICE', payload: uri }),

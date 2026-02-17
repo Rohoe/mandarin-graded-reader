@@ -38,6 +38,7 @@ const KEYS = {
   MAX_TOKENS:         'gradedReader_maxTokens',
   DEFAULT_LEVEL:      'gradedReader_defaultLevel',
   DEFAULT_TOPIK_LEVEL: 'gradedReader_defaultTopikLevel',
+  DEFAULT_YUE_LEVEL:   'gradedReader_defaultYueLevel',
   DARK_MODE:          'gradedReader_darkMode',
   TTS_VOICE_URI:      'gradedReader_ttsVoiceURI',
   TTS_KO_VOICE_URI:   'gradedReader_ttsKoVoiceURI',
@@ -481,6 +482,16 @@ export function loadDefaultTopikLevel() {
 
 export function saveDefaultTopikLevel(n) {
   save(KEYS.DEFAULT_TOPIK_LEVEL, n);
+}
+
+// ── Default YUE level preference ─────────────────────────────
+
+export function loadDefaultYueLevel() {
+  return load(KEYS.DEFAULT_YUE_LEVEL, 2);
+}
+
+export function saveDefaultYueLevel(n) {
+  save(KEYS.DEFAULT_YUE_LEVEL, n);
 }
 
 // ── Dark mode preference ──────────────────────────────────────

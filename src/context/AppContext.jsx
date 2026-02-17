@@ -41,6 +41,8 @@ import {
   saveDefaultLevel,
   loadDefaultTopikLevel,
   saveDefaultTopikLevel,
+  loadDefaultYueLevel,
+  saveDefaultYueLevel,
   loadDarkMode,
   saveDarkMode,
   loadTtsVoiceURI,
@@ -105,6 +107,7 @@ function buildInitialState() {
     maxTokens:         loadMaxTokens(),
     defaultLevel:      loadDefaultLevel(),
     defaultTopikLevel: loadDefaultTopikLevel(),
+    defaultYueLevel:   loadDefaultYueLevel(),
     darkMode:          loadDarkMode(),
     ttsVoiceURI:       loadTtsVoiceURI(),
     ttsKoVoiceURI:     loadTtsKoVoiceURI(),
@@ -498,6 +501,10 @@ function baseReducer(state, action) {
     case 'SET_DEFAULT_TOPIK_LEVEL':
       saveDefaultTopikLevel(action.payload);
       return { ...state, defaultTopikLevel: action.payload };
+
+    case 'SET_DEFAULT_YUE_LEVEL':
+      saveDefaultYueLevel(action.payload);
+      return { ...state, defaultYueLevel: action.payload };
 
     case 'SET_DARK_MODE':
       saveDarkMode(action.payload);

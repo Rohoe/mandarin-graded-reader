@@ -11,8 +11,8 @@ import GenerationProgress from './GenerationProgress';
 import './TopicForm.css';
 
 export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStandaloneGenerating, onCancel }) {
-  const { apiKey, defaultLevel, defaultTopikLevel, learnedVocabulary, maxTokens, loading, providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
-    apiKey: s.apiKey, defaultLevel: s.defaultLevel, defaultTopikLevel: s.defaultTopikLevel,
+  const { apiKey, defaultLevel, defaultTopikLevel, defaultYueLevel, learnedVocabulary, maxTokens, loading, providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
+    apiKey: s.apiKey, defaultLevel: s.defaultLevel, defaultTopikLevel: s.defaultTopikLevel, defaultYueLevel: s.defaultYueLevel,
     learnedVocabulary: s.learnedVocabulary, maxTokens: s.maxTokens, loading: s.loading,
     providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
   }));
@@ -22,7 +22,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
 
   const [topic, setTopic]         = useState('');
   const [langId, setLangId]       = useState(DEFAULT_LANG_ID);
-  const defaultLevelForLang = langId === 'ko' ? (defaultTopikLevel ?? 2) : (defaultLevel ?? 3);
+  const defaultLevelForLang = langId === 'ko' ? (defaultTopikLevel ?? 2) : langId === 'yue' ? (defaultYueLevel ?? 2) : (defaultLevel ?? 3);
   const [level, setLevel]         = useState(defaultLevelForLang);
   const [mode, setMode]           = useState('syllabus'); // 'syllabus' | 'standalone'
   const [lessonCount, setLessonCount] = useState(6);
@@ -125,7 +125,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
                 key={lang.id}
                 type="button"
                 className={`topic-form__lang-pill ${langId === lang.id ? 'active' : ''}`}
-                onClick={() => { setLangId(lang.id); setLevel(lang.id === 'ko' ? (defaultTopikLevel ?? 2) : (defaultLevel ?? 3)); }}
+                onClick={() => { setLangId(lang.id); setLevel(lang.id === 'ko' ? (defaultTopikLevel ?? 2) : lang.id === 'yue' ? (defaultYueLevel ?? 2) : (defaultLevel ?? 3)); }}
                 disabled={loading}
               >
                 {lang.nameNative}
