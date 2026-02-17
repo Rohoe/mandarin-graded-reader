@@ -266,7 +266,7 @@ function AppShell() {
                 : null)}
               onMarkComplete={handleMarkComplete}
               onUnmarkComplete={handleUnmarkComplete}
-              isCompleted={completedSet.has(lessonIndex)}
+              isCompleted={!standaloneKey && completedSet.has(lessonIndex)}
               onContinueStory={handleContinueStory}
               onOpenSidebar={() => setSidebarOpen(true)}
             />

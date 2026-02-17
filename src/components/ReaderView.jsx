@@ -17,6 +17,10 @@ import GenerationProgress from './GenerationProgress';
 import GrammarNotes from './GrammarNotes';
 import './ReaderView.css';
 
+// Track which lesson keys we've already tried to load from cache
+// (module-level to avoid ref-during-render lint errors)
+const _loadedKeys = new Set();
+
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar }) {
   const { generatedReaders, learnedVocabulary, error, pendingReaders, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, verboseVocab, quotaWarning, providerKeys, activeProvider, activeModel, customBaseUrl } = useAppSelector(s => ({
     generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, error: s.error,
@@ -93,13 +97,12 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     setActiveVocab(null);
   }, [lessonKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Load from cache or generate
-  useEffect(() => {
-    if (!lessonKey) return;
-    if (generatedReaders[lessonKey]) return;
+  // Load from cache synchronously to avoid flash of "Generate Reader" button.
+  // Uses module-level Set to avoid re-dispatching for the same key.
+  if (lessonKey && !generatedReaders[lessonKey] && !_loadedKeys.has(lessonKey)) {
+    _loadedKeys.add(lessonKey);
     dispatch({ type: 'LOAD_CACHED_READER', payload: { lessonKey } });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lessonKey]);
+  }
 
   // Scroll to top when lesson changes
   useEffect(() => {
