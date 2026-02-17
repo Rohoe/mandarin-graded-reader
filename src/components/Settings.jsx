@@ -535,24 +535,31 @@ export default function Settings({ onClose }) {
                 </>
               );
             }
-            // Standard providers with model dropdown
-            return prov.models.length > 0 ? (
+            // Standard providers with model input + suggestions
+            return (
               <>
                 <p className="settings-section__desc text-muted" style={{ marginBottom: 'var(--space-2)' }}>
                   Model
                 </p>
-                <select
-                  className="form-select"
+                <input
+                  type="text"
+                  className="form-input"
+                  list={`models-${prov.id}`}
                   value={state.activeModel || prov.defaultModel}
                   onChange={e => act.setActiveModel(e.target.value)}
-                  style={{ maxWidth: '18rem', marginBottom: 'var(--space-3)' }}
-                >
+                  placeholder={prov.defaultModel}
+                  style={{ maxWidth: '18rem', marginBottom: 'var(--space-2)' }}
+                />
+                <datalist id={`models-${prov.id}`}>
                   {prov.models.map(m => (
                     <option key={m.id} value={m.id}>{m.label}</option>
                   ))}
-                </select>
+                </datalist>
+                <p className="settings-section__desc text-muted" style={{ fontSize: 'var(--text-xs)', marginBottom: 'var(--space-3)' }}>
+                  Select a suggested model or type any model ID.
+                </p>
               </>
-            ) : null;
+            );
           })()}
 
           {/* API key input */}
