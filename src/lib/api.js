@@ -125,12 +125,11 @@ function callGemini(apiKey, model, systemPrompt, userMessage, maxTokens) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
   const body = {
     contents: [{ role: 'user', parts: [{ text: userMessage }] }],
-    generationConfig: {
-      maxOutputTokens: maxTokens,
-      // Disable thinking mode for Gemini 2.5 models — thinking tokens consume
-      // the output budget and can leave very little room for actual content.
-      thinkingConfig: { thinkingBudget: 0 },
-    },
+    generationConfig: { maxOutputTokens: maxTokens },
+    // Disable thinking mode for Gemini 2.5 models — thinking tokens consume
+    // the output budget and can leave very little room for actual content.
+    // Must be top-level, NOT inside generationConfig.
+    thinkingConfig: { thinkingBudget: 0 },
   };
   if (systemPrompt) {
     body.system_instruction = { parts: [{ text: systemPrompt }] };
