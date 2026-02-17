@@ -15,6 +15,12 @@ export default function Settings({ onClose }) {
   const [showKey, setShowKey]         = useState(false);
   const [customModelInput, setCustomModelInput] = useState(state.customModelName || '');
   const [customUrlInput, setCustomUrlInput] = useState(state.customBaseUrl || '');
+  // Show model picker expanded if user has a non-default model set, or for openai_compatible
+  const [showModelPicker, setShowModelPicker] = useState(() => {
+    if (state.activeProvider === 'openai_compatible') return true;
+    const prov = getProvider(state.activeProvider);
+    return !!(state.activeModel && state.activeModel !== prov.defaultModel);
+  });
   const [confirmClear, setConfirmClear] = useState(false);
   const [confirmRestore, setConfirmRestore] = useState(false);
   const [restoreError, setRestoreError] = useState(null);
@@ -471,6 +477,9 @@ export default function Settings({ onClose }) {
           {/* Model selector */}
           {(() => {
             const prov = getProvider(state.activeProvider);
+            const currentModel = state.activeModel || prov.defaultModel;
+            const modelLabel = prov.models.find(m => m.id === currentModel)?.label || currentModel;
+
             if (state.activeProvider === 'openai_compatible') {
               const presets = prov.presets || [];
               return (
@@ -535,7 +544,24 @@ export default function Settings({ onClose }) {
                 </>
               );
             }
-            // Standard providers with model input + suggestions
+
+            // Standard providers: show default model with option to change
+            if (!showModelPicker) {
+              return (
+                <p className="settings-section__desc text-muted" style={{ marginBottom: 'var(--space-3)' }}>
+                  Model: <strong>{modelLabel}</strong>
+                  {' '}<button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    style={{ fontSize: 'var(--text-xs)', padding: '0 var(--space-2)' }}
+                    onClick={() => setShowModelPicker(true)}
+                  >
+                    Change
+                  </button>
+                </p>
+              );
+            }
+
             return (
               <>
                 <p className="settings-section__desc text-muted" style={{ marginBottom: 'var(--space-2)' }}>
@@ -545,7 +571,7 @@ export default function Settings({ onClose }) {
                   type="text"
                   className="form-input"
                   list={`models-${prov.id}`}
-                  value={state.activeModel || prov.defaultModel}
+                  value={currentModel}
                   onChange={e => act.setActiveModel(e.target.value)}
                   placeholder={prov.defaultModel}
                   style={{ maxWidth: '18rem', marginBottom: 'var(--space-2)' }}
@@ -557,6 +583,14 @@ export default function Settings({ onClose }) {
                 </datalist>
                 <p className="settings-section__desc text-muted" style={{ fontSize: 'var(--text-xs)', marginBottom: 'var(--space-3)' }}>
                   Select a suggested model or type any model ID.
+                  {' '}<button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    style={{ fontSize: 'var(--text-xs)', padding: '0 var(--space-2)' }}
+                    onClick={() => { act.setActiveModel(null); setShowModelPicker(false); }}
+                  >
+                    Reset to default
+                  </button>
                 </p>
               </>
             );
