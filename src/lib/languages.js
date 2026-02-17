@@ -70,25 +70,22 @@ const zhConfig = {
     targetLanguage: 'Mandarin Chinese',
     titleInstruction: 'Chinese lesson title (8-15 characters)',
     titleFieldKey: 'title_zh',
-    storyRequirements: `- Calibrate language complexity to the HSK level:
-  - HSK 0: Absolute total beginner — ultra-short sentences (3-5 characters each), only the ~30 most common words (我、你、他、好、是、有、不、大、小、来、去、吃、喝、家、人), no grammar beyond subject+verb+object, every character introduced in vocabulary, heavy pinyin support expected
-  - HSK 1-2: Simple sentences (5-10 characters), basic 是/有/在 structures, high-frequency verbs, concrete nouns, present/past with 了
-  - HSK 3-4: Compound sentences, 把/被 constructions, common complements (得、到、完), conjunctions (虽然...但是, 因为...所以), some idiomatic expressions
-  - HSK 5-6: Complex syntax, literary expressions where appropriate (之、而、则), abstract vocabulary, formal and informal register as suits the content, classical allusions or chengyu if relevant to the topic
-- Dialogue and discourse markers should reflect natural speech patterns appropriate to the context
-- Avoid vocabulary or structures above the target HSK level unless explicitly introduced as new words`,
+    getStoryRequirements: (level) => {
+      const suffix = `- Dialogue and discourse markers should reflect natural speech patterns appropriate to the context
+- Avoid vocabulary or structures above the target HSK level unless explicitly introduced as new words`;
+      const bands = {
+        0: `- HSK 0: Absolute total beginner — ultra-short sentences (3-5 characters each), only the ~30 most common words (我、你、他、好、是、有、不、大、小、来、去、吃、喝、家、人), no grammar beyond subject+verb+object, every character introduced in vocabulary, heavy pinyin support expected`,
+        1: `- HSK 1-2: Simple sentences (5-10 characters), basic 是/有/在 structures, high-frequency verbs, concrete nouns, present/past with 了`,
+        2: `- HSK 1-2: Simple sentences (5-10 characters), basic 是/有/在 structures, high-frequency verbs, concrete nouns, present/past with 了`,
+        3: `- HSK 3-4: Compound sentences, 把/被 constructions, common complements (得、到、完), conjunctions (虽然...但是, 因为...所以), some idiomatic expressions`,
+        4: `- HSK 3-4: Compound sentences, 把/被 constructions, common complements (得、到、完), conjunctions (虽然...但是, 因为...所以), some idiomatic expressions`,
+        5: `- HSK 5-6: Complex syntax, literary expressions where appropriate (之、而、则), abstract vocabulary, formal and informal register as suits the content, classical allusions or chengyu if relevant to the topic`,
+        6: `- HSK 5-6: Complex syntax, literary expressions where appropriate (之、而、则), abstract vocabulary, formal and informal register as suits the content, classical allusions or chengyu if relevant to the topic`,
+      };
+      return `- Calibrate language complexity to HSK ${level}:\n${bands[level] || bands[3]}\n${suffix}`;
+    },
     vocabFormat: `- **Word** (pinyin) - English definition`,
-    ankiFields: `{
-    "chinese": "词",
-    "pinyin": "cí",
-    "english": "n. word/term",
-    "example_story": "Story sentence using the word.",
-    "example_story_translation": "English translation of the story example sentence.",
-    "usage_note_story": "Usage note explaining what this example demonstrates.",
-    "example_extra": "Additional example sentence.",
-    "example_extra_translation": "English translation of the additional example sentence.",
-    "usage_note_extra": "Usage note explaining what this example demonstrates."
-  }`,
+    ankiFields: `{ "chinese": "词", "pinyin": "cí", "english": "n. definition", "example_story": "...", "example_story_translation": "...", "usage_note_story": "...", "example_extra": "...", "example_extra_translation": "...", "usage_note_extra": "..." }`,
     grammarContext: 'Mandarin grammar patterns',
     gradingContext: 'Chinese language teacher',
     gradingLanguage: 'Mandarin',
@@ -166,25 +163,22 @@ const koConfig = {
     targetLanguage: 'Korean',
     titleInstruction: 'Korean lesson title (5-15 syllables)',
     titleFieldKey: 'title_ko',
-    storyRequirements: `- Calibrate language complexity to the TOPIK level:
-  - TOPIK 0: Absolute total beginner — ultra-short sentences (3-6 syllables each), only the ~30 most common words (나, 너, 이, 그, 있다, 없다, 좋다, 가다, 오다, 먹다, 물, 집, 사람, 크다, 작다), no grammar beyond subject+verb, every word introduced in vocabulary, heavy romanization support expected
-  - TOPIK 1-2: Simple sentences, basic 이다/있다/없다 structures, high-frequency verbs, concrete nouns, present/past with -았/었-, polite speech level (-아요/-어요)
-  - TOPIK 3-4: Compound sentences, passive/causative constructions, common grammar patterns (-는 것, -기 때문에, -으면), connecting endings (-고, -지만, -아서), some idiomatic expressions
-  - TOPIK 5-6: Complex syntax, formal register (-습니다), literary expressions, advanced grammar (-는 바, -에 의하면), hanja-derived vocabulary, proverbs if relevant
-- Dialogue should use appropriate speech levels (존댓말/반말) for the context
-- Avoid vocabulary or structures above the target TOPIK level unless explicitly introduced as new words`,
+    getStoryRequirements: (level) => {
+      const suffix = `- Dialogue should use appropriate speech levels (존댓말/반말) for the context
+- Avoid vocabulary or structures above the target TOPIK level unless explicitly introduced as new words`;
+      const bands = {
+        0: `- TOPIK 0: Absolute total beginner — ultra-short sentences (3-6 syllables each), only the ~30 most common words (나, 너, 이, 그, 있다, 없다, 좋다, 가다, 오다, 먹다, 물, 집, 사람, 크다, 작다), no grammar beyond subject+verb, every word introduced in vocabulary, heavy romanization support expected`,
+        1: `- TOPIK 1-2: Simple sentences, basic 이다/있다/없다 structures, high-frequency verbs, concrete nouns, present/past with -았/었-, polite speech level (-아요/-어요)`,
+        2: `- TOPIK 1-2: Simple sentences, basic 이다/있다/없다 structures, high-frequency verbs, concrete nouns, present/past with -았/었-, polite speech level (-아요/-어요)`,
+        3: `- TOPIK 3-4: Compound sentences, passive/causative constructions, common grammar patterns (-는 것, -기 때문에, -으면), connecting endings (-고, -지만, -아서), some idiomatic expressions`,
+        4: `- TOPIK 3-4: Compound sentences, passive/causative constructions, common grammar patterns (-는 것, -기 때문에, -으면), connecting endings (-고, -지만, -아서), some idiomatic expressions`,
+        5: `- TOPIK 5-6: Complex syntax, formal register (-습니다), literary expressions, advanced grammar (-는 바, -에 의하면), hanja-derived vocabulary, proverbs if relevant`,
+        6: `- TOPIK 5-6: Complex syntax, formal register (-습니다), literary expressions, advanced grammar (-는 바, -에 의하면), hanja-derived vocabulary, proverbs if relevant`,
+      };
+      return `- Calibrate language complexity to TOPIK ${level}:\n${bands[level] || bands[3]}\n${suffix}`;
+    },
     vocabFormat: `- **Word** (romanization) - English definition`,
-    ankiFields: `{
-    "korean": "단어",
-    "romanization": "dan-eo",
-    "english": "n. word/term",
-    "example_story": "Story sentence using the word.",
-    "example_story_translation": "English translation of the story example sentence.",
-    "usage_note_story": "Usage note explaining what this example demonstrates.",
-    "example_extra": "Additional example sentence.",
-    "example_extra_translation": "English translation of the additional example sentence.",
-    "usage_note_extra": "Usage note explaining what this example demonstrates."
-  }`,
+    ankiFields: `{ "korean": "단어", "romanization": "dan-eo", "english": "n. definition", "example_story": "...", "example_story_translation": "...", "usage_note_story": "...", "example_extra": "...", "example_extra_translation": "...", "usage_note_extra": "..." }`,
     grammarContext: 'Korean grammar patterns',
     gradingContext: 'Korean language teacher',
     gradingLanguage: 'Korean',
@@ -258,29 +252,26 @@ const yueConfig = {
     targetLanguage: 'Cantonese Chinese (written Cantonese)',
     titleInstruction: 'Cantonese lesson title in traditional Chinese characters (8-15 characters)',
     titleFieldKey: 'title_yue',
-    storyRequirements: `- Write in WRITTEN CANTONESE (書面粵語), NOT standard written Chinese (書面語):
+    getStoryRequirements: (level) => {
+      const cantoPrefix = `- Write in WRITTEN CANTONESE (書面粵語), NOT standard written Chinese (書面語):
   - Use Cantonese-specific grammar: 係 (not 是), 唔 (not 不), 佢 (not 他/她), 喺 (not 在), 嘅 (not 的), 畀 (not 給), 咗 (not 了 for completion), 緊 (for progressive), 嚟 (not 來), 噉 (not 這樣), 點解 (not 為什麼)
   - Use traditional Chinese characters throughout
   - Include Cantonese sentence-final particles where natural: 啦, 喎, 嘅, 咩, 㗎, 囉, 喇, 呢
-  - Dialogue should reflect natural Cantonese speech patterns
-- Calibrate language complexity to the proficiency level:
-  - Level 0: Absolute total beginner — ultra-short sentences (3-5 characters each), only the ~30 most common Cantonese words (我、你、佢、好、係、有、唔、大、細、嚟、去、食、飲、屋、人), no grammar beyond subject+verb+object, every character introduced in vocabulary, heavy jyutping support expected
-  - Level 1-2: Simple sentences (5-10 characters), basic 係/有/喺 structures, high-frequency Cantonese verbs, concrete nouns, past tense with 咗
-  - Level 3-4: Compound sentences, 將/被 constructions, common Cantonese complements (到、晒、返), conjunctions (雖然...但係, 因為...所以), Cantonese idioms
-  - Level 5-6: Complex syntax, literary Cantonese expressions, abstract vocabulary, mixing formal and colloquial registers, Cantonese proverbs and slang
-- Avoid vocabulary or structures above the target level unless explicitly introduced as new words`,
+  - Dialogue should reflect natural Cantonese speech patterns`;
+      const suffix = `- Avoid vocabulary or structures above the target level unless explicitly introduced as new words`;
+      const bands = {
+        0: `- Level 0: Absolute total beginner — ultra-short sentences (3-5 characters each), only the ~30 most common Cantonese words (我、你、佢、好、係、有、唔、大、細、嚟、去、食、飲、屋、人), no grammar beyond subject+verb+object, every character introduced in vocabulary, heavy jyutping support expected`,
+        1: `- Level 1-2: Simple sentences (5-10 characters), basic 係/有/喺 structures, high-frequency Cantonese verbs, concrete nouns, past tense with 咗`,
+        2: `- Level 1-2: Simple sentences (5-10 characters), basic 係/有/喺 structures, high-frequency Cantonese verbs, concrete nouns, past tense with 咗`,
+        3: `- Level 3-4: Compound sentences, 將/被 constructions, common Cantonese complements (到、晒、返), conjunctions (雖然...但係, 因為...所以), Cantonese idioms`,
+        4: `- Level 3-4: Compound sentences, 將/被 constructions, common Cantonese complements (到、晒、返), conjunctions (雖然...但係, 因為...所以), Cantonese idioms`,
+        5: `- Level 5-6: Complex syntax, literary Cantonese expressions, abstract vocabulary, mixing formal and colloquial registers, Cantonese proverbs and slang`,
+        6: `- Level 5-6: Complex syntax, literary Cantonese expressions, abstract vocabulary, mixing formal and colloquial registers, Cantonese proverbs and slang`,
+      };
+      return `${cantoPrefix}\n- Calibrate language complexity to YUE ${level}:\n${bands[level] || bands[3]}\n${suffix}`;
+    },
     vocabFormat: `- **Word** (jyutping) - English definition`,
-    ankiFields: `{
-    "chinese": "詞",
-    "jyutping": "ci4",
-    "english": "n. word/term",
-    "example_story": "Story sentence using the word.",
-    "example_story_translation": "English translation of the story example sentence.",
-    "usage_note_story": "Usage note explaining what this example demonstrates.",
-    "example_extra": "Additional example sentence.",
-    "example_extra_translation": "English translation of the additional example sentence.",
-    "usage_note_extra": "Usage note explaining what this example demonstrates."
-  }`,
+    ankiFields: `{ "chinese": "詞", "jyutping": "ci4", "english": "n. definition", "example_story": "...", "example_story_translation": "...", "usage_note_story": "...", "example_extra": "...", "example_extra_translation": "...", "usage_note_extra": "..." }`,
     grammarContext: 'Cantonese grammar patterns',
     gradingContext: 'Cantonese language teacher',
     gradingLanguage: 'Cantonese',

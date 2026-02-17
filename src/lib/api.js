@@ -263,13 +263,17 @@ export async function generateReader(llmConfig, topic, level, learnedWords = {},
   const charRange = `${targetChars - 100}-${targetChars + 100}`;
   const system = buildReaderSystem(langConfig, level, topic, charRange);
 
-  const learnedList = Object.keys(learnedWords);
+  const learnedList = Object.keys(learnedWords)
+    .filter(w => !learnedWords[w].langId || learnedWords[w].langId === langId);
   const learnedSection = learnedList.length > 0
     ? `\n\nPreviously introduced vocabulary (do not reuse as "new" vocabulary — you may use these words freely in the story but do not list them in the vocabulary section):\n${learnedList.join(', ')}`
     : '';
 
-  const continuationSection = previousStory
-    ? `\n\nThis is a continuation. Previous episode for narrative context:\n---\n${previousStory}\n---\nContinue the story with new events, maintaining the same characters and setting.`
+  const truncatedStory = previousStory && previousStory.length > 600
+    ? '[Earlier story truncated]\n…' + previousStory.slice(-600)
+    : previousStory;
+  const continuationSection = truncatedStory
+    ? `\n\nThis is a continuation. Previous episode for narrative context:\n---\n${truncatedStory}\n---\nContinue the story with new events, maintaining the same characters and setting.`
     : '';
 
   const userMessage = `Generate a graded reader for the topic: ${topic}${learnedSection}${continuationSection}`;

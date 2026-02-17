@@ -3,8 +3,6 @@ export function buildReaderSystem(langConfig, level, topic, charRange) {
   const profName = langConfig.proficiency.name;
   return `Create an educational graded reader in ${p.targetLanguage} for ${profName} ${level} learners.
 
-If a user types in a series of words from the article, assume those are new vocabulary that should be appended to the list in the same format.
-
 ## VOCABULARY REQUIREMENTS
 - Select 12-15 new vocabulary items appropriate for the specified ${profName} level
 - Items may include single words, compound words, collocations, or idiomatic expressions
@@ -15,7 +13,7 @@ If a user types in a series of words from the article, assume those are new voca
 ## STORY REQUIREMENTS
 - Length: ${charRange} ${langConfig.charUnit}
 - Topic: ${topic}
-${p.storyRequirements}
+${p.getStoryRequirements(level)}
 
 ## OUTPUT FORMAT
 
