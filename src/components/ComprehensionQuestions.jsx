@@ -3,6 +3,7 @@ import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { gradeAnswers } from '../lib/api';
 import { buildLLMConfig } from '../lib/llmConfig';
+import { translateText } from '../lib/translate';
 import './ComprehensionQuestions.css';
 
 function renderInline(text) {
@@ -28,7 +29,7 @@ function scoreBadgeClass(scoreStr) {
 
 const AUTO_SAVE_DELAY = 1500;
 
-export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars, verboseVocab }) {
+export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars, verboseVocab, showParagraphTools }) {
   const { apiKey, providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
     apiKey: s.apiKey, providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
   }));
@@ -40,6 +41,9 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
   const [results, setResults] = useState(() => reader?.gradingResults ?? null);
   const [grading, setGrading] = useState(false);
   const [gradingError, setGradingError] = useState(null);
+  const [visibleQTranslations, setVisibleQTranslations] = useState(new Set());
+  const [fetchedQTranslations, setFetchedQTranslations] = useState({});
+  const [translatingQIndex, setTranslatingQIndex] = useState(null);
 
   // Refs for debounced auto-save — read current values without stale closures
   const debounceRef = useRef(null);
@@ -138,6 +142,30 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
     setGradingError(null);
   }
 
+  async function handleQTranslateClick(i, qText, qTranslation) {
+    // Toggle off if already visible
+    if (visibleQTranslations.has(i)) {
+      setVisibleQTranslations(prev => { const n = new Set(prev); n.delete(i); return n; });
+      return;
+    }
+    // Show existing translation (from LLM or previous fetch)
+    if (qTranslation || fetchedQTranslations[i]) {
+      setVisibleQTranslations(prev => new Set(prev).add(i));
+      return;
+    }
+    // Fetch via Google Translate
+    setVisibleQTranslations(prev => new Set(prev).add(i));
+    setTranslatingQIndex(i);
+    try {
+      const translation = await translateText(qText, langId);
+      setFetchedQTranslations(prev => ({ ...prev, [i]: translation }));
+    } catch (err) {
+      act.notify('error', `Translation failed: ${err.message}`);
+    } finally {
+      setTranslatingQIndex(null);
+    }
+  }
+
   return (
     <section className="comprehension">
       <button
@@ -165,8 +193,22 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                 <div className="comprehension__item-body">
                   <span className="comprehension__text text-chinese">
                   {renderChars ? renderChars(qText, `q${i}`) : renderInline(qText)}
+                  {showParagraphTools && (
+                    <button
+                      className={`reader-view__translate-btn ${translatingQIndex === i ? 'reader-view__translate-btn--loading' : ''} ${visibleQTranslations.has(i) ? 'reader-view__translate-btn--active' : ''}`}
+                      onClick={() => handleQTranslateClick(i, qText, qTranslation)}
+                      disabled={translatingQIndex === i}
+                      title={visibleQTranslations.has(i) ? 'Hide translation' : 'Translate to English'}
+                      aria-label={visibleQTranslations.has(i) ? 'Hide translation' : 'Translate to English'}
+                    >
+                      EN
+                    </button>
+                  )}
                 </span>
-                {verboseVocab && qTranslation && (
+                {visibleQTranslations.has(i) && (qTranslation || fetchedQTranslations[i]) && (
+                  <span className="comprehension__translation text-muted">{qTranslation || fetchedQTranslations[i]}</span>
+                )}
+                {verboseVocab && !visibleQTranslations.has(i) && qTranslation && (
                   <span className="comprehension__translation text-muted">{qTranslation}</span>
                 )}
 

@@ -303,6 +303,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         langId={langId}
         renderChars={renderChars}
         verboseVocab={verboseVocab}
+        showParagraphTools={translateButtons}
       />
 
       {/* Vocabulary */}
