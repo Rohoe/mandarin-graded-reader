@@ -35,8 +35,8 @@ export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
     if (titleSectionMatch) {
       const titleBlock = titleSectionMatch[1].trim();
       const lines = titleBlock.split('\n').map(l => l.trim()).filter(Boolean);
-      result.titleZh = lines[0] || '';
-      result.titleEn = lines[1] || '';
+      result.titleZh = (lines[0] || '').replace(/\*\*/g, '').replace(/^\*|\*$/g, '');
+      result.titleEn = (lines[1] || '').replace(/\*\*/g, '').replace(/^\*|\*$/g, '');
     } else {
       // Fallback: first # heading
       const h1 = rawText.match(/^#{1,3}\s+(.+)$/m);
