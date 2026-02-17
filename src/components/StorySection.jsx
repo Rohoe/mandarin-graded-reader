@@ -22,6 +22,8 @@ export default function StorySection({
   onTranslate,
   translatingIndex,
   showParagraphTools,
+  selectionPopover,
+  selectionPopoverRef,
 }) {
   const [visibleTranslations, setVisibleTranslations] = useState(new Set());
 
@@ -117,6 +119,18 @@ export default function StorySection({
           <span className="reader-view__popover-chinese text-target">{activeVocab.word.chinese}</span>
           <span className="reader-view__popover-pinyin">{activeVocab.word.pinyin}</span>
           <span className="reader-view__popover-english">{activeVocab.word.english}</span>
+        </div>,
+        document.body
+      )}
+      {selectionPopover && createPortal(
+        <div ref={selectionPopoverRef} className="reader-view__popover reader-view__selection-popover" style={getPopoverPosition(selectionPopover.rect)}>
+          <span className="reader-view__selection-text text-target">{selectionPopover.text}</span>
+          {selectionPopover.romanization && (
+            <span className="reader-view__selection-romanization">{selectionPopover.romanization}</span>
+          )}
+          <span className="reader-view__selection-translation">
+            {selectionPopover.translation || '\u2026'}
+          </span>
         </div>,
         document.body
       )}

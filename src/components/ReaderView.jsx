@@ -9,6 +9,7 @@ import { useTTS } from '../hooks/useTTS';
 import { useRomanization } from '../hooks/useRomanization';
 import { useVocabPopover } from '../hooks/useVocabPopover';
 import { useReaderGeneration } from '../hooks/useReaderGeneration';
+import { useTextSelection } from '../hooks/useTextSelection';
 import StorySection from './StorySection';
 import VocabularyList from './VocabularyList';
 import ComprehensionQuestions from './ComprehensionQuestions';
@@ -72,15 +73,63 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
 
   const { activeVocab, setActiveVocab, popoverRef, handleVocabClick, lookupVocab, getPopoverPosition } = useVocabPopover(reader, langConfig);
 
+  const { selection, popoverRef: selectionPopoverRef, clearSelection } = useTextSelection(scrollRef);
+  const [selectionPopover, setSelectionPopover] = useState(null);
+
+  // Build selection popover data when selection changes
+  useEffect(() => {
+    if (!selection) {
+      setSelectionPopover(null);
+      return;
+    }
+    // If vocab popover is active, don't show selection popover
+    if (activeVocab) {
+      setSelectionPopover(null);
+      return;
+    }
+
+    const { text, rect } = selection;
+    let romanization = null;
+    if (romanizer) {
+      try {
+        const romArr = romanizer.romanize(text);
+        romanization = romArr.join('');
+      } catch { /* ignore */ }
+    }
+
+    setSelectionPopover({ text, rect, romanization, translation: null });
+
+    // Fetch translation async
+    let cancelled = false;
+    translateText(text, langId).then(translation => {
+      if (!cancelled) {
+        setSelectionPopover(prev => prev ? { ...prev, translation } : null);
+      }
+    }).catch(() => {
+      if (!cancelled) {
+        setSelectionPopover(prev => prev ? { ...prev, translation: '(translation failed)' } : null);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [selection, activeVocab, romanizer, langId]);
+
+  // Close selection popover when vocab popover opens
+  useEffect(() => {
+    if (activeVocab) {
+      clearSelection();
+    }
+  }, [activeVocab, clearSelection]);
+
   const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModels, customBaseUrl });
   const { handleGenerate } = useReaderGeneration(
     lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength
   );
 
-  // Cancel speech & close popover when lesson changes
+  // Cancel speech & close popovers when lesson changes
   useEffect(() => {
     stopSpeaking();
     setActiveVocab(null);
+    clearSelection();
   }, [lessonKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load from cache synchronously to avoid flash of "Generate Reader" button.
@@ -288,6 +337,8 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         onTranslate={handleTranslate}
         translatingIndex={translatingIndex}
         showParagraphTools={translateButtons}
+        selectionPopover={selectionPopover}
+        selectionPopoverRef={selectionPopoverRef}
       />
 
       <hr className="divider" />
