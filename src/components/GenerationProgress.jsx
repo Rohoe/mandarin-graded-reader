@@ -1,26 +1,34 @@
 import { useState, useEffect } from 'react';
+import { useAppSelector } from '../context/useAppSelector';
+import { getProvider } from '../lib/providers';
 import './GenerationProgress.css';
 
-// Phases for reader generation (~15-30 s)
-const READER_PHASES = [
-  { pct: 12, label: 'Connecting to Claude…',          ms: 1200 },
-  { pct: 38, label: 'Writing your story…',             ms: 7000 },
-  { pct: 62, label: 'Building vocabulary list…',       ms: 6000 },
-  { pct: 78, label: 'Adding comprehension questions…', ms: 4000 },
-  { pct: 92, label: 'Preparing Anki cards…',           ms: 4000 },
-  { pct: 98, label: 'Almost done…',                    ms: 60000 },
-];
-
-// Phases for syllabus generation (~5-10 s)
-const SYLLABUS_PHASES = [
-  { pct: 20, label: 'Connecting to Claude…',          ms: 800  },
-  { pct: 55, label: 'Designing lesson structure…',    ms: 3500 },
-  { pct: 85, label: 'Writing lesson descriptions…',   ms: 3000 },
-  { pct: 97, label: 'Almost done…',                   ms: 60000 },
-];
+function buildPhases(type, providerName) {
+  const connectLabel = `Connecting to ${providerName}…`;
+  if (type === 'syllabus') {
+    return [
+      { pct: 20, label: connectLabel,                     ms: 800  },
+      { pct: 55, label: 'Designing lesson structure…',    ms: 3500 },
+      { pct: 85, label: 'Writing lesson descriptions…',   ms: 3000 },
+      { pct: 97, label: 'Almost done…',                   ms: 60000 },
+    ];
+  }
+  return [
+    { pct: 12, label: connectLabel,                       ms: 1200 },
+    { pct: 38, label: 'Writing your story…',              ms: 7000 },
+    { pct: 62, label: 'Building vocabulary list…',        ms: 6000 },
+    { pct: 78, label: 'Adding comprehension questions…',  ms: 4000 },
+    { pct: 92, label: 'Preparing Anki cards…',            ms: 4000 },
+    { pct: 98, label: 'Almost done…',                     ms: 60000 },
+  ];
+}
 
 export default function GenerationProgress({ type = 'reader' }) {
-  const phases = type === 'syllabus' ? SYLLABUS_PHASES : READER_PHASES;
+  const activeProvider = useAppSelector(s => s.activeProvider);
+  const providerDef = getProvider(activeProvider);
+  // Use short display name (e.g. "Anthropic" not "Anthropic (Claude)")
+  const providerName = providerDef.name.split(' (')[0];
+  const phases = buildPhases(type, providerName);
 
   const [phaseIdx, setPhaseIdx] = useState(0);
   const [pct, setPct]           = useState(0);
