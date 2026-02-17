@@ -29,12 +29,14 @@ English subtitle on the next line
 With bolded vocabulary and italicized proper nouns
 
 ### 3. Vocabulary List
-For each word:
+For each word, use EXACTLY this format (4 lines per word, no labels or prefixes):
 ${p.vocabFormat}
-- Example sentence FROM STORY
-- *Brief usage note for the story example — explain the grammar pattern, collocation, register, or nuance shown (1 sentence, in English)*
-- Additional example sentence (NOT from story, demonstrating different usage context)
-- *Brief usage note for the additional example — explain what new aspect of usage this example shows (1 sentence, in English)*
+- A sentence from the story that uses this word (copy it exactly, keep bold markers)
+- *One-sentence English note: explain the grammar pattern, collocation, or nuance in that sentence*
+- A new example sentence (not from the story, showing different usage)
+- *One-sentence English note: explain what this second example demonstrates*
+
+IMPORTANT: Do NOT prefix example sentences with labels like "Example sentence:" or "From story:". Just write the sentence directly.
 
 ### 4. Comprehension Questions
 3-5 questions in ${p.targetLanguage} at the target level

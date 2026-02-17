@@ -108,9 +108,9 @@ export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
         chinese:                  card[targetField] || card.chinese || card.korean || '',
         pinyin:                   card[romField] || card.pinyin || card.romanization || '',
         english:                  card[transField] || card.english || '',
-        exampleStory:             card.example_story || '',
+        exampleStory:             stripExamplePrefix(card.example_story || ''),
         exampleStoryTranslation:  card.example_story_translation || '',
-        exampleExtra:             card.example_extra || '',
+        exampleExtra:             stripExamplePrefix(card.example_extra || ''),
         exampleExtraTranslation:  card.example_extra_translation || '',
         usageNoteStory:           card.usage_note_story || '',
         usageNoteExtra:           card.usage_note_extra || '',
@@ -138,9 +138,9 @@ export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
           chinese:                  card[targetField] || card.chinese || card.korean || '',
           pinyin:                   card[romField] || card.pinyin || card.romanization || '',
           english:                  card[transField] || card.english || '',
-          exampleStory:             card.example_story || '',
+          exampleStory:             stripExamplePrefix(card.example_story || ''),
           exampleStoryTranslation:  card.example_story_translation || '',
-          exampleExtra:             card.example_extra || '',
+          exampleExtra:             stripExamplePrefix(card.example_extra || ''),
           exampleExtraTranslation:  card.example_extra_translation || '',
           usageNoteStory:           card.usage_note_story || '',
           usageNoteExtra:           card.usage_note_extra || '',
@@ -231,8 +231,8 @@ function extractExamples(text, scriptRegex) {
       continue;
     }
     if (/^(?:brief\s+)?usage\s+note\b/i.test(bulletStripped)) {
-      // "Brief usage note for the story example — ..." → extract after the dash
-      const noteText = bulletStripped.replace(/^(?:brief\s+)?usage\s+note[^—–-]*[—–-]\s*/i, '').trim();
+      // "Brief usage note for the story example — ..." or "...:" → extract after dash or colon
+      const noteText = bulletStripped.replace(/^(?:brief\s+)?usage\s+note[^—–:,-]*[—–:,-]\s*/i, '').trim();
       if (noteText) usageNotes.push(noteText);
       continue;
     }
