@@ -101,11 +101,14 @@ src/
     extendSyllabusPrompt.js   buildExtendSyllabusPrompt(langConfig, topic, level, existingLessons, additionalCount)
 
   hooks/
-    useTTS.js                 Voice loading, speech synthesis, per-paragraph speak
+    useTTS.js                 Voice loading, speech synthesis, per-paragraph speak.
+                              Accepts ttsSpeechRate param; rate = ttsSpeechRate × langConfig.tts.defaultRate.
     useRomanization.jsx       Async romanizer loading, renderChars() with ruby tags.
-                              renderChars parses markdown segments (**bold**, *italic*,
-                              plain) before applying ruby romanization to each segment.
-                              romanizeText() handles plain text → ruby JSX conversion.
+                              Accepts pinyinOn from global state (romanizationOn) rather
+                              than managing local toggle state. renderChars parses markdown
+                              segments (**bold**, *italic*, plain) before applying ruby
+                              romanization to each segment. romanizeText() handles plain
+                              text → ruby JSX conversion.
     useVocabPopover.js        Vocab map, click handler, popover positioning, close logic
     useReaderGeneration.js    Generate/regenerate API calls + state updates
 
@@ -145,12 +148,11 @@ src/
     ReaderView                Main content area (~350 lines); orchestrates hooks and
                               sub-components. Determines langId, sets data-lang attribute.
                               Uses custom hooks: useTTS, useRomanization, useVocabPopover,
-                              useReaderGeneration. Delegates story rendering to StorySection
-                              and control buttons to ReaderControls.
+                              useReaderGeneration. Reads romanizationOn and ttsSpeechRate
+                              from global state. TTS button rendered directly in the article
+                              header. Delegates story rendering to StorySection.
     StorySection              Renders story paragraphs with vocab buttons, TTS click-to-read,
                               and popover portal for vocab definitions.
-    ReaderControls            Romanization toggle + TTS buttons (inline in header + floating
-                              portal when header scrolls off via IntersectionObserver).
     StatsDashboard/           Modal showing learning stats: vocab growth bar chart, per-language
                               breakdown, quiz scores, streak counter, activity counts.
                               Uses computeStats() from lib/stats.js. CSS-only charts.
@@ -169,6 +171,9 @@ src/
                               results survive page reload. Accepts renderChars prop from ReaderView;
                               when set (romanization toggle is on), question text is rendered with
                               <ruby> romanization annotations instead of plain renderInline().
+                              Accepts verboseVocab prop; when enabled, shows English translation
+                              below each question. Questions are { text, translation } objects
+                              (parser extracts trailing parenthesized translations).
     GrammarNotes              Collapsible section showing 3–5 grammar pattern cards per reader.
                               Accepts `renderChars` prop — applies ruby romanization to `note.pattern`
                               and `note.example` when romanization toggle is on.
@@ -186,13 +191,14 @@ src/
                               holds at ~97-98% until response arrives and component unmounts.
                               Reads activeProvider from state to show dynamic provider name
                               (e.g. "Connecting to OpenAI…" instead of hardcoded Claude).
-    Settings                  Sections in order: dark mode toggle, verbose vocab toggle,
-                              cloud sync (sign-in + push/pull), save folder picker, TTS
+    Settings                  Sections in order: dark mode toggle, romanization toggle,
+                              verbose vocab toggle, reading speed slider (0.5×–2.0×), TTS
                               voice selectors (Chinese + Korean + Cantonese), default HSK
-                              level, default TOPIK level, AI provider (provider pills with
-                              key-set indicator dots, collapsible model picker, API key
-                              input, base URL for custom endpoints), API output tokens
-                              slider (4096–16384), storage usage meter, backup & restore,
+                              level, default TOPIK level, default YUE level, AI provider
+                              (provider pills with key-set indicator dots, collapsible model
+                              picker, API key input, base URL for custom endpoints), API
+                              output tokens slider (4096–16384), storage usage meter, backup
+                              & restore, cloud sync (sign-in + push/pull), save folder picker,
                               danger zone (clear-all data).
                               Model picker: collapsed by default showing "Model: **name**
                               [Change]"; expands to <input> + <datalist> with curated
@@ -253,9 +259,12 @@ src/
   maxTokens:         number,          // API output ceiling, default 8192
   defaultLevel:      number,          // Default HSK level for TopicForm, default 3
   defaultTopikLevel: number,          // Default TOPIK level for TopicForm, default 2
+  defaultYueLevel:   number,          // Default YUE level for TopicForm, default 2
   ttsKoVoiceURI:     string | null,   // Preferred Korean TTS voice URI, or null
   ttsYueVoiceURI:    string | null,   // Preferred Cantonese TTS voice URI, or null
-  verboseVocab:      boolean,         // Show example translations in vocab + Anki export (default false)
+  ttsSpeechRate:     number,          // TTS speed multiplier (0.5–2.0), default 1.0
+  romanizationOn:    boolean,         // Show ruby romanization annotations (persisted, default false)
+  verboseVocab:      boolean,         // Show example translations in vocab + comprehension + Anki export (default false)
   // Background generation (ephemeral, not persisted)
   pendingReaders:    { [lessonKey]: true },  // keys currently being generated
   // Learning activity log (persisted to localStorage)
@@ -315,6 +324,7 @@ The LLM's reader response is parsed with regex section matching:
 - Sections delimited by `### 1. Title`, `### 2. Story`, `### 3. Vocabulary`, `### 4. Comprehension`, `### 5. Anki`
 - If section extraction fails, the component falls back to showing raw text with a "Regenerate" button
 - `parseStorySegments()` splits story text into `{ type: 'text'|'bold'|'italic', content }` segments for rendering
+- `parseQuestions()` returns `{ text, translation }` objects; extracts trailing parenthesized English translations (e.g. `问题？(Translation?)`) when present
 
 ## Anki export format
 

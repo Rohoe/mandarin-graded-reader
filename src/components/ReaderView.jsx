@@ -4,6 +4,7 @@ import { actions } from '../context/actions';
 import { getLang, getLessonTitle, DEFAULT_LANG_ID } from '../lib/languages';
 import { buildLLMConfig } from '../lib/llmConfig';
 import { getProvider } from '../lib/providers';
+import { translateText } from '../lib/translate';
 import { useTTS } from '../hooks/useTTS';
 import { useRomanization } from '../hooks/useRomanization';
 import { useVocabPopover } from '../hooks/useVocabPopover';
@@ -36,6 +37,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   const scrollRef = useRef(null);
   const [confirmRegen, setConfirmRegen] = useState(false);
   const [readerLength, setReaderLength] = useState(1200);
+  const [translatingIndex, setTranslatingIndex] = useState(null);
 
   // Determine langId from reader, lessonMeta, or syllabus
   const langId = reader?.langId || lessonMeta?.langId || DEFAULT_LANG_ID;
@@ -97,6 +99,19 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     setConfirmRegen(false);
     act.clearReader(lessonKey);
     await handleGenerate();
+  }
+
+  async function handleTranslate(index, text) {
+    setTranslatingIndex(index);
+    try {
+      const translation = await translateText(text, langId);
+      const existing = reader.paragraphTranslations || {};
+      act.setReader(lessonKey, { ...reader, paragraphTranslations: { ...existing, [index]: translation } });
+    } catch (err) {
+      act.notify('error', `Translation failed: ${err.message}`);
+    } finally {
+      setTranslatingIndex(null);
+    }
   }
 
   // Proficiency badge text
@@ -269,6 +284,9 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         activeVocab={activeVocab}
         popoverRef={popoverRef}
         getPopoverPosition={getPopoverPosition}
+        paragraphTranslations={reader.paragraphTranslations}
+        onTranslate={handleTranslate}
+        translatingIndex={translatingIndex}
       />
 
       <hr className="divider" />
