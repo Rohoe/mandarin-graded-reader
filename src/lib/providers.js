@@ -31,10 +31,10 @@ export const PROVIDERS = {
     id: 'gemini',
     name: 'Google Gemini',
     keyPlaceholder: 'AIza...',
-    defaultModel: 'gemini-2.5-flash',
+    defaultModel: 'gemini-2.5-pro',
     models: [
-      { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
       { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
+      { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
     ],
   },
   openai_compatible: {
