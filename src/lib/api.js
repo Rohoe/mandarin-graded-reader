@@ -237,7 +237,7 @@ export async function gradeAnswers(llmConfig, questions, userAnswers, story, lev
   const langConfig = getLang(langId);
   const system = buildGradingSystem(langConfig, level);
   const answersBlock = questions
-    .map((q, i) => `Q${i + 1}: ${q}\nA${i + 1}: ${userAnswers[i] || '(no answer provided)'}`)
+    .map((q, i) => `Q${i + 1}: ${typeof q === 'string' ? q : q.text}\nA${i + 1}: ${userAnswers[i] || '(no answer provided)'}`)
     .join('\n\n');
   const userMessage = `Story (for reference):\n${story}\n\n---\n\nQuestions and Student Answers:\n${answersBlock}`;
   const raw = await callLLM(llmConfig, system, userMessage, maxTokens);

@@ -39,7 +39,9 @@ ${p.vocabFormat}
 IMPORTANT: Do NOT prefix example sentences with labels like "Example sentence:" or "From story:". Just write the sentence directly.
 
 ### 4. Comprehension Questions
-3-5 questions in ${p.targetLanguage} at the target level
+3-5 questions in ${p.targetLanguage} at the target level.
+Each question must be followed by its English translation in parentheses on the same line.
+Example format: 他为什么去了北京？(Why did he go to Beijing?)
 
 ### 5. Anki Cards Data (JSON)
 Return a JSON block tagged \`\`\`anki-json containing an array of card objects:

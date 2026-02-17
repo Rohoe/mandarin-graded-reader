@@ -58,6 +58,14 @@
   line-height: var(--leading-chinese);
 }
 
+.comprehension__translation {
+  display: block;
+  font-size: var(--text-sm);
+  font-style: italic;
+  line-height: var(--leading-relaxed);
+  margin-top: var(--space-1);
+}
+
 .comprehension__item-body {
   display: flex;
   flex-direction: column;

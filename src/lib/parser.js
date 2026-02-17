@@ -257,7 +257,15 @@ function parseQuestions(text) {
   for (const line of lines) {
     // Strip leading number/bullet
     const cleaned = line.replace(/^[\d]+[.、)]\s*/, '').replace(/^[-•]\s*/, '').trim();
-    if (cleaned && cleaned.length > 2) questions.push(cleaned);
+    if (cleaned && cleaned.length > 2) {
+      // Extract trailing English translation in parentheses: 问题？(Translation?)
+      const transMatch = cleaned.match(/^(.*?\S)\s*\(([^)]+)\)\s*$/);
+      if (transMatch) {
+        questions.push({ text: transMatch[1], translation: transMatch[2] });
+      } else {
+        questions.push({ text: cleaned, translation: '' });
+      }
+    }
   }
 
   return questions;

@@ -28,7 +28,7 @@ function scoreBadgeClass(scoreStr) {
 
 const AUTO_SAVE_DELAY = 1500;
 
-export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars }) {
+export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars, verboseVocab }) {
   const { apiKey, providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
     apiKey: s.apiKey, providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
   }));
@@ -155,13 +155,20 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
       {!collapsed && (
         <div id="comprehension-content">
           <ol className="comprehension__list fade-in">
-            {questions.map((q, i) => (
+            {questions.map((q, i) => {
+              // Support both plain strings (old readers) and { text, translation } objects
+              const qText = typeof q === 'string' ? q : q.text;
+              const qTranslation = typeof q === 'object' ? q.translation : '';
+              return (
               <li key={i} className="comprehension__item">
                 <span className="comprehension__num">{i + 1}.</span>
                 <div className="comprehension__item-body">
                   <span className="comprehension__text text-chinese">
-                  {renderChars ? renderChars(q, `q${i}`) : renderInline(q)}
+                  {renderChars ? renderChars(qText, `q${i}`) : renderInline(qText)}
                 </span>
+                {verboseVocab && qTranslation && (
+                  <span className="comprehension__translation text-muted">{qTranslation}</span>
+                )}
 
                   {results === null ? (
                     <textarea
@@ -197,7 +204,8 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                   )}
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ol>
 
           {results !== null ? (
