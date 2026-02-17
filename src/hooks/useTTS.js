@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-export function useTTS(langConfig, langId, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, setTtsVoice) {
+export function useTTS(langConfig, langId, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, setTtsVoice, ttsSpeechRate) {
   const ttsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
   const [speakingKey, setSpeakingKey] = useState(null);
   const utteranceRef = useRef(null);
@@ -49,13 +49,13 @@ export function useTTS(langConfig, langId, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoi
     } else {
       utterance.lang = langConfig.tts.defaultLang;
     }
-    utterance.rate = langConfig.tts.defaultRate;
+    utterance.rate = (ttsSpeechRate ?? 1) * langConfig.tts.defaultRate;
     utterance.onend = () => setSpeakingKey(null);
     utterance.onerror = () => setSpeakingKey(null);
     utteranceRef.current = utterance;
     setSpeakingKey(key);
     window.speechSynthesis.speak(utterance);
-  }, [ttsSupported, speakingKey, voices, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, langId, langConfig.tts]);
+  }, [ttsSupported, speakingKey, voices, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, langId, langConfig.tts, ttsSpeechRate]);
 
   const stopSpeaking = useCallback(() => {
     window.speechSynthesis?.cancel();

@@ -51,6 +51,7 @@ const KEYS = {
   CUSTOM_BASE_URL:    'gradedReader_customBaseUrl',
   CUSTOM_MODEL_NAME:  'gradedReader_customModelName',
   COMPAT_PRESET:      'gradedReader_compatPreset',
+  TTS_SPEECH_RATE:    'gradedReader_ttsSpeechRate',
 };
 
 const READER_KEY_PREFIX = 'gradedReader_reader_';
@@ -519,6 +520,16 @@ export function loadTtsYueVoiceURI() {
 
 export function saveTtsYueVoiceURI(uri) {
   save(KEYS.TTS_YUE_VOICE_URI, uri);
+}
+
+// ── TTS speech rate preference ────────────────────────────────
+
+export function loadTtsSpeechRate() {
+  return load(KEYS.TTS_SPEECH_RATE, 1);
+}
+
+export function saveTtsSpeechRate(rate) {
+  save(KEYS.TTS_SPEECH_RATE, rate);
 }
 
 // ── Verbose vocabulary preference ────────────────────────────

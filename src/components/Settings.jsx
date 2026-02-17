@@ -402,6 +402,31 @@ export default function Settings({ onClose }) {
           </>
         )}
 
+        {/* Reading speed */}
+        {'speechSynthesis' in window && (
+          <>
+            <section className="settings-section">
+              <h3 className="settings-section__title form-label">Reading Speed</h3>
+              <p className="settings-section__desc text-muted">
+                Adjust the text-to-speech playback speed.
+              </p>
+              <div className="settings-slider-row">
+                <span className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>0.5x</span>
+                <span className="settings-slider-value">{state.ttsSpeechRate.toFixed(1)}x</span>
+                <span className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>2.0x</span>
+              </div>
+              <input
+                type="range"
+                className="settings-slider"
+                min={0.5} max={2} step={0.1}
+                value={state.ttsSpeechRate}
+                onChange={e => act.setTtsSpeechRate(e.target.value)}
+              />
+            </section>
+            <hr className="divider" />
+          </>
+        )}
+
         {/* Default HSK level */}
         <section className="settings-section">
           <h3 className="settings-section__title form-label">Default HSK Level</h3>

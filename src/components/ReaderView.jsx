@@ -22,10 +22,10 @@ import './ReaderView.css';
 const _loadedKeys = new Set();
 
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar }) {
-  const { generatedReaders, learnedVocabulary, error, pendingReaders, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, verboseVocab, quotaWarning, providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
+  const { generatedReaders, learnedVocabulary, error, pendingReaders, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate, verboseVocab, quotaWarning, providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
     generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, error: s.error,
     pendingReaders: s.pendingReaders, maxTokens: s.maxTokens,
-    ttsVoiceURI: s.ttsVoiceURI, ttsKoVoiceURI: s.ttsKoVoiceURI, ttsYueVoiceURI: s.ttsYueVoiceURI,
+    ttsVoiceURI: s.ttsVoiceURI, ttsKoVoiceURI: s.ttsKoVoiceURI, ttsYueVoiceURI: s.ttsYueVoiceURI, ttsSpeechRate: s.ttsSpeechRate,
     verboseVocab: s.verboseVocab, quotaWarning: s.quotaWarning,
     providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
   }));
@@ -79,7 +79,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   };
 
   const { ttsSupported, speakingKey, speakText, stopSpeaking } = useTTS(
-    langConfig, langId, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, setTtsVoice
+    langConfig, langId, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, setTtsVoice, ttsSpeechRate
   );
 
   const { pinyinOn, setPinyinOn, romanizer, renderChars } = useRomanization(langId, langConfig);
