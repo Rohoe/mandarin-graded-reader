@@ -1,9 +1,10 @@
 # 漫读 — Multi-Language Graded Reader
 
-A single-page web app for generating graded readers in **Mandarin Chinese**, **Cantonese**, and **Korean** using Claude AI. Designed for HSK, TOPIK, and Cantonese learners who want personalised reading practice with vocabulary tracking and Anki export.
+A single-page web app for generating graded readers in **Mandarin Chinese**, **Cantonese**, and **Korean** using AI. Supports multiple LLM providers: **Anthropic Claude**, **OpenAI (GPT-4o)**, **Google Gemini**, and **OpenAI-compatible** endpoints (DeepSeek, Groq, custom). Designed for HSK, TOPIK, and Cantonese learners who want personalised reading practice with vocabulary tracking and Anki export.
 
 ## Features
 
+- **Multi-provider AI** — Choose from Anthropic Claude, OpenAI GPT-4o, Google Gemini, or any OpenAI-compatible endpoint (DeepSeek, Groq, custom). Each provider stores its own API key; switch freely without losing keys. Model selector with curated defaults per provider
 - **Multi-language support** — Generate readers in Mandarin Chinese (HSK 1–6), Cantonese (YUE 1–6, written Cantonese with jyutping), or Korean (TOPIK 1–6). Select a language via the pill toggle in the sidebar form; content in all languages coexists side-by-side
 - **Syllabus Mode** — Generate a course for any topic with proficiency-level selection, an AI-written summary and a dedicated home page showing all lessons and completion status
 - **Graded Reader Generation** — Stories with bolded vocabulary, level-calibrated grammar
@@ -36,11 +37,16 @@ A single-page web app for generating graded readers in **Mandarin Chinese**, **C
 npm install
 ```
 
-### 2. Get an Anthropic API key
+### 2. Get an API key
 
-Sign up at [console.anthropic.com](https://console.anthropic.com) and create an API key (starts with `sk-ant-`).
+Get an API key from your preferred provider:
 
-> No `.env` file is required. When you first open the app, it will prompt you to paste your API key directly in the UI. The key is stored in your browser's `localStorage` — it never leaves your device except for calls to Anthropic's API.
+- **Anthropic:** [console.anthropic.com](https://console.anthropic.com) (key starts with `sk-ant-`)
+- **OpenAI:** [platform.openai.com](https://platform.openai.com) (key starts with `sk-`)
+- **Google Gemini:** [aistudio.google.com](https://aistudio.google.com) (key starts with `AIza`)
+- **DeepSeek / Groq / Other:** Get a key from your chosen provider
+
+> No `.env` file is required. Open Settings in the app to select your provider and paste your API key. Each provider stores its own key in your browser's `localStorage` — keys never leave your device except for calls to the selected provider's API.
 
 ### 3. Run the app
 
@@ -66,7 +72,7 @@ The app is optimised for iPhone and Android: safe area insets keep the UI clear 
 
 ## Usage
 
-1. **Enter your API key** on the setup screen (first run only)
+1. **Select a provider and enter your API key** in Settings (first run only)
 2. **Choose "Course Syllabus"** — enter a topic (e.g. "Chinese business culture") and HSK level, then click "Generate Syllabus"
 3. **Click a lesson** in the sidebar to generate its reader
 4. **Read** the story; bolded words are new vocabulary
@@ -130,7 +136,7 @@ Once configured, open Settings → Cloud Sync → sign in with Google or Apple. 
 
 ## Security note
 
-Your API key is stored in plain text in `localStorage` and sent directly to Anthropic's API from your browser. This is acceptable for personal use. Do not share the URL with others if you have the key pre-filled.
+Your API keys are stored in plain text in `localStorage` and sent directly to the selected provider's API from your browser. Keys are never synced to file storage or the cloud. This is acceptable for personal use. Do not share the URL with others if you have keys pre-filled.
 
 ## Tech stack
 
@@ -196,7 +202,7 @@ vercel --prod
 
 ### Verification
 
-1. Open the deployed URL — the ApiKeySetup screen appears
-2. Enter a valid Anthropic API key — proceeds to the main UI
+1. Open the deployed URL
+2. Open Settings → AI Provider, select a provider, and enter a valid API key
 3. Generate a reader — confirms browser-to-API calls work
 4. (Optional) Sign in with Google/Apple in Settings → Cloud Sync — confirms OAuth redirect works

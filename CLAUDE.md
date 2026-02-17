@@ -4,7 +4,7 @@ Project context and architecture notes for Claude Code sessions.
 
 ## What this app does
 
-Single-page React + Vite app that generates graded readers in **Mandarin Chinese**, **Cantonese**, and **Korean** using the Anthropic Claude API. Users select a language and proficiency level (HSK 1–6 for Chinese, YUE 1–6 for Cantonese, TOPIK 1–6 for Korean); the app generates structured stories with vocabulary, comprehension questions, and Anki flashcard exports. All three languages coexist side-by-side.
+Single-page React + Vite app that generates graded readers in **Mandarin Chinese**, **Cantonese**, and **Korean** using LLM APIs. Supports multiple AI providers: **Anthropic Claude**, **OpenAI**, **Google Gemini**, and **OpenAI-compatible** endpoints (DeepSeek, Groq, custom). Users select a language and proficiency level (HSK 1–6 for Chinese, YUE 1–6 for Cantonese, TOPIK 1–6 for Korean); the app generates structured stories with vocabulary, comprehension questions, and Anki flashcard exports. All three languages coexist side-by-side.
 
 ## Running the app
 
@@ -14,7 +14,7 @@ npm run dev        # starts at http://localhost:5173 (or 5174 if port taken)
 npm run build      # production build to dist/
 ```
 
-No `.env` file is required for basic use. The app can be used without an Anthropic API key to browse existing readers, review vocabulary, and access all non-generative features. To generate new readers or grade comprehension questions, users add their API key (`sk-ant-...`) in Settings. The key is stored in `localStorage`. For cloud sync, a `.env` file with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` is needed (see README for setup).
+No `.env` file is required for basic use. The app can be used without an API key to browse existing readers, review vocabulary, and access all non-generative features. To generate new readers or grade comprehension questions, users select a provider and add their API key in Settings. Each provider stores its own key in `localStorage` — switching providers doesn't lose keys. For cloud sync, a `.env` file with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` is needed (see README for setup).
 
 ## Architecture
 
@@ -47,17 +47,28 @@ src/
     vocabNormalizer.js        Migration helpers: normalizeSyllabus() adds langId + title_target
                               to legacy data. normalizeVocabWord() maps chinese/pinyin/english
                               ↔ generic target/romanization/translation fields.
-    api.js                    Claude API calls: generateSyllabus(), generateReader(),
-                              extendSyllabus(), gradeAnswers(). All accept optional langId
-                              (last param, defaults to 'zh'). Prompt templates imported from
-                              src/prompts/. Uses anthropic-dangerous-direct-browser-access
-                              header. Model: claude-sonnet-4-20250514
+    providers.js              Provider registry for multi-LLM support. Exports PROVIDERS
+                              map, getProvider(id), DEFAULT_PROVIDER. Four providers:
+                              anthropic, openai, gemini, openai_compatible (with presets
+                              for DeepSeek, Groq, and custom endpoints). Each config
+                              defines id, name, keyPlaceholder, defaultModel, models[].
+    llmConfig.js              buildLLMConfig(state) — builds { provider, apiKey, model,
+                              baseUrl } from app state for API functions.
+    api.js                    LLM API calls: generateSyllabus(), generateReader(),
+                              extendSyllabus(), gradeAnswers(). All accept llmConfig as
+                              first param and optional langId as last param (defaults to
+                              'zh'). callLLM() dispatches to provider-specific functions:
+                              callAnthropic, callOpenAI (also used for compatible), callGemini.
+                              Shared fetchWithRetry() for exponential backoff on 5xx/429.
+                              Prompt templates imported from src/prompts/.
     stats.js                  Derives learning statistics: computeStats(state), getStreak(),
                               getWordsByPeriod(). Used by StatsDashboard component.
     storage.js                localStorage helpers — load/save for all persisted state.
                               Per-reader lazy storage with index key. Also fans writes to
                               disk when a FileSystemDirectoryHandle is registered via
-                              setDirectoryHandle(). API key is NOT synced to file.
+                              setDirectoryHandle(). Provider keys are NOT synced to file
+                              or cloud. Includes migration from legacy single apiKey to
+                              providerKeys map.
     fileStorage.js            File System Access API layer. Persists app data as JSON
                               files in a user-chosen folder. Stores the directory handle
                               in IndexedDB (localStorage can't hold object handles).
@@ -167,12 +178,14 @@ src/
                               type='syllabus': 4 phases (~10s budget); shown in TopicForm
                               Uses setTimeout chain to advance through phases; bar
                               holds at ~97-98% until response arrives and component unmounts
-    Settings                  Sections in order: dark mode toggle, cloud sync (sign-in
-                              + push/pull), save folder picker, TTS voice selectors
-                              (Chinese + Korean + Cantonese), default HSK level, default
-                              TOPIK level,
-                              API key update, API output tokens slider (4096–16384),
-                              storage usage meter, danger zone (clear-all data).
+    Settings                  Sections in order: dark mode toggle, verbose vocab toggle,
+                              cloud sync (sign-in + push/pull), save folder picker, TTS
+                              voice selectors (Chinese + Korean + Cantonese), default HSK
+                              level, default TOPIK level, AI provider (provider pills with
+                              key-set indicator dots, model dropdown or preset selector,
+                              API key input, base URL for custom endpoints), API output
+                              tokens slider (4096–16384), storage usage meter, backup &
+                              restore, danger zone (clear-all data).
                               Sticky header (title + close button stay visible when scrolling).
                               Close button enlarged to 32×32px for easier tap target.
     SyncConflictDialog        Modal shown when local and cloud data differ (e.g., old browser
@@ -187,7 +200,13 @@ src/
 
 ```js
 {
-  apiKey:            string,          // stored in localStorage only (never synced to file)
+  apiKey:            string,          // derived: providerKeys[activeProvider] (backward compat)
+  providerKeys:     { anthropic, openai, gemini, openai_compatible },  // per-provider keys
+  activeProvider:   string,           // 'anthropic' | 'openai' | 'gemini' | 'openai_compatible'
+  activeModel:      string | null,    // model override, or null for provider default
+  customBaseUrl:    string,           // base URL for openai_compatible provider
+  customModelName:  string,           // model name for openai_compatible provider
+  compatPreset:     string,           // 'deepseek' | 'groq' | 'custom'
   syllabi:           Array<{          // all saved syllabi, newest first
     id:        string,                // "syllabus_<timestamp36>"
     topic:     string,
@@ -253,20 +272,33 @@ Language support is implemented via a config registry in `src/lib/languages.js`.
 
 **Migration:** Legacy data (missing `langId`) is automatically normalized to `langId: 'zh'` at hydration via `vocabNormalizer.js`.
 
-## Claude API integration
+## LLM API integration
 
-- **Model:** `claude-sonnet-4-20250514`
-- **Endpoint:** `POST https://api.anthropic.com/v1/messages`
-- **Required browser header:** `anthropic-dangerous-direct-browser-access: true`
-- **All 4 API functions** (`generateSyllabus`, `generateReader`, `extendSyllabus`, `gradeAnswers`) accept `langId` as the last parameter (defaults to `'zh'`). Prompt templates are built from `langConfig.prompts` fragments.
-- **Syllabus prompt:** Returns a JSON object `{ summary: string, lessons: [] }` (no markdown fences). Falls back gracefully if Claude returns a plain array (old format).
+The app supports multiple LLM providers via a registry in `src/lib/providers.js`. All 4 API functions accept `llmConfig` as the first parameter (built by `buildLLMConfig(state)` from `src/lib/llmConfig.js`) and `langId` as the last parameter (defaults to `'zh'`).
+
+**Providers and endpoints:**
+
+| Provider | Endpoint | Auth | Default Model |
+|----------|----------|------|---------------|
+| Anthropic | `api.anthropic.com/v1/messages` | `x-api-key` + `anthropic-version` + `anthropic-dangerous-direct-browser-access` | `claude-sonnet-4-20250514` |
+| OpenAI | `api.openai.com/v1/chat/completions` | `Authorization: Bearer` | `gpt-4o` |
+| Gemini | `generativelanguage.googleapis.com/v1beta/models/{model}:generateContent` | Key in URL query param | `gemini-2.5-flash` |
+| OpenAI-Compatible | Custom `baseUrl` + `/v1/chat/completions` | `Authorization: Bearer` | Depends on preset (DeepSeek: `deepseek-chat`, Groq: `llama-3.3-70b-versatile`) |
+
+**Key architecture:**
+- `callLLM(llmConfig, systemPrompt, userMessage, maxTokens)` dispatches to provider-specific functions
+- Shared `fetchWithRetry()` handles exponential backoff (2 retries for 5xx/429)
+- Prompt templates are provider-agnostic — built from `langConfig.prompts` fragments
+- **Syllabus prompt:** Returns a JSON object `{ summary: string, lessons: [] }` (no markdown fences). Falls back gracefully if the LLM returns a plain array (old format).
 - **Reader prompt:** Returns structured markdown with sections 1–6; section 5 is an ` ```anki-json ``` ` block
 
-The `learnedVocabulary` object keys are passed to Claude in each new reader request so it avoids re-introducing already-covered words.
+The `learnedVocabulary` object keys are passed to the LLM in each new reader request so it avoids re-introducing already-covered words.
+
+**Migration:** Existing users with a single `gradedReader_apiKey` in localStorage are auto-migrated to `providerKeys.anthropic` on first load.
 
 ## Response parsing (lib/parser.js)
 
-Claude's reader response is parsed with regex section matching:
+The LLM's reader response is parsed with regex section matching:
 - Sections delimited by `### 1. Title`, `### 2. Story`, `### 3. Vocabulary`, `### 4. Comprehension`, `### 5. Anki`
 - If section extraction fails, the component falls back to showing raw text with a "Regenerate" button
 - `parseStorySegments()` splits story text into `{ type: 'text'|'bold'|'italic', content }` segments for rendering
@@ -362,7 +394,7 @@ The app is hosted at: `https://mandarin-graded-reader.vercel.app` (update when f
 
 ## Known limitations / future work
 
-- **API key security:** Key is in `localStorage` in plain text. Acceptable for personal use; a backend proxy would be needed for shared deployments.
+- **API key security:** Provider keys are in `localStorage` in plain text (never synced to file or cloud). Acceptable for personal use; a backend proxy would be needed for shared deployments.
 - **localStorage quota:** ~5MB limit. The Settings page shows usage %. If many long readers are cached, old ones may need to be cleared manually.
 - **File System Access API:** Only available in Chromium-based browsers (Chrome, Edge). Not supported in Firefox or Safari. Falls back gracefully to localStorage-only mode.
 - **Parsing robustness:** The regex parser uses `#{2,4}\s*N\.` to match section headings, tolerating minor formatting variation (2–4 hash marks, any section title text). If section extraction fails entirely, the raw text fallback is shown. `parseVocabularySection` uses two patterns: Pattern A handles `(pinyin)` or `[pinyin]` with any dash/colon separator; Pattern B handles no-bracket format (pinyin backfilled from ankiJson). Any word in the ankiJson block but absent from the vocab section is appended automatically, ensuring all bolded story words are click-to-define.
