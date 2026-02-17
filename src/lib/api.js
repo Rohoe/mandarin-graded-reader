@@ -263,8 +263,11 @@ export async function generateReader(llmConfig, topic, level, learnedWords = {},
   const charRange = `${targetChars - 100}-${targetChars + 100}`;
   const system = buildReaderSystem(langConfig, level, topic, charRange);
 
+  const MAX_VOCAB_LIST = 200;
   const learnedList = Object.keys(learnedWords)
-    .filter(w => !learnedWords[w].langId || learnedWords[w].langId === langId);
+    .filter(w => !learnedWords[w].langId || learnedWords[w].langId === langId)
+    .sort((a, b) => (learnedWords[b].dateAdded || 0) - (learnedWords[a].dateAdded || 0))
+    .slice(0, MAX_VOCAB_LIST);
   const learnedSection = learnedList.length > 0
     ? `\n\nPreviously introduced vocabulary (do not reuse as "new" vocabulary — you may use these words freely in the story but do not list them in the vocabulary section):\n${learnedList.join(', ')}`
     : '';
