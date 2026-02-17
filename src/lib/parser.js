@@ -202,6 +202,16 @@ function parseVocabularySection(text, scriptRegex) {
   return items;
 }
 
+// Strip verbose prefixes that some LLMs (especially Gemini) add to example lines
+function stripExamplePrefix(text) {
+  return text
+    .replace(/^[-•*]\s*/, '')                                           // bullet markers
+    .replace(/^(?:example\s+sentence\s+(?:from\s+story|FROM\s+STORY)\s*:\s*)/i, '')  // "Example sentence FROM STORY:"
+    .replace(/^(?:additional\s+example\s+(?:sentence\s*)?:\s*)/i, '')   // "Additional example sentence:"
+    .replace(/^(?:example\s+(?:sentence\s*)?:\s*)/i, '')                // "Example sentence:" / "Example:"
+    .trim();
+}
+
 function extractExamples(text, scriptRegex) {
   const lines = text.split('\n');
   const examples = [];
@@ -214,16 +224,22 @@ function extractExamples(text, scriptRegex) {
     if (/^\*\*/.test(trimmed) || /^\d+\./.test(trimmed)) break;
     // Skip sub-headers
     if (/^#{1,4}/.test(trimmed)) break;
-    // Detect usage note lines: start with italic marker (*text*) after optional bullet
-    const stripped = trimmed.replace(/^[-•]\s*/, '');
-    if (/^\*[^*]/.test(stripped) && /\*\s*$/.test(stripped)) {
-      // This is a usage note (italic line), attach to the last example
-      usageNotes.push(stripped.replace(/^\*\s*/, '').replace(/\s*\*$/, ''));
+    // Detect usage note lines: italic (*text*) or "Brief usage note" / "Usage note" prefix
+    const bulletStripped = trimmed.replace(/^[-•*]\s*/, '');
+    if (/^\*[^*]/.test(bulletStripped) && /\*\s*$/.test(bulletStripped)) {
+      usageNotes.push(bulletStripped.replace(/^\*\s*/, '').replace(/\s*\*$/, ''));
+      continue;
+    }
+    if (/^(?:brief\s+)?usage\s+note\b/i.test(bulletStripped)) {
+      // "Brief usage note for the story example — ..." → extract after the dash
+      const noteText = bulletStripped.replace(/^(?:brief\s+)?usage\s+note[^—–-]*[—–-]\s*/i, '').trim();
+      if (noteText) usageNotes.push(noteText);
       continue;
     }
     // Only collect lines that contain target script characters — skip English-only lines
     if (!scriptRegex.test(trimmed)) continue;
-    if (examples.length < 2) examples.push(stripped);
+    const cleaned = stripExamplePrefix(trimmed);
+    if (examples.length < 2) examples.push(cleaned);
     else break;
   }
 

@@ -4,6 +4,7 @@ import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { generateSyllabus, generateReader } from '../lib/api';
 import { buildLLMConfig } from '../lib/llmConfig';
+import { getProvider } from '../lib/providers';
 import { parseReaderResponse } from '../lib/parser';
 import { getLang, getAllLanguages, DEFAULT_LANG_ID } from '../lib/languages';
 import GenerationProgress from './GenerationProgress';
@@ -224,8 +225,19 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
             : 'Generate Reader'}
       </button>
 
+      {!loading && apiKey && (
+        <p className="topic-form__hint" style={{ opacity: 0.5 }}>
+          Using {(() => {
+            const prov = getProvider(activeProvider);
+            const modelId = activeModel || prov.defaultModel;
+            const modelLabel = prov.models.find(m => m.id === modelId)?.label || modelId;
+            return modelLabel;
+          })()}
+        </p>
+      )}
+
       {!loading && !apiKey && (
-        <p className="topic-form__hint">⚠️ API key required. Open Settings to add your key.</p>
+        <p className="topic-form__hint">API key required. Open Settings to add your key.</p>
       )}
 
       {!loading && apiKey && !topic.trim() && (

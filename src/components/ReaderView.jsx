@@ -3,6 +3,7 @@ import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { getLang, getLessonTitle, DEFAULT_LANG_ID } from '../lib/languages';
 import { buildLLMConfig } from '../lib/llmConfig';
+import { getProvider } from '../lib/providers';
 import { useTTS } from '../hooks/useTTS';
 import { useRomanization } from '../hooks/useRomanization';
 import { useVocabPopover } from '../hooks/useVocabPopover';
@@ -198,6 +199,15 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
           <button className="btn btn-primary btn-lg reader-view__generate-btn" onClick={handleGenerate} disabled={isPending}>
             Generate Reader
           </button>
+          {llmConfig.apiKey && (
+            <p className="text-muted" style={{ fontSize: 'var(--text-xs)', textAlign: 'center', marginTop: 'var(--space-2)', opacity: 0.5 }}>
+              Using {(() => {
+                const prov = getProvider(activeProvider);
+                const modelLabel = prov.models.find(m => m.id === llmConfig.model)?.label || llmConfig.model;
+                return modelLabel;
+              })()}
+            </p>
+          )}
         </div>
       </div>
     );
