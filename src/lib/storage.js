@@ -54,6 +54,7 @@ const KEYS = {
   COMPAT_PRESET:      'gradedReader_compatPreset',
   TTS_SPEECH_RATE:    'gradedReader_ttsSpeechRate',
   ROMANIZATION_ON:    'gradedReader_romanizationOn',
+  TRANSLATE_BUTTONS:  'gradedReader_translateButtons',
 };
 
 const READER_KEY_PREFIX = 'gradedReader_reader_';
@@ -552,6 +553,16 @@ export function loadRomanizationOn() {
 
 export function saveRomanizationOn(val) {
   save(KEYS.ROMANIZATION_ON, val);
+}
+
+// ── Translate buttons preference ─────────────────────────────
+
+export function loadTranslateButtons() {
+  return load(KEYS.TRANSLATE_BUTTONS, true);
+}
+
+export function saveTranslateButtons(val) {
+  save(KEYS.TRANSLATE_BUTTONS, val);
 }
 
 // ── Verbose vocabulary preference ────────────────────────────

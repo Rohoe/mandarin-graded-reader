@@ -271,31 +271,29 @@
 }
 
 /* ── Paragraph wrapper + translate ────────── */
-.reader-view__para-wrapper {
-  position: relative;
-}
+.reader-view__para-wrapper {}
 
 .reader-view__translate-btn {
-  position: absolute;
-  top: var(--space-1);
-  right: 0;
+  display: inline-block;
+  vertical-align: middle;
   background: none;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   font-family: var(--font-display);
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--color-text-subtle);
-  padding: 2px 6px;
+  padding: 1px 5px;
+  margin-left: 6px;
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.15s ease, background 0.15s ease;
   line-height: 1.4;
 }
 
-.reader-view__para-wrapper:hover .reader-view__translate-btn {
-  opacity: 0.7;
+.reader-view__paragraph:hover .reader-view__translate-btn {
+  opacity: 0.5;
 }
 
 .reader-view__translate-btn:hover {
@@ -306,24 +304,24 @@
 }
 
 .reader-view__translate-btn--active {
-  opacity: 0.7;
+  opacity: 0.5;
   color: var(--color-accent);
   border-color: var(--color-accent-dim);
 }
 
 .reader-view__translate-btn--loading {
-  opacity: 0.7;
+  opacity: 0.5;
   animation: translatePulse 1s ease-in-out infinite;
 }
 
 @keyframes translatePulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.9; }
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
 }
 
 @media (pointer: coarse) {
   .reader-view__translate-btn {
-    opacity: 0.4;
+    opacity: 0.35;
   }
 }
 

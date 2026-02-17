@@ -22,11 +22,11 @@ import './ReaderView.css';
 const _loadedKeys = new Set();
 
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar }) {
-  const { generatedReaders, learnedVocabulary, error, pendingReaders, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate, romanizationOn, verboseVocab, quotaWarning, providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
+  const { generatedReaders, learnedVocabulary, error, pendingReaders, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate, romanizationOn, translateButtons, verboseVocab, quotaWarning, providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
     generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, error: s.error,
     pendingReaders: s.pendingReaders, maxTokens: s.maxTokens,
     ttsVoiceURI: s.ttsVoiceURI, ttsKoVoiceURI: s.ttsKoVoiceURI, ttsYueVoiceURI: s.ttsYueVoiceURI, ttsSpeechRate: s.ttsSpeechRate,
-    romanizationOn: s.romanizationOn, verboseVocab: s.verboseVocab, quotaWarning: s.quotaWarning,
+    romanizationOn: s.romanizationOn, translateButtons: s.translateButtons, verboseVocab: s.verboseVocab, quotaWarning: s.quotaWarning,
     providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
   }));
   const dispatch = useAppDispatch();
@@ -287,6 +287,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         paragraphTranslations={reader.paragraphTranslations}
         onTranslate={handleTranslate}
         translatingIndex={translatingIndex}
+        showTranslateButtons={translateButtons}
       />
 
       <hr className="divider" />

@@ -21,6 +21,7 @@ export default function StorySection({
   paragraphTranslations,
   onTranslate,
   translatingIndex,
+  showTranslateButtons,
 }) {
   const [visibleTranslations, setVisibleTranslations] = useState(new Set());
 
@@ -79,16 +80,18 @@ export default function StorySection({
                   if (seg.type === 'italic') return <em key={i}>{renderChars(seg.content, `${pi}-em${i}`)}</em>;
                   return <span key={i}>{renderChars(seg.content, `${pi}-s${i}`)}</span>;
                 })}
+                {showTranslateButtons && (
+                  <button
+                    className={`reader-view__translate-btn ${isTranslating ? 'reader-view__translate-btn--loading' : ''} ${showTranslation ? 'reader-view__translate-btn--active' : ''}`}
+                    onClick={(e) => handleTranslateClick(e, pi, para)}
+                    disabled={isTranslating}
+                    title={showTranslation ? 'Hide translation' : 'Translate to English'}
+                    aria-label={showTranslation ? 'Hide translation' : 'Translate to English'}
+                  >
+                    EN
+                  </button>
+                )}
               </p>
-              <button
-                className={`reader-view__translate-btn ${isTranslating ? 'reader-view__translate-btn--loading' : ''} ${showTranslation ? 'reader-view__translate-btn--active' : ''}`}
-                onClick={(e) => handleTranslateClick(e, pi, para)}
-                disabled={isTranslating}
-                title={showTranslation ? 'Hide translation' : 'Translate to English'}
-                aria-label={showTranslation ? 'Hide translation' : 'Translate to English'}
-              >
-                EN
-              </button>
               {showTranslation && (
                 <div className="reader-view__translation">
                   <p className="reader-view__translation-text">{translation}</p>

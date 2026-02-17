@@ -193,6 +193,26 @@ export default function Settings({ onClose }) {
 
         <hr className="divider" />
 
+        {/* Translate Buttons */}
+        <section className="settings-section">
+          <div className="settings-toggle-row">
+            <div>
+              <h3 className="settings-section__title form-label">Translate Buttons</h3>
+              <p className="settings-section__desc text-muted">Show per-paragraph "EN" buttons in stories for quick Google Translate translations.</p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={state.translateButtons}
+              className={`settings-toggle ${state.translateButtons ? 'settings-toggle--on' : ''}`}
+              onClick={() => act.setTranslateButtons(!state.translateButtons)}
+            >
+              <span className="settings-toggle__thumb" />
+            </button>
+          </div>
+        </section>
+
+        <hr className="divider" />
+
         {/* Verbose Vocabulary */}
         <section className="settings-section">
           <div className="settings-toggle-row">
