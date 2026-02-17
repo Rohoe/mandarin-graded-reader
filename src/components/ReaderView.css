@@ -263,26 +263,35 @@
 }
 
 .reader-view__paragraph {
-  margin-bottom: 1.25em;
-}
-
-.reader-view__paragraph:last-child {
-  margin-bottom: 0;
+  margin: 0;
 }
 
 /* ── Paragraph tools (TTS + translate) ───── */
-.reader-view__para-wrapper {}
+.reader-view__para-wrapper {
+  margin-bottom: 1.25em;
+}
+
+.reader-view__para-wrapper:last-child {
+  margin-bottom: 0;
+}
 
 .reader-view__para-tts-btn {
-  all: unset;
   display: inline-block;
   vertical-align: middle;
-  cursor: pointer;
-  font-size: 0.7em;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-text-subtle);
+  padding: 1px 5px;
   margin-left: 6px;
+  cursor: pointer;
   opacity: 0;
-  transition: opacity 0.15s ease;
-  line-height: 1;
+  transition: opacity 0.15s ease, background 0.15s ease;
+  line-height: 1.4;
 }
 
 .reader-view__paragraph:hover .reader-view__para-tts-btn {
@@ -291,10 +300,15 @@
 
 .reader-view__para-tts-btn:hover {
   opacity: 1 !important;
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+  border-color: var(--color-accent-dim);
 }
 
 .reader-view__para-tts-btn--active {
   opacity: 0.7;
+  color: var(--color-accent);
+  border-color: var(--color-accent-dim);
 }
 
 @media (pointer: coarse) {

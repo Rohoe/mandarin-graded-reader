@@ -88,7 +88,7 @@ export default function StorySection({
                     title={isSpeaking ? 'Stop' : 'Listen'}
                     aria-label={isSpeaking ? 'Stop speaking' : 'Listen to paragraph'}
                   >
-                    {isSpeaking ? '⏹' : '🔊'}
+                    {isSpeaking ? '■' : 'TTS'}
                   </button>
                 )}
                 {showParagraphTools && (
