@@ -270,8 +270,38 @@
   margin-bottom: 0;
 }
 
-/* ── Paragraph wrapper + translate ────────── */
+/* ── Paragraph tools (TTS + translate) ───── */
 .reader-view__para-wrapper {}
+
+.reader-view__para-tts-btn {
+  all: unset;
+  display: inline-block;
+  vertical-align: middle;
+  cursor: pointer;
+  font-size: 0.7em;
+  margin-left: 6px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  line-height: 1;
+}
+
+.reader-view__paragraph:hover .reader-view__para-tts-btn {
+  opacity: 0.5;
+}
+
+.reader-view__para-tts-btn:hover {
+  opacity: 1 !important;
+}
+
+.reader-view__para-tts-btn--active {
+  opacity: 0.7;
+}
+
+@media (pointer: coarse) {
+  .reader-view__para-tts-btn {
+    opacity: 0.35;
+  }
+}
 
 .reader-view__translate-btn {
   display: inline-block;
@@ -363,22 +393,12 @@ rt {
   line-height: 2.8;
 }
 
-.reader-view__paragraph--tts {
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  padding: var(--space-1) var(--space-2);
-  margin-left: calc(-1 * var(--space-2));
-  transition: background var(--transition);
-}
-
-.reader-view__paragraph--tts:hover {
-  background: rgba(74, 124, 126, 0.06);
-}
-
 .reader-view__paragraph--speaking {
   background: var(--color-accent-light);
   border-left: 2px solid var(--color-accent);
-  padding-left: calc(var(--space-2) - 2px);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  margin-left: calc(-1 * var(--space-2));
 }
 
 .reader-view__vocab {

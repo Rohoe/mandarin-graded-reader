@@ -193,12 +193,12 @@ export default function Settings({ onClose }) {
 
         <hr className="divider" />
 
-        {/* Translate Buttons */}
+        {/* Paragraph Tools */}
         <section className="settings-section">
           <div className="settings-toggle-row">
             <div>
-              <h3 className="settings-section__title form-label">Translate Buttons</h3>
-              <p className="settings-section__desc text-muted">Show per-paragraph "EN" buttons in stories for quick Google Translate translations.</p>
+              <h3 className="settings-section__title form-label">Paragraph Tools</h3>
+              <p className="settings-section__desc text-muted">Show inline TTS and translate buttons at the end of each paragraph.</p>
             </div>
             <button
               role="switch"

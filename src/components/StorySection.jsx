@@ -21,7 +21,7 @@ export default function StorySection({
   paragraphTranslations,
   onTranslate,
   translatingIndex,
-  showTranslateButtons,
+  showParagraphTools,
 }) {
   const [visibleTranslations, setVisibleTranslations] = useState(new Set());
 
@@ -41,6 +41,11 @@ export default function StorySection({
     }
   }
 
+  function handleTtsClick(e, para, paraKey) {
+    e.stopPropagation();
+    speakText(stripMarkdown(para), paraKey);
+  }
+
   return (
     <div className="reader-view__story-section">
       <div className={`reader-view__story text-target ${pinyinOn ? 'reader-view__story--pinyin' : ''}`}>
@@ -52,11 +57,7 @@ export default function StorySection({
           const showTranslation = visibleTranslations.has(pi) && translation;
           return (
             <div key={pi} className="reader-view__para-wrapper">
-              <p
-                className={`reader-view__paragraph ${ttsSupported ? 'reader-view__paragraph--tts' : ''} ${isSpeaking ? 'reader-view__paragraph--speaking' : ''}`}
-                onClick={ttsSupported ? () => speakText(stripMarkdown(para), paraKey) : undefined}
-                title={ttsSupported ? (isSpeaking ? 'Stop' : 'Click to listen') : undefined}
-              >
+              <p className={`reader-view__paragraph ${isSpeaking ? 'reader-view__paragraph--speaking' : ''}`}>
                 {parseStorySegments(para).map((seg, i) => {
                   if (seg.type === 'bold') {
                     const entry = lookupVocab(seg.content);
@@ -80,7 +81,17 @@ export default function StorySection({
                   if (seg.type === 'italic') return <em key={i}>{renderChars(seg.content, `${pi}-em${i}`)}</em>;
                   return <span key={i}>{renderChars(seg.content, `${pi}-s${i}`)}</span>;
                 })}
-                {showTranslateButtons && (
+                {showParagraphTools && ttsSupported && (
+                  <button
+                    className={`reader-view__para-tts-btn ${isSpeaking ? 'reader-view__para-tts-btn--active' : ''}`}
+                    onClick={(e) => handleTtsClick(e, para, paraKey)}
+                    title={isSpeaking ? 'Stop' : 'Listen'}
+                    aria-label={isSpeaking ? 'Stop speaking' : 'Listen to paragraph'}
+                  >
+                    {isSpeaking ? '⏹' : '🔊'}
+                  </button>
+                )}
+                {showParagraphTools && (
                   <button
                     className={`reader-view__translate-btn ${isTranslating ? 'reader-view__translate-btn--loading' : ''} ${showTranslation ? 'reader-view__translate-btn--active' : ''}`}
                     onClick={(e) => handleTranslateClick(e, pi, para)}

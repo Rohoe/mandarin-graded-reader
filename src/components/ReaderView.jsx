@@ -287,7 +287,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         paragraphTranslations={reader.paragraphTranslations}
         onTranslate={handleTranslate}
         translatingIndex={translatingIndex}
-        showTranslateButtons={translateButtons}
+        showParagraphTools={translateButtons}
       />
 
       <hr className="divider" />
