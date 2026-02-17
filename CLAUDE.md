@@ -77,10 +77,13 @@ src/
                                 graded-reader-readers.json    (generatedReaders cache)
                                 graded-reader-vocabulary.json (learnedVocabulary)
                                 graded-reader-exported.json   (exportedWords array)
-    parser.js                 Parses Claude's markdown response into structured data:
+    parser.js                 Parses LLM markdown response into structured data:
                               titleZh, titleEn, story, vocabulary[], questions[], ankiJson[],
                               grammarNotes[]. Accepts langId param — uses langConfig.scriptRegex
                               and langConfig.fields for language-aware parsing.
+                              extractExamples() strips verbose LLM prefixes (e.g. "Example
+                              sentence FROM STORY:", "Additional example:") via
+                              stripExamplePrefix(). Detects "Brief usage note" lines.
     anki.js                   Generates tab-separated Anki .txt export; duplicate prevention.
                               Accepts langId — uses langConfig.fields for column mapping and
                               langConfig.proficiency.name for tags/filename.
@@ -99,7 +102,10 @@ src/
 
   hooks/
     useTTS.js                 Voice loading, speech synthesis, per-paragraph speak
-    useRomanization.jsx       Async romanizer loading, renderChars() with ruby tags
+    useRomanization.jsx       Async romanizer loading, renderChars() with ruby tags.
+                              renderChars parses markdown segments (**bold**, *italic*,
+                              plain) before applying ruby romanization to each segment.
+                              romanizeText() handles plain text → ruby JSX conversion.
     useVocabPopover.js        Vocab map, click handler, popover positioning, close logic
     useReaderGeneration.js    Generate/regenerate API calls + state updates
 
@@ -177,15 +183,22 @@ src/
                               type='reader': 6 phases (~30s budget); shown in ReaderView
                               type='syllabus': 4 phases (~10s budget); shown in TopicForm
                               Uses setTimeout chain to advance through phases; bar
-                              holds at ~97-98% until response arrives and component unmounts
+                              holds at ~97-98% until response arrives and component unmounts.
+                              Reads activeProvider from state to show dynamic provider name
+                              (e.g. "Connecting to OpenAI…" instead of hardcoded Claude).
     Settings                  Sections in order: dark mode toggle, verbose vocab toggle,
                               cloud sync (sign-in + push/pull), save folder picker, TTS
                               voice selectors (Chinese + Korean + Cantonese), default HSK
                               level, default TOPIK level, AI provider (provider pills with
-                              key-set indicator dots, model dropdown or preset selector,
-                              API key input, base URL for custom endpoints), API output
-                              tokens slider (4096–16384), storage usage meter, backup &
-                              restore, danger zone (clear-all data).
+                              key-set indicator dots, collapsible model picker, API key
+                              input, base URL for custom endpoints), API output tokens
+                              slider (4096–16384), storage usage meter, backup & restore,
+                              danger zone (clear-all data).
+                              Model picker: collapsed by default showing "Model: **name**
+                              [Change]"; expands to <input> + <datalist> with curated
+                              suggestions and a "Reset to default" button. For
+                              openai_compatible: always expanded with preset pills
+                              (DeepSeek/Groq/Custom) + model name input.
                               Sticky header (title + close button stay visible when scrolling).
                               Close button enlarged to 32×32px for easier tap target.
     SyncConflictDialog        Modal shown when local and cloud data differ (e.g., old browser

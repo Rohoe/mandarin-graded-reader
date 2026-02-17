@@ -4,7 +4,7 @@ A single-page web app for generating graded readers in **Mandarin Chinese**, **C
 
 ## Features
 
-- **Multi-provider AI** — Choose from Anthropic Claude, OpenAI GPT-4o, Google Gemini, or any OpenAI-compatible endpoint (DeepSeek, Groq, custom). Each provider stores its own API key; switch freely without losing keys. Model selector with curated defaults per provider
+- **Multi-provider AI** — Choose from Anthropic Claude, OpenAI GPT-4o, Google Gemini, or any OpenAI-compatible endpoint (DeepSeek, Groq, custom). Each provider stores its own API key; switch freely without losing keys. Model picker with curated defaults per provider; collapsed by default, expandable to type any model ID (handles new/deprecated models gracefully)
 - **Multi-language support** — Generate readers in Mandarin Chinese (HSK 1–6), Cantonese (YUE 1–6, written Cantonese with jyutping), or Korean (TOPIK 1–6). Select a language via the pill toggle in the sidebar form; content in all languages coexists side-by-side
 - **Syllabus Mode** — Generate a course for any topic with proficiency-level selection, an AI-written summary and a dedicated home page showing all lessons and completion status
 - **Graded Reader Generation** — Stories with bolded vocabulary, level-calibrated grammar
@@ -72,7 +72,7 @@ The app is optimised for iPhone and Android: safe area insets keep the UI clear 
 
 ## Usage
 
-1. **Select a provider and enter your API key** in Settings (first run only)
+1. **Select a provider and enter your API key** in Settings (first run only). The default model is pre-selected; click "Change" to pick a different one or type any model ID
 2. **Choose "Course Syllabus"** — enter a topic (e.g. "Chinese business culture") and HSK level, then click "Generate Syllabus"
 3. **Click a lesson** in the sidebar to generate its reader
 4. **Read** the story; bolded words are new vocabulary
