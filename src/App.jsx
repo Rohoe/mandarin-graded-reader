@@ -3,6 +3,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import { useAppSelector } from './context/useAppSelector';
 import { actions } from './context/actions';
 import { generateReader, extendSyllabus } from './lib/api';
+import { buildLLMConfig } from './lib/llmConfig';
 import { loadLastSession, saveLastSession } from './lib/storage';
 import { parseReaderResponse } from './lib/parser';
 import SyllabusPanel from './components/SyllabusPanel';
@@ -150,7 +151,8 @@ function AppShell() {
     setStandaloneKey(newKey);
     setSidebarOpen(false);
     try {
-      const raw    = await generateReader(state.apiKey, continuationTopic, level, state.learnedVocabulary, 1200, state.maxTokens, story, langId);
+      const llmConfig = buildLLMConfig(state);
+      const raw    = await generateReader(llmConfig, continuationTopic, level, state.learnedVocabulary, 1200, state.maxTokens, story, langId);
       const parsed = parseReaderResponse(raw, langId);
       pushGeneratedReader(newKey, { ...parsed, topic: continuationTopic, level, langId, lessonKey: newKey });
       if (parsed.ankiJson?.length > 0) {
@@ -169,8 +171,9 @@ function AppShell() {
     if (!activeSyllabusId || !currentSyllabus) return;
     act.setLoading(true, '正在扩展课程大纲…');
     try {
+      const llmConfig = buildLLMConfig(state);
       const { lessons: newLessons } = await extendSyllabus(
-        state.apiKey,
+        llmConfig,
         currentSyllabus.topic,
         currentSyllabus.level,
         currentSyllabus.lessons,

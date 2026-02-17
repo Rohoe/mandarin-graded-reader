@@ -3,9 +3,18 @@ import { createContext, useReducer, useEffect, useRef, useMemo, useCallback } fr
 import { supabase } from '../lib/supabase';
 import { normalizeSyllabi, normalizeStandaloneReaders } from '../lib/vocabNormalizer';
 import {
-  loadApiKey,
-  saveApiKey,
-  clearApiKey,
+  loadProviderKeys,
+  saveProviderKeys,
+  loadActiveProvider,
+  saveActiveProvider,
+  loadActiveModel,
+  saveActiveModel,
+  loadCustomBaseUrl,
+  saveCustomBaseUrl,
+  loadCustomModelName,
+  saveCustomModelName,
+  loadCompatPreset,
+  saveCompatPreset,
   loadSyllabi,
   saveSyllabi,
   loadSyllabusProgress,
@@ -63,8 +72,16 @@ import { pushToCloud, pullFromCloud, pushReaderToCloud, detectConflict } from '.
 // ── Initial state ─────────────────────────────────────────────
 
 function buildInitialState() {
+  const providerKeys   = loadProviderKeys();
+  const activeProvider = loadActiveProvider();
   return {
-    apiKey:            loadApiKey(),
+    apiKey:            providerKeys[activeProvider] || '',
+    providerKeys,
+    activeProvider,
+    activeModel:       loadActiveModel(),
+    customBaseUrl:     loadCustomBaseUrl(),
+    customModelName:   loadCustomModelName(),
+    compatPreset:      loadCompatPreset(),
     syllabi:           normalizeSyllabi(loadSyllabi()),
     syllabusProgress:  loadSyllabusProgress(),
     standaloneReaders: normalizeStandaloneReaders(loadStandaloneReaders()),
@@ -120,13 +137,46 @@ const DATA_ACTIONS = new Set([
 function baseReducer(state, action) {
   switch (action.type) {
 
-    case 'SET_API_KEY':
-      saveApiKey(action.payload);
-      return { ...state, apiKey: action.payload };
+    case 'SET_API_KEY': {
+      // Backward compat: map to anthropic provider key
+      const newKeys = { ...state.providerKeys, anthropic: action.payload };
+      saveProviderKeys(newKeys);
+      return { ...state, providerKeys: newKeys, apiKey: newKeys[state.activeProvider] || '' };
+    }
 
-    case 'CLEAR_API_KEY':
-      clearApiKey();
-      return { ...state, apiKey: '' };
+    case 'CLEAR_API_KEY': {
+      const newKeys = { ...state.providerKeys, anthropic: '' };
+      saveProviderKeys(newKeys);
+      return { ...state, providerKeys: newKeys, apiKey: newKeys[state.activeProvider] || '' };
+    }
+
+    case 'SET_PROVIDER_KEY': {
+      const { provider, key } = action.payload;
+      const newKeys = { ...state.providerKeys, [provider]: key };
+      saveProviderKeys(newKeys);
+      return { ...state, providerKeys: newKeys, apiKey: newKeys[state.activeProvider] || '' };
+    }
+
+    case 'SET_ACTIVE_PROVIDER': {
+      saveActiveProvider(action.payload);
+      return { ...state, activeProvider: action.payload, apiKey: state.providerKeys[action.payload] || '' };
+    }
+
+    case 'SET_ACTIVE_MODEL':
+      saveActiveModel(action.payload);
+      return { ...state, activeModel: action.payload };
+
+    case 'SET_CUSTOM_BASE_URL':
+      saveCustomBaseUrl(action.payload);
+      return { ...state, customBaseUrl: action.payload };
+
+    case 'SET_CUSTOM_MODEL_NAME':
+      saveCustomModelName(action.payload);
+      return { ...state, customModelName: action.payload };
+
+    case 'SET_COMPAT_PRESET':
+      saveCompatPreset(action.payload);
+      return { ...state, compatPreset: action.payload };
 
     // ── Syllabus actions ──────────────────────────────────────
 
@@ -388,15 +438,21 @@ function baseReducer(state, action) {
       clearAllAppData();
       return {
         ...buildInitialState(),
-        apiKey:        state.apiKey,
-        saveFolder:    state.saveFolder,
-        fsInitialized: state.fsInitialized,
-        fsSupported:   state.fsSupported,
-        maxTokens:     state.maxTokens,
-        defaultLevel:  state.defaultLevel,
+        apiKey:          state.apiKey,
+        providerKeys:    state.providerKeys,
+        activeProvider:  state.activeProvider,
+        activeModel:     state.activeModel,
+        customBaseUrl:   state.customBaseUrl,
+        customModelName: state.customModelName,
+        compatPreset:    state.compatPreset,
+        saveFolder:      state.saveFolder,
+        fsInitialized:   state.fsInitialized,
+        fsSupported:     state.fsSupported,
+        maxTokens:       state.maxTokens,
+        defaultLevel:    state.defaultLevel,
         defaultTopikLevel: state.defaultTopikLevel,
-        ttsYueVoiceURI: state.ttsYueVoiceURI,
-        verboseVocab:   state.verboseVocab,
+        ttsYueVoiceURI:  state.ttsYueVoiceURI,
+        verboseVocab:    state.verboseVocab,
       };
 
     // ── File storage actions ──────────────────────────────────

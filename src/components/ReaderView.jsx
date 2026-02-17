@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { getLang, getLessonTitle, DEFAULT_LANG_ID } from '../lib/languages';
+import { buildLLMConfig } from '../lib/llmConfig';
 import { useTTS } from '../hooks/useTTS';
 import { useRomanization } from '../hooks/useRomanization';
 import { useVocabPopover } from '../hooks/useVocabPopover';
@@ -16,11 +17,12 @@ import GrammarNotes from './GrammarNotes';
 import './ReaderView.css';
 
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar }) {
-  const { generatedReaders, learnedVocabulary, error, pendingReaders, apiKey, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, verboseVocab, quotaWarning } = useAppSelector(s => ({
+  const { generatedReaders, learnedVocabulary, error, pendingReaders, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, verboseVocab, quotaWarning, providerKeys, activeProvider, activeModel, customBaseUrl } = useAppSelector(s => ({
     generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, error: s.error,
-    pendingReaders: s.pendingReaders, apiKey: s.apiKey, maxTokens: s.maxTokens,
+    pendingReaders: s.pendingReaders, maxTokens: s.maxTokens,
     ttsVoiceURI: s.ttsVoiceURI, ttsKoVoiceURI: s.ttsKoVoiceURI, ttsYueVoiceURI: s.ttsYueVoiceURI,
     verboseVocab: s.verboseVocab, quotaWarning: s.quotaWarning,
+    providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModel: s.activeModel, customBaseUrl: s.customBaseUrl,
   }));
   const dispatch = useAppDispatch();
   const act = actions(dispatch);
@@ -79,8 +81,9 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
 
   const { activeVocab, setActiveVocab, popoverRef, handleVocabClick, lookupVocab, getPopoverPosition } = useVocabPopover(reader, langConfig);
 
+  const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModel, customBaseUrl });
   const { handleGenerate } = useReaderGeneration(
-    lessonKey, lessonMeta, reader, langId, isPending, apiKey, learnedVocabulary, maxTokens, readerLength
+    lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength
   );
 
   // Cancel speech & close popover when lesson changes

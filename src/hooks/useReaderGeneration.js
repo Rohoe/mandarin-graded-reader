@@ -6,7 +6,7 @@ import { generateReader } from '../lib/api';
 import { parseReaderResponse } from '../lib/parser';
 import { getLang } from '../lib/languages';
 
-export function useReaderGeneration(lessonKey, lessonMeta, reader, langId, isPending, apiKey, learnedVocabulary, maxTokens, readerLength) {
+export function useReaderGeneration(lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength) {
   const dispatch = useAppDispatch();
   const { pushGeneratedReader } = useContext(AppContext);
   const act = actions(dispatch);
@@ -34,7 +34,7 @@ export function useReaderGeneration(lessonKey, lessonMeta, reader, langId, isPen
     act.startPendingReader(lessonKey);
     act.clearError();
     try {
-      const raw    = await generateReader(apiKey, topic, level, learnedVocabulary, readerLength, maxTokens, null, readerLangId);
+      const raw    = await generateReader(llmConfig, topic, level, learnedVocabulary, readerLength, maxTokens, null, readerLangId);
       const parsed = parseReaderResponse(raw, readerLangId);
       pushGeneratedReader(lessonKey, { ...parsed, topic, level, langId: readerLangId, lessonKey });
       if (parsed.ankiJson?.length > 0) {
@@ -48,7 +48,7 @@ export function useReaderGeneration(lessonKey, lessonMeta, reader, langId, isPen
     } finally {
       act.clearPendingReader(lessonKey);
     }
-  }, [isPending, lessonKey, lessonMeta, reader, langId, apiKey, learnedVocabulary, readerLength, maxTokens, act, pushGeneratedReader]);
+  }, [isPending, lessonKey, lessonMeta, reader, langId, llmConfig, learnedVocabulary, readerLength, maxTokens, act, pushGeneratedReader]);
 
   return { handleGenerate, act };
 }

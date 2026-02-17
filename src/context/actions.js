@@ -5,6 +5,12 @@ export function actions(dispatch) {
   return {
     setApiKey:             key    => dispatch({ type: 'SET_API_KEY', payload: key }),
     clearApiKey:           ()     => dispatch({ type: 'CLEAR_API_KEY' }),
+    setProviderKey:        (provider, key) => dispatch({ type: 'SET_PROVIDER_KEY', payload: { provider, key } }),
+    setActiveProvider:     id     => dispatch({ type: 'SET_ACTIVE_PROVIDER', payload: id }),
+    setActiveModel:        model  => dispatch({ type: 'SET_ACTIVE_MODEL', payload: model }),
+    setCustomBaseUrl:      url    => dispatch({ type: 'SET_CUSTOM_BASE_URL', payload: url }),
+    setCustomModelName:    name   => dispatch({ type: 'SET_CUSTOM_MODEL_NAME', payload: name }),
+    setCompatPreset:       preset => dispatch({ type: 'SET_COMPAT_PRESET', payload: preset }),
     // Syllabi
     addSyllabus:           s      => dispatch({ type: 'ADD_SYLLABUS', payload: s }),
     removeSyllabus:        id     => dispatch({ type: 'REMOVE_SYLLABUS', payload: id }),

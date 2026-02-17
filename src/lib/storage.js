@@ -45,6 +45,12 @@ const KEYS = {
   CLOUD_LAST_SYNCED:  'gradedReader_cloudLastSynced',
   VERBOSE_VOCAB:      'gradedReader_verboseVocab',
   LEARNING_ACTIVITY:  'gradedReader_learningActivity',
+  PROVIDER_KEYS:      'gradedReader_providerKeys',
+  ACTIVE_PROVIDER:    'gradedReader_activeProvider',
+  ACTIVE_MODEL:       'gradedReader_activeModel',
+  CUSTOM_BASE_URL:    'gradedReader_customBaseUrl',
+  CUSTOM_MODEL_NAME:  'gradedReader_customModelName',
+  COMPAT_PRESET:      'gradedReader_compatPreset',
 };
 
 const READER_KEY_PREFIX = 'gradedReader_reader_';
@@ -124,6 +130,67 @@ export function loadApiKey() {
 
 export function clearApiKey() {
   localStorage.removeItem(KEYS.API_KEY);
+}
+
+// ── Provider Keys (multi-LLM) ─────────────────────────────────
+// Deliberately NOT synced to file or cloud — keys stay local only.
+
+export function loadProviderKeys() {
+  let keys = load(KEYS.PROVIDER_KEYS, null);
+  if (!keys) {
+    // Migrate from old single apiKey if it exists
+    const oldKey = load(KEYS.API_KEY, '');
+    keys = { anthropic: oldKey || '', openai: '', gemini: '', openai_compatible: '' };
+    if (oldKey) {
+      save(KEYS.PROVIDER_KEYS, keys);
+      localStorage.removeItem(KEYS.API_KEY);
+    }
+  }
+  return keys;
+}
+
+export function saveProviderKeys(keys) {
+  save(KEYS.PROVIDER_KEYS, keys);
+}
+
+export function loadActiveProvider() {
+  return load(KEYS.ACTIVE_PROVIDER, 'anthropic');
+}
+
+export function saveActiveProvider(id) {
+  save(KEYS.ACTIVE_PROVIDER, id);
+}
+
+export function loadActiveModel() {
+  return load(KEYS.ACTIVE_MODEL, null);
+}
+
+export function saveActiveModel(model) {
+  save(KEYS.ACTIVE_MODEL, model);
+}
+
+export function loadCustomBaseUrl() {
+  return load(KEYS.CUSTOM_BASE_URL, '');
+}
+
+export function saveCustomBaseUrl(url) {
+  save(KEYS.CUSTOM_BASE_URL, url);
+}
+
+export function loadCustomModelName() {
+  return load(KEYS.CUSTOM_MODEL_NAME, '');
+}
+
+export function saveCustomModelName(name) {
+  save(KEYS.CUSTOM_MODEL_NAME, name);
+}
+
+export function loadCompatPreset() {
+  return load(KEYS.COMPAT_PRESET, 'deepseek');
+}
+
+export function saveCompatPreset(preset) {
+  save(KEYS.COMPAT_PRESET, preset);
 }
 
 // ── Syllabi ───────────────────────────────────────────────────

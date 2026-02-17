@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { gradeAnswers } from '../lib/api';
+import { buildLLMConfig } from '../lib/llmConfig';
 import './ComprehensionQuestions.css';
 
 function renderInline(text) {
@@ -28,7 +29,9 @@ function scoreBadgeClass(scoreStr) {
 const AUTO_SAVE_DELAY = 1500;
 
 export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars }) {
-  const apiKey = useAppSelector(s => s.apiKey);
+  const { apiKey, providerKeys, activeProvider, activeModel, customBaseUrl } = useAppSelector(s => ({
+    apiKey: s.apiKey, providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModel: s.activeModel, customBaseUrl: s.customBaseUrl,
+  }));
   const dispatch = useAppDispatch();
   const act = actions(dispatch);
 
@@ -113,7 +116,8 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
     setGradingError(null);
     try {
       const answersArray = questions.map((_, i) => answers[i] || '');
-      const result = await gradeAnswers(apiKey, questions, answersArray, story, level, 2048, langId);
+      const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModel, customBaseUrl });
+      const result = await gradeAnswers(llmConfig, questions, answersArray, story, level, 2048, langId);
       setResults(result);
       if (lessonKey) {
         act.setReader(lessonKey, {

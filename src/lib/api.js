@@ -1,7 +1,9 @@
 /**
- * Claude API integration.
- * Reads the API key from the app's state (passed as argument) rather than
- * importing from storage, so callers control where the key comes from.
+ * LLM API integration — supports Anthropic, OpenAI, Google Gemini,
+ * and OpenAI-compatible providers (DeepSeek, Groq, etc.).
+ *
+ * All public functions accept an `llmConfig` object as the first parameter:
+ *   { provider, apiKey, model, baseUrl }
  */
 
 import { getLang, DEFAULT_LANG_ID } from './languages';
@@ -10,16 +12,12 @@ import { buildReaderSystem } from '../prompts/readerSystemPrompt';
 import { buildGradingSystem } from '../prompts/gradingPrompt';
 import { buildExtendSyllabusPrompt } from '../prompts/extendSyllabusPrompt';
 
-const API_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL   = 'claude-sonnet-4-20250514';
+// ── Shared retry logic ─────────────────────────────────────────
 
-// ── Core fetch wrapper ────────────────────────────────────────
-
-const MAX_RETRIES   = 2;   // up to 3 total attempts
+const MAX_RETRIES   = 2;
 const BASE_DELAY_MS = 1000;
 
 function isRetryable(status) {
-  // Retry on server errors and rate limits; never retry client errors (400, 401, 403, etc.)
   return status >= 500 || status === 429;
 }
 
@@ -27,34 +25,25 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function callClaude(apiKey, systemPrompt, userMessage, maxTokens = 4096) {
-  if (!apiKey) throw new Error('No API key provided. Please enter your Anthropic API key in Settings.');
-
+/**
+ * Fetch with retry: shared across all providers.
+ * @param {string} url
+ * @param {object} options - fetch options
+ * @param {function} extractText - (responseData) => string
+ * @param {string} providerLabel - for error messages
+ */
+async function fetchWithRetry(url, options, extractText, providerLabel) {
   let lastError;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: MODEL,
-          max_tokens: maxTokens,
-          ...(systemPrompt ? { system: systemPrompt } : {}),
-          messages: [{ role: 'user', content: userMessage }],
-        }),
-      });
+      const response = await fetch(url, options);
 
       if (!response.ok) {
-        let msg = `API error ${response.status}`;
+        let msg = `[${providerLabel}] API error ${response.status}`;
         try {
           const err = await response.json();
-          msg = err.error?.message || msg;
+          msg = err.error?.message || err.message || msg;
         } catch { /* ignore */ }
         const error = new Error(msg);
         error.status = response.status;
@@ -62,20 +51,19 @@ async function callClaude(apiKey, systemPrompt, userMessage, maxTokens = 4096) {
         if (!isRetryable(response.status) || attempt === MAX_RETRIES) throw error;
         lastError = error;
         const backoff = BASE_DELAY_MS * Math.pow(2, attempt);
-        console.warn(`[callClaude] ${response.status} on attempt ${attempt + 1}, retrying in ${backoff}ms…`);
+        console.warn(`[${providerLabel}] ${response.status} on attempt ${attempt + 1}, retrying in ${backoff}ms…`);
         await delay(backoff);
         continue;
       }
 
       const data = await response.json();
-      return data.content[0].text;
+      return extractText(data);
     } catch (err) {
-      // Network errors (TypeError: Failed to fetch) are retryable
-      if (err.status !== undefined) throw err; // Already an API error we decided not to retry
+      if (err.status !== undefined) throw err;
       if (attempt === MAX_RETRIES) throw err;
       lastError = err;
       const backoff = BASE_DELAY_MS * Math.pow(2, attempt);
-      console.warn(`[callClaude] Network error on attempt ${attempt + 1}, retrying in ${backoff}ms…`, err.message);
+      console.warn(`[${providerLabel}] Network error on attempt ${attempt + 1}, retrying in ${backoff}ms…`, err.message);
       await delay(backoff);
     }
   }
@@ -83,13 +71,105 @@ async function callClaude(apiKey, systemPrompt, userMessage, maxTokens = 4096) {
   throw lastError;
 }
 
+// ── Provider-specific call functions ────────────────────────────
+
+function callAnthropic(apiKey, model, systemPrompt, userMessage, maxTokens) {
+  return fetchWithRetry(
+    'https://api.anthropic.com/v1/messages',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        ...(systemPrompt ? { system: systemPrompt } : {}),
+        messages: [{ role: 'user', content: userMessage }],
+      }),
+    },
+    data => data.content[0].text,
+    'Anthropic',
+  );
+}
+
+function callOpenAI(apiKey, model, systemPrompt, userMessage, maxTokens, baseUrl) {
+  const url = `${baseUrl || 'https://api.openai.com'}/v1/chat/completions`;
+  const messages = [];
+  if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+  messages.push({ role: 'user', content: userMessage });
+
+  return fetchWithRetry(
+    url,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        messages,
+      }),
+    },
+    data => data.choices[0].message.content,
+    baseUrl ? 'OpenAI-Compatible' : 'OpenAI',
+  );
+}
+
+function callGemini(apiKey, model, systemPrompt, userMessage, maxTokens) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const body = {
+    contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+    generationConfig: { maxOutputTokens: maxTokens },
+  };
+  if (systemPrompt) {
+    body.system_instruction = { parts: [{ text: systemPrompt }] };
+  }
+
+  return fetchWithRetry(
+    url,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    },
+    data => data.candidates[0].content.parts[0].text,
+    'Gemini',
+  );
+}
+
+// ── Unified dispatcher ──────────────────────────────────────────
+
+async function callLLM(llmConfig, systemPrompt, userMessage, maxTokens = 4096) {
+  const { provider, apiKey, model, baseUrl } = llmConfig;
+  if (!apiKey) throw new Error('No API key provided. Please add your API key in Settings.');
+
+  switch (provider) {
+    case 'anthropic':
+      return callAnthropic(apiKey, model, systemPrompt, userMessage, maxTokens);
+    case 'openai':
+      return callOpenAI(apiKey, model, systemPrompt, userMessage, maxTokens, null);
+    case 'gemini':
+      return callGemini(apiKey, model, systemPrompt, userMessage, maxTokens);
+    case 'openai_compatible':
+      return callOpenAI(apiKey, model, systemPrompt, userMessage, maxTokens, baseUrl);
+    default:
+      return callAnthropic(apiKey, model, systemPrompt, userMessage, maxTokens);
+  }
+}
+
 // ── Syllabus generation ───────────────────────────────────────
 
-export async function generateSyllabus(apiKey, topic, level, lessonCount = 6, langId = DEFAULT_LANG_ID) {
+export async function generateSyllabus(llmConfig, topic, level, lessonCount = 6, langId = DEFAULT_LANG_ID) {
   const langConfig = getLang(langId);
   const prompt = buildSyllabusPrompt(langConfig, topic, level, lessonCount);
 
-  const raw = await callClaude(apiKey, '', prompt, 2048);
+  const raw = await callLLM(llmConfig, '', prompt, 2048);
 
   let result;
   try {
@@ -104,7 +184,7 @@ export async function generateSyllabus(apiKey, topic, level, lessonCount = 6, la
       const arrMatch = raw.match(/\[[\s\S]*?\]/);
       if (arrMatch) result = JSON.parse(arrMatch[0]);
     }
-    if (!result) throw new Error('Claude returned an invalid syllabus format. Please try again.');
+    if (!result) throw new Error('LLM returned an invalid syllabus format. Please try again.');
   }
 
   // Normalise: handle both new { summary, lessons } and old plain-array formats
@@ -153,14 +233,14 @@ function repairJSON(str) {
   return result;
 }
 
-export async function gradeAnswers(apiKey, questions, userAnswers, story, level, maxTokens = 2048, langId = DEFAULT_LANG_ID) {
+export async function gradeAnswers(llmConfig, questions, userAnswers, story, level, maxTokens = 2048, langId = DEFAULT_LANG_ID) {
   const langConfig = getLang(langId);
   const system = buildGradingSystem(langConfig, level);
   const answersBlock = questions
     .map((q, i) => `Q${i + 1}: ${q}\nA${i + 1}: ${userAnswers[i] || '(no answer provided)'}`)
     .join('\n\n');
   const userMessage = `Story (for reference):\n${story}\n\n---\n\nQuestions and Student Answers:\n${answersBlock}`;
-  const raw = await callClaude(apiKey, system, userMessage, maxTokens);
+  const raw = await callLLM(llmConfig, system, userMessage, maxTokens);
   const cleaned = repairJSON(raw.trim());
   try {
     return JSON.parse(cleaned);
@@ -177,7 +257,7 @@ export async function gradeAnswers(apiKey, questions, userAnswers, story, level,
 
 // ── Reader generation ─────────────────────────────────────────
 
-export async function generateReader(apiKey, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192, previousStory = null, langId = DEFAULT_LANG_ID) {
+export async function generateReader(llmConfig, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192, previousStory = null, langId = DEFAULT_LANG_ID) {
   const langConfig = getLang(langId);
   // Build a range string: e.g. 1200 → "1100-1300"
   const charRange = `${targetChars - 100}-${targetChars + 100}`;
@@ -194,16 +274,16 @@ export async function generateReader(apiKey, topic, level, learnedWords = {}, ta
 
   const userMessage = `Generate a graded reader for the topic: ${topic}${learnedSection}${continuationSection}`;
 
-  return await callClaude(apiKey, system, userMessage, maxTokens);
+  return await callLLM(llmConfig, system, userMessage, maxTokens);
 }
 
 // ── Syllabus extension ────────────────────────────────────────
 
-export async function extendSyllabus(apiKey, topic, level, existingLessons, additionalCount = 3, langId = DEFAULT_LANG_ID) {
+export async function extendSyllabus(llmConfig, topic, level, existingLessons, additionalCount = 3, langId = DEFAULT_LANG_ID) {
   const langConfig = getLang(langId);
   const prompt = buildExtendSyllabusPrompt(langConfig, topic, level, existingLessons, additionalCount);
 
-  const raw = await callClaude(apiKey, '', prompt, 2048);
+  const raw = await callLLM(llmConfig, '', prompt, 2048);
 
   let lessons;
   try {
@@ -213,7 +293,7 @@ export async function extendSyllabus(apiKey, topic, level, existingLessons, addi
     if (arrMatch) {
       try { lessons = JSON.parse(arrMatch[0]); } catch { /* fall through */ }
     }
-    if (!lessons) throw new Error('Claude returned an invalid lesson format. Please try again.');
+    if (!lessons) throw new Error('LLM returned an invalid lesson format. Please try again.');
   }
 
   if (!Array.isArray(lessons)) throw new Error('Expected an array of lessons. Please try again.');

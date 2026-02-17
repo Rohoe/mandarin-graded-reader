@@ -3,15 +3,17 @@ import { AppContext } from '../context/AppContext';
 import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { generateSyllabus, generateReader } from '../lib/api';
+import { buildLLMConfig } from '../lib/llmConfig';
 import { parseReaderResponse } from '../lib/parser';
 import { getLang, getAllLanguages, DEFAULT_LANG_ID } from '../lib/languages';
 import GenerationProgress from './GenerationProgress';
 import './TopicForm.css';
 
 export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStandaloneGenerating, onCancel }) {
-  const { apiKey, defaultLevel, defaultTopikLevel, learnedVocabulary, maxTokens, loading } = useAppSelector(s => ({
+  const { apiKey, defaultLevel, defaultTopikLevel, learnedVocabulary, maxTokens, loading, providerKeys, activeProvider, activeModel, customBaseUrl } = useAppSelector(s => ({
     apiKey: s.apiKey, defaultLevel: s.defaultLevel, defaultTopikLevel: s.defaultTopikLevel,
     learnedVocabulary: s.learnedVocabulary, maxTokens: s.maxTokens, loading: s.loading,
+    providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModel: s.activeModel, customBaseUrl: s.customBaseUrl,
   }));
   const dispatch = useAppDispatch();
   const { pushGeneratedReader } = useContext(AppContext);
@@ -36,7 +38,8 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
     act.setLoading(true, '正在生成课程大纲…');
     act.clearError();
     try {
-      const { summary, lessons } = await generateSyllabus(apiKey, topic.trim(), level, lessonCount, langId);
+      const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModel, customBaseUrl });
+      const { summary, lessons } = await generateSyllabus(llmConfig, topic.trim(), level, lessonCount, langId);
       const newSyllabus = {
         id:        `syllabus_${Date.now().toString(36)}`,
         topic:     topic.trim(),
@@ -72,7 +75,8 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
 
     // Generate in background — form can close, user can navigate away
     try {
-      const raw    = await generateReader(apiKey, topicStr, level, learnedVocabulary, readerLength, maxTokens, null, langId);
+      const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModel, customBaseUrl });
+      const raw    = await generateReader(llmConfig, topicStr, level, learnedVocabulary, readerLength, maxTokens, null, langId);
       const parsed = parseReaderResponse(raw, langId);
       pushGeneratedReader(lessonKey, { ...parsed, topic: topicStr, level, langId: langId, lessonKey, isStandalone: true });
       if (parsed.ankiJson?.length > 0) {

@@ -4,6 +4,7 @@ import { actions } from '../context/actions';
 import { getStorageUsage, loadAllReaders, exportAllData } from '../lib/storage';
 import { parseReaderResponse } from '../lib/parser';
 import { signInWithGoogle, signInWithApple, signOut, pushToCloud } from '../lib/cloudSync';
+import { PROVIDERS, getProvider } from '../lib/providers';
 import './Settings.css';
 
 export default function Settings({ onClose }) {
@@ -12,6 +13,8 @@ export default function Settings({ onClose }) {
 
   const [newKey, setNewKey]           = useState('');
   const [showKey, setShowKey]         = useState(false);
+  const [customModelInput, setCustomModelInput] = useState(state.customModelName || '');
+  const [customUrlInput, setCustomUrlInput] = useState(state.customBaseUrl || '');
   const [confirmClear, setConfirmClear] = useState(false);
   const [confirmRestore, setConfirmRestore] = useState(false);
   const [restoreError, setRestoreError] = useState(null);
@@ -51,10 +54,9 @@ export default function Settings({ onClose }) {
     e.preventDefault();
     const trimmed = newKey.trim();
     if (!trimmed) return;
-    act.setApiKey(trimmed);
+    act.setProviderKey(state.activeProvider, trimmed);
     act.notify('success', 'API key updated.');
     setNewKey('');
-    onClose?.();
   }
 
   function handleReparseAll() {
@@ -441,13 +443,123 @@ export default function Settings({ onClose }) {
 
         <hr className="divider" />
 
-        {/* API Key */}
+        {/* AI Provider */}
         <section className="settings-section">
-          <h3 className="settings-section__title form-label">Anthropic API Key</h3>
+          <h3 className="settings-section__title form-label">AI Provider</h3>
+
+          {/* Provider pills */}
+          <div className="topic-form__lang-pills" style={{ marginBottom: 'var(--space-3)' }}>
+            {Object.values(PROVIDERS).map(p => (
+              <button
+                key={p.id}
+                type="button"
+                className={`topic-form__lang-pill ${state.activeProvider === p.id ? 'active' : ''}`}
+                onClick={() => act.setActiveProvider(p.id)}
+                style={{ position: 'relative' }}
+              >
+                {p.name.split(' (')[0]}
+                {state.providerKeys[p.id] && (
+                  <span style={{
+                    display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
+                    background: 'var(--color-accent)', marginLeft: 4, verticalAlign: 'middle',
+                  }} />
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Model selector */}
+          {(() => {
+            const prov = getProvider(state.activeProvider);
+            if (state.activeProvider === 'openai_compatible') {
+              const presets = prov.presets || [];
+              return (
+                <>
+                  <p className="settings-section__desc text-muted" style={{ marginBottom: 'var(--space-2)' }}>
+                    Preset
+                  </p>
+                  <div className="topic-form__lang-pills" style={{ marginBottom: 'var(--space-3)' }}>
+                    {presets.map(preset => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        className={`topic-form__lang-pill ${state.compatPreset === preset.id ? 'active' : ''}`}
+                        onClick={() => {
+                          act.setCompatPreset(preset.id);
+                          if (preset.baseUrl) act.setCustomBaseUrl(preset.baseUrl);
+                          if (preset.defaultModel) {
+                            act.setCustomModelName(preset.defaultModel);
+                            setCustomModelInput(preset.defaultModel);
+                            act.setActiveModel(preset.defaultModel);
+                          }
+                          if (preset.baseUrl) setCustomUrlInput(preset.baseUrl);
+                        }}
+                      >
+                        {preset.name}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="settings-section__desc text-muted" style={{ marginBottom: 'var(--space-2)' }}>
+                    Model name
+                  </p>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. deepseek-chat"
+                    value={customModelInput}
+                    onChange={e => {
+                      setCustomModelInput(e.target.value);
+                      act.setCustomModelName(e.target.value);
+                      act.setActiveModel(e.target.value);
+                    }}
+                    style={{ maxWidth: '18rem', marginBottom: 'var(--space-3)' }}
+                  />
+                  {state.compatPreset === 'custom' && (
+                    <>
+                      <p className="settings-section__desc text-muted" style={{ marginBottom: 'var(--space-2)' }}>
+                        Base URL
+                      </p>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="https://api.example.com"
+                        value={customUrlInput}
+                        onChange={e => {
+                          setCustomUrlInput(e.target.value);
+                          act.setCustomBaseUrl(e.target.value);
+                        }}
+                        style={{ maxWidth: '18rem', marginBottom: 'var(--space-3)' }}
+                      />
+                    </>
+                  )}
+                </>
+              );
+            }
+            // Standard providers with model dropdown
+            return prov.models.length > 0 ? (
+              <>
+                <p className="settings-section__desc text-muted" style={{ marginBottom: 'var(--space-2)' }}>
+                  Model
+                </p>
+                <select
+                  className="form-select"
+                  value={state.activeModel || prov.defaultModel}
+                  onChange={e => act.setActiveModel(e.target.value)}
+                  style={{ maxWidth: '18rem', marginBottom: 'var(--space-3)' }}
+                >
+                  {prov.models.map(m => (
+                    <option key={m.id} value={m.id}>{m.label}</option>
+                  ))}
+                </select>
+              </>
+            ) : null;
+          })()}
+
+          {/* API key input */}
           <p className="settings-section__desc text-muted">
-            Required for generating new readers and grading comprehension questions.
-            {' '}Current key: <code className="settings-key-preview">
-              {state.apiKey ? `${state.apiKey.slice(0, 12)}…` : 'Not set'}
+            API key for {getProvider(state.activeProvider).name}.
+            {' '}Current: <code className="settings-key-preview">
+              {state.providerKeys[state.activeProvider] ? `${state.providerKeys[state.activeProvider].slice(0, 12)}…` : 'Not set'}
             </code>
           </p>
           <form onSubmit={handleUpdateKey} className="settings-section__form">
@@ -455,7 +567,7 @@ export default function Settings({ onClose }) {
               <input
                 type={showKey ? 'text' : 'password'}
                 className="form-input"
-                placeholder="sk-ant-api03-…"
+                placeholder={getProvider(state.activeProvider).keyPlaceholder}
                 value={newKey}
                 onChange={e => setNewKey(e.target.value)}
                 autoComplete="off"
@@ -476,7 +588,7 @@ export default function Settings({ onClose }) {
         <section className="settings-section">
           <h3 className="settings-section__title form-label">API Output Tokens</h3>
           <p className="settings-section__desc text-muted">
-            Maximum tokens Claude can return per generation. Increase this if readers are being cut off.
+            Maximum output tokens per generation. Increase this if readers are being cut off.
           </p>
           <div className="settings-slider-row">
             <span className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>4 096</span>
