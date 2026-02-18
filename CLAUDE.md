@@ -80,10 +80,15 @@ src/
                               disk when a FileSystemDirectoryHandle is registered via
                               setDirectoryHandle(). Provider keys are NOT synced to file
                               or cloud. Includes migration from legacy single apiKey to
-                              providerKeys map.
+                              providerKeys map. LRU eviction of stale readers (>30 cached,
+                              >30 days old) with backup verification — only evicts readers
+                              confirmed to exist in cloud or file storage. Tracks evicted
+                              keys in localStorage for restore UI.
     fileStorage.js            File System Access API layer. Persists app data as JSON
                               files in a user-chosen folder. Stores the directory handle
                               in IndexedDB (localStorage can't hold object handles).
+                              readReaderFromFile(dirHandle, lessonKey) reads a single
+                              reader from the monolithic readers JSON (used for restore).
                               File layout in chosen folder:
                                 graded-reader-syllabi.json    (syllabi + syllabusProgress + standaloneReaders)
                                 graded-reader-readers.json    (generatedReaders cache)
@@ -115,6 +120,9 @@ src/
                               state to user_data table; pullFromCloud returns the row or null
                               (PGRST116 = no row, not an error). pushReaderToCloud serialized
                               via module-level promise queue to prevent race conditions.
+                              fetchCloudReaderKeys() returns Set of reader keys in cloud
+                              (for eviction verification). pullReaderFromCloud(lessonKey)
+                              fetches a single reader's data for on-demand restore.
 
   prompts/
     syllabusPrompt.js         buildSyllabusPrompt(langConfig, topic, level, lessonCount)
@@ -182,7 +190,10 @@ src/
                               global state. TTS button rendered directly in the article header.
                               Delegates story rendering to StorySection. Demo reader detection:
                               shows dismissible banner, hides Mark Complete / Regenerate /
-                              Continue Story for demo readers.
+                              Continue Story for demo readers. Evicted reader detection:
+                              shows "archived to free up storage" message with "Restore
+                              from backup" button (tries file then cloud); on failure falls
+                              through to normal "Generate Reader" UI.
     StorySection              Renders story paragraphs with vocab buttons, TTS click-to-read,
                               and popover portal for vocab definitions.
     StatsDashboard/           Modal showing learning stats: vocab growth bar chart, per-language
@@ -232,16 +243,19 @@ src/
                               holds at ~97-98% until response arrives and component unmounts.
                               Reads activeProvider from state to show dynamic provider name
                               (e.g. "Connecting to OpenAI…" instead of hardcoded Claude).
-    Settings                  Tabbed modal with 4 tabs (AI Provider default):
-                              **AI Provider**: provider pills with key-set indicator dots,
-                              collapsible model picker, API key input, base URL for custom.
+    Settings                  Tabbed modal with 4 tabs (Reading default when key
+                              exists, AI Provider default for new users):
                               **Reading**: dark mode, romanization, paragraph tools, verbose
-                              vocab, reading speed slider (0.5×–2.0×), TTS voice selectors,
-                              default HSK/TOPIK/YUE levels.
-                              **Sync**: storage usage meter, re-parse button, backup & restore,
+                              vocab, reading speed slider (0.5×–2.0×), default HSK/TOPIK/YUE
+                              levels, TTS voice selectors.
+                              **AI Provider**: provider pills with key-set indicator dots,
+                              warning dot when no key configured, collapsible model picker,
+                              API key input, base URL for custom.
+                              **Sync**: storage usage meter, backup & restore,
                               cloud sync (sign-in + push/pull), save folder picker.
                               **Advanced**: output tokens slider (4096–16384), structured
-                              output toggle (opt-in), danger zone (clear-all data).
+                              output toggle (opt-in), re-parse cached readers button,
+                              danger zone (clear-all data).
                               Sticky header (title + close button stay visible when scrolling).
                               Close button enlarged to 32×32px for easier tap target.
     SyncConflictDialog        Modal shown when local and cloud data differ (e.g., old browser
@@ -306,6 +320,8 @@ src/
   romanizationOn:    boolean,         // Show ruby romanization annotations (persisted, default false)
   verboseVocab:      boolean,         // Show example translations in vocab + comprehension + Anki export (default false)
   useStructuredOutput: boolean,      // Use provider-native structured output (default false)
+  // Reader eviction tracking (persisted to localStorage)
+  evictedReaderKeys: Set<string>,     // lesson keys evicted from localStorage but available in backup
   // Background generation (ephemeral, not persisted)
   pendingReaders:    { [lessonKey]: true },  // keys currently being generated
   // Learning activity log (persisted to localStorage)
@@ -465,7 +481,7 @@ The app is hosted at: `https://mandarin-graded-reader.vercel.app` (update when f
 ## Known limitations / future work
 
 - **API key security:** Provider keys are in `localStorage` in plain text (never synced to file or cloud). Acceptable for personal use; a backend proxy would be needed for shared deployments.
-- **localStorage quota:** ~5MB limit. The Settings page shows usage %. If many long readers are cached, old ones may need to be cleared manually.
+- **localStorage quota:** ~5MB limit. The Settings page shows usage %. Automatic LRU eviction removes readers older than 30 days when >30 are cached (only if backup exists in cloud or file storage). Evicted readers show a "Restore from backup" button when navigated to.
 - **File System Access API:** Only available in Chromium-based browsers (Chrome, Edge). Not supported in Firefox or Safari. Falls back gracefully to localStorage-only mode.
 - **Parsing robustness:** The regex parser uses `#{2,4}\s*N\.` to match section headings, tolerating minor formatting variation (2–4 hash marks, any section title text). If section extraction fails entirely, the raw text fallback is shown. `parseVocabularySection` uses two patterns: Pattern A handles `(pinyin)` or `[pinyin]` with any dash/colon separator; Pattern B handles no-bracket format (pinyin backfilled from ankiJson). Any word in the ankiJson block but absent from the vocab section is appended automatically, ensuring all bolded story words are click-to-define. The opt-in structured output mode bypasses regex entirely but is not supported by OpenAI-compatible endpoints.
 - **No streaming:** Reader generation can take 15–30s with no partial content shown; only the ink-character animation plays during this time.

@@ -10,7 +10,7 @@ A single-page web app for generating graded readers in **Mandarin Chinese**, **C
 - **Graded Reader Generation** — Stories with bolded vocabulary, level-calibrated grammar
 - **Vocabulary Memory** — Tracks learned words across sessions; new readers avoid repeating them
 - **Anki Export** — Download flashcard files (.txt) with duplicate prevention; includes both vocabulary cards and grammar pattern cards (tagged `Grammar`)
-- **Offline persistence** — All data stored in `localStorage`; pick up where you left off
+- **Offline persistence** — All data stored in `localStorage`; pick up where you left off. Automatic LRU eviction frees space when >30 readers are cached (only evicts readers backed up to cloud or file storage); evicted readers show a one-click "Restore from backup" button
 - **Grammar Notes** — Each reader includes 3–5 collapsible grammar pattern cards explaining structures used in the story, with examples
 - **Comprehension grading** — Type answers to comprehension questions and get AI-powered feedback with per-question scores; every question includes a toggleable suggested model answer; results persist across sessions
 - **Syllabus home page** — Overview of all lessons with completion badges, a summary, Continue CTA, and delete button with confirmation
