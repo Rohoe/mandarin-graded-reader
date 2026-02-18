@@ -113,9 +113,12 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
             <span>{stats.standaloneCount} standalone readers</span>
           </div>
           {!fullActivity && (
-            <button className="btn btn-ghost btn-xs" onClick={handleLoadFullHistory} style={{ marginTop: 'var(--space-2)' }}>
-              Load full history
-            </button>
+            <p className="text-muted" style={{ fontSize: 'var(--text-xs)', marginTop: 'var(--space-2)' }}>
+              Showing last 90 days.{' '}
+              <button className="btn btn-ghost btn-xs" onClick={handleLoadFullHistory} style={{ padding: 0, textDecoration: 'underline' }}>
+                Load full history
+              </button>
+            </p>
           )}
           {fullActivity && (
             <p className="text-muted" style={{ fontSize: 'var(--text-xs)', marginTop: 'var(--space-2)' }}>

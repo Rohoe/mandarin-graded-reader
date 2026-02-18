@@ -30,6 +30,7 @@ export function actions(dispatch) {
     // Reader cache
     setReader:             (k, d) => dispatch({ type: 'SET_READER', payload: { lessonKey: k, data: d } }),
     clearReader:           k      => dispatch({ type: 'CLEAR_READER', payload: k }),
+    touchReader:           k      => dispatch({ type: 'TOUCH_READER', payload: { lessonKey: k } }),
     // Vocabulary
     addVocabulary:         words  => dispatch({ type: 'ADD_VOCABULARY', payload: words }),
     clearVocabulary:       ()     => dispatch({ type: 'CLEAR_VOCABULARY' }),

@@ -254,3 +254,13 @@
   background: var(--color-accent);
   border-radius: 1px;
 }
+
+.settings-tabs__warning-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-error, #c0392b);
+  margin-left: 4px;
+  vertical-align: middle;
+}

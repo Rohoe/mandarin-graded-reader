@@ -8,8 +8,8 @@ import { PROVIDERS, getProvider } from '../lib/providers';
 import './Settings.css';
 
 const TABS = [
-  { id: 'ai',       label: 'AI Provider' },
   { id: 'reading',  label: 'Reading' },
+  { id: 'ai',       label: 'AI Provider' },
   { id: 'sync',     label: 'Sync' },
   { id: 'advanced', label: 'Advanced' },
 ];
@@ -18,7 +18,8 @@ export default function Settings({ onClose }) {
   const { state, dispatch, pickSaveFolder, removeSaveFolder } = useApp();
   const act = actions(dispatch);
 
-  const [activeTab, setActiveTab] = useState('ai');
+  const hasAnyKey = Object.values(state.providerKeys).some(k => k);
+  const [activeTab, setActiveTab] = useState(hasAnyKey ? 'reading' : 'ai');
   const [newKey, setNewKey]           = useState('');
   const [showKey, setShowKey]         = useState(false);
   const [customModelInput, setCustomModelInput] = useState(state.customModelName || '');
@@ -168,6 +169,9 @@ export default function Settings({ onClose }) {
               onClick={() => setActiveTab(tab.id)}
             >
               {tab.label}
+              {tab.id === 'ai' && !hasAnyKey && (
+                <span className="settings-tabs__warning-dot" title="No API key configured" />
+              )}
             </button>
           ))}
         </div>
@@ -280,124 +284,6 @@ export default function Settings({ onClose }) {
           </>
         )}
 
-        {/* TTS voices */}
-        {'speechSynthesis' in window && (chineseVoices.length > 0 || koreanVoices.length > 0 || cantoneseVoices.length > 0) && (
-          <>
-            <section className="settings-section">
-              <h3 className="settings-section__title form-label">Text-to-Speech Voices</h3>
-              {chineseVoices.length > 0 && (
-                <>
-                  <p className="settings-section__desc text-muted">
-                    Chinese voice used when listening to stories.
-                  </p>
-                  <select
-                    className="form-select"
-                    value={state.ttsVoiceURI || ''}
-                    onChange={e => act.setTtsVoice(e.target.value)}
-                    style={{ maxWidth: '18rem' }}
-                  >
-                    {(() => {
-                      const recommended = chineseVoices.filter(isRecommendedZhVoice);
-                      const other = chineseVoices.filter(v => !isRecommendedZhVoice(v));
-                      return (
-                        <>
-                          {recommended.length > 0 && (
-                            <optgroup label="Recommended">
-                              {recommended.map(v => (
-                                <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>
-                              ))}
-                            </optgroup>
-                          )}
-                          {other.length > 0 && (
-                            <optgroup label="Other voices">
-                              {other.map(v => (
-                                <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>
-                              ))}
-                            </optgroup>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </select>
-                </>
-              )}
-              {koreanVoices.length > 0 && (
-                <>
-                  <p className="settings-section__desc text-muted" style={{ marginTop: chineseVoices.length > 0 ? 'var(--space-4)' : 0 }}>
-                    Korean voice used when listening to stories.
-                  </p>
-                  <select
-                    className="form-select"
-                    value={state.ttsKoVoiceURI || ''}
-                    onChange={e => act.setTtsKoVoice(e.target.value)}
-                    style={{ maxWidth: '18rem' }}
-                  >
-                    {(() => {
-                      const recommended = koreanVoices.filter(isRecommendedKoVoice);
-                      const other = koreanVoices.filter(v => !isRecommendedKoVoice(v));
-                      return (
-                        <>
-                          {recommended.length > 0 && (
-                            <optgroup label="Recommended">
-                              {recommended.map(v => (
-                                <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>
-                              ))}
-                            </optgroup>
-                          )}
-                          {other.length > 0 && (
-                            <optgroup label="Other voices">
-                              {other.map(v => (
-                                <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>
-                              ))}
-                            </optgroup>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </select>
-                </>
-              )}
-              {cantoneseVoices.length > 0 && (
-                <>
-                  <p className="settings-section__desc text-muted" style={{ marginTop: (chineseVoices.length > 0 || koreanVoices.length > 0) ? 'var(--space-4)' : 0 }}>
-                    Cantonese voice used when listening to stories.
-                  </p>
-                  <select
-                    className="form-select"
-                    value={state.ttsYueVoiceURI || ''}
-                    onChange={e => act.setTtsYueVoice(e.target.value)}
-                    style={{ maxWidth: '18rem' }}
-                  >
-                    {(() => {
-                      const recommended = cantoneseVoices.filter(isRecommendedYueVoice);
-                      const other = cantoneseVoices.filter(v => !isRecommendedYueVoice(v));
-                      return (
-                        <>
-                          {recommended.length > 0 && (
-                            <optgroup label="Recommended">
-                              {recommended.map(v => (
-                                <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>
-                              ))}
-                            </optgroup>
-                          )}
-                          {other.length > 0 && (
-                            <optgroup label="Other voices">
-                              {other.map(v => (
-                                <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>
-                              ))}
-                            </optgroup>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </select>
-                </>
-              )}
-            </section>
-            <hr className="divider" />
-          </>
-        )}
-
         {/* Default HSK level */}
         <section className="settings-section">
           <h3 className="settings-section__title form-label">Default HSK Level</h3>
@@ -467,6 +353,73 @@ export default function Settings({ onClose }) {
             <option value={6}>YUE 6 — Advanced (~5,000 words)</option>
           </select>
         </section>
+
+        {/* TTS voice preferences */}
+        {'speechSynthesis' in window && (
+          <>
+            <hr className="divider" />
+            <section className="settings-section">
+              <h3 className="settings-section__title form-label">TTS Voices</h3>
+              <p className="settings-section__desc text-muted">
+                Choose preferred text-to-speech voices for each language. Recommended voices are listed first.
+              </p>
+
+              {/* Chinese voice */}
+              <label className="form-label" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>Chinese voice</label>
+              <select
+                className="form-select"
+                value={state.ttsZhVoiceURI || ''}
+                onChange={e => act.setTtsZhVoiceURI(e.target.value || null)}
+                style={{ maxWidth: '18rem' }}
+              >
+                <option value="">Auto (best available)</option>
+                {chineseVoices
+                  .sort((a, b) => isRecommendedZhVoice(b) - isRecommendedZhVoice(a))
+                  .map(v => (
+                    <option key={v.voiceURI} value={v.voiceURI}>
+                      {v.name} ({v.lang}){isRecommendedZhVoice(v) ? ' ★' : ''}
+                    </option>
+                  ))}
+              </select>
+
+              {/* Cantonese voice */}
+              <label className="form-label" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>Cantonese voice</label>
+              <select
+                className="form-select"
+                value={state.ttsYueVoiceURI || ''}
+                onChange={e => act.setTtsYueVoiceURI(e.target.value || null)}
+                style={{ maxWidth: '18rem' }}
+              >
+                <option value="">Auto (best available)</option>
+                {cantoneseVoices
+                  .sort((a, b) => isRecommendedYueVoice(b) - isRecommendedYueVoice(a))
+                  .map(v => (
+                    <option key={v.voiceURI} value={v.voiceURI}>
+                      {v.name} ({v.lang}){isRecommendedYueVoice(v) ? ' ★' : ''}
+                    </option>
+                  ))}
+              </select>
+
+              {/* Korean voice */}
+              <label className="form-label" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>Korean voice</label>
+              <select
+                className="form-select"
+                value={state.ttsKoVoiceURI || ''}
+                onChange={e => act.setTtsKoVoiceURI(e.target.value || null)}
+                style={{ maxWidth: '18rem' }}
+              >
+                <option value="">Auto (best available)</option>
+                {koreanVoices
+                  .sort((a, b) => isRecommendedKoVoice(b) - isRecommendedKoVoice(a))
+                  .map(v => (
+                    <option key={v.voiceURI} value={v.voiceURI}>
+                      {v.name} ({v.lang}){isRecommendedKoVoice(v) ? ' ★' : ''}
+                    </option>
+                  ))}
+              </select>
+            </section>
+          </>
+        )}
 
         </>)}
 
@@ -659,20 +612,6 @@ export default function Settings({ onClose }) {
               {(usage.used / 1024).toFixed(0)} KB / {(usage.limit / 1024 / 1024).toFixed(0)} MB ({usage.pct}% used)
             </p>
           </div>
-          {(() => {
-            const allReaders = loadAllReaders();
-            const readerCount = Object.keys(allReaders).length;
-            return readerCount > 0 ? (
-              <div style={{ marginTop: 'var(--space-3)' }}>
-                <p className="settings-section__desc text-muted">
-                  Re-parse all cached readers from their saved raw text. Use this after a parser update to refresh vocabulary and examples without regenerating.
-                </p>
-                <button className="btn btn-secondary btn-sm" onClick={handleReparseAll}>
-                  Re-parse {readerCount} cached reader{readerCount !== 1 ? 's' : ''}
-                </button>
-              </div>
-            ) : null;
-          })()}
         </section>
 
         <hr className="divider" />
@@ -861,6 +800,26 @@ export default function Settings({ onClose }) {
             </button>
           </div>
         </section>
+
+        {/* Re-parse cached readers */}
+        {(() => {
+          const allReaders = loadAllReaders();
+          const readerCount = Object.keys(allReaders).length;
+          return readerCount > 0 ? (
+            <>
+              <hr className="divider" />
+              <section className="settings-section">
+                <h3 className="settings-section__title form-label">Re-parse Cached Readers</h3>
+                <p className="settings-section__desc text-muted">
+                  Re-parse all cached readers from their saved raw text. Use this after a parser update to refresh vocabulary and examples without regenerating.
+                </p>
+                <button className="btn btn-secondary btn-sm" onClick={handleReparseAll}>
+                  Re-parse {readerCount} cached reader{readerCount !== 1 ? 's' : ''}
+                </button>
+              </section>
+            </>
+          ) : null;
+        })()}
 
         <hr className="divider" />
 
