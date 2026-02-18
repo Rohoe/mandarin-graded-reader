@@ -35,6 +35,7 @@ import {
   saveExportedWordsFull,
   clearAllAppData,
   setDirectoryHandle,
+  getDirectoryHandle,
   loadMaxTokens,
   saveMaxTokens,
   loadDefaultLevel,
@@ -68,6 +69,10 @@ import {
   loadLearningActivity,
   saveLearningActivity,
   stashOldActivity,
+  evictStaleReaders,
+  loadEvictedReaderKeys,
+  saveEvictedReaderKeys,
+  unmarkEvicted,
 } from '../lib/storage';
 import {
   loadDirectoryHandle,
@@ -75,10 +80,11 @@ import {
   clearDirectoryHandle,
   verifyPermission,
   readAllFromFolder,
+  readReaderFromFile,
   pickDirectory,
   isSupported,
 } from '../lib/fileStorage';
-import { pushToCloud, pullFromCloud, pushReaderToCloud, detectConflict } from '../lib/cloudSync';
+import { pushToCloud, pullFromCloud, pushReaderToCloud, detectConflict, fetchCloudReaderKeys, pullReaderFromCloud } from '../lib/cloudSync';
 import { DEMO_READER_KEY, DEMO_READER_DATA } from '../lib/demoReader';
 
 // ── Initial state ─────────────────────────────────────────────
@@ -135,6 +141,8 @@ function buildInitialState() {
     translateButtons:  loadTranslateButtons(),
     verboseVocab:      loadVerboseVocab(),
     useStructuredOutput: loadStructuredOutput(),
+    // Evicted reader keys (persisted)
+    evictedReaderKeys: loadEvictedReaderKeys(),
     // Background generation tracking (ephemeral, not persisted)
     pendingReaders:    {},
     // Learning activity log (persisted)
@@ -235,7 +243,10 @@ function baseReducer(state, action) {
       Object.keys(newReaders).forEach(k => {
         if (k.startsWith(`lesson_${id}_`)) delete newReaders[k];
       });
-      return { ...state, syllabi: newSyllabi, syllabusProgress: newProgress, generatedReaders: newReaders };
+      // Clean up evicted keys for this syllabus
+      const prefix = `lesson_${id}_`;
+      const newEvicted = new Set([...state.evictedReaderKeys].filter(k => !k.startsWith(prefix)));
+      return { ...state, syllabi: newSyllabi, syllabusProgress: newProgress, generatedReaders: newReaders, evictedReaderKeys: newEvicted };
     }
 
     case 'SET_LESSON_INDEX': {
@@ -291,7 +302,10 @@ function baseReducer(state, action) {
       const newList = state.standaloneReaders.filter(r => r.key !== key);
       const newReaders = { ...state.generatedReaders };
       delete newReaders[key];
-      return { ...state, standaloneReaders: newList, generatedReaders: newReaders };
+      // Clean up evicted key
+      const newEvicted = new Set(state.evictedReaderKeys);
+      newEvicted.delete(key);
+      return { ...state, standaloneReaders: newList, generatedReaders: newReaders, evictedReaderKeys: newEvicted };
     }
 
     // ── Reader cache actions ──────────────────────────────────
@@ -307,10 +321,15 @@ function baseReducer(state, action) {
       if (data.story && (!prev || !prev.story)) {
         newActivity = [...newActivity, { type: 'reader_generated', lessonKey, timestamp: Date.now() }];
       }
+      // Remove from evicted set if regenerating an evicted reader
+      const newEvicted = state.evictedReaderKeys.has(lessonKey)
+        ? new Set([...state.evictedReaderKeys].filter(k => k !== lessonKey))
+        : state.evictedReaderKeys;
       return {
         ...state,
         generatedReaders: { ...state.generatedReaders, [lessonKey]: data },
         learningActivity: newActivity,
+        evictedReaderKeys: newEvicted,
       };
     }
 
@@ -328,6 +347,19 @@ function baseReducer(state, action) {
       return {
         ...state,
         generatedReaders: { ...state.generatedReaders, [lessonKey]: cached },
+      };
+    }
+
+    case 'TOUCH_READER': {
+      const { lessonKey } = action.payload;
+      const existing = state.generatedReaders[lessonKey];
+      if (!existing) return state;
+      return {
+        ...state,
+        generatedReaders: {
+          ...state.generatedReaders,
+          [lessonKey]: { ...existing, lastOpenedAt: Date.now() },
+        },
       };
     }
 
@@ -438,6 +470,7 @@ function baseReducer(state, action) {
         defaultTopikLevel: state.defaultTopikLevel,
         ttsYueVoiceURI:  state.ttsYueVoiceURI,
         verboseVocab:    state.verboseVocab,
+        evictedReaderKeys: new Set(),
       };
 
     // ── File storage actions ──────────────────────────────────
@@ -536,6 +569,20 @@ function baseReducer(state, action) {
         learnedVocabulary: d.learned_vocabulary,
         exportedWords:     new Set(d.exported_words),
         lastModified:      cloudTs,
+      };
+    }
+
+    case 'SET_EVICTED_READER_KEYS':
+      return { ...state, evictedReaderKeys: action.payload };
+
+    case 'RESTORE_EVICTED_READER': {
+      const { lessonKey, data } = action.payload;
+      const newEvicted = new Set(state.evictedReaderKeys);
+      newEvicted.delete(lessonKey);
+      return {
+        ...state,
+        generatedReaders: { ...state.generatedReaders, [lessonKey]: data },
+        evictedReaderKeys: newEvicted,
       };
     }
 
@@ -662,6 +709,43 @@ export function AppProvider({ children }) {
     }
   }
 
+  // Restores an evicted reader from file storage or cloud
+  async function restoreEvictedReader(lessonKey) {
+    // Try file storage first (faster, no network)
+    const dirHandle = getDirectoryHandle();
+    if (dirHandle) {
+      try {
+        const data = await readReaderFromFile(dirHandle, lessonKey);
+        if (data) {
+          dispatch({ type: 'RESTORE_EVICTED_READER', payload: { lessonKey, data } });
+          return true;
+        }
+      } catch (e) {
+        console.warn('[AppContext] File restore failed:', e.message);
+      }
+    }
+
+    // Try cloud
+    if (stateRef.current.cloudUser) {
+      try {
+        const data = await pullReaderFromCloud(lessonKey);
+        if (data) {
+          dispatch({ type: 'RESTORE_EVICTED_READER', payload: { lessonKey, data } });
+          return true;
+        }
+      } catch (e) {
+        console.warn('[AppContext] Cloud restore failed:', e.message);
+      }
+    }
+
+    // Neither found — unmark from evicted set so UI falls through to Generate
+    unmarkEvicted(lessonKey);
+    const newEvicted = new Set(stateRef.current.evictedReaderKeys);
+    newEvicted.delete(lessonKey);
+    dispatch({ type: 'SET_EVICTED_READER_KEYS', payload: newEvicted });
+    return false;
+  }
+
   // Resolves a sync conflict by choosing either 'cloud' or 'local' data
   async function resolveSyncConflict(choice) {
     if (!state.syncConflict) return;
@@ -698,6 +782,51 @@ export function AppProvider({ children }) {
     }
   }, [state.fsInitialized]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Evict stale readers from localStorage on startup (only when backup exists)
+  useEffect(() => {
+    if (!state.fsInitialized) return;
+    const hasFileBackup = !!state.saveFolder;
+    const hasCloudBackup = !!state.cloudUser;
+    if (!hasFileBackup && !hasCloudBackup) return;
+
+    async function runEviction() {
+      try {
+        // Build backupKeys from file + cloud
+        let backupKeys = new Set();
+
+        // File storage: readers were hydrated into generatedReaders already
+        if (hasFileBackup) {
+          for (const k of Object.keys(stateRef.current.generatedReaders)) {
+            backupKeys.add(k);
+          }
+        }
+
+        // Cloud: fetch reader keys
+        if (hasCloudBackup) {
+          try {
+            const cloudKeys = await fetchCloudReaderKeys();
+            if (cloudKeys) {
+              for (const k of cloudKeys) backupKeys.add(k);
+            }
+          } catch (e) {
+            console.warn('[AppContext] Failed to fetch cloud reader keys for eviction:', e.message);
+          }
+        }
+
+        if (backupKeys.size === 0) return;
+
+        const evicted = evictStaleReaders({ backupKeys });
+        if (evicted.length > 0) {
+          dispatch({ type: 'SET_EVICTED_READER_KEYS', payload: loadEvictedReaderKeys() });
+        }
+      } catch (e) {
+        console.warn('[AppContext] Eviction failed:', e.message);
+      }
+    }
+
+    runEviction();
+  }, [state.fsInitialized]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Persistence effects (pure reducer → side effects here) ──
 
   // Skip persistence on first render (state came from localStorage already)
@@ -711,6 +840,7 @@ export function AppProvider({ children }) {
   useEffect(() => { if (mountedRef.current) saveLearnedVocabulary(state.learnedVocabulary); }, [state.learnedVocabulary]);
   useEffect(() => { if (mountedRef.current) saveExportedWordsFull(state.exportedWords); }, [state.exportedWords]);
   useEffect(() => { if (mountedRef.current) saveLearningActivity(state.learningActivity); }, [state.learningActivity]);
+  useEffect(() => { if (mountedRef.current) saveEvictedReaderKeys(state.evictedReaderKeys); }, [state.evictedReaderKeys]);
 
   // Provider/API settings
   useEffect(() => { if (mountedRef.current) saveProviderKeys(state.providerKeys); }, [state.providerKeys]);
@@ -858,6 +988,7 @@ export function AppProvider({ children }) {
     removeSaveFolder,
     pushGeneratedReader,
     resolveSyncConflict,
+    restoreEvictedReader,
   }), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (

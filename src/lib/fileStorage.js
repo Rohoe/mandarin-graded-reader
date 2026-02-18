@@ -126,6 +126,13 @@ export async function readJSON(dirHandle, filename) {
   }
 }
 
+// ── Read a single reader from folder ──────────────────────────
+
+export async function readReaderFromFile(dirHandle, lessonKey) {
+  const data = await readJSON(dirHandle, FILES.readers);
+  return data?.[lessonKey] ?? null;
+}
+
 // ── Read all app data from folder ─────────────────────────────
 
 export async function readAllFromFolder(dirHandle) {

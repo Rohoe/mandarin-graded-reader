@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useContext } from 'react';
 import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
+import { AppContext } from '../context/AppContext';
 import { actions } from '../context/actions';
 import { getLang, getLessonTitle, DEFAULT_LANG_ID } from '../lib/languages';
 import { buildLLMConfig } from '../lib/llmConfig';
@@ -24,15 +25,16 @@ import './ReaderView.css';
 const _loadedKeys = new Set();
 
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar }) {
-  const { generatedReaders, learnedVocabulary, error, pendingReaders, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate, romanizationOn, translateButtons, verboseVocab, quotaWarning, providerKeys, activeProvider, activeModels, customBaseUrl, useStructuredOutput } = useAppSelector(s => ({
+  const { generatedReaders, learnedVocabulary, error, pendingReaders, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate, romanizationOn, translateButtons, verboseVocab, quotaWarning, providerKeys, activeProvider, activeModels, customBaseUrl, useStructuredOutput, evictedReaderKeys } = useAppSelector(s => ({
     generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, error: s.error,
     pendingReaders: s.pendingReaders, maxTokens: s.maxTokens,
     ttsVoiceURI: s.ttsVoiceURI, ttsKoVoiceURI: s.ttsKoVoiceURI, ttsYueVoiceURI: s.ttsYueVoiceURI, ttsSpeechRate: s.ttsSpeechRate,
     romanizationOn: s.romanizationOn, translateButtons: s.translateButtons, verboseVocab: s.verboseVocab, quotaWarning: s.quotaWarning,
     providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
-    useStructuredOutput: s.useStructuredOutput,
+    useStructuredOutput: s.useStructuredOutput, evictedReaderKeys: s.evictedReaderKeys,
   }));
   const dispatch = useAppDispatch();
+  const { restoreEvictedReader } = useContext(AppContext);
   const act = actions(dispatch);
   const isPending = !!(lessonKey && pendingReaders[lessonKey]);
 
@@ -43,6 +45,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   const [demoBannerDismissed, setDemoBannerDismissed] = useState(false);
   const [readerLength, setReaderLength] = useState(1200);
   const [translatingIndex, setTranslatingIndex] = useState(null);
+  const [restoring, setRestoring] = useState(false);
 
   // Determine langId from reader, lessonMeta, or syllabus
   const langId = reader?.langId || lessonMeta?.langId || DEFAULT_LANG_ID;
@@ -148,6 +151,11 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [lessonKey]);
 
+  // Track when a reader is opened (for LRU eviction)
+  useEffect(() => {
+    if (lessonKey && reader) act.touchReader(lessonKey);
+  }, [lessonKey, !!reader]); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function handleRegenConfirm() {
     setConfirmRegen(false);
     act.clearReader(lessonKey);
@@ -216,6 +224,47 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
             </>
           )}
           <GenerationProgress type="reader" />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Evicted (archived) reader ───────────────────────────────
+  if (!reader && !isPending && lessonKey && evictedReaderKeys.has(lessonKey)) {
+    async function handleRestore() {
+      setRestoring(true);
+      try {
+        const ok = await restoreEvictedReader(lessonKey);
+        if (!ok) {
+          act.notify('error', 'Could not restore — you can regenerate it.');
+        }
+      } catch {
+        act.notify('error', 'Restore failed — you can regenerate it.');
+      } finally {
+        setRestoring(false);
+      }
+    }
+
+    return (
+      <div className="reader-view reader-view--pregeneratе">
+        <div className="reader-view__pregenerate card card-padded">
+          {lessonMeta && (
+            <>
+              <p className="reader-view__lesson-num text-subtle font-display">Lesson {lessonMeta.lesson_number}</p>
+              <h2 className="text-target-title reader-view__lesson-title">{getLessonTitle(lessonMeta, langId)}</h2>
+              <p className="reader-view__lesson-en font-display text-muted">{lessonMeta.title_en}</p>
+            </>
+          )}
+          <p className="text-muted" style={{ textAlign: 'center', margin: 'var(--space-4) 0' }}>
+            This reader was archived to free up browser storage.
+          </p>
+          <button
+            className="btn btn-primary btn-lg reader-view__generate-btn"
+            onClick={handleRestore}
+            disabled={restoring}
+          >
+            {restoring ? 'Restoring…' : 'Restore from backup'}
+          </button>
         </div>
       </div>
     );

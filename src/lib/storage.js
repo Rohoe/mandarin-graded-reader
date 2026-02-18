@@ -56,6 +56,7 @@ const KEYS = {
   TTS_SPEECH_RATE:    'gradedReader_ttsSpeechRate',
   ROMANIZATION_ON:    'gradedReader_romanizationOn',
   TRANSLATE_BUTTONS:  'gradedReader_translateButtons',
+  EVICTED_READER_KEYS: 'gradedReader_evictedReaderKeys',
 };
 
 const READER_KEY_PREFIX = 'gradedReader_reader_';
@@ -695,6 +696,98 @@ export function loadActivityStash() {
   return load(ACTIVITY_STASH_KEY, []);
 }
 
+// ── Reader eviction (LRU) ─────────────────────────────────────
+
+const EVICT_MAX_READERS = 30;        // keep at most this many in localStorage
+const EVICT_STALE_DAYS = 30;         // readers not opened in this many days are candidates
+const EVICT_STALE_MS = EVICT_STALE_DAYS * 24 * 60 * 60 * 1000;
+
+// ── Evicted reader keys tracking ──────────────────────────────
+
+export function loadEvictedReaderKeys() {
+  return new Set(load(KEYS.EVICTED_READER_KEYS, []));
+}
+
+export function saveEvictedReaderKeys(set) {
+  save(KEYS.EVICTED_READER_KEYS, [...set]);
+}
+
+export function unmarkEvicted(lessonKey) {
+  const evicted = loadEvictedReaderKeys();
+  if (evicted.has(lessonKey)) {
+    evicted.delete(lessonKey);
+    saveEvictedReaderKeys(evicted);
+  }
+}
+
+/**
+ * Evict old readers from localStorage to free space.
+ * Only evicts readers that have a confirmed backup (present in backupKeys).
+ * Returns the list of evicted lesson keys.
+ *
+ * @param {{ activeKey?: string, backupKeys?: Set<string> }} options
+ */
+export function evictStaleReaders({ activeKey, backupKeys } = {}) {
+  migrateReadersIfNeeded();
+  const index = loadReaderIndex();
+  if (index.length <= EVICT_MAX_READERS) return [];
+
+  // Build metadata for each reader
+  const entries = [];
+  for (const key of index) {
+    if (key === activeKey) continue; // never evict active reader
+    const raw = localStorage.getItem(READER_KEY_PREFIX + key);
+    if (!raw) continue;
+    try {
+      const data = JSON.parse(raw);
+      entries.push({
+        key,
+        lastOpenedAt: data.lastOpenedAt || 0,
+        size: raw.length * 2, // approximate bytes
+      });
+    } catch {
+      entries.push({ key, lastOpenedAt: 0, size: raw.length * 2 });
+    }
+  }
+
+  // Sort by lastOpenedAt ascending (oldest first)
+  entries.sort((a, b) => a.lastOpenedAt - b.lastOpenedAt);
+
+  const now = Date.now();
+  const evicted = [];
+  let remaining = index.length;
+
+  for (const entry of entries) {
+    // Stop once we're within budget
+    if (remaining <= EVICT_MAX_READERS) break;
+    // Only evict if stale (never opened, or opened > EVICT_STALE_DAYS ago)
+    const isStale = !entry.lastOpenedAt || (now - entry.lastOpenedAt > EVICT_STALE_MS);
+    if (!isStale) continue;
+    // Only evict if backed up (when backupKeys provided)
+    if (backupKeys && !backupKeys.has(entry.key)) continue;
+
+    localStorage.removeItem(READER_KEY_PREFIX + entry.key);
+    evicted.push(entry.key);
+    remaining--;
+  }
+
+  if (evicted.length > 0) {
+    // Update index to remove evicted keys
+    const evictedSet = new Set(evicted);
+    const newIndex = index.filter(k => !evictedSet.has(k));
+    saveReaderIndex(newIndex);
+
+    // Track evicted keys
+    const existing = loadEvictedReaderKeys();
+    for (const k of evicted) existing.add(k);
+    saveEvictedReaderKeys(existing);
+
+    console.info(`[storage] Evicted ${evicted.length} stale reader(s) from localStorage`);
+  }
+
+  return evicted;
+}
+
 // ── Storage usage estimate ────────────────────────────────────
 
 export function getStorageUsage() {
@@ -722,6 +815,8 @@ export function clearAllAppData() {
   }
   Object.values(KEYS).forEach(k => localStorage.removeItem(k));
   localStorage.removeItem(KEYS.READERS); // legacy monolithic key
+  // Clear evicted reader keys
+  localStorage.removeItem(KEYS.EVICTED_READER_KEYS);
   // Files are left on disk intentionally — user can delete the folder manually
 }
 

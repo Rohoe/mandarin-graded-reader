@@ -73,6 +73,38 @@ export async function pullFromCloud() {
   return data; // null if first sync
 }
 
+// Fetch just the reader keys from cloud (for eviction verification)
+export async function fetchCloudReaderKeys() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from('user_data')
+    .select('generated_readers')
+    .eq('user_id', user.id)
+    .single();
+  if (error) {
+    if (error.code === 'PGRST116') return new Set(); // no row
+    throw error;
+  }
+  return new Set(Object.keys(data?.generated_readers ?? {}));
+}
+
+// Pull a single reader from cloud by lesson key
+export async function pullReaderFromCloud(lessonKey) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from('user_data')
+    .select('generated_readers')
+    .eq('user_id', user.id)
+    .single();
+  if (error) {
+    if (error.code === 'PGRST116') return null;
+    throw error;
+  }
+  return data?.generated_readers?.[lessonKey] ?? null;
+}
+
 // Simple hash function for conflict detection
 function hashData(data) {
   const str = JSON.stringify({
