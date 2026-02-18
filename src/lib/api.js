@@ -259,9 +259,10 @@ export async function gradeAnswers(llmConfig, questions, userAnswers, story, lev
 
 export async function generateReader(llmConfig, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192, previousStory = null, langId = DEFAULT_LANG_ID) {
   const langConfig = getLang(langId);
-  // Build a range string: e.g. 1200 → "1100-1300"
-  const charRange = `${targetChars - 100}-${targetChars + 100}`;
-  const system = buildReaderSystem(langConfig, level, topic, charRange);
+  // Build a range string scaled to reader size
+  const rangePadding = targetChars <= 300 ? 50 : 100;
+  const charRange = `${targetChars - rangePadding}-${targetChars + rangePadding}`;
+  const system = buildReaderSystem(langConfig, level, topic, charRange, targetChars);
 
   const MAX_VOCAB_LIST = 200;
   const learnedList = Object.keys(learnedWords)

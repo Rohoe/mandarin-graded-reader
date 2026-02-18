@@ -242,7 +242,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
             <span className="reader-view__length-value">~{readerLength} chars</span>
             <input
               id="rv-reader-length" type="range" className="reader-view__length-slider"
-              min={300} max={2000} step={100} value={readerLength}
+              min={150} max={2000} step={50} value={readerLength}
               onChange={e => setReaderLength(Number(e.target.value))}
             />
             <div className="reader-view__length-ticks"><span>Short</span><span>Long</span></div>
