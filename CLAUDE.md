@@ -96,7 +96,7 @@ src/
 
   prompts/
     syllabusPrompt.js         buildSyllabusPrompt(langConfig, topic, level, lessonCount)
-    readerSystemPrompt.js     buildReaderSystem(langConfig, level, topic, charRange)
+    readerSystemPrompt.js     buildReaderSystem(langConfig, level, topic, charRange, targetChars)
     gradingPrompt.js          buildGradingSystem(langConfig, level)
     extendSyllabusPrompt.js   buildExtendSyllabusPrompt(langConfig, topic, level, existingLessons, additionalCount)
 
@@ -116,7 +116,7 @@ src/
     TopicForm                 Topic input + language selector (pill toggle: 中文 / 粵語 / 한국어)
                               + proficiency level pills (read from langConfig). Two modes:
                               syllabus / standalone. Sliders: lesson count (2–12, syllabus
-                              mode only) and reader length (500–2000 chars, step 100).
+                              mode only) and reader length (150–2000 chars, step 50).
                               Passes langId through to all API calls and reader creation.
                               Generate button is disabled if no API key is set; shows warning
                               message directing user to Settings. Hint text when topic is empty.

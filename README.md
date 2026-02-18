@@ -14,7 +14,7 @@ A single-page web app for generating graded readers in **Mandarin Chinese**, **C
 - **Grammar Notes** — Each reader includes 3–5 collapsible grammar pattern cards explaining structures used in the story, with examples
 - **Comprehension grading** — Type answers to comprehension questions and get AI-powered feedback with per-question scores; imperfect answers include a suggested model answer; results persist across sessions
 - **Syllabus home page** — Overview of all lessons with completion badges, a summary, Continue CTA, and delete button with confirmation
-- **Configurable length** — Sliders for syllabus lesson count (2–12) and reader story length (500–2000 characters)
+- **Configurable length** — Sliders for syllabus lesson count (2–12) and reader story length (150–2000 characters). Short readers (≤250 chars) automatically scale down to fewer vocabulary words, questions, and grammar notes — ideal for absolute beginners
 - **Dark mode** — Toggle in Settings; persists across sessions. Overrides all colour tokens via `[data-theme="dark"]` on the root element
 - **Story continuation** — "Next episode →" button generates a follow-up reader that continues the narrative from the previous story, maintaining characters and setting
 - **Extend syllabus** — "Add more lessons" panel on the syllabus home page appends 2–6 AI-generated lessons to an existing syllabus
@@ -85,7 +85,7 @@ Alternatively, use **Single Reader** mode to generate a one-off story without a 
 
 Use the sliders in the sidebar form to control:
 - **Lessons** (syllabus mode) — how many lessons to generate (2–12, default 6)
-- **Reader Length** — target story length in Chinese characters (500–2000, default 1200)
+- **Reader Length** — target story length in characters (150–2000, default 1200). Readers ≤250 chars use fewer vocab words (3–5), questions (2–3), and grammar notes (1–2)
 
 To fix truncated readers, open **Settings → API Output Tokens** and drag the slider up. The default is 8,192 tokens. Values above 8,192 may require an API tier that supports extended output.
 
