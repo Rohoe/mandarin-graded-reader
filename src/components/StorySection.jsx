@@ -116,9 +116,9 @@ export default function StorySection({
       </div>
       {activeVocab && createPortal(
         <div ref={popoverRef} className="reader-view__popover" style={getPopoverPosition(activeVocab.rect)}>
-          <span className="reader-view__popover-chinese text-target">{activeVocab.word.chinese}</span>
-          <span className="reader-view__popover-pinyin">{activeVocab.word.pinyin}</span>
-          <span className="reader-view__popover-english">{activeVocab.word.english}</span>
+          <span className="reader-view__popover-chinese text-target">{activeVocab.word.target || activeVocab.word.chinese}</span>
+          <span className="reader-view__popover-pinyin">{activeVocab.word.romanization || activeVocab.word.pinyin}</span>
+          <span className="reader-view__popover-english">{activeVocab.word.translation || activeVocab.word.english}</span>
         </div>,
         document.body
       )}

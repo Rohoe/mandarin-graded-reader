@@ -10,6 +10,7 @@ import { useRomanization } from '../hooks/useRomanization';
 import { useVocabPopover } from '../hooks/useVocabPopover';
 import { useReaderGeneration } from '../hooks/useReaderGeneration';
 import { useTextSelection } from '../hooks/useTextSelection';
+import { DEMO_READER_KEY } from '../lib/demoReader';
 import StorySection from './StorySection';
 import VocabularyList from './VocabularyList';
 import ComprehensionQuestions from './ComprehensionQuestions';
@@ -23,20 +24,23 @@ import './ReaderView.css';
 const _loadedKeys = new Set();
 
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar }) {
-  const { generatedReaders, learnedVocabulary, error, pendingReaders, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate, romanizationOn, translateButtons, verboseVocab, quotaWarning, providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
+  const { generatedReaders, learnedVocabulary, error, pendingReaders, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate, romanizationOn, translateButtons, verboseVocab, quotaWarning, providerKeys, activeProvider, activeModels, customBaseUrl, useStructuredOutput } = useAppSelector(s => ({
     generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, error: s.error,
     pendingReaders: s.pendingReaders, maxTokens: s.maxTokens,
     ttsVoiceURI: s.ttsVoiceURI, ttsKoVoiceURI: s.ttsKoVoiceURI, ttsYueVoiceURI: s.ttsYueVoiceURI, ttsSpeechRate: s.ttsSpeechRate,
     romanizationOn: s.romanizationOn, translateButtons: s.translateButtons, verboseVocab: s.verboseVocab, quotaWarning: s.quotaWarning,
     providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
+    useStructuredOutput: s.useStructuredOutput,
   }));
   const dispatch = useAppDispatch();
   const act = actions(dispatch);
   const isPending = !!(lessonKey && pendingReaders[lessonKey]);
 
   const reader = generatedReaders[lessonKey];
+  const isDemo = lessonKey === DEMO_READER_KEY;
   const scrollRef = useRef(null);
   const [confirmRegen, setConfirmRegen] = useState(false);
+  const [demoBannerDismissed, setDemoBannerDismissed] = useState(false);
   const [readerLength, setReaderLength] = useState(1200);
   const [translatingIndex, setTranslatingIndex] = useState(null);
 
@@ -122,7 +126,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
 
   const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModels, customBaseUrl });
   const { handleGenerate } = useReaderGeneration(
-    lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength
+    lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength, useStructuredOutput
   );
 
   // Cancel speech & close popovers when lesson changes
@@ -292,6 +296,14 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         </div>
       )}
 
+      {/* Demo reader banner */}
+      {isDemo && !demoBannerDismissed && (
+        <div className="reader-view__demo-banner">
+          <span>This is a sample reader. Add your API key in Settings to generate your own.</span>
+          <button className="reader-view__quota-dismiss" onClick={() => setDemoBannerDismissed(true)} aria-label="Dismiss">✕</button>
+        </div>
+      )}
+
       {/* Title + TTS */}
       <header className="reader-view__header">
         <div className="reader-view__header-text">
@@ -377,7 +389,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       )}
 
       {/* Mark complete */}
-      {!isCompleted && onMarkComplete && (
+      {!isDemo && !isCompleted && onMarkComplete && (
         <div className="reader-view__complete-row">
           <button className="btn btn-primary reader-view__complete-btn" onClick={onMarkComplete}>Mark Lesson Complete ✓</button>
         </div>
@@ -392,20 +404,22 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       )}
 
       {/* Regenerate */}
-      <div className="reader-view__regen-row">
-        {confirmRegen ? (
-          <>
-            <span className="reader-view__regen-prompt text-muted">Replace this reader?</span>
-            <button className="btn btn-ghost btn-sm" onClick={() => setConfirmRegen(false)}>Cancel</button>
-            <button className="btn btn-sm reader-view__regen-confirm-btn" onClick={handleRegenConfirm}>Regenerate</button>
-          </>
-        ) : (
-          <button className="btn btn-ghost btn-sm" onClick={() => setConfirmRegen(true)}>Regenerate reader</button>
-        )}
-      </div>
+      {!isDemo && (
+        <div className="reader-view__regen-row">
+          {confirmRegen ? (
+            <>
+              <span className="reader-view__regen-prompt text-muted">Replace this reader?</span>
+              <button className="btn btn-ghost btn-sm" onClick={() => setConfirmRegen(false)}>Cancel</button>
+              <button className="btn btn-sm reader-view__regen-confirm-btn" onClick={handleRegenConfirm}>Regenerate</button>
+            </>
+          ) : (
+            <button className="btn btn-ghost btn-sm" onClick={() => setConfirmRegen(true)}>Regenerate reader</button>
+          )}
+        </div>
+      )}
 
       {/* Continue story */}
-      {onContinueStory && reader.story && !isPending && (
+      {!isDemo && onContinueStory && reader.story && !isPending && (
         <div className="reader-view__continue-row">
           <button
             className="btn btn-primary"

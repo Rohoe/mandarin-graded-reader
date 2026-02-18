@@ -21,13 +21,18 @@ No `.env` file is required for basic use. The app can be used without an API key
 ```
 src/
   App.jsx                     Root layout; manages UI-only state (sidebar open,
-                              settings modal, stats modal, activeSyllabusId,
-                              standaloneKey, syllabusView 'home'|'lesson')
+                              settings modal, stats modal, flashcard modal,
+                              activeSyllabusId, standaloneKey, syllabusView
+                              'home'|'lesson')
   App.css                     Two-column layout, mobile header, toast notification
   index.css                   Design system: tokens, reset, shared primitives
 
   context/
-    AppContext.jsx             useReducer-based global store + AppProvider
+    AppContext.jsx             useReducer-based global store + AppProvider.
+                              Pure reducer (no side effects); all persistence via
+                              useEffect hooks in AppProvider keyed to state slices.
+                              Uses mountedRef to skip initial-render saves.
+                              Generated readers use prevReadersRef diffing.
                               Exports: AppContext, AppProvider, useApp (re-export)
     useApp.js                 useApp hook (separate file — ESLint fast-refresh rule)
     actions.js                actions() helper factory (separate file — same reason)
@@ -59,7 +64,14 @@ src/
                               first param and optional langId as last param (defaults to
                               'zh'). callLLM() dispatches to provider-specific functions:
                               callAnthropic, callOpenAI (also used for compatible), callGemini.
+                              Each call uses AbortController with 60s timeout; generateReader
+                              accepts an external signal for abort-on-unmount.
                               Shared fetchWithRetry() for exponential backoff on 5xx/429.
+                              Structured output: callLLMStructured() dispatches to
+                              callAnthropicStructured (tool use), callOpenAIStructured
+                              (json_schema), callGeminiStructured (responseMimeType).
+                              OpenAI-compatible falls back to standard text callLLM.
+                              READER_JSON_SCHEMA exported for structured output.
                               Prompt templates imported from src/prompts/.
     stats.js                  Derives learning statistics: computeStats(state), getStreak(),
                               getWordsByPeriod(). Used by StatsDashboard component.
@@ -84,15 +96,25 @@ src/
                               extractExamples() strips verbose LLM prefixes (e.g. "Example
                               sentence FROM STORY:", "Additional example:") via
                               stripExamplePrefix(). Detects "Brief usage note" lines.
+                              Vocab items include canonical fields (target, romanization,
+                              translation) alongside legacy aliases (chinese, pinyin, english).
+                              normalizeStructuredReader(rawJson, langId) converts structured
+                              JSON (from tool use / json_schema) into the same shape as
+                              parseReaderResponse; falls back to regex parser on invalid JSON.
     anki.js                   Generates tab-separated Anki .txt export; duplicate prevention.
                               Accepts langId — uses langConfig.fields for column mapping and
                               langConfig.proficiency.name for tags/filename.
     supabase.js               Supabase client singleton (reads VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY)
+    demoReader.js             Hardcoded HSK 2 demo reader ("小猫找朋友"). Exports
+                              DEMO_READER_KEY = 'standalone_demo' and DEMO_READER_DATA.
+                              Injected into initial state when no syllabi/readers exist.
+                              Removed automatically on first real generation.
     cloudSync.js              Cloud sync helpers: signInWithGoogle(), signInWithApple(), signOut(),
                               pushToCloud(state), pullFromCloud(). Auth uses Supabase OAuth with
                               redirectTo: window.location.origin. pushToCloud upserts all syncable
                               state to user_data table; pullFromCloud returns the row or null
-                              (PGRST116 = no row, not an error).
+                              (PGRST116 = no row, not an error). pushReaderToCloud serialized
+                              via module-level promise queue to prevent race conditions.
 
   prompts/
     syllabusPrompt.js         buildSyllabusPrompt(langConfig, topic, level, lessonCount)
@@ -110,7 +132,10 @@ src/
                               romanization to each segment. romanizeText() handles plain
                               text → ruby JSX conversion.
     useVocabPopover.js        Vocab map, click handler, popover positioning, close logic
-    useReaderGeneration.js    Generate/regenerate API calls + state updates
+    useReaderGeneration.js    Generate/regenerate API calls + state updates.
+                              Uses AbortController ref for abort-on-unmount.
+                              Accepts useStructuredOutput flag to switch between
+                              regex parser and normalizeStructuredReader.
 
   components/
     TopicForm                 Topic input + language selector (pill toggle: 中文 / 粵語 / 한국어)
@@ -136,7 +161,12 @@ src/
                               "Not yet synced". Dirty detection compares lastModified
                               vs cloudLastSynced timestamps. When not signed in, a
                               "Sign in" link appears below the label and opens Settings.
-                              Also shows "Stats" button to open the StatsDashboard modal.
+                              Also shows "Cards" button to open FlashcardReview and
+                              "Stats" button to open the StatsDashboard modal.
+                              Standalone readers with seriesId are grouped as
+                              collapsible series with episode numbers; ungrouped
+                              readers render as before. Demo readers show "(sample)"
+                              label and hide archive/delete buttons.
     SyllabusHome              Overview page for a syllabus (shown when syllabusView='home').
                               Displays: topic, HSK badge, date, AI-generated summary, lesson
                               list with completion status and Start/Review CTAs, Continue
@@ -145,17 +175,27 @@ src/
                               "Add more lessons" collapsible panel: slider 2–6, Generate button
                               calls onExtend(additionalCount). Shows a fixed LoadingIndicator
                               overlay while state.loading is true.
-    ReaderView                Main content area (~350 lines); orchestrates hooks and
-                              sub-components. Determines langId, sets data-lang attribute.
-                              Uses custom hooks: useTTS, useRomanization, useVocabPopover,
-                              useReaderGeneration. Reads romanizationOn and ttsSpeechRate
-                              from global state. TTS button rendered directly in the article
-                              header. Delegates story rendering to StorySection.
+    ReaderView                Main content area; orchestrates hooks and sub-components.
+                              Determines langId, sets data-lang attribute. Uses custom hooks:
+                              useTTS, useRomanization, useVocabPopover, useReaderGeneration.
+                              Reads romanizationOn, ttsSpeechRate, useStructuredOutput from
+                              global state. TTS button rendered directly in the article header.
+                              Delegates story rendering to StorySection. Demo reader detection:
+                              shows dismissible banner, hides Mark Complete / Regenerate /
+                              Continue Story for demo readers.
     StorySection              Renders story paragraphs with vocab buttons, TTS click-to-read,
                               and popover portal for vocab definitions.
     StatsDashboard/           Modal showing learning stats: vocab growth bar chart, per-language
                               breakdown, quiz scores, streak counter, activity counts.
                               Uses computeStats() from lib/stats.js. CSS-only charts.
+                              "Load full history" button merges stashed activity entries.
+                              "Review flashcards" button opens FlashcardReview modal.
+    FlashcardReview/          Modal with state machine: front → back → done. Shows
+                              target word in large script font; reveals romanization +
+                              translation on flip. Three judgment buttons (Got it / Almost
+                              / Missed it). Language filter pills when vocab spans multiple
+                              languages. Session summary on completion. Logs
+                              flashcard_reviewed activity.
     VocabularyList            Collapsible accordion of vocab cards with examples.
                               Accepts `renderChars` prop — applies ruby romanization to word headers
                               and example sentences when romanization toggle is on.
@@ -164,7 +204,8 @@ src/
     ComprehensionQuestions    Collapsible question list with interactive answer input and AI grading.
                               Input mode: textarea per question + "Grade My Answers" button (disabled
                               if no API key; shows warning). Results mode: per-question score badge
-                              (1–5) + feedback + optional suggested answer (shown when score < 5/5)
+                              (1–5) + feedback + toggleable suggested answer (always available,
+                              collapsed by default via "Show suggested answer" button)
                               + overall score panel. Calls gradeAnswers() from api.js; persists
                               userAnswers + gradingResults into the reader object via act.setReader().
                               State initialised from reader.userAnswers / reader.gradingResults so
@@ -191,20 +232,16 @@ src/
                               holds at ~97-98% until response arrives and component unmounts.
                               Reads activeProvider from state to show dynamic provider name
                               (e.g. "Connecting to OpenAI…" instead of hardcoded Claude).
-    Settings                  Sections in order: dark mode toggle, romanization toggle,
-                              verbose vocab toggle, reading speed slider (0.5×–2.0×), TTS
-                              voice selectors (Chinese + Korean + Cantonese), default HSK
-                              level, default TOPIK level, default YUE level, AI provider
-                              (provider pills with key-set indicator dots, collapsible model
-                              picker, API key input, base URL for custom endpoints), API
-                              output tokens slider (4096–16384), storage usage meter, backup
-                              & restore, cloud sync (sign-in + push/pull), save folder picker,
-                              danger zone (clear-all data).
-                              Model picker: collapsed by default showing "Model: **name**
-                              [Change]"; expands to <input> + <datalist> with curated
-                              suggestions and a "Reset to default" button. For
-                              openai_compatible: always expanded with preset pills
-                              (DeepSeek/Groq/Custom) + model name input.
+    Settings                  Tabbed modal with 4 tabs (AI Provider default):
+                              **AI Provider**: provider pills with key-set indicator dots,
+                              collapsible model picker, API key input, base URL for custom.
+                              **Reading**: dark mode, romanization, paragraph tools, verbose
+                              vocab, reading speed slider (0.5×–2.0×), TTS voice selectors,
+                              default HSK/TOPIK/YUE levels.
+                              **Sync**: storage usage meter, re-parse button, backup & restore,
+                              cloud sync (sign-in + push/pull), save folder picker.
+                              **Advanced**: output tokens slider (4096–16384), structured
+                              output toggle (opt-in), danger zone (clear-all data).
                               Sticky header (title + close button stay visible when scrolling).
                               Close button enlarged to 32×32px for easier tap target.
     SyncConflictDialog        Modal shown when local and cloud data differ (e.g., old browser
@@ -239,17 +276,20 @@ src/
     [syllabusId]: { lessonIndex: number, completedLessons: number[] },
   },
   standaloneReaders: Array<{          // metadata for one-off readers, newest first
-    key:       string,                // "standalone_<timestamp>"
-    topic:     string,
-    level:     number,
-    langId:    string,                // 'zh' | 'yue' | 'ko'
-    createdAt: number,
+    key:           string,            // "standalone_<timestamp>"
+    topic:         string,
+    level:         number,
+    langId:        string,            // 'zh' | 'yue' | 'ko'
+    createdAt:     number,
+    seriesId?:     string,            // groups continuation chains (parent's key)
+    episodeNumber?: number,           // 1-based episode within a series
+    isDemo?:       boolean,           // true for the built-in demo reader
   }>,
   generatedReaders:  { [lessonKey]: parsedReaderData },  // in-memory + localStorage + file
                      // parsedReaderData fields: raw, titleZh, titleEn, story, vocabulary[],
                      //   questions[], ankiJson[], grammarNotes[], parseError,
                      //   userAnswers, gradingResults, topic, level, langId, lessonKey
-  learnedVocabulary: { [targetWord]: { pinyin, english, langId?, dateAdded } },
+  learnedVocabulary: { [targetWord]: { romanization, pinyin, translation, english, langId?, dateAdded } },
   exportedWords:     Set<string>,     // serialised as array in localStorage + file
   loading:           boolean,
   loadingMessage:    string,
@@ -265,6 +305,7 @@ src/
   ttsSpeechRate:     number,          // TTS speed multiplier (0.5–2.0), default 1.0
   romanizationOn:    boolean,         // Show ruby romanization annotations (persisted, default false)
   verboseVocab:      boolean,         // Show example translations in vocab + comprehension + Anki export (default false)
+  useStructuredOutput: boolean,      // Use provider-native structured output (default false)
   // Background generation (ephemeral, not persisted)
   pendingReaders:    { [lessonKey]: true },  // keys currently being generated
   // Learning activity log (persisted to localStorage)
@@ -309,10 +350,13 @@ The app supports multiple LLM providers via a registry in `src/lib/providers.js`
 
 **Key architecture:**
 - `callLLM(llmConfig, systemPrompt, userMessage, maxTokens)` dispatches to provider-specific functions
+- `callLLMStructured(...)` dispatches to structured output variants (Anthropic tool use, OpenAI json_schema, Gemini responseMimeType); OpenAI-compatible falls back to `callLLM`
+- All calls use `AbortController` with 60s timeout; `generateReader` accepts an external `signal` for abort-on-unmount
 - Shared `fetchWithRetry()` handles exponential backoff (2 retries for 5xx/429)
 - Prompt templates are provider-agnostic — built from `langConfig.prompts` fragments
 - **Syllabus prompt:** Returns a JSON object `{ summary: string, lessons: [] }` (no markdown fences). Falls back gracefully if the LLM returns a plain array (old format).
-- **Reader prompt:** Returns structured markdown with sections 1–6; section 5 is an ` ```anki-json ``` ` block
+- **Reader prompt (text mode):** Returns structured markdown with sections 1–6; section 5 is an ` ```anki-json ``` ` block
+- **Reader prompt (structured mode):** Returns JSON matching `READER_JSON_SCHEMA` with fields: `title_target`, `title_en`, `story`, `vocabulary[]`, `questions[]`, `grammar_notes[]`
 
 The `learnedVocabulary` object keys are passed to the LLM in each new reader request so it avoids re-introducing already-covered words.
 
@@ -320,11 +364,14 @@ The `learnedVocabulary` object keys are passed to the LLM in each new reader req
 
 ## Response parsing (lib/parser.js)
 
-The LLM's reader response is parsed with regex section matching:
+**Regex parser (default):** The LLM's reader response is parsed with regex section matching:
 - Sections delimited by `### 1. Title`, `### 2. Story`, `### 3. Vocabulary`, `### 4. Comprehension`, `### 5. Anki`
 - If section extraction fails, the component falls back to showing raw text with a "Regenerate" button
 - `parseStorySegments()` splits story text into `{ type: 'text'|'bold'|'italic', content }` segments for rendering
 - `parseQuestions()` returns `{ text, translation }` objects; extracts trailing parenthesized English translations (e.g. `问题？(Translation?)`) when present
+- Vocabulary items include both canonical fields (`target`, `romanization`, `translation`) and legacy aliases (`chinese`, `pinyin`, `english`) for backward compatibility
+
+**Structured parser (opt-in):** `normalizeStructuredReader(rawJson, langId)` converts structured JSON from provider-native structured output into the same shape as `parseReaderResponse`. Falls back to the regex parser if JSON parsing fails. Vocabulary, questions, and grammar notes are mapped directly from the JSON schema fields.
 
 ## Anki export format
 
@@ -420,7 +467,7 @@ The app is hosted at: `https://mandarin-graded-reader.vercel.app` (update when f
 - **API key security:** Provider keys are in `localStorage` in plain text (never synced to file or cloud). Acceptable for personal use; a backend proxy would be needed for shared deployments.
 - **localStorage quota:** ~5MB limit. The Settings page shows usage %. If many long readers are cached, old ones may need to be cleared manually.
 - **File System Access API:** Only available in Chromium-based browsers (Chrome, Edge). Not supported in Firefox or Safari. Falls back gracefully to localStorage-only mode.
-- **Parsing robustness:** The regex parser uses `#{2,4}\s*N\.` to match section headings, tolerating minor formatting variation (2–4 hash marks, any section title text). If section extraction fails entirely, the raw text fallback is shown. `parseVocabularySection` uses two patterns: Pattern A handles `(pinyin)` or `[pinyin]` with any dash/colon separator; Pattern B handles no-bracket format (pinyin backfilled from ankiJson). Any word in the ankiJson block but absent from the vocab section is appended automatically, ensuring all bolded story words are click-to-define.
+- **Parsing robustness:** The regex parser uses `#{2,4}\s*N\.` to match section headings, tolerating minor formatting variation (2–4 hash marks, any section title text). If section extraction fails entirely, the raw text fallback is shown. `parseVocabularySection` uses two patterns: Pattern A handles `(pinyin)` or `[pinyin]` with any dash/colon separator; Pattern B handles no-bracket format (pinyin backfilled from ankiJson). Any word in the ankiJson block but absent from the vocab section is appended automatically, ensuring all bolded story words are click-to-define. The opt-in structured output mode bypasses regex entirely but is not supported by OpenAI-compatible endpoints.
 - **No streaming:** Reader generation can take 15–30s with no partial content shown; only the ink-character animation plays during this time.
 - **Mobile:** Uses `viewport-fit=cover` + `env(safe-area-inset-*)` for notch/Dynamic Island support, `100dvh` for iOS Safari viewport height, `pointerdown` (not `mousedown`) for the vocab popover close handler, and body scroll lock when the sidebar overlay is open.
 - **Mobile sidebar:** The slide-in animation is handled entirely by the `.app-sidebar` wrapper in `App.css` (toggling `.app-sidebar--open`). `SyllabusPanel.css` must NOT apply its own `position: fixed` / `transform` on mobile — the inner `.syllabus-panel` just fills the wrapper with `width: 100%; height: 100%`.

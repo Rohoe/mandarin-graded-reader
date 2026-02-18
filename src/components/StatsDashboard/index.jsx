@@ -1,12 +1,25 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import { computeStats } from '../../lib/stats';
 import { getAllLanguages } from '../../lib/languages';
+import { loadActivityStash } from '../../lib/storage';
 import './StatsDashboard.css';
 
-export default function StatsDashboard({ onClose }) {
+export default function StatsDashboard({ onClose, onShowFlashcards }) {
   const { state } = useApp();
-  const stats = useMemo(() => computeStats(state), [state]);
+  const [fullActivity, setFullActivity] = useState(null);
+  const stateForStats = useMemo(() => {
+    if (!fullActivity) return state;
+    return { ...state, learningActivity: fullActivity };
+  }, [state, fullActivity]);
+  const stats = useMemo(() => computeStats(stateForStats), [stateForStats]);
+
+  const handleLoadFullHistory = useCallback(() => {
+    const stash = loadActivityStash();
+    if (stash.length > 0) {
+      setFullActivity([...stash, ...state.learningActivity]);
+    }
+  }, [state.learningActivity]);
   const languages = getAllLanguages();
 
   const maxBarCount = Math.max(...stats.wordsByPeriod.map(b => b.count), 1);
@@ -38,6 +51,15 @@ export default function StatsDashboard({ onClose }) {
             <span className="stats-card__label">Avg Quiz Score</span>
           </div>
         </div>
+
+        {/* Flashcard review entry point */}
+        {stats.totalWords > 0 && onShowFlashcards && (
+          <div style={{ textAlign: 'center' }}>
+            <button className="btn btn-secondary btn-sm" onClick={onShowFlashcards}>
+              Review flashcards
+            </button>
+          </div>
+        )}
 
         {/* Vocab over time chart */}
         {stats.wordsByPeriod.length > 0 && (
@@ -90,6 +112,16 @@ export default function StatsDashboard({ onClose }) {
             <span>{stats.syllabusCount} syllabi created</span>
             <span>{stats.standaloneCount} standalone readers</span>
           </div>
+          {!fullActivity && (
+            <button className="btn btn-ghost btn-xs" onClick={handleLoadFullHistory} style={{ marginTop: 'var(--space-2)' }}>
+              Load full history
+            </button>
+          )}
+          {fullActivity && (
+            <p className="text-muted" style={{ fontSize: 'var(--text-xs)', marginTop: 'var(--space-2)' }}>
+              Showing full history ({fullActivity.length} entries)
+            </p>
+          )}
         </div>
       </div>
     </div>

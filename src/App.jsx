@@ -5,12 +5,14 @@ import { actions } from './context/actions';
 import { generateReader, extendSyllabus } from './lib/api';
 import { buildLLMConfig } from './lib/llmConfig';
 import { loadLastSession, saveLastSession } from './lib/storage';
-import { parseReaderResponse } from './lib/parser';
+import { parseReaderResponse, normalizeStructuredReader } from './lib/parser';
+import { DEMO_READER_KEY } from './lib/demoReader';
 import SyllabusPanel from './components/SyllabusPanel';
 import SyllabusHome from './components/SyllabusHome';
 import ReaderView from './components/ReaderView';
 import Settings from './components/Settings';
 import StatsDashboard from './components/StatsDashboard';
+import FlashcardReview from './components/FlashcardReview';
 import SyncConflictDialog from './components/SyncConflictDialog';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingIndicator from './components/LoadingIndicator';
@@ -36,9 +38,10 @@ function AppShell() {
   const act = actions(dispatch);
   const { syllabi, syllabusProgress } = state;
 
-  const [showSettings, setShowSettings]     = useState(false);
-  const [showStats,    setShowStats]        = useState(false);
-  const [sidebarOpen,  setSidebarOpen]      = useState(false);
+  const [showSettings,   setShowSettings]     = useState(false);
+  const [showStats,      setShowStats]       = useState(false);
+  const [showFlashcards, setShowFlashcards]  = useState(false);
+  const [sidebarOpen,    setSidebarOpen]     = useState(false);
 
   // Restore last session, falling back to first non-archived syllabus
   const [activeSyllabusId, setActiveSyllabusId] = useState(() => {
@@ -53,7 +56,10 @@ function AppShell() {
   });
   const [standaloneKey, setStandaloneKey] = useState(() => {
     const session = loadLastSession();
-    return session?.standaloneKey || null;
+    if (session?.standaloneKey) return session.standaloneKey;
+    // Auto-open demo reader for new users
+    const hasDemo = state.standaloneReaders.some(r => r.isDemo);
+    return hasDemo ? DEMO_READER_KEY : null;
   });
 
   // Persist session whenever navigation state changes
@@ -111,6 +117,15 @@ function AppShell() {
   }
 
   function handleMarkComplete() {
+    // Learn vocabulary from this reader on completion
+    const reader = state.generatedReaders[activeLessonKey];
+    if (reader?.ankiJson?.length > 0) {
+      act.addVocabulary(reader.ankiJson.map(c => ({
+        chinese: c.chinese, korean: c.korean, target: c.target,
+        pinyin: c.pinyin, romanization: c.romanization, english: c.english,
+        langId: currentSyllabus?.langId || reader.langId || 'zh',
+      })));
+    }
     act.markLessonComplete(activeSyllabusId, lessonIndex);
     if (currentSyllabus && lessonIndex < lessons.length - 1) {
       act.setLessonIndex(activeSyllabusId, lessonIndex + 1);
@@ -146,18 +161,29 @@ function AppShell() {
   async function handleContinueStory({ story, topic, level, langId }) {
     const newKey = `standalone_${Date.now()}`;
     const continuationTopic = `Continuation: ${topic}`;
-    act.addStandaloneReader({ key: newKey, topic: continuationTopic, level, langId, createdAt: Date.now() });
+
+    // Determine series context from the current reader
+    const parentKey = standaloneKey || activeLessonKey;
+    const parentMeta = state.standaloneReaders.find(r => r.key === parentKey);
+    const seriesId = parentMeta?.seriesId || parentKey;
+    const episodeNumber = (parentMeta?.episodeNumber || 1) + 1;
+
+    // Retroactively tag parent as episode 1 if it wasn't in a series yet
+    if (parentMeta && !parentMeta.seriesId) {
+      act.updateStandaloneReaderMeta({ key: parentKey, seriesId, episodeNumber: 1 });
+    }
+
+    act.addStandaloneReader({ key: newKey, topic: continuationTopic, level, langId, createdAt: Date.now(), seriesId, episodeNumber });
     act.startPendingReader(newKey);
     setStandaloneKey(newKey);
     setSidebarOpen(false);
     try {
       const llmConfig = buildLLMConfig(state);
-      const raw    = await generateReader(llmConfig, continuationTopic, level, state.learnedVocabulary, 1200, state.maxTokens, story, langId);
-      const parsed = parseReaderResponse(raw, langId);
+      const raw    = await generateReader(llmConfig, continuationTopic, level, state.learnedVocabulary, 1200, state.maxTokens, story, langId, { structured: state.useStructuredOutput });
+      const parsed = state.useStructuredOutput
+        ? normalizeStructuredReader(raw, langId)
+        : parseReaderResponse(raw, langId);
       pushGeneratedReader(newKey, { ...parsed, topic: continuationTopic, level, langId, lessonKey: newKey });
-      if (parsed.ankiJson?.length > 0) {
-        act.addVocabulary(parsed.ankiJson.map(c => ({ chinese: c.chinese, korean: c.korean, pinyin: c.pinyin, romanization: c.romanization, english: c.english, langId })));
-      }
       act.notify('success', 'Continuation reader ready!');
     } catch (err) {
       act.removeStandaloneReader(newKey);
@@ -230,6 +256,7 @@ function AppShell() {
             onNewSyllabus={handleNewSyllabus}
             onShowSettings={() => setShowSettings(true)}
             onShowStats={() => setShowStats(true)}
+            onShowFlashcards={() => setShowFlashcards(true)}
             onStandaloneGenerated={onStandaloneGenerated}
             onSwitchSyllabus={handleSwitchSyllabus}
             onSelectStandalone={handleSelectStandalone}
@@ -285,7 +312,14 @@ function AppShell() {
       {/* ─ Stats modal ──────────────────────────────────── */}
       {showStats && (
         <ErrorBoundary name="stats">
-          <StatsDashboard onClose={() => setShowStats(false)} />
+          <StatsDashboard onClose={() => setShowStats(false)} onShowFlashcards={() => { setShowStats(false); setShowFlashcards(true); }} />
+        </ErrorBoundary>
+      )}
+
+      {/* ─ Flashcard review modal ──────────────────────────── */}
+      {showFlashcards && (
+        <ErrorBoundary name="flashcards">
+          <FlashcardReview onClose={() => setShowFlashcards(false)} />
         </ErrorBoundary>
       )}
 

@@ -44,6 +44,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
   const [visibleQTranslations, setVisibleQTranslations] = useState(new Set());
   const [fetchedQTranslations, setFetchedQTranslations] = useState({});
   const [translatingQIndex, setTranslatingQIndex] = useState(null);
+  const [showSuggested, setShowSuggested] = useState({});
 
   // Refs for debounced auto-save — read current values without stale closures
   const debounceRef = useRef(null);
@@ -77,6 +78,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
     setAnswers(reader?.userAnswers ?? {});
     setResults(reader?.gradingResults ?? null);
     setGradingError(null);
+    setShowSuggested({});
   }, [lessonKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Flush pending save on unmount
@@ -235,9 +237,18 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                               {results.feedback[i].feedback}
                             </p>
                             {results.feedback[i].suggestedAnswer && (
-                              <p className="comprehension__suggested-answer">
-                                <strong>Suggested answer:</strong> {results.feedback[i].suggestedAnswer}
-                              </p>
+                              showSuggested[i] ? (
+                                <p className="comprehension__suggested-answer">
+                                  <strong>Suggested answer:</strong> {results.feedback[i].suggestedAnswer}
+                                </p>
+                              ) : (
+                                <button
+                                  className="btn btn-ghost btn-xs comprehension__show-suggested"
+                                  onClick={() => setShowSuggested(prev => ({ ...prev, [i]: true }))}
+                                >
+                                  Show suggested answer
+                                </button>
+                              )
                             )}
                           </div>
                         </div>

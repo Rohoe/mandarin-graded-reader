@@ -14,10 +14,11 @@ export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes,
   if (!ankiJson || ankiJson.length === 0) return null;
 
   // Calculate preview without triggering export
-  const grammarCards = (grammarNotes || []).map(n => ({ chinese: n.pattern }));
+  const grammarCards = (grammarNotes || []).map(n => ({ target: n.pattern, chinese: n.pattern }));
   const allCards     = [...ankiJson, ...grammarCards];
-  const newCount     = allCards.filter(c => c.chinese && !exportedWords.has(c.chinese)).length;
-  const skipCount    = allCards.filter(c => c.chinese && exportedWords.has(c.chinese)).length;
+  const getWord = c => c.target || c.chinese || c.korean || '';
+  const newCount     = allCards.filter(c => getWord(c) && !exportedWords.has(getWord(c))).length;
+  const skipCount    = allCards.filter(c => getWord(c) && exportedWords.has(getWord(c))).length;
 
   const allExported = newCount === 0;
 

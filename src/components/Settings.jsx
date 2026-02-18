@@ -7,10 +7,18 @@ import { signInWithGoogle, signInWithApple, signOut, pushToCloud } from '../lib/
 import { PROVIDERS, getProvider } from '../lib/providers';
 import './Settings.css';
 
+const TABS = [
+  { id: 'ai',       label: 'AI Provider' },
+  { id: 'reading',  label: 'Reading' },
+  { id: 'sync',     label: 'Sync' },
+  { id: 'advanced', label: 'Advanced' },
+];
+
 export default function Settings({ onClose }) {
   const { state, dispatch, pickSaveFolder, removeSaveFolder } = useApp();
   const act = actions(dispatch);
 
+  const [activeTab, setActiveTab] = useState('ai');
   const [newKey, setNewKey]           = useState('');
   const [showKey, setShowKey]         = useState(false);
   const [customModelInput, setCustomModelInput] = useState(state.customModelName || '');
@@ -151,7 +159,21 @@ export default function Settings({ onClose }) {
           <button className="btn btn-ghost settings-panel__close" onClick={onClose} aria-label="Close settings">✕</button>
         </div>
 
-        <hr className="divider" />
+        {/* Tab bar */}
+        <div className="settings-tabs">
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              className={`settings-tabs__tab ${activeTab === tab.id ? 'settings-tabs__tab--active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ═══ Reading tab ═══ */}
+        {activeTab === 'reading' && (<>
 
         {/* Dark mode */}
         <section className="settings-section">
@@ -446,7 +468,10 @@ export default function Settings({ onClose }) {
           </select>
         </section>
 
-        <hr className="divider" />
+        </>)}
+
+        {/* ═══ AI Provider tab ═══ */}
+        {activeTab === 'ai' && (<>
 
         {/* AI Provider */}
         <section className="settings-section">
@@ -618,33 +643,10 @@ export default function Settings({ onClose }) {
           </form>
         </section>
 
-        <hr className="divider" />
+        </>)}
 
-        {/* Max output tokens */}
-        <section className="settings-section">
-          <h3 className="settings-section__title form-label">API Output Tokens</h3>
-          <p className="settings-section__desc text-muted">
-            Maximum output tokens per generation. Increase this if readers are being cut off.
-          </p>
-          <div className="settings-slider-row">
-            <span className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>4 096</span>
-            <span className="settings-slider-value">{state.maxTokens.toLocaleString()}</span>
-            <span className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>16 384</span>
-          </div>
-          <input
-            type="range"
-            className="settings-slider"
-            min={4096} max={16384} step={1024}
-            value={state.maxTokens}
-            onChange={e => act.setMaxTokens(e.target.value)}
-          />
-          <p className="settings-section__desc text-muted" style={{ fontSize: 'var(--text-xs)' }}>
-            Current: <code className="settings-key-preview">{state.maxTokens.toLocaleString()} tokens</code>
-            {state.maxTokens > 8192 && ' — Note: values above 8,192 may not be supported by all API tiers.'}
-          </p>
-        </section>
-
-        <hr className="divider" />
+        {/* ═══ Sync tab ═══ */}
+        {activeTab === 'sync' && (<>
 
         {/* localStorage usage */}
         <section className="settings-section">
@@ -807,6 +809,59 @@ export default function Settings({ onClose }) {
           )}
         </section>
 
+        </>)}
+
+        {/* ═══ Advanced tab ═══ */}
+        {activeTab === 'advanced' && (<>
+
+        {/* Max output tokens */}
+        <section className="settings-section">
+          <h3 className="settings-section__title form-label">API Output Tokens</h3>
+          <p className="settings-section__desc text-muted">
+            Maximum output tokens per generation. Increase this if readers are being cut off.
+          </p>
+          <div className="settings-slider-row">
+            <span className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>4 096</span>
+            <span className="settings-slider-value">{state.maxTokens.toLocaleString()}</span>
+            <span className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>16 384</span>
+          </div>
+          <input
+            type="range"
+            className="settings-slider"
+            min={4096} max={16384} step={1024}
+            value={state.maxTokens}
+            onChange={e => act.setMaxTokens(e.target.value)}
+          />
+          <p className="settings-section__desc text-muted" style={{ fontSize: 'var(--text-xs)' }}>
+            Current: <code className="settings-key-preview">{state.maxTokens.toLocaleString()} tokens</code>
+            {state.maxTokens > 8192 && ' — Note: values above 8,192 may not be supported by all API tiers.'}
+          </p>
+        </section>
+
+        <hr className="divider" />
+
+        {/* Structured output */}
+        <section className="settings-section">
+          <div className="settings-toggle-row">
+            <div>
+              <h3 className="settings-section__title form-label">Structured Output</h3>
+              <p className="settings-section__desc text-muted">
+                Use provider-native structured output (tool use for Anthropic, JSON schema for OpenAI, response schema for Gemini).
+                May improve parsing reliability but is not supported by all providers.
+                OpenAI-compatible endpoints fall back to the standard text parser.
+              </p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={state.useStructuredOutput}
+              className={`settings-toggle ${state.useStructuredOutput ? 'settings-toggle--on' : ''}`}
+              onClick={() => act.setStructuredOutput(!state.useStructuredOutput)}
+            >
+              <span className="settings-toggle__thumb" />
+            </button>
+          </div>
+        </section>
+
         <hr className="divider" />
 
         {/* Danger zone */}
@@ -837,6 +892,8 @@ export default function Settings({ onClose }) {
             )}
           </div>
         </section>
+
+        </>)}
       </div>
     </div>
   );

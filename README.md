@@ -12,11 +12,13 @@ A single-page web app for generating graded readers in **Mandarin Chinese**, **C
 - **Anki Export** — Download flashcard files (.txt) with duplicate prevention; includes both vocabulary cards and grammar pattern cards (tagged `Grammar`)
 - **Offline persistence** — All data stored in `localStorage`; pick up where you left off
 - **Grammar Notes** — Each reader includes 3–5 collapsible grammar pattern cards explaining structures used in the story, with examples
-- **Comprehension grading** — Type answers to comprehension questions and get AI-powered feedback with per-question scores; imperfect answers include a suggested model answer; results persist across sessions
+- **Comprehension grading** — Type answers to comprehension questions and get AI-powered feedback with per-question scores; every question includes a toggleable suggested model answer; results persist across sessions
 - **Syllabus home page** — Overview of all lessons with completion badges, a summary, Continue CTA, and delete button with confirmation
 - **Configurable length** — Sliders for syllabus lesson count (2–12) and reader story length (150–2000 characters). Short readers (≤250 chars) automatically scale down to fewer vocabulary words, questions, and grammar notes — ideal for absolute beginners
 - **Dark mode** — Toggle in Settings; persists across sessions. Overrides all colour tokens via `[data-theme="dark"]` on the root element
-- **Story continuation** — "Next episode →" button generates a follow-up reader that continues the narrative from the previous story, maintaining characters and setting
+- **Story continuation** — "Next episode →" button generates a follow-up reader that continues the narrative from the previous story, maintaining characters and setting. Continuation chains are grouped as series in the sidebar with episode numbers
+- **Flashcard review** — Built-in flashcard mode for reviewing learned vocabulary. Front shows the target word; flip to reveal romanization and translation. Judge each card as "Got it", "Almost", or "Missed it". Filter by language. Accessible from the sidebar footer or Stats dashboard
+- **Demo reader** — New users see a sample HSK 2 reader on first launch to explore the UI before adding an API key
 - **Extend syllabus** — "Add more lessons" panel on the syllabus home page appends 2–6 AI-generated lessons to an existing syllabus
 - **Collapsible sidebar sections** — Syllabus lesson list and standalone readers list can be collapsed/expanded via caret buttons in their section headers
 - **Text-to-speech** — 🔊 icon button reads the full story aloud; click any paragraph to hear just that sentence. Separate voice preferences for Chinese, Korean, and Cantonese, configurable in Settings. Adjustable reading speed (0.5×–2.0×) via slider in Settings. Auto-selects the best available voice for each language (Chinese: Google neural, macOS Tingting/Meijia; Korean: Google, Yuna)
@@ -26,7 +28,8 @@ A single-page web app for generating graded readers in **Mandarin Chinese**, **C
 - **Comprehension question translations** — When Verbose Vocabulary is enabled, comprehension questions display their English translations below the target-language text
 - **Disk persistence** — Optionally save all data as JSON files to a folder on your computer (Chrome/Edge only)
 - **Cloud Sync** — Sign in with Google or Apple to push/pull all your data to/from Supabase. Manual sync via explicit Push/Pull buttons in Settings; API key stays local. The sidebar footer shows sync status: signed-in state, "Synced"/"Unsynced" indicator based on whether local data has changed since the last push
-- **Learning Stats Dashboard** — Track vocabulary growth, quiz scores, day streaks, and per-language breakdowns. CSS-only bar charts show words learned over time. Accessible via the "Stats" button in the sidebar footer
+- **Learning Stats Dashboard** — Track vocabulary growth, quiz scores, day streaks, and per-language breakdowns. CSS-only bar charts show words learned over time. Activity log stashes entries older than 90 days to avoid memory bloat; "Load full history" button in Stats. Accessible via the "Stats" button in the sidebar footer
+- **Structured output** — Opt-in setting (Settings → Advanced) to use provider-native structured output (Anthropic tool use, OpenAI JSON schema, Gemini response schema) for more reliable parsing. Default off; OpenAI-compatible endpoints fall back to the standard regex parser
 - **PWA / Offline Support** — Install the app on your home screen; cached readers and the full UI work offline. Service worker powered by Workbox with runtime caching for Google Fonts
 
 ## Setup
@@ -87,7 +90,7 @@ Use the sliders in the sidebar form to control:
 - **Lessons** (syllabus mode) — how many lessons to generate (2–12, default 6)
 - **Reader Length** — target story length in characters (150–2000, default 1200). Readers ≤250 chars use fewer vocab words (3–5), questions (2–3), and grammar notes (1–2)
 
-To fix truncated readers, open **Settings → API Output Tokens** and drag the slider up. The default is 8,192 tokens. Values above 8,192 may require an API tier that supports extended output.
+To fix truncated readers, open **Settings → Advanced → API Output Tokens** and drag the slider up. The default is 8,192 tokens. Values above 8,192 may require an API tier that supports extended output.
 
 ### Optional: Save to disk
 

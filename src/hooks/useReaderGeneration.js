@@ -1,15 +1,21 @@
-import { useCallback, useContext } from 'react';
+import { useCallback, useContext, useRef, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import { useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { generateReader } from '../lib/api';
-import { parseReaderResponse } from '../lib/parser';
+import { parseReaderResponse, normalizeStructuredReader } from '../lib/parser';
 import { getLang } from '../lib/languages';
 
-export function useReaderGeneration(lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength) {
+export function useReaderGeneration(lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength, useStructuredOutput = false) {
   const dispatch = useAppDispatch();
   const { pushGeneratedReader } = useContext(AppContext);
   const act = actions(dispatch);
+  const abortRef = useRef(null);
+
+  // Abort in-flight request on unmount
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
 
   const handleGenerate = useCallback(async () => {
     if (isPending) return;
@@ -31,24 +37,31 @@ export function useReaderGeneration(lessonKey, lessonMeta, reader, langId, isPen
       return;
     }
 
+    // Abort any previous in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     act.startPendingReader(lessonKey);
     act.clearError();
     try {
-      const raw    = await generateReader(llmConfig, topic, level, learnedVocabulary, readerLength, maxTokens, null, readerLangId);
-      const parsed = parseReaderResponse(raw, readerLangId);
+      const raw    = await generateReader(llmConfig, topic, level, learnedVocabulary, readerLength, maxTokens, null, readerLangId, { signal: controller.signal, structured: useStructuredOutput });
+      const parsed = useStructuredOutput
+        ? normalizeStructuredReader(raw, readerLangId)
+        : parseReaderResponse(raw, readerLangId);
       pushGeneratedReader(lessonKey, { ...parsed, topic, level, langId: readerLangId, lessonKey });
-      if (parsed.ankiJson?.length > 0) {
-        act.addVocabulary(parsed.ankiJson.map(c => ({
-          chinese: c.chinese, korean: c.korean, pinyin: c.pinyin, romanization: c.romanization, english: c.english, langId: readerLangId,
-        })));
-      }
       act.notify('success', `Reader ready: ${lessonMeta?.title_en || topic}`);
     } catch (err) {
-      act.notify('error', `Generation failed: ${err.message.slice(0, 80)}`);
+      if (err.message?.includes('timed out') || err.name === 'AbortError') {
+        act.notify('error', 'Request timed out after 60 seconds. Try again or switch to a faster provider.');
+      } else {
+        act.notify('error', `Generation failed: ${err.message.slice(0, 80)}`);
+      }
     } finally {
       act.clearPendingReader(lessonKey);
+      if (abortRef.current === controller) abortRef.current = null;
     }
-  }, [isPending, lessonKey, lessonMeta, reader, langId, llmConfig, learnedVocabulary, readerLength, maxTokens, act, pushGeneratedReader]);
+  }, [isPending, lessonKey, lessonMeta, reader, langId, llmConfig, learnedVocabulary, readerLength, maxTokens, useStructuredOutput, act, pushGeneratedReader]);
 
   return { handleGenerate, act };
 }

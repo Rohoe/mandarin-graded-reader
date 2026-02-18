@@ -17,12 +17,12 @@ Do NOT echo the question or answer text back. Use only ASCII characters in keys.
     {
       "score": "X/5",
       "feedback": "Specific feedback.",
-      "suggestedAnswer": "A model answer (omit this field or leave empty string if score is 5/5)."
+      "suggestedAnswer": "A concise model answer."
     }
   ]
 }
 
 Score 1–5: 5=fully correct, 4=mostly correct, 3=partial, 2=mostly wrong, 1=incorrect/blank.
 Overall score = sum / (questions × 5).
-Include "suggestedAnswer" only when score < 5. It should be a concise ideal answer in the same language the student used (English or ${p.targetLanguage}).`;
+Always include "suggestedAnswer" for every question, even when score is 5/5. It should be a concise ideal answer in the same language the student used (English or ${p.targetLanguage}).`;
 }

@@ -208,3 +208,49 @@
 .settings-toggle--on .settings-toggle__thumb {
   transform: translateX(20px);
 }
+
+/* ── Settings tabs ──────────────────────────────────────────── */
+.settings-tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-2);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.settings-tabs__tab {
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: none;
+  font-size: var(--text-sm);
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius) var(--radius) 0 0;
+  white-space: nowrap;
+  transition: color var(--transition-fast), background var(--transition-fast);
+  position: relative;
+}
+
+.settings-tabs__tab:hover {
+  color: var(--color-text);
+  background: var(--color-bg-elevated);
+}
+
+.settings-tabs__tab--active {
+  color: var(--color-accent);
+}
+
+.settings-tabs__tab--active::after {
+  content: '';
+  position: absolute;
+  bottom: calc(-1 * var(--space-2) - 1px);
+  left: var(--space-2);
+  right: var(--space-2);
+  height: 2px;
+  background: var(--color-accent);
+  border-radius: 1px;
+}

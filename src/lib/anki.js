@@ -31,8 +31,11 @@ export function prepareExport(ankiJson, exportedWords, langId = DEFAULT_LANG_ID)
 function grammarNotesToCards(grammarNotes) {
   if (!grammarNotes?.length) return [];
   return grammarNotes.map(note => ({
+    target:           note.pattern,
     chinese:          note.pattern,
+    romanization:     '',
     pinyin:           '',
+    translation:      note.label,
     english:          note.label,
     example_story:    note.example     || '',
     usage_note_story: note.explanation || '',

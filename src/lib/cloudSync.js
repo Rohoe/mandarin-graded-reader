@@ -35,8 +35,16 @@ export async function pushToCloud(state) {
   if (error) throw error;
 }
 
+// Serialize concurrent reader pushes to prevent read-modify-write races.
+let _readerSyncQueue = Promise.resolve();
+
 // Merges a single newly-generated reader into the cloud row (read-then-write).
-export async function pushReaderToCloud(lessonKey, readerData) {
+export function pushReaderToCloud(lessonKey, readerData) {
+  _readerSyncQueue = _readerSyncQueue.then(() => _pushReaderToCloudImpl(lessonKey, readerData)).catch(() => {});
+  return _readerSyncQueue;
+}
+
+async function _pushReaderToCloudImpl(lessonKey, readerData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not signed in');
   const { data } = await supabase

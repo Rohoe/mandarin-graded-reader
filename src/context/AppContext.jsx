@@ -23,16 +23,16 @@ import {
   saveStandaloneReaders,
   loadReader,
   loadReaderIndex,
-  saveReader,
   saveReaderSafe,
   deleteReader,
   clearReaders,
+  saveReader,
   loadLearnedVocabulary,
-  addLearnedVocabulary,
-  clearLearnedVocabulary,
+  mergeVocabulary,
+  saveLearnedVocabulary,
   loadExportedWords,
-  addExportedWords,
-  clearExportedWords,
+  mergeExportedWords,
+  saveExportedWordsFull,
   clearAllAppData,
   setDirectoryHandle,
   loadMaxTokens,
@@ -61,10 +61,13 @@ import {
   saveTranslateButtons,
   loadVerboseVocab,
   saveVerboseVocab,
+  loadStructuredOutput,
+  saveStructuredOutput,
   loadLastModified,
   saveLastModified,
   loadLearningActivity,
   saveLearningActivity,
+  stashOldActivity,
 } from '../lib/storage';
 import {
   loadDirectoryHandle,
@@ -76,12 +79,25 @@ import {
   isSupported,
 } from '../lib/fileStorage';
 import { pushToCloud, pullFromCloud, pushReaderToCloud, detectConflict } from '../lib/cloudSync';
+import { DEMO_READER_KEY, DEMO_READER_DATA } from '../lib/demoReader';
 
 // ── Initial state ─────────────────────────────────────────────
 
 function buildInitialState() {
   const providerKeys   = loadProviderKeys();
   const activeProvider = loadActiveProvider();
+  const syllabi = normalizeSyllabi(loadSyllabi());
+  const standaloneReaders = normalizeStandaloneReaders(loadStandaloneReaders());
+
+  // Inject demo reader for new users (no syllabi, no standalone readers)
+  const isEmpty = syllabi.length === 0 && standaloneReaders.length === 0;
+  const demoStandalone = isEmpty
+    ? [{ key: DEMO_READER_KEY, topic: DEMO_READER_DATA.topic, level: 2, langId: 'zh', createdAt: Date.now(), isDemo: true }]
+    : standaloneReaders;
+  const demoReaders = isEmpty
+    ? { [DEMO_READER_KEY]: DEMO_READER_DATA }
+    : {};
+
   return {
     apiKey:            providerKeys[activeProvider] || '',
     providerKeys,
@@ -90,10 +106,10 @@ function buildInitialState() {
     customBaseUrl:     loadCustomBaseUrl(),
     customModelName:   loadCustomModelName(),
     compatPreset:      loadCompatPreset(),
-    syllabi:           normalizeSyllabi(loadSyllabi()),
+    syllabi,
     syllabusProgress:  loadSyllabusProgress(),
-    standaloneReaders: normalizeStandaloneReaders(loadStandaloneReaders()),
-    generatedReaders:  {},
+    standaloneReaders: demoStandalone,
+    generatedReaders:  demoReaders,
     learnedVocabulary: loadLearnedVocabulary(),
     exportedWords:     loadExportedWords(),
     loading:           false,
@@ -118,6 +134,7 @@ function buildInitialState() {
     romanizationOn:    loadRomanizationOn(),
     translateButtons:  loadTranslateButtons(),
     verboseVocab:      loadVerboseVocab(),
+    useStructuredOutput: loadStructuredOutput(),
     // Background generation tracking (ephemeral, not persisted)
     pendingReaders:    {},
     // Learning activity log (persisted)
@@ -135,7 +152,7 @@ function buildInitialState() {
 const DATA_ACTIONS = new Set([
   'ADD_SYLLABUS', 'EXTEND_SYLLABUS_LESSONS', 'REMOVE_SYLLABUS',
   'SET_LESSON_INDEX', 'MARK_LESSON_COMPLETE', 'UNMARK_LESSON_COMPLETE',
-  'ADD_STANDALONE_READER', 'REMOVE_STANDALONE_READER',
+  'ADD_STANDALONE_READER', 'REMOVE_STANDALONE_READER', 'UPDATE_STANDALONE_READER_META',
   'ARCHIVE_SYLLABUS', 'UNARCHIVE_SYLLABUS',
   'ARCHIVE_STANDALONE_READER', 'UNARCHIVE_STANDALONE_READER',
   'SET_READER', 'CLEAR_READER',
@@ -150,60 +167,51 @@ function baseReducer(state, action) {
   switch (action.type) {
 
     case 'SET_API_KEY': {
-      // Backward compat: map to anthropic provider key
       const newKeys = { ...state.providerKeys, anthropic: action.payload };
-      saveProviderKeys(newKeys);
       return { ...state, providerKeys: newKeys, apiKey: newKeys[state.activeProvider] || '' };
     }
 
     case 'CLEAR_API_KEY': {
       const newKeys = { ...state.providerKeys, anthropic: '' };
-      saveProviderKeys(newKeys);
       return { ...state, providerKeys: newKeys, apiKey: newKeys[state.activeProvider] || '' };
     }
 
     case 'SET_PROVIDER_KEY': {
       const { provider, key } = action.payload;
       const newKeys = { ...state.providerKeys, [provider]: key };
-      saveProviderKeys(newKeys);
       return { ...state, providerKeys: newKeys, apiKey: newKeys[state.activeProvider] || '' };
     }
 
-    case 'SET_ACTIVE_PROVIDER': {
-      saveActiveProvider(action.payload);
+    case 'SET_ACTIVE_PROVIDER':
       return { ...state, activeProvider: action.payload, apiKey: state.providerKeys[action.payload] || '' };
-    }
 
     case 'SET_ACTIVE_MODEL': {
       const { provider: prov, model } = action.payload;
-      const newModels = { ...state.activeModels, [prov]: model };
-      saveActiveModels(newModels);
-      return { ...state, activeModels: newModels };
+      return { ...state, activeModels: { ...state.activeModels, [prov]: model } };
     }
 
     case 'SET_CUSTOM_BASE_URL':
-      saveCustomBaseUrl(action.payload);
       return { ...state, customBaseUrl: action.payload };
 
     case 'SET_CUSTOM_MODEL_NAME':
-      saveCustomModelName(action.payload);
       return { ...state, customModelName: action.payload };
 
     case 'SET_COMPAT_PRESET':
-      saveCompatPreset(action.payload);
       return { ...state, compatPreset: action.payload };
 
     // ── Syllabus actions ──────────────────────────────────────
 
     case 'ADD_SYLLABUS': {
       const newSyllabi = [action.payload, ...state.syllabi];
-      saveSyllabi(newSyllabi);
       const newProgress = {
         ...state.syllabusProgress,
         [action.payload.id]: { lessonIndex: 0, completedLessons: [] },
       };
-      saveSyllabusProgress(newProgress);
-      return { ...state, syllabi: newSyllabi, syllabusProgress: newProgress };
+      // Remove demo reader on first real generation
+      const filteredStandalone = state.standaloneReaders.filter(r => !r.isDemo);
+      const filteredReaders = { ...state.generatedReaders };
+      if (filteredStandalone.length !== state.standaloneReaders.length) delete filteredReaders[DEMO_READER_KEY];
+      return { ...state, syllabi: newSyllabi, syllabusProgress: newProgress, standaloneReaders: filteredStandalone, generatedReaders: filteredReaders };
     }
 
     case 'EXTEND_SYLLABUS_LESSONS': {
@@ -215,22 +223,14 @@ function baseReducer(state, action) {
       const renumbered = newLessons.map((l, i) => ({ ...l, lesson_number: startNum + i }));
       const updated = { ...existing, lessons: [...existing.lessons, ...renumbered] };
       const newSyllabi = state.syllabi.map(s => s.id === id ? updated : s);
-      saveSyllabi(newSyllabi);
       return { ...state, syllabi: newSyllabi };
     }
 
     case 'REMOVE_SYLLABUS': {
       const id = action.payload;
       const newSyllabi = state.syllabi.filter(s => s.id !== id);
-      saveSyllabi(newSyllabi);
       const newProgress = { ...state.syllabusProgress };
       delete newProgress[id];
-      saveSyllabusProgress(newProgress);
-      // Remove cached readers from localStorage using the index (avoids loading all reader data)
-      const readerKeys = loadReaderIndex();
-      readerKeys.forEach(k => {
-        if (k.startsWith(`lesson_${id}_`)) deleteReader(k);
-      });
       const newReaders = { ...state.generatedReaders };
       Object.keys(newReaders).forEach(k => {
         if (k.startsWith(`lesson_${id}_`)) delete newReaders[k];
@@ -244,7 +244,6 @@ function baseReducer(state, action) {
         ...state.syllabusProgress,
         [syllabusId]: { ...state.syllabusProgress[syllabusId], lessonIndex },
       };
-      saveSyllabusProgress(newProgress);
       return { ...state, syllabusProgress: newProgress };
     }
 
@@ -254,10 +253,8 @@ function baseReducer(state, action) {
       if (entry.completedLessons.includes(lessonIndex)) return state;
       const newEntry = { ...entry, completedLessons: [...entry.completedLessons, lessonIndex] };
       const newProgress = { ...state.syllabusProgress, [syllabusId]: newEntry };
-      saveSyllabusProgress(newProgress);
       const actEntry = { type: 'lesson_completed', syllabusId, lessonIndex, timestamp: Date.now() };
       const newActivity = [...state.learningActivity, actEntry];
-      saveLearningActivity(newActivity);
       return { ...state, syllabusProgress: newProgress, learningActivity: newActivity };
     }
 
@@ -266,23 +263,32 @@ function baseReducer(state, action) {
       const entry = state.syllabusProgress[syllabusId] || { lessonIndex: 0, completedLessons: [] };
       const newEntry = { ...entry, completedLessons: entry.completedLessons.filter(i => i !== lessonIndex) };
       const newProgress = { ...state.syllabusProgress, [syllabusId]: newEntry };
-      saveSyllabusProgress(newProgress);
       return { ...state, syllabusProgress: newProgress };
     }
 
     // ── Standalone reader actions ─────────────────────────────
 
     case 'ADD_STANDALONE_READER': {
-      const newList = [action.payload, ...state.standaloneReaders];
-      saveStandaloneReaders(newList);
-      return { ...state, standaloneReaders: newList };
+      // Remove demo reader on first real generation
+      const withoutDemo = state.standaloneReaders.filter(r => !r.isDemo);
+      const filteredReaders = { ...state.generatedReaders };
+      if (withoutDemo.length !== state.standaloneReaders.length) delete filteredReaders[DEMO_READER_KEY];
+      return { ...state, standaloneReaders: [action.payload, ...withoutDemo], generatedReaders: filteredReaders };
+    }
+
+    case 'UPDATE_STANDALONE_READER_META': {
+      const { key, ...meta } = action.payload;
+      return {
+        ...state,
+        standaloneReaders: state.standaloneReaders.map(r =>
+          r.key === key ? { ...r, ...meta } : r
+        ),
+      };
     }
 
     case 'REMOVE_STANDALONE_READER': {
       const key = action.payload;
       const newList = state.standaloneReaders.filter(r => r.key !== key);
-      saveStandaloneReaders(newList);
-      deleteReader(key);
       const newReaders = { ...state.generatedReaders };
       delete newReaders[key];
       return { ...state, standaloneReaders: newList, generatedReaders: newReaders };
@@ -292,33 +298,24 @@ function baseReducer(state, action) {
 
     case 'SET_READER': {
       const { lessonKey, data } = action.payload;
-      const { quotaExceeded } = saveReaderSafe(lessonKey, data);
       let newActivity = state.learningActivity;
-      // Log quiz grading when gradingResults are saved for the first time
       const prev = state.generatedReaders[lessonKey];
       if (data.gradingResults && (!prev || !prev.gradingResults)) {
         const score = data.gradingResults.overallScore ?? null;
-        const actEntry = { type: 'quiz_graded', lessonKey, score, timestamp: Date.now() };
-        newActivity = [...newActivity, actEntry];
-        saveLearningActivity(newActivity);
+        newActivity = [...newActivity, { type: 'quiz_graded', lessonKey, score, timestamp: Date.now() }];
       }
-      // Log reader generation when story appears for the first time
       if (data.story && (!prev || !prev.story)) {
-        const actEntry = { type: 'reader_generated', lessonKey, timestamp: Date.now() };
-        newActivity = [...newActivity, actEntry];
-        saveLearningActivity(newActivity);
+        newActivity = [...newActivity, { type: 'reader_generated', lessonKey, timestamp: Date.now() }];
       }
       return {
         ...state,
         generatedReaders: { ...state.generatedReaders, [lessonKey]: data },
         learningActivity: newActivity,
-        ...(quotaExceeded ? { quotaWarning: true } : {}),
       };
     }
 
     case 'CLEAR_READER': {
       const key = action.payload;
-      deleteReader(key);
       const newReaders = { ...state.generatedReaders };
       delete newReaders[key];
       return { ...state, generatedReaders: newReaders };
@@ -339,37 +336,17 @@ function baseReducer(state, action) {
 
     // ── Archive actions ───────────────────────────────────────
 
-    case 'ARCHIVE_SYLLABUS': {
-      const newSyllabi = state.syllabi.map(s =>
-        s.id === action.payload ? { ...s, archived: true } : s
-      );
-      saveSyllabi(newSyllabi);
-      return { ...state, syllabi: newSyllabi };
-    }
+    case 'ARCHIVE_SYLLABUS':
+      return { ...state, syllabi: state.syllabi.map(s => s.id === action.payload ? { ...s, archived: true } : s) };
 
-    case 'UNARCHIVE_SYLLABUS': {
-      const newSyllabi = state.syllabi.map(s =>
-        s.id === action.payload ? { ...s, archived: false } : s
-      );
-      saveSyllabi(newSyllabi);
-      return { ...state, syllabi: newSyllabi };
-    }
+    case 'UNARCHIVE_SYLLABUS':
+      return { ...state, syllabi: state.syllabi.map(s => s.id === action.payload ? { ...s, archived: false } : s) };
 
-    case 'ARCHIVE_STANDALONE_READER': {
-      const newList = state.standaloneReaders.map(r =>
-        r.key === action.payload ? { ...r, archived: true } : r
-      );
-      saveStandaloneReaders(newList);
-      return { ...state, standaloneReaders: newList };
-    }
+    case 'ARCHIVE_STANDALONE_READER':
+      return { ...state, standaloneReaders: state.standaloneReaders.map(r => r.key === action.payload ? { ...r, archived: true } : r) };
 
-    case 'UNARCHIVE_STANDALONE_READER': {
-      const newList = state.standaloneReaders.map(r =>
-        r.key === action.payload ? { ...r, archived: false } : r
-      );
-      saveStandaloneReaders(newList);
-      return { ...state, standaloneReaders: newList };
-    }
+    case 'UNARCHIVE_STANDALONE_READER':
+      return { ...state, standaloneReaders: state.standaloneReaders.map(r => r.key === action.payload ? { ...r, archived: false } : r) };
 
     // ── Backup restore ────────────────────────────────────────
 
@@ -378,12 +355,10 @@ function baseReducer(state, action) {
       const restoredSyllabi = normalizeSyllabi(d.syllabi || []);
       const restoredProgress = d.syllabusProgress || d.syllabus_progress || {};
       const restoredStandalone = normalizeStandaloneReaders(d.standaloneReaders || d.standalone_readers || []);
-      const restoredReaders = d.generatedReaders || d.generated_readers || {};
       const restoredVocab = d.learnedVocabulary || d.learned_vocabulary || {};
       const restoredExported = d.exportedWords || d.exported_words || [];
-      saveSyllabi(restoredSyllabi);
-      saveSyllabusProgress(restoredProgress);
-      saveStandaloneReaders(restoredStandalone);
+      // Readers need immediate persistence (cleared + re-saved)
+      const restoredReaders = d.generatedReaders || d.generated_readers || {};
       clearReaders();
       for (const [k, v] of Object.entries(restoredReaders)) saveReader(k, v);
       return {
@@ -399,33 +374,28 @@ function baseReducer(state, action) {
 
     // ── Vocabulary actions ────────────────────────────────────
 
+    case 'SET_LEARNING_ACTIVITY':
+      return { ...state, learningActivity: action.payload };
+
     case 'LOG_ACTIVITY': {
       const entry = { ...action.payload, timestamp: Date.now() };
-      const newActivity = [...state.learningActivity, entry];
-      saveLearningActivity(newActivity);
-      return { ...state, learningActivity: newActivity };
+      return { ...state, learningActivity: [...state.learningActivity, entry] };
     }
 
     case 'ADD_VOCABULARY': {
-      const updated = addLearnedVocabulary(action.payload);
+      const updated = mergeVocabulary(state.learnedVocabulary, action.payload);
       const wordCount = Array.isArray(action.payload) ? action.payload.length : Object.keys(action.payload).length;
       const entry = { type: 'vocab_added', count: wordCount, timestamp: Date.now() };
-      const newActivity = [...state.learningActivity, entry];
-      saveLearningActivity(newActivity);
-      return { ...state, learnedVocabulary: updated, learningActivity: newActivity };
+      return { ...state, learnedVocabulary: updated, learningActivity: [...state.learningActivity, entry] };
     }
 
     case 'CLEAR_VOCABULARY':
-      clearLearnedVocabulary();
       return { ...state, learnedVocabulary: {} };
 
-    case 'ADD_EXPORTED_WORDS': {
-      const updated = addExportedWords(action.payload);
-      return { ...state, exportedWords: updated };
-    }
+    case 'ADD_EXPORTED_WORDS':
+      return { ...state, exportedWords: mergeExportedWords(state.exportedWords, action.payload) };
 
     case 'CLEAR_EXPORTED_WORDS':
-      clearExportedWords();
       return { ...state, exportedWords: new Set() };
 
     // ── UI state ──────────────────────────────────────────────
@@ -494,52 +464,43 @@ function baseReducer(state, action) {
     // ── API preferences ───────────────────────────────────────
 
     case 'SET_MAX_TOKENS':
-      saveMaxTokens(action.payload);
       return { ...state, maxTokens: action.payload };
 
     case 'SET_DEFAULT_LEVEL':
-      saveDefaultLevel(action.payload);
       return { ...state, defaultLevel: action.payload };
 
     case 'SET_DEFAULT_TOPIK_LEVEL':
-      saveDefaultTopikLevel(action.payload);
       return { ...state, defaultTopikLevel: action.payload };
 
     case 'SET_DEFAULT_YUE_LEVEL':
-      saveDefaultYueLevel(action.payload);
       return { ...state, defaultYueLevel: action.payload };
 
     case 'SET_DARK_MODE':
-      saveDarkMode(action.payload);
       return { ...state, darkMode: action.payload };
 
     case 'SET_TTS_VOICE':
-      saveTtsVoiceURI(action.payload);
       return { ...state, ttsVoiceURI: action.payload };
 
     case 'SET_TTS_KO_VOICE':
-      saveTtsKoVoiceURI(action.payload);
       return { ...state, ttsKoVoiceURI: action.payload };
 
     case 'SET_TTS_YUE_VOICE':
-      saveTtsYueVoiceURI(action.payload);
       return { ...state, ttsYueVoiceURI: action.payload };
 
     case 'SET_VERBOSE_VOCAB':
-      saveVerboseVocab(action.payload);
       return { ...state, verboseVocab: action.payload };
 
     case 'SET_TTS_SPEECH_RATE':
-      saveTtsSpeechRate(action.payload);
       return { ...state, ttsSpeechRate: action.payload };
 
     case 'SET_ROMANIZATION_ON':
-      saveRomanizationOn(action.payload);
       return { ...state, romanizationOn: action.payload };
 
     case 'SET_TRANSLATE_BUTTONS':
-      saveTranslateButtons(action.payload);
       return { ...state, translateButtons: action.payload };
+
+    case 'SET_STRUCTURED_OUTPUT':
+      return { ...state, useStructuredOutput: action.payload };
 
     case 'START_PENDING_READER':
       return { ...state, pendingReaders: { ...state.pendingReaders, [action.payload]: true } };
@@ -559,7 +520,6 @@ function baseReducer(state, action) {
       return { ...state, cloudSyncing: action.payload };
 
     case 'SET_CLOUD_LAST_SYNCED':
-      saveCloudLastSynced(action.payload);
       return { ...state, cloudLastSynced: action.payload };
 
     case 'HYDRATE_FROM_CLOUD': {
@@ -567,12 +527,6 @@ function baseReducer(state, action) {
       const normalizedSyllabi = normalizeSyllabi(d.syllabi);
       const normalizedStandalone = normalizeStandaloneReaders(d.standalone_readers);
       const cloudTs = d.updated_at ? new Date(d.updated_at).getTime() : Date.now();
-      // Mirror to localStorage
-      saveSyllabi(normalizedSyllabi);
-      saveSyllabusProgress(d.syllabus_progress);
-      saveStandaloneReaders(normalizedStandalone);
-      for (const [k, v] of Object.entries(d.generated_readers || {})) saveReader(k, v);
-      saveLastModified(cloudTs);
       return {
         ...state,
         syllabi:           normalizedSyllabi,
@@ -734,6 +688,74 @@ export function AppProvider({ children }) {
       startupSyncDoneRef.current = true;
     }
   }
+
+  // Prune old learning activity entries to stash on startup
+  useEffect(() => {
+    if (!state.fsInitialized) return;
+    const pruned = stashOldActivity(state.learningActivity);
+    if (pruned !== state.learningActivity) {
+      dispatch({ type: 'SET_LEARNING_ACTIVITY', payload: pruned });
+    }
+  }, [state.fsInitialized]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Persistence effects (pure reducer → side effects here) ──
+
+  // Skip persistence on first render (state came from localStorage already)
+  const mountedRef = useRef(false);
+  useEffect(() => { mountedRef.current = true; }, []);
+
+  // Data slices
+  useEffect(() => { if (mountedRef.current) saveSyllabi(state.syllabi); }, [state.syllabi]);
+  useEffect(() => { if (mountedRef.current) saveSyllabusProgress(state.syllabusProgress); }, [state.syllabusProgress]);
+  useEffect(() => { if (mountedRef.current) saveStandaloneReaders(state.standaloneReaders); }, [state.standaloneReaders]);
+  useEffect(() => { if (mountedRef.current) saveLearnedVocabulary(state.learnedVocabulary); }, [state.learnedVocabulary]);
+  useEffect(() => { if (mountedRef.current) saveExportedWordsFull(state.exportedWords); }, [state.exportedWords]);
+  useEffect(() => { if (mountedRef.current) saveLearningActivity(state.learningActivity); }, [state.learningActivity]);
+
+  // Provider/API settings
+  useEffect(() => { if (mountedRef.current) saveProviderKeys(state.providerKeys); }, [state.providerKeys]);
+  useEffect(() => { if (mountedRef.current) saveActiveProvider(state.activeProvider); }, [state.activeProvider]);
+  useEffect(() => { if (mountedRef.current) saveActiveModels(state.activeModels); }, [state.activeModels]);
+  useEffect(() => { if (mountedRef.current) saveCustomBaseUrl(state.customBaseUrl); }, [state.customBaseUrl]);
+  useEffect(() => { if (mountedRef.current) saveCustomModelName(state.customModelName); }, [state.customModelName]);
+  useEffect(() => { if (mountedRef.current) saveCompatPreset(state.compatPreset); }, [state.compatPreset]);
+
+  // User preferences
+  useEffect(() => { if (mountedRef.current) saveMaxTokens(state.maxTokens); }, [state.maxTokens]);
+  useEffect(() => { if (mountedRef.current) saveDefaultLevel(state.defaultLevel); }, [state.defaultLevel]);
+  useEffect(() => { if (mountedRef.current) saveDefaultTopikLevel(state.defaultTopikLevel); }, [state.defaultTopikLevel]);
+  useEffect(() => { if (mountedRef.current) saveDefaultYueLevel(state.defaultYueLevel); }, [state.defaultYueLevel]);
+  useEffect(() => { if (mountedRef.current) saveDarkMode(state.darkMode); }, [state.darkMode]);
+  useEffect(() => { if (mountedRef.current) saveTtsVoiceURI(state.ttsVoiceURI); }, [state.ttsVoiceURI]);
+  useEffect(() => { if (mountedRef.current) saveTtsKoVoiceURI(state.ttsKoVoiceURI); }, [state.ttsKoVoiceURI]);
+  useEffect(() => { if (mountedRef.current) saveTtsYueVoiceURI(state.ttsYueVoiceURI); }, [state.ttsYueVoiceURI]);
+  useEffect(() => { if (mountedRef.current) saveVerboseVocab(state.verboseVocab); }, [state.verboseVocab]);
+  useEffect(() => { if (mountedRef.current) saveTtsSpeechRate(state.ttsSpeechRate); }, [state.ttsSpeechRate]);
+  useEffect(() => { if (mountedRef.current) saveRomanizationOn(state.romanizationOn); }, [state.romanizationOn]);
+  useEffect(() => { if (mountedRef.current) saveTranslateButtons(state.translateButtons); }, [state.translateButtons]);
+  useEffect(() => { if (mountedRef.current) saveStructuredOutput(state.useStructuredOutput); }, [state.useStructuredOutput]);
+  useEffect(() => { if (mountedRef.current) saveCloudLastSynced(state.cloudLastSynced); }, [state.cloudLastSynced]);
+
+  // Generated readers — diff-based persistence
+  const prevReadersRef = useRef(state.generatedReaders);
+  useEffect(() => {
+    if (!mountedRef.current) return;
+    const prev = prevReadersRef.current;
+    const curr = state.generatedReaders;
+    prevReadersRef.current = curr;
+    if (prev === curr) return;
+    // Save new/changed readers
+    for (const key of Object.keys(curr)) {
+      if (curr[key] !== prev[key]) {
+        const { quotaExceeded } = saveReaderSafe(key, curr[key]);
+        if (quotaExceeded) dispatch({ type: 'SET_QUOTA_WARNING', payload: true });
+      }
+    }
+    // Delete removed readers
+    for (const key of Object.keys(prev)) {
+      if (!(key in curr)) deleteReader(key);
+    }
+  }, [state.generatedReaders]);
 
   // Apply / remove dark theme attribute on <html>
   useEffect(() => {

@@ -21,6 +21,7 @@ export function actions(dispatch) {
     // Standalone readers
     addStandaloneReader:   meta   => dispatch({ type: 'ADD_STANDALONE_READER', payload: meta }),
     removeStandaloneReader:key    => dispatch({ type: 'REMOVE_STANDALONE_READER', payload: key }),
+    updateStandaloneReaderMeta: meta => dispatch({ type: 'UPDATE_STANDALONE_READER_META', payload: meta }),
     // Archive
     archiveSyllabus:            id  => dispatch({ type: 'ARCHIVE_SYLLABUS', payload: id }),
     unarchiveSyllabus:          id  => dispatch({ type: 'UNARCHIVE_SYLLABUS', payload: id }),
@@ -52,6 +53,7 @@ export function actions(dispatch) {
     setTtsSpeechRate:      rate   => dispatch({ type: 'SET_TTS_SPEECH_RATE', payload: Number(rate) }),
     setRomanizationOn:     val    => dispatch({ type: 'SET_ROMANIZATION_ON', payload: Boolean(val) }),
     setTranslateButtons:   val    => dispatch({ type: 'SET_TRANSLATE_BUTTONS', payload: Boolean(val) }),
+    setStructuredOutput:   val    => dispatch({ type: 'SET_STRUCTURED_OUTPUT', payload: Boolean(val) }),
     // Background generation tracking
     startPendingReader:    key    => dispatch({ type: 'START_PENDING_READER', payload: key }),
     clearPendingReader:    key    => dispatch({ type: 'CLEAR_PENDING_READER', payload: key }),

@@ -28,7 +28,7 @@ function delay(ms) {
 /**
  * Fetch with retry: shared across all providers.
  * @param {string} url
- * @param {object} options - fetch options
+ * @param {object} options - fetch options (may include signal)
  * @param {function} extractText - (responseData) => string
  * @param {string} providerLabel - for error messages
  */
@@ -59,6 +59,7 @@ async function fetchWithRetry(url, options, extractText, providerLabel) {
       const data = await response.json();
       return extractText(data);
     } catch (err) {
+      if (err.name === 'AbortError') throw new Error('Request timed out after 60 seconds. Try again or switch to a faster provider.');
       if (err.status !== undefined) throw err;
       if (attempt === MAX_RETRIES) throw err;
       lastError = err;
@@ -73,7 +74,7 @@ async function fetchWithRetry(url, options, extractText, providerLabel) {
 
 // ── Provider-specific call functions ────────────────────────────
 
-function callAnthropic(apiKey, model, systemPrompt, userMessage, maxTokens) {
+function callAnthropic(apiKey, model, systemPrompt, userMessage, maxTokens, signal) {
   return fetchWithRetry(
     'https://api.anthropic.com/v1/messages',
     {
@@ -90,13 +91,14 @@ function callAnthropic(apiKey, model, systemPrompt, userMessage, maxTokens) {
         ...(systemPrompt ? { system: systemPrompt } : {}),
         messages: [{ role: 'user', content: userMessage }],
       }),
+      signal,
     },
     data => data.content[0].text,
     'Anthropic',
   );
 }
 
-function callOpenAI(apiKey, model, systemPrompt, userMessage, maxTokens, baseUrl) {
+function callOpenAI(apiKey, model, systemPrompt, userMessage, maxTokens, baseUrl, signal) {
   const url = `${baseUrl || 'https://api.openai.com'}/v1/chat/completions`;
   const messages = [];
   if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
@@ -115,13 +117,14 @@ function callOpenAI(apiKey, model, systemPrompt, userMessage, maxTokens, baseUrl
         max_tokens: maxTokens,
         messages,
       }),
+      signal,
     },
     data => data.choices[0].message.content,
     baseUrl ? 'OpenAI-Compatible' : 'OpenAI',
   );
 }
 
-function callGemini(apiKey, model, systemPrompt, userMessage, maxTokens) {
+function callGemini(apiKey, model, systemPrompt, userMessage, maxTokens, signal) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
   const body = {
     contents: [{ role: 'user', parts: [{ text: userMessage }] }],
@@ -137,6 +140,7 @@ function callGemini(apiKey, model, systemPrompt, userMessage, maxTokens) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      signal,
     },
     data => data.candidates[0].content.parts[0].text,
     'Gemini',
@@ -145,21 +149,36 @@ function callGemini(apiKey, model, systemPrompt, userMessage, maxTokens) {
 
 // ── Unified dispatcher ──────────────────────────────────────────
 
-async function callLLM(llmConfig, systemPrompt, userMessage, maxTokens = 4096) {
+const DEFAULT_TIMEOUT_MS = 60_000;
+
+async function callLLM(llmConfig, systemPrompt, userMessage, maxTokens = 4096, { signal: externalSignal } = {}) {
   const { provider, apiKey, model, baseUrl } = llmConfig;
   if (!apiKey) throw new Error('No API key provided. Please add your API key in Settings.');
 
-  switch (provider) {
-    case 'anthropic':
-      return callAnthropic(apiKey, model, systemPrompt, userMessage, maxTokens);
-    case 'openai':
-      return callOpenAI(apiKey, model, systemPrompt, userMessage, maxTokens, null);
-    case 'gemini':
-      return callGemini(apiKey, model, systemPrompt, userMessage, maxTokens);
-    case 'openai_compatible':
-      return callOpenAI(apiKey, model, systemPrompt, userMessage, maxTokens, baseUrl);
-    default:
-      return callAnthropic(apiKey, model, systemPrompt, userMessage, maxTokens);
+  // Create timeout-based AbortController, linked to any external signal
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+  if (externalSignal) {
+    if (externalSignal.aborted) { clearTimeout(timeoutId); controller.abort(); }
+    else externalSignal.addEventListener('abort', () => { clearTimeout(timeoutId); controller.abort(); }, { once: true });
+  }
+  const { signal } = controller;
+
+  try {
+    switch (provider) {
+      case 'anthropic':
+        return await callAnthropic(apiKey, model, systemPrompt, userMessage, maxTokens, signal);
+      case 'openai':
+        return await callOpenAI(apiKey, model, systemPrompt, userMessage, maxTokens, null, signal);
+      case 'gemini':
+        return await callGemini(apiKey, model, systemPrompt, userMessage, maxTokens, signal);
+      case 'openai_compatible':
+        return await callOpenAI(apiKey, model, systemPrompt, userMessage, maxTokens, baseUrl, signal);
+      default:
+        return await callAnthropic(apiKey, model, systemPrompt, userMessage, maxTokens, signal);
+    }
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -255,9 +274,192 @@ export async function gradeAnswers(llmConfig, questions, userAnswers, story, lev
   }
 }
 
+// ── Structured output schema ──────────────────────────────────
+
+export const READER_JSON_SCHEMA = {
+  type: 'object',
+  properties: {
+    title_target:  { type: 'string', description: 'Title in the target language' },
+    title_en:      { type: 'string', description: 'English subtitle' },
+    story:         { type: 'string', description: 'The story text with **bolded** vocabulary and *italicized* proper nouns' },
+    vocabulary: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          target:       { type: 'string', description: 'Word in target language' },
+          romanization: { type: 'string', description: 'Pinyin, jyutping, or romanization' },
+          english:      { type: 'string', description: 'English definition' },
+          example_story:             { type: 'string', description: 'Example sentence from the story' },
+          example_story_translation: { type: 'string', description: 'English translation of story example' },
+          usage_note_story:          { type: 'string', description: 'Grammar/usage note for story example' },
+          example_extra:             { type: 'string', description: 'Additional example sentence' },
+          example_extra_translation: { type: 'string', description: 'English translation of extra example' },
+          usage_note_extra:          { type: 'string', description: 'Grammar/usage note for extra example' },
+        },
+        required: ['target', 'romanization', 'english', 'example_story'],
+      },
+    },
+    questions: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          text:        { type: 'string', description: 'Question in target language' },
+          translation: { type: 'string', description: 'English translation of the question' },
+        },
+        required: ['text', 'translation'],
+      },
+    },
+    grammar_notes: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          pattern:     { type: 'string', description: 'Grammar pattern in target language' },
+          label:       { type: 'string', description: 'English name of the pattern' },
+          explanation: { type: 'string', description: 'One-sentence explanation' },
+          example:     { type: 'string', description: 'Example from the story' },
+        },
+        required: ['pattern', 'label', 'explanation', 'example'],
+      },
+    },
+  },
+  required: ['title_target', 'title_en', 'story', 'vocabulary', 'questions', 'grammar_notes'],
+};
+
+// ── Structured output provider functions ─────────────────────
+
+function callAnthropicStructured(apiKey, model, systemPrompt, userMessage, maxTokens, signal) {
+  const tool = {
+    name: 'create_reader',
+    description: 'Create a structured graded reader response',
+    input_schema: READER_JSON_SCHEMA,
+  };
+  return fetchWithRetry(
+    'https://api.anthropic.com/v1/messages',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        ...(systemPrompt ? { system: systemPrompt } : {}),
+        messages: [{ role: 'user', content: userMessage }],
+        tools: [tool],
+        tool_choice: { type: 'tool', name: 'create_reader' },
+      }),
+      signal,
+    },
+    data => {
+      const toolBlock = data.content.find(b => b.type === 'tool_use');
+      if (!toolBlock) throw new Error('Anthropic did not return structured output');
+      return JSON.stringify(toolBlock.input);
+    },
+    'Anthropic',
+  );
+}
+
+function callOpenAIStructured(apiKey, model, systemPrompt, userMessage, maxTokens, baseUrl, signal) {
+  const url = `${baseUrl || 'https://api.openai.com'}/v1/chat/completions`;
+  const messages = [];
+  if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+  messages.push({ role: 'user', content: userMessage });
+
+  return fetchWithRetry(
+    url,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        messages,
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'graded_reader',
+            strict: true,
+            schema: READER_JSON_SCHEMA,
+          },
+        },
+      }),
+      signal,
+    },
+    data => data.choices[0].message.content,
+    baseUrl ? 'OpenAI-Compatible' : 'OpenAI',
+  );
+}
+
+function callGeminiStructured(apiKey, model, systemPrompt, userMessage, maxTokens, signal) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const body = {
+    contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+    generationConfig: {
+      maxOutputTokens: maxTokens,
+      responseMimeType: 'application/json',
+      responseSchema: READER_JSON_SCHEMA,
+    },
+  };
+  if (systemPrompt) {
+    body.system_instruction = { parts: [{ text: systemPrompt }] };
+  }
+
+  return fetchWithRetry(
+    url,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal,
+    },
+    data => data.candidates[0].content.parts[0].text,
+    'Gemini',
+  );
+}
+
+async function callLLMStructured(llmConfig, systemPrompt, userMessage, maxTokens = 8192, { signal: externalSignal } = {}) {
+  const { provider, apiKey, model, baseUrl } = llmConfig;
+  if (!apiKey) throw new Error('No API key provided. Please add your API key in Settings.');
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+  if (externalSignal) {
+    if (externalSignal.aborted) { clearTimeout(timeoutId); controller.abort(); }
+    else externalSignal.addEventListener('abort', () => { clearTimeout(timeoutId); controller.abort(); }, { once: true });
+  }
+  const { signal } = controller;
+
+  try {
+    switch (provider) {
+      case 'anthropic':
+        return await callAnthropicStructured(apiKey, model, systemPrompt, userMessage, maxTokens, signal);
+      case 'openai':
+        return await callOpenAIStructured(apiKey, model, systemPrompt, userMessage, maxTokens, null, signal);
+      case 'gemini':
+        return await callGeminiStructured(apiKey, model, systemPrompt, userMessage, maxTokens, signal);
+      case 'openai_compatible':
+        // Falls back to regular call — structured output support varies
+        return await callOpenAI(apiKey, model, systemPrompt, userMessage, maxTokens, baseUrl, signal);
+      default:
+        return await callAnthropicStructured(apiKey, model, systemPrompt, userMessage, maxTokens, signal);
+    }
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 // ── Reader generation ─────────────────────────────────────────
 
-export async function generateReader(llmConfig, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192, previousStory = null, langId = DEFAULT_LANG_ID) {
+export async function generateReader(llmConfig, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192, previousStory = null, langId = DEFAULT_LANG_ID, { signal, structured = false } = {}) {
   const langConfig = getLang(langId);
   // Build a range string scaled to reader size
   const rangePadding = targetChars <= 300 ? 50 : 100;
@@ -282,7 +484,10 @@ export async function generateReader(llmConfig, topic, level, learnedWords = {},
 
   const userMessage = `Generate a graded reader for the topic: ${topic}${learnedSection}${continuationSection}`;
 
-  return await callLLM(llmConfig, system, userMessage, maxTokens);
+  if (structured) {
+    return await callLLMStructured(llmConfig, system, userMessage, maxTokens, { signal });
+  }
+  return await callLLM(llmConfig, system, userMessage, maxTokens, { signal });
 }
 
 // ── Syllabus extension ────────────────────────────────────────

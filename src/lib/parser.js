@@ -103,27 +103,37 @@ export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
     const romField = langConfig.fields.romanization;
     const transField = langConfig.fields.translation;
 
-    if (result.vocabulary.length === 0 && result.ankiJson.length > 0) {
-      result.vocabulary = result.ankiJson.map(card => ({
-        chinese:                  card[targetField] || card.chinese || card.korean || '',
-        pinyin:                   card[romField] || card.pinyin || card.romanization || '',
-        english:                  card[transField] || card.english || '',
+    function makeVocabFromCard(card) {
+      const t = card[targetField] || card.chinese || card.korean || '';
+      const r = card[romField] || card.pinyin || card.romanization || '';
+      const tr = card[transField] || card.english || '';
+      return {
+        target: t, romanization: r, translation: tr,
+        chinese: t, pinyin: r, english: tr,
         exampleStory:             stripExamplePrefix(card.example_story || ''),
         exampleStoryTranslation:  card.example_story_translation || '',
         exampleExtra:             stripExamplePrefix(card.example_extra || ''),
         exampleExtraTranslation:  card.example_extra_translation || '',
         usageNoteStory:           card.usage_note_story || '',
         usageNoteExtra:           card.usage_note_extra || '',
-      }));
+      };
+    }
+
+    if (result.vocabulary.length === 0 && result.ankiJson.length > 0) {
+      result.vocabulary = result.ankiJson.map(makeVocabFromCard);
     } else if (result.vocabulary.length > 0 && result.ankiJson.length > 0) {
       // Enrich vocabulary items with usage notes + fill missing pinyin from the Anki JSON block
       const ankiByWord = new Map(result.ankiJson.map(c => [c[targetField] || c.chinese || c.korean, c]));
       const enriched = result.vocabulary.map(word => {
-        const card = ankiByWord.get(word.chinese);
+        const card = ankiByWord.get(word.target || word.chinese);
         if (!card) return word;
+        const rom = word.romanization || word.pinyin || card[romField] || card.pinyin || card.romanization || '';
         return {
           ...word,
-          pinyin:                  word.pinyin || card[romField] || card.pinyin || card.romanization || '',
+          target: word.target || word.chinese,
+          romanization: rom,
+          translation: word.translation || word.english,
+          pinyin: rom,
           exampleStoryTranslation: card.example_story_translation || word.exampleStoryTranslation || '',
           exampleExtraTranslation: card.example_extra_translation || word.exampleExtraTranslation || '',
           usageNoteStory:          card.usage_note_story || word.usageNoteStory,
@@ -131,20 +141,10 @@ export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
         };
       });
       // Append any words present in ankiJson but absent from the vocabulary section
-      const vocabChinese = new Set(enriched.map(v => v.chinese));
+      const vocabTargets = new Set(enriched.map(v => v.target || v.chinese));
       const missing = result.ankiJson
-        .filter(card => !vocabChinese.has(card[targetField] || card.chinese || card.korean))
-        .map(card => ({
-          chinese:                  card[targetField] || card.chinese || card.korean || '',
-          pinyin:                   card[romField] || card.pinyin || card.romanization || '',
-          english:                  card[transField] || card.english || '',
-          exampleStory:             stripExamplePrefix(card.example_story || ''),
-          exampleStoryTranslation:  card.example_story_translation || '',
-          exampleExtra:             stripExamplePrefix(card.example_extra || ''),
-          exampleExtraTranslation:  card.example_extra_translation || '',
-          usageNoteStory:           card.usage_note_story || '',
-          usageNoteExtra:           card.usage_note_extra || '',
-        }));
+        .filter(card => !vocabTargets.has(card[targetField] || card.chinese || card.korean))
+        .map(makeVocabFromCard);
       result.vocabulary = missing.length > 0 ? [...enriched, ...missing] : enriched;
     }
   } catch (err) {
@@ -166,6 +166,9 @@ function parseVocabularySection(text, scriptRegex) {
     seen.add(chinese);
     const { examples, usageNotes } = extractExamples(afterText, scriptRegex);
     items.push({
+      target: chinese,
+      romanization: pinyin,
+      translation: english,
       chinese,
       pinyin,
       english,
@@ -317,4 +320,77 @@ export function parseStorySegments(storyText) {
   }
 
   return segments;
+}
+
+// ── Structured output normalizer ─────────────────────────────
+
+/**
+ * Converts a structured JSON reader response (from tool use / json_schema)
+ * into the same shape as parseReaderResponse returns.
+ */
+export function normalizeStructuredReader(rawJson, langId = DEFAULT_LANG_ID) {
+  let data;
+  try {
+    data = typeof rawJson === 'string' ? JSON.parse(rawJson) : rawJson;
+  } catch {
+    // Fallback to regex parser if JSON is invalid
+    return parseReaderResponse(rawJson, langId);
+  }
+
+  const vocabulary = (data.vocabulary || []).map(v => ({
+    target:       v.target || v.chinese || v.korean || '',
+    chinese:      v.target || v.chinese || '',
+    korean:       v.korean || v.target || '',
+    romanization: v.romanization || v.pinyin || v.jyutping || '',
+    pinyin:       v.romanization || v.pinyin || '',
+    translation:  v.english || '',
+    english:      v.english || '',
+    exampleStory:             v.example_story || '',
+    exampleStoryTranslation:  v.example_story_translation || '',
+    usageNoteStory:           v.usage_note_story || '',
+    exampleExtra:             v.example_extra || '',
+    exampleExtraTranslation:  v.example_extra_translation || '',
+    usageNoteExtra:           v.usage_note_extra || '',
+  }));
+
+  const ankiJson = vocabulary.map(v => ({
+    chinese:      v.target,
+    korean:       v.target,
+    target:       v.target,
+    pinyin:       v.romanization,
+    romanization: v.romanization,
+    english:      v.translation,
+    translation:  v.translation,
+    example_story:             v.exampleStory,
+    example_story_translation: v.exampleStoryTranslation,
+    usage_note_story:          v.usageNoteStory,
+    example_extra:             v.exampleExtra,
+    example_extra_translation: v.exampleExtraTranslation,
+    usage_note_extra:          v.usageNoteExtra,
+  }));
+
+  const questions = (data.questions || []).map(q => ({
+    text:        q.text || '',
+    translation: q.translation || '',
+  }));
+
+  const grammarNotes = (data.grammar_notes || []).map(n => ({
+    pattern:     n.pattern || '',
+    label:       n.label || '',
+    explanation: n.explanation || '',
+    example:     n.example || '',
+  }));
+
+  return {
+    raw:          typeof rawJson === 'string' ? rawJson : JSON.stringify(data),
+    titleZh:      data.title_target || '',
+    titleEn:      data.title_en || '',
+    story:        data.story || '',
+    vocabulary,
+    questions,
+    ankiJson,
+    grammarNotes,
+    parseError:   null,
+    langId,
+  };
 }

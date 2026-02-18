@@ -13,6 +13,7 @@ export default function SyllabusPanel({
   onNewSyllabus,
   onShowSettings,
   onShowStats,
+  onShowFlashcards,
   onStandaloneGenerated,
   onStandaloneGenerating,
   onSwitchSyllabus,
@@ -40,6 +41,27 @@ export default function SyllabusPanel({
   const completedLessons = new Set(progress.completedLessons);
 
   // Form is open when no syllabi exist; resets when active syllabus changes
+  // Group standalone readers by seriesId for continuation chains
+  const { ungrouped, seriesGroups } = (() => {
+    const groups = {};
+    const solo = [];
+    for (const r of activeStandalone) {
+      if (r.seriesId) {
+        if (!groups[r.seriesId]) groups[r.seriesId] = [];
+        groups[r.seriesId].push(r);
+      } else {
+        solo.push(r);
+      }
+    }
+    // Sort episodes within each series
+    for (const g of Object.values(groups)) {
+      g.sort((a, b) => (a.episodeNumber || 0) - (b.episodeNumber || 0));
+    }
+    return { ungrouped: solo, seriesGroups: groups };
+  })();
+
+  const [expandedSeries, setExpandedSeries] = useState({});
+
   const [formOpen, setFormOpen] = useState(!currentSyllabus);
   useEffect(() => { setFormOpen(!currentSyllabus); }, [activeSyllabusId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -216,7 +238,67 @@ export default function SyllabusPanel({
           </button>
           {standaloneOpen && (
           <ul id="standalone-readers-list" className="syllabus-panel__list" role="list">
-            {activeStandalone.map(r => (
+            {/* Series groups */}
+            {Object.entries(seriesGroups).map(([sId, episodes]) => {
+              const firstEp = episodes[0];
+              const baseTopic = (firstEp.topic || '').replace(/^Continuation:\s*/i, '');
+              const isExpanded = expandedSeries[sId] ?? false;
+              return (
+                <li key={`series-${sId}`}>
+                  <button
+                    className="syllabus-panel__series-header"
+                    onClick={() => setExpandedSeries(prev => ({ ...prev, [sId]: !isExpanded }))}
+                  >
+                    <span className="syllabus-panel__lesson-text">
+                      <span className="syllabus-panel__lesson-zh text-chinese">
+                        {generatedReaders[firstEp.key]?.titleZh || baseTopic}
+                      </span>
+                      <span className="syllabus-panel__lesson-en text-muted">
+                        {episodes.length} episode{episodes.length !== 1 ? 's' : ''}
+                      </span>
+                    </span>
+                    <span className="syllabus-panel__caret-btn">{isExpanded ? '▾' : '▸'}</span>
+                  </button>
+                  {isExpanded && (
+                    <ul className="syllabus-panel__series-list">
+                      {episodes.map(r => (
+                        <li key={r.key}>
+                          <div className={`syllabus-panel__lesson-btn syllabus-panel__standalone-item ${standaloneKey === r.key ? 'syllabus-panel__lesson-btn--active' : ''}`}>
+                            <button
+                              className="syllabus-panel__standalone-select"
+                              onClick={() => onSelectStandalone?.(r.key)}
+                              disabled={loading}
+                            >
+                              <span className="syllabus-panel__lesson-text">
+                                <span className="syllabus-panel__lesson-num">{r.episodeNumber || '·'}</span>
+                                <span className="syllabus-panel__lesson-zh text-chinese">
+                                  {generatedReaders[r.key]?.titleZh || r.topic}
+                                </span>
+                              </span>
+                            </button>
+                            <button
+                              className="btn btn-ghost btn-sm syllabus-panel__archive-btn"
+                              onClick={() => act.archiveStandaloneReader(r.key)}
+                              aria-label="Archive reader"
+                              title="Archive this reader"
+                            >↓</button>
+                            <button
+                              className="btn btn-ghost btn-sm syllabus-panel__delete-btn"
+                              onClick={() => requestDelete(r.key, r.topic, 'standalone')}
+                              aria-label="Delete reader"
+                              title="Delete this reader"
+                            >×</button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+
+            {/* Ungrouped readers */}
+            {ungrouped.map(r => (
               <li key={r.key}>
                 <div
                   className={`syllabus-panel__lesson-btn syllabus-panel__standalone-item ${standaloneKey === r.key ? 'syllabus-panel__lesson-btn--active' : ''}`}
@@ -229,28 +311,29 @@ export default function SyllabusPanel({
                     <span className="syllabus-panel__lesson-text">
                       <span className="syllabus-panel__lesson-zh text-chinese">
                         {generatedReaders[r.key]?.titleZh || r.topic}
+                        {r.isDemo && <span className="text-muted" style={{ fontSize: 'var(--text-xs)', marginLeft: '0.35em' }}>(sample)</span>}
                       </span>
                       <span className="syllabus-panel__lesson-en text-muted">
                         {generatedReaders[r.key]?.titleEn || `${getLang(r.langId).proficiency.name} ${r.level}`}
                       </span>
                     </span>
                   </button>
-                  <button
-                    className="btn btn-ghost btn-sm syllabus-panel__archive-btn"
-                    onClick={() => act.archiveStandaloneReader(r.key)}
-                    aria-label="Archive reader"
-                    title="Archive this reader"
-                  >
-                    ↓
-                  </button>
-                  <button
-                    className="btn btn-ghost btn-sm syllabus-panel__delete-btn"
-                    onClick={() => requestDelete(r.key, r.topic, 'standalone')}
-                    aria-label="Delete reader"
-                    title="Delete this reader"
-                  >
-                    ×
-                  </button>
+                  {!r.isDemo && (
+                    <button
+                      className="btn btn-ghost btn-sm syllabus-panel__archive-btn"
+                      onClick={() => act.archiveStandaloneReader(r.key)}
+                      aria-label="Archive reader"
+                      title="Archive this reader"
+                    >↓</button>
+                  )}
+                  {!r.isDemo && (
+                    <button
+                      className="btn btn-ghost btn-sm syllabus-panel__delete-btn"
+                      onClick={() => requestDelete(r.key, r.topic, 'standalone')}
+                      aria-label="Delete reader"
+                      title="Delete this reader"
+                    >×</button>
+                  )}
                 </div>
               </li>
             ))}
@@ -362,6 +445,13 @@ export default function SyllabusPanel({
             </>
           )}
         </div>
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={onShowFlashcards}
+          title="Flashcard review"
+        >
+          ⬡ Cards
+        </button>
         <button
           className="btn btn-ghost btn-sm"
           onClick={onShowStats}

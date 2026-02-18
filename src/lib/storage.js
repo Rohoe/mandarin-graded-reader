@@ -45,6 +45,7 @@ const KEYS = {
   TTS_YUE_VOICE_URI:  'gradedReader_ttsYueVoiceURI',
   CLOUD_LAST_SYNCED:  'gradedReader_cloudLastSynced',
   VERBOSE_VOCAB:      'gradedReader_verboseVocab',
+  STRUCTURED_OUTPUT:  'gradedReader_structuredOutput',
   LEARNING_ACTIVITY:  'gradedReader_learningActivity',
   PROVIDER_KEYS:      'gradedReader_providerKeys',
   ACTIVE_PROVIDER:    'gradedReader_activeProvider',
@@ -411,11 +412,11 @@ export function addLearnedVocabulary(wordList) {
   const existing = loadLearnedVocabulary();
   const now = new Date().toISOString();
   for (const word of wordList) {
-    const key = word.chinese || word.korean || word.target || '';
+    const key = word.target || word.chinese || word.korean || '';
     if (key && !existing[key]) {
       existing[key] = {
-        pinyin:    word.pinyin  || word.romanization || '',
-        english:   word.english || word.translation  || '',
+        pinyin:    word.romanization || word.pinyin  || '',
+        english:   word.translation  || word.english || '',
         langId:    word.langId  || undefined,
         dateAdded: now,
       };
@@ -423,6 +424,44 @@ export function addLearnedVocabulary(wordList) {
   }
   saveWithFile(KEYS.VOCABULARY, existing, 'vocabulary');
   return existing;
+}
+
+/**
+ * Merge vocabulary in-memory without saving (for pure reducer).
+ */
+export function mergeVocabulary(existing, wordList) {
+  const merged = { ...existing };
+  const now = new Date().toISOString();
+  for (const word of wordList) {
+    const key = word.target || word.chinese || word.korean || '';
+    if (key && !merged[key]) {
+      merged[key] = {
+        pinyin:    word.romanization || word.pinyin  || '',
+        english:   word.translation  || word.english || '',
+        langId:    word.langId  || undefined,
+        dateAdded: now,
+      };
+    }
+  }
+  return merged;
+}
+
+export function saveLearnedVocabulary(vocab) {
+  saveWithFile(KEYS.VOCABULARY, vocab, 'vocabulary');
+}
+
+/**
+ * Merge exported words in-memory without saving (for pure reducer).
+ */
+export function mergeExportedWords(existing, newWords) {
+  const merged = new Set(existing);
+  for (const w of newWords) merged.add(w);
+  return merged;
+}
+
+export function saveExportedWordsFull(wordSet) {
+  const arr = [...wordSet];
+  saveWithFile(KEYS.EXPORTED, arr, 'exported');
 }
 
 export function clearLearnedVocabulary() {
@@ -575,6 +614,14 @@ export function saveVerboseVocab(val) {
   save(KEYS.VERBOSE_VOCAB, val);
 }
 
+export function loadStructuredOutput() {
+  return load(KEYS.STRUCTURED_OUTPUT, false);
+}
+
+export function saveStructuredOutput(val) {
+  save(KEYS.STRUCTURED_OUTPUT, val);
+}
+
 // ── Cloud last-synced timestamp ───────────────────────────────
 
 export function loadCloudLastSynced() {
@@ -616,6 +663,36 @@ export function loadLearningActivity() {
 
 export function saveLearningActivity(activity) {
   save(KEYS.LEARNING_ACTIVITY, activity);
+}
+
+const ACTIVITY_STASH_KEY = 'gradedReader_learningActivity_stash';
+const STASH_AGE_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
+const STASH_THRESHOLD = 500;
+
+/**
+ * Move activity entries older than 90 days to a separate stash key.
+ * Called when the main array exceeds STASH_THRESHOLD entries.
+ * Returns the pruned (recent) activity array.
+ */
+export function stashOldActivity(activity) {
+  if (activity.length <= STASH_THRESHOLD) return activity;
+  const cutoff = Date.now() - STASH_AGE_MS;
+  const recent = [];
+  const old = [];
+  for (const entry of activity) {
+    if ((entry.timestamp || 0) < cutoff) old.push(entry);
+    else recent.push(entry);
+  }
+  if (old.length === 0) return activity;
+  // Merge with existing stash
+  const existingStash = load(ACTIVITY_STASH_KEY, []);
+  save(ACTIVITY_STASH_KEY, [...existingStash, ...old]);
+  save(KEYS.LEARNING_ACTIVITY, recent);
+  return recent;
+}
+
+export function loadActivityStash() {
+  return load(ACTIVITY_STASH_KEY, []);
 }
 
 // ── Storage usage estimate ────────────────────────────────────

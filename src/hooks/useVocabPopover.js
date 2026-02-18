@@ -10,9 +10,10 @@ export function useVocabPopover(reader, langConfig) {
     const map = new Map();
     if (vocabulary) {
       for (const v of vocabulary) {
-        map.set(v.chinese, v);
-        const stripped = v.chinese.replace(new RegExp(`^[^${scriptRegex.source.slice(1, -1)}]+|[^${scriptRegex.source.slice(1, -1)}]+$`, 'g'), '');
-        if (stripped && stripped !== v.chinese) map.set(stripped, v);
+        const word = v.target || v.chinese;
+        map.set(word, v);
+        const stripped = word.replace(new RegExp(`^[^${scriptRegex.source.slice(1, -1)}]+|[^${scriptRegex.source.slice(1, -1)}]+$`, 'g'), '');
+        if (stripped && stripped !== word) map.set(stripped, v);
       }
     }
     return map;
@@ -22,7 +23,7 @@ export function useVocabPopover(reader, langConfig) {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
     setActiveVocab(prev =>
-      prev && prev.word.chinese === vocabWord.chinese ? null : { word: vocabWord, rect }
+      prev && (prev.word.target || prev.word.chinese) === (vocabWord.target || vocabWord.chinese) ? null : { word: vocabWord, rect }
     );
   }, []);
 

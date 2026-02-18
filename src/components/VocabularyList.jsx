@@ -27,10 +27,10 @@ function VocabCard({ word, index, renderChars, verboseVocab }) {
       >
         <span className="vocab-card__num text-subtle">{index + 1}</span>
         <span className="vocab-card__chinese text-chinese">
-          {renderChars ? renderChars(word.chinese, `vc-${index}`) : word.chinese}
+          {renderChars ? renderChars(word.target || word.chinese, `vc-${index}`) : (word.target || word.chinese)}
         </span>
-        <span className="vocab-card__pinyin text-muted">{word.pinyin}</span>
-        <span className="vocab-card__english">{word.english}</span>
+        <span className="vocab-card__pinyin text-muted">{word.romanization || word.pinyin}</span>
+        <span className="vocab-card__english">{word.translation || word.english}</span>
         <span className="vocab-card__chevron">{open ? '▲' : '▼'}</span>
       </button>
 
@@ -93,7 +93,7 @@ export default function VocabularyList({ vocabulary, renderChars, verboseVocab }
         <div id="vocabulary-list-content" className="vocabulary-list__cards fade-in">
           {vocabulary.map((word, i) => (
             <VocabCard
-              key={word.chinese + i}
+              key={(word.target || word.chinese) + i}
               word={word}
               index={i}
               renderChars={renderChars}
