@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import { computeStats } from '../../lib/stats';
 import { getAllLanguages } from '../../lib/languages';
@@ -22,6 +22,15 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
   }, [state.learningActivity]);
   const languages = getAllLanguages();
 
+  // Close on Escape key
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') onClose?.();
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const maxBarCount = Math.max(...stats.wordsByPeriod.map(b => b.count), 1);
 
   return (
@@ -39,8 +48,8 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
             <span className="stats-card__label">Words Learned</span>
           </div>
           <div className="stats-card">
-            <span className="stats-card__value">{stats.completedLessons}/{stats.totalLessons}</span>
-            <span className="stats-card__label">Lessons Done</span>
+            <span className="stats-card__value">{stats.totalLessons === 0 ? '—' : `${stats.completedLessons}/${stats.totalLessons}`}</span>
+            <span className="stats-card__label">{stats.totalLessons === 0 ? 'No courses yet' : 'Lessons Done'}</span>
           </div>
           <div className="stats-card">
             <span className="stats-card__value">{stats.streak}</span>

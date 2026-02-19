@@ -152,6 +152,15 @@ export default function Settings({ onClose }) {
     onClose?.();
   }
 
+  // Close on Escape key
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') onClose?.();
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   return (
     <div className="settings-overlay" onClick={e => e.target === e.currentTarget && onClose?.()}>
       <div className="settings-panel card card-padded fade-in">
@@ -606,7 +615,7 @@ export default function Settings({ onClose }) {
           <h3 className="settings-section__title form-label">Browser Storage Usage</h3>
           <div className="settings-storage">
             <div className="settings-storage__bar">
-              <div className="settings-storage__fill" style={{ width: `${Math.min(usage.pct, 100)}%` }} />
+              <div className="settings-storage__fill" style={{ width: `${Math.max(Math.min(usage.pct, 100), usage.pct > 0 ? 3 : 0)}%` }} />
             </div>
             <p className="settings-storage__label text-subtle">
               {(usage.used / 1024).toFixed(0)} KB / {(usage.limit / 1024 / 1024).toFixed(0)} MB ({usage.pct}% used)

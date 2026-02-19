@@ -242,6 +242,11 @@ function extractExamples(text, scriptRegex) {
     // Only collect lines that contain target script characters — skip English-only lines
     if (!scriptRegex.test(trimmed)) continue;
     const cleaned = stripExamplePrefix(trimmed);
+    // Reject lines that look like usage notes / meta-commentary with only a few target chars
+    // (e.g. "Shows how 深远 describes lasting impact" — mostly English with one target word)
+    const targetCharCount = (cleaned.match(new RegExp(scriptRegex.source, 'g')) || []).length;
+    const totalLength = cleaned.replace(/\s/g, '').length;
+    if (totalLength > 0 && targetCharCount / totalLength < 0.3) continue;
     if (examples.length < 2) examples.push(cleaned);
     else break;
   }
@@ -289,7 +294,7 @@ function parseGrammarNotes(text) {
     // Next non-empty line after the header is the example
     const afterHeader = text.slice(match.index + match[0].length);
     const exampleLine = afterHeader.split('\n').map(l => l.trim()).find(l => l.length > 0) || '';
-    items.push({ pattern, label, explanation, example: exampleLine });
+    items.push({ pattern, label, explanation, example: exampleLine.replace(/^[-•]\s*/, '') });
   }
   return items;
 }

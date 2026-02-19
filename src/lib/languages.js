@@ -60,6 +60,10 @@ const zhConfig = {
   })),
 
   // UI
+  placeholders: {
+    syllabus: 'e.g. Chinese business culture, Traditional festivals…',
+    standalone: 'e.g. A day at a Beijing market…',
+  },
   decorativeChars: ['读', '写', '学', '文', '语', '书'],
   romanizationLabel: '拼',
   romanizationName: 'pinyin',
@@ -154,6 +158,10 @@ const koConfig = {
     },
   })),
 
+  placeholders: {
+    syllabus: 'e.g. Korean food culture, K-drama themes…',
+    standalone: 'e.g. A trip to a Seoul café…',
+  },
   decorativeChars: ['읽', '쓰', '배', '글', '어', '책'],
   romanizationLabel: 'Aa',
   romanizationName: 'romanization',
@@ -243,6 +251,10 @@ const yueConfig = {
     };
   }),
 
+  placeholders: {
+    syllabus: 'e.g. Hong Kong street food, Cantonese opera…',
+    standalone: 'e.g. A morning at a cha chaan teng…',
+  },
   decorativeChars: ['廣', '粵', '話', '語', '字', '音'],
   romanizationLabel: '粵',
   romanizationName: 'jyutping',

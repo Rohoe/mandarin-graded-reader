@@ -51,10 +51,15 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   const langId = reader?.langId || lessonMeta?.langId || DEFAULT_LANG_ID;
   const langConfig = getLang(langId);
 
-  // Set data-lang on <html> when reader changes
+  // Set data-lang on <html> and update page title when reader changes
   useEffect(() => {
     document.documentElement.setAttribute('data-lang', langId);
-    return () => document.documentElement.removeAttribute('data-lang');
+    const titles = { zh: '漫读 — Mandarin Reader', yue: '漫读 — Cantonese Reader', ko: '漫读 — Korean Reader' };
+    document.title = titles[langId] || titles.zh;
+    return () => {
+      document.documentElement.removeAttribute('data-lang');
+      document.title = '漫读 — Graded Reader';
+    };
   }, [langId]);
 
   // Cycling chars for empty state
@@ -139,12 +144,14 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     clearSelection();
   }, [lessonKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Load from cache synchronously to avoid flash of "Generate Reader" button.
+  // Load from cache to avoid flash of "Generate Reader" button.
   // Uses module-level Set to avoid re-dispatching for the same key.
-  if (lessonKey && !generatedReaders[lessonKey] && !_loadedKeys.has(lessonKey)) {
-    _loadedKeys.add(lessonKey);
-    dispatch({ type: 'LOAD_CACHED_READER', payload: { lessonKey } });
-  }
+  useEffect(() => {
+    if (lessonKey && !generatedReaders[lessonKey] && !_loadedKeys.has(lessonKey)) {
+      _loadedKeys.add(lessonKey);
+      dispatch({ type: 'LOAD_CACHED_READER', payload: { lessonKey } });
+    }
+  }, [lessonKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Scroll to top when lesson changes
   useEffect(() => {
@@ -185,7 +192,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         <div className="reader-view__empty-state">
           <span className="reader-view__empty-hanzi">{decorativeChars[charIndex]}</span>
           <p className="font-display reader-view__empty-text">
-            Open the sidebar to generate a reader or start a course.
+            Choose a topic and generate a reader to get started.
           </p>
           <button className="btn btn-primary reader-view__empty-open-menu" onClick={onOpenSidebar}>
             ☰ Open menu
@@ -358,7 +365,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         <div className="reader-view__header-text">
           <div className="reader-view__meta text-subtle font-display">
             {reader.level && profBadge}
-            {reader.topic && ` · ${reader.topic}`}
+            {reader.topic && ` · ${reader.topic.charAt(0).toUpperCase() + reader.topic.slice(1)}`}
           </div>
           <h1 className="reader-view__title text-target-title">
             {reader.titleZh || getLessonTitle(lessonMeta, langId) || ''}
@@ -440,12 +447,12 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       {/* Mark complete */}
       {!isDemo && !isCompleted && onMarkComplete && (
         <div className="reader-view__complete-row">
-          <button className="btn btn-primary reader-view__complete-btn" onClick={onMarkComplete}>Mark Lesson Complete ✓</button>
+          <button className="btn btn-primary reader-view__complete-btn" onClick={onMarkComplete}>{lessonKey?.startsWith('standalone_') ? 'Mark Complete ✓' : 'Mark Lesson Complete ✓'}</button>
         </div>
       )}
       {isCompleted && (
         <div className="reader-view__completed-badge">
-          <span>✓ Lesson completed</span>
+          <span>✓ {lessonKey?.startsWith('standalone_') ? 'Completed' : 'Lesson completed'}</span>
           {onUnmarkComplete && (
             <button className="btn btn-ghost btn-sm reader-view__unmark-btn" onClick={onUnmarkComplete}>Undo</button>
           )}

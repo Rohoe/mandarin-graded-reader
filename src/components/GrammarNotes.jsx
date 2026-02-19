@@ -41,7 +41,10 @@ function GrammarCard({ note, index, renderChars }) {
         <p className="grammar-card__explanation">{note.explanation}</p>
         {note.example && (
           <p className="grammar-card__example text-chinese">
-            {renderChars ? renderChars(note.example, `ge-${index}`) : note.example}
+            {(() => {
+              const cleaned = note.example.replace(/^[-•]\s*/, '');
+              return renderChars ? renderChars(cleaned, `ge-${index}`) : cleaned;
+            })()}
           </p>
         )}
       </div>

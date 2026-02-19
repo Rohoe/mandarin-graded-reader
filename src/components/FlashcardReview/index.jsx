@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import { actions } from '../../context/actions';
 import { getAllLanguages } from '../../lib/languages';
@@ -67,6 +67,23 @@ export default function FlashcardReview({ onClose }) {
     const langIds = new Set(allCards.map(c => c.langId));
     return languages.filter(l => langIds.has(l.id));
   }, [allCards, languages]);
+
+  // Close on Escape, keyboard navigation for flashcards
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') { onClose?.(); return; }
+      if (phase === 'front' && (e.key === ' ' || e.key === 'Enter')) {
+        e.preventDefault();
+        handleReveal();
+      } else if (phase === 'back') {
+        if (e.key === '1') handleJudge('got');
+        else if (e.key === '2') handleJudge('almost');
+        else if (e.key === '3') handleJudge('missed');
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose, phase, handleReveal, handleJudge]);
 
   if (allCards.length === 0) {
     return (

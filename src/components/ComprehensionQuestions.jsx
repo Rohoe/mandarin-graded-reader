@@ -284,6 +284,11 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                 >
                   {grading ? 'Grading…' : 'Grade My Answers'}
                 </button>
+                {!grading && apiKey && !hasAnyAnswer && (
+                  <p className="comprehension__hint text-muted" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>
+                    Answer at least one question to grade
+                  </p>
+                )}
               </div>
               {!apiKey && (
                 <p className="comprehension__hint" style={{ marginTop: '0.75rem', fontSize: '0.9rem', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>

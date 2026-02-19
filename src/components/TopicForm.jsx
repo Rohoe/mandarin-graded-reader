@@ -142,8 +142,8 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
           type="text"
           className="form-input"
           placeholder={mode === 'syllabus'
-            ? 'e.g. Chinese business culture, Traditional festivals…'
-            : 'e.g. A day at a Beijing market…'}
+            ? (langConfig.placeholders?.syllabus || 'e.g. Chinese business culture, Traditional festivals…')
+            : (langConfig.placeholders?.standalone || 'e.g. A day at a Beijing market…')}
           value={topic}
           onChange={e => setTopic(e.target.value)}
           disabled={loading}
