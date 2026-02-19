@@ -50,6 +50,10 @@ export function useReaderGeneration(lessonKey, lessonMeta, reader, langId, isPen
         ? normalizeStructuredReader(raw, readerLangId)
         : parseReaderResponse(raw, readerLangId);
       pushGeneratedReader(lessonKey, { ...parsed, topic, level, langId: readerLangId, lessonKey });
+      // Update sidebar metadata with generated titles so they persist across reloads
+      if ((parsed.titleZh || parsed.titleEn) && lessonKey.startsWith('standalone_')) {
+        act.updateStandaloneReaderMeta({ key: lessonKey, titleZh: parsed.titleZh, titleEn: parsed.titleEn });
+      }
       act.notify('success', `Reader ready: ${lessonMeta?.title_en || topic}`);
     } catch (err) {
       if (err.message?.includes('timed out') || err.name === 'AbortError') {

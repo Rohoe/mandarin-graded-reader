@@ -184,6 +184,10 @@ function AppShell() {
         ? normalizeStructuredReader(raw, langId)
         : parseReaderResponse(raw, langId);
       pushGeneratedReader(newKey, { ...parsed, topic: continuationTopic, level, langId, lessonKey: newKey });
+      // Update sidebar metadata with generated titles so they persist across reloads
+      if (parsed.titleZh || parsed.titleEn) {
+        act.updateStandaloneReaderMeta({ key: newKey, titleZh: parsed.titleZh, titleEn: parsed.titleEn });
+      }
       act.notify('success', 'Continuation reader ready!');
     } catch (err) {
       act.removeStandaloneReader(newKey);

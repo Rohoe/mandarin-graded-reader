@@ -251,7 +251,7 @@ export default function SyllabusPanel({
                   >
                     <span className="syllabus-panel__lesson-text">
                       <span className="syllabus-panel__lesson-zh text-chinese">
-                        {generatedReaders[firstEp.key]?.titleZh || baseTopic}
+                        {firstEp.titleZh || generatedReaders[firstEp.key]?.titleZh || baseTopic}
                       </span>
                       <span className="syllabus-panel__lesson-en text-muted">
                         {episodes.length} episode{episodes.length !== 1 ? 's' : ''}
@@ -272,7 +272,7 @@ export default function SyllabusPanel({
                               <span className="syllabus-panel__lesson-text">
                                 <span className="syllabus-panel__lesson-num">{r.episodeNumber || '·'}</span>
                                 <span className="syllabus-panel__lesson-zh text-chinese">
-                                  {generatedReaders[r.key]?.titleZh || r.topic}
+                                  {r.titleZh || generatedReaders[r.key]?.titleZh || r.topic}
                                 </span>
                               </span>
                             </button>
@@ -310,11 +310,11 @@ export default function SyllabusPanel({
                   >
                     <span className="syllabus-panel__lesson-text">
                       <span className="syllabus-panel__lesson-zh text-chinese">
-                        {generatedReaders[r.key]?.titleZh || r.topic}
+                        {r.titleZh || generatedReaders[r.key]?.titleZh || r.topic}
                         {r.isDemo && <span className="text-muted" style={{ fontSize: 'var(--text-xs)', marginLeft: '0.35em' }}>(sample)</span>}
                       </span>
                       <span className="syllabus-panel__lesson-en text-muted">
-                        {generatedReaders[r.key]?.titleEn || `${getLang(r.langId).proficiency.name} ${r.level}`}
+                        {r.titleEn || generatedReaders[r.key]?.titleEn || `${getLang(r.langId).proficiency.name} ${r.level}`}
                       </span>
                     </span>
                   </button>
@@ -389,7 +389,7 @@ export default function SyllabusPanel({
                   <div className="syllabus-panel__lesson-btn syllabus-panel__standalone-item syllabus-panel__archived-item">
                     <span className="syllabus-panel__lesson-text">
                       <span className="syllabus-panel__lesson-zh text-chinese">
-                        {generatedReaders[r.key]?.titleZh || r.topic}
+                        {r.titleZh || generatedReaders[r.key]?.titleZh || r.topic}
                       </span>
                       <span className="syllabus-panel__lesson-en text-muted">
                         {getLang(r.langId).proficiency.name} {r.level}

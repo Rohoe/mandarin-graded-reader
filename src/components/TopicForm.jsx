@@ -80,6 +80,10 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
       const raw    = await generateReader(llmConfig, topicStr, level, learnedVocabulary, readerLength, maxTokens, null, langId);
       const parsed = parseReaderResponse(raw, langId);
       pushGeneratedReader(lessonKey, { ...parsed, topic: topicStr, level, langId: langId, lessonKey, isStandalone: true });
+      // Update sidebar metadata with generated titles so they persist across reloads
+      if (parsed.titleZh || parsed.titleEn) {
+        act.updateStandaloneReaderMeta({ key: lessonKey, titleZh: parsed.titleZh, titleEn: parsed.titleEn });
+      }
       if (parsed.ankiJson?.length > 0) {
         act.addVocabulary(parsed.ankiJson.map(c => ({
           chinese: c.chinese, korean: c.korean, pinyin: c.pinyin, romanization: c.romanization, english: c.english, langId: langId,
