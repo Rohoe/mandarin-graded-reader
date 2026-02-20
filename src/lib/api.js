@@ -291,10 +291,8 @@ export const READER_JSON_SCHEMA = {
           romanization: { type: 'string', description: 'Pinyin, jyutping, or romanization' },
           english:      { type: 'string', description: 'English definition' },
           example_story:             { type: 'string', description: 'Example sentence from the story' },
-          example_story_translation: { type: 'string', description: 'English translation of story example' },
           usage_note_story:          { type: 'string', description: 'Grammar/usage note for story example' },
           example_extra:             { type: 'string', description: 'Additional example sentence' },
-          example_extra_translation: { type: 'string', description: 'English translation of extra example' },
           usage_note_extra:          { type: 'string', description: 'Grammar/usage note for extra example' },
         },
         required: ['target', 'romanization', 'english', 'example_story'],
@@ -306,9 +304,8 @@ export const READER_JSON_SCHEMA = {
         type: 'object',
         properties: {
           text:        { type: 'string', description: 'Question in target language' },
-          translation: { type: 'string', description: 'English translation of the question' },
         },
-        required: ['text', 'translation'],
+        required: ['text'],
       },
     },
     grammar_notes: {

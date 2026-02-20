@@ -29,7 +29,11 @@ function scoreBadgeClass(scoreStr) {
 
 const AUTO_SAVE_DELAY = 1500;
 
-export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars, verboseVocab, showParagraphTools }) {
+function stripMarkdown(text) {
+  return text.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1');
+}
+
+export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars, showParagraphTools, speakText, speakingKey, ttsSupported }) {
   const { apiKey, providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
     apiKey: s.apiKey, providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
   }));
@@ -196,22 +200,31 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                   <span className="comprehension__text text-chinese">
                   {renderChars ? renderChars(qText, `q${i}`) : renderInline(qText)}
                   {showParagraphTools && (
-                    <button
-                      className={`reader-view__translate-btn ${translatingQIndex === i ? 'reader-view__translate-btn--loading' : ''} ${visibleQTranslations.has(i) ? 'reader-view__translate-btn--active' : ''}`}
-                      onClick={() => handleQTranslateClick(i, qText, qTranslation)}
-                      disabled={translatingQIndex === i}
-                      title={visibleQTranslations.has(i) ? 'Hide translation' : 'Translate to English'}
-                      aria-label={visibleQTranslations.has(i) ? 'Hide translation' : 'Translate to English'}
-                    >
-                      EN
-                    </button>
+                    <>
+                      {ttsSupported && (
+                        <button
+                          className={`reader-view__para-tts-btn ${speakingKey === `question-${i}` ? 'reader-view__para-tts-btn--active' : ''}`}
+                          onClick={(e) => { e.stopPropagation(); speakText(stripMarkdown(qText), `question-${i}`); }}
+                          title="Listen"
+                          aria-label="Listen to question"
+                        >
+                          {speakingKey === `question-${i}` ? '⏹' : '🔊'}
+                        </button>
+                      )}
+                      <button
+                        className={`reader-view__translate-btn ${translatingQIndex === i ? 'reader-view__translate-btn--loading' : ''} ${visibleQTranslations.has(i) ? 'reader-view__translate-btn--active' : ''}`}
+                        onClick={() => handleQTranslateClick(i, qText, qTranslation)}
+                        disabled={translatingQIndex === i}
+                        title={visibleQTranslations.has(i) ? 'Hide translation' : 'Translate to English'}
+                        aria-label={visibleQTranslations.has(i) ? 'Hide translation' : 'Translate to English'}
+                      >
+                        EN
+                      </button>
+                    </>
                   )}
                 </span>
                 {visibleQTranslations.has(i) && (qTranslation || fetchedQTranslations[i]) && (
                   <span className="comprehension__translation text-muted">{qTranslation || fetchedQTranslations[i]}</span>
-                )}
-                {verboseVocab && !visibleQTranslations.has(i) && qTranslation && (
-                  <span className="comprehension__translation text-muted">{qTranslation}</span>
                 )}
 
                   {results === null ? (

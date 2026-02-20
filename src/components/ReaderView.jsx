@@ -46,6 +46,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   const [readerLength, setReaderLength] = useState(1200);
   const [translatingIndex, setTranslatingIndex] = useState(null);
   const [restoring, setRestoring] = useState(false);
+  const [translatingVocabKey, setTranslatingVocabKey] = useState(null);
 
   // Determine langId from reader, lessonMeta, or syllabus
   const langId = reader?.langId || lessonMeta?.langId || DEFAULT_LANG_ID;
@@ -180,6 +181,25 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     } finally {
       setTranslatingIndex(null);
     }
+  }
+
+  async function handleTranslateVocabExample(index, type, text) {
+    const key = `${type}-${index}`;
+    setTranslatingVocabKey(key);
+    try {
+      const translation = await translateText(text, langId);
+      const existing = reader.vocabTranslations || {};
+      act.setReader(lessonKey, { ...reader, vocabTranslations: { ...existing, [key]: translation } });
+    } catch (err) {
+      act.notify('error', `Translation failed: ${err.message}`);
+    } finally {
+      setTranslatingVocabKey(null);
+    }
+  }
+
+  function handleCacheVocabTranslations(translations) {
+    const existing = reader.vocabTranslations || {};
+    act.setReader(lessonKey, { ...reader, vocabTranslations: { ...existing, ...translations } });
   }
 
   // Proficiency badge text
@@ -421,12 +441,24 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         level={reader.level || lessonMeta?.level || 3}
         langId={langId}
         renderChars={renderChars}
-        verboseVocab={verboseVocab}
         showParagraphTools={translateButtons}
+        speakText={speakText}
+        speakingKey={speakingKey}
+        ttsSupported={ttsSupported}
       />
 
       {/* Vocabulary */}
-      <VocabularyList vocabulary={reader.vocabulary} renderChars={renderChars} verboseVocab={verboseVocab} />
+      <VocabularyList
+        vocabulary={reader.vocabulary}
+        renderChars={renderChars}
+        speakText={speakText}
+        speakingKey={speakingKey}
+        ttsSupported={ttsSupported}
+        showParagraphTools={translateButtons}
+        onTranslateExample={handleTranslateVocabExample}
+        translatingKey={translatingVocabKey}
+        vocabTranslations={reader?.vocabTranslations || {}}
+      />
 
       {/* Grammar notes */}
       <GrammarNotes grammarNotes={reader.grammarNotes} renderChars={renderChars} />
@@ -441,6 +473,8 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
           langId={langId}
           verboseVocab={verboseVocab}
           romanizer={romanizer}
+          vocabTranslations={reader?.vocabTranslations || {}}
+          onCacheVocabTranslations={handleCacheVocabTranslations}
         />
       )}
 

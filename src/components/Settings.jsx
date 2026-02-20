@@ -253,7 +253,7 @@ export default function Settings({ onClose }) {
           <div className="settings-toggle-row">
             <div>
               <h3 className="settings-section__title form-label">Verbose Vocabulary</h3>
-              <p className="settings-section__desc text-muted">Show English translations for example sentences in the vocabulary section and include them in Anki exports.</p>
+              <p className="settings-section__desc text-muted">Include English translations of example sentences in Anki flashcard exports (translated via Google Translate at export time).</p>
             </div>
             <button
               role="switch"

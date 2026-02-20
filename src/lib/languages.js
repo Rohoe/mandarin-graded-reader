@@ -89,7 +89,7 @@ const zhConfig = {
       return `- Calibrate language complexity to HSK ${level}:\n${bands[level] || bands[3]}\n${suffix}`;
     },
     vocabFormat: `- **Word** (pinyin) - English definition`,
-    ankiFields: `{ "chinese": "词", "pinyin": "cí", "english": "n. definition", "example_story": "...", "example_story_translation": "...", "usage_note_story": "...", "example_extra": "...", "example_extra_translation": "...", "usage_note_extra": "..." }`,
+    ankiFields: `{ "chinese": "词", "pinyin": "cí", "english": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
     grammarContext: 'Mandarin grammar patterns',
     gradingContext: 'Chinese language teacher',
     gradingLanguage: 'Mandarin',
@@ -186,7 +186,7 @@ const koConfig = {
       return `- Calibrate language complexity to TOPIK ${level}:\n${bands[level] || bands[3]}\n${suffix}`;
     },
     vocabFormat: `- **Word** (romanization) - English definition`,
-    ankiFields: `{ "korean": "단어", "romanization": "dan-eo", "english": "n. definition", "example_story": "...", "example_story_translation": "...", "usage_note_story": "...", "example_extra": "...", "example_extra_translation": "...", "usage_note_extra": "..." }`,
+    ankiFields: `{ "korean": "단어", "romanization": "dan-eo", "english": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
     grammarContext: 'Korean grammar patterns',
     gradingContext: 'Korean language teacher',
     gradingLanguage: 'Korean',
@@ -283,7 +283,7 @@ const yueConfig = {
       return `${cantoPrefix}\n- Calibrate language complexity to YUE ${level}:\n${bands[level] || bands[3]}\n${suffix}`;
     },
     vocabFormat: `- **Word** (jyutping) - English definition`,
-    ankiFields: `{ "chinese": "詞", "jyutping": "ci4", "english": "n. definition", "example_story": "...", "example_story_translation": "...", "usage_note_story": "...", "example_extra": "...", "example_extra_translation": "...", "usage_note_extra": "..." }`,
+    ankiFields: `{ "chinese": "詞", "jyutping": "ci4", "english": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
     grammarContext: 'Cantonese grammar patterns',
     gradingContext: 'Cantonese language teacher',
     gradingLanguage: 'Cantonese',

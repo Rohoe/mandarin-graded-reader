@@ -45,8 +45,6 @@ IMPORTANT: Do NOT prefix example sentences with labels like "Example sentence:" 
 
 ### 4. Comprehension Questions
 ${questionRange} questions in ${p.targetLanguage} at the target level.
-Each question must be followed by its English translation in parentheses on the same line.
-Example format: 他为什么去了北京？(Why did he go to Beijing?)
 
 ### 5. Anki Cards Data (JSON)
 Return a JSON block tagged \`\`\`anki-json containing an array of card objects:

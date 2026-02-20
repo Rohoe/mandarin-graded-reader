@@ -59,7 +59,7 @@ function romanizeForExport(text, romanizer, scriptRegex) {
   return parts.join(' ');
 }
 
-export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forceAll = false, grammarNotes = [], langId = DEFAULT_LANG_ID, verboseVocab = false, romanizer = null } = {}) {
+export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forceAll = false, grammarNotes = [], langId = DEFAULT_LANG_ID, verboseVocab = false, romanizer = null, vocabTranslations = {} } = {}) {
   const langConfig = getLang(langId);
   const targetField = langConfig.fields.target;
   const profName = langConfig.proficiency.name;
@@ -77,7 +77,7 @@ export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forc
 
   let content = null;
   if (toExport.length > 0) {
-    const lines = toExport.map(card => formatRow(card, level, topicTag, today, langConfig, verboseVocab, romanizer, scriptRegex));
+    const lines = toExport.map((card, idx) => formatRow(card, level, topicTag, today, langConfig, verboseVocab, romanizer, scriptRegex, vocabTranslations, idx));
     content = lines.join('\n');
   }
 
@@ -89,7 +89,7 @@ export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forc
   };
 }
 
-function formatRow(card, level, topicTag, date, langConfig, verboseVocab = false, romanizer = null, scriptRegex = null) {
+function formatRow(card, level, topicTag, date, langConfig, verboseVocab = false, romanizer = null, scriptRegex = null, vocabTranslations = {}, cardIndex = 0) {
   const targetField = langConfig.fields.target;
   const romField = langConfig.fields.romanization;
   const transField = langConfig.fields.translation;
@@ -102,7 +102,8 @@ function formatRow(card, level, topicTag, date, langConfig, verboseVocab = false
       const rom = romanizeForExport(card.example_story, romanizer, scriptRegex);
       if (rom) exampleParts.push(`<i>${rom}</i>`);
     }
-    if (verboseVocab && card.example_story_translation) exampleParts.push(`<i>${card.example_story_translation}</i>`);
+    const storyTrans = vocabTranslations[`story-${cardIndex}`] || card.example_story_translation;
+    if (verboseVocab && storyTrans) exampleParts.push(`<i>${storyTrans}</i>`);
     if (card.usage_note_story) exampleParts.push(`<i>${card.usage_note_story}</i>`);
   }
   if (card.example_extra) {
@@ -112,7 +113,8 @@ function formatRow(card, level, topicTag, date, langConfig, verboseVocab = false
       const rom = romanizeForExport(card.example_extra, romanizer, scriptRegex);
       if (rom) exampleParts.push(`<i>${rom}</i>`);
     }
-    if (verboseVocab && card.example_extra_translation) exampleParts.push(`<i>${card.example_extra_translation}</i>`);
+    const extraTrans = vocabTranslations[`extra-${cardIndex}`] || card.example_extra_translation;
+    if (verboseVocab && extraTrans) exampleParts.push(`<i>${extraTrans}</i>`);
     if (card.usage_note_extra) exampleParts.push(`<i>${card.usage_note_extra}</i>`);
   }
   const examples = exampleParts.join('<br>');
