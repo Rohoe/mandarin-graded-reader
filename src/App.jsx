@@ -318,6 +318,7 @@ function AppShell() {
               isCompleted={!standaloneKey && completedSet.has(lessonIndex)}
               onContinueStory={handleContinueStory}
               onOpenSidebar={() => setSidebarOpen(true)}
+              onOpenSettings={() => setShowSettings(true)}
             />
           )
         }
@@ -358,6 +359,7 @@ function AppShell() {
               onStandaloneGenerated={(key) => { setShowNewForm(false); onStandaloneGenerated(key); }}
               onStandaloneGenerating={handleStandaloneGenerating}
               onCancel={() => setShowNewForm(false)}
+              onOpenSettings={() => { setShowNewForm(false); setShowSettings(true); }}
             />
           </div>
         </div>

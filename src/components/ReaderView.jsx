@@ -24,7 +24,7 @@ import './ReaderView.css';
 // (module-level to avoid ref-during-render lint errors)
 const _loadedKeys = new Set();
 
-export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar }) {
+export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar, onOpenSettings }) {
   const { generatedReaders, learnedVocabulary, error, pendingReaders, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate, romanizationOn, translateButtons, verboseVocab, quotaWarning, providerKeys, activeProvider, activeModels, customBaseUrl, useStructuredOutput, evictedReaderKeys } = useAppSelector(s => ({
     generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, error: s.error,
     pendingReaders: s.pendingReaders, maxTokens: s.maxTokens,
@@ -445,6 +445,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         speakText={speakText}
         speakingKey={speakingKey}
         ttsSupported={ttsSupported}
+        onOpenSettings={onOpenSettings}
       />
 
       {/* Vocabulary */}

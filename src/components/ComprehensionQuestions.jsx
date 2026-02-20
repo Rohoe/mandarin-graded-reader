@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { gradeAnswers } from '../lib/api';
-import { buildLLMConfig } from '../lib/llmConfig';
+import { buildLLMConfig, hasAnyUserKey } from '../lib/llmConfig';
 import { translateText } from '../lib/translate';
 import './ComprehensionQuestions.css';
 
@@ -33,10 +33,13 @@ function stripMarkdown(text) {
   return text.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1');
 }
 
-export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars, showParagraphTools, speakText, speakingKey, ttsSupported }) {
+export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars, showParagraphTools, speakText, speakingKey, ttsSupported, onOpenSettings }) {
   const { apiKey, providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
     apiKey: s.apiKey, providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
   }));
+
+  const defaultKeyAvailable = !hasAnyUserKey(providerKeys) && !!import.meta.env.VITE_DEFAULT_GEMINI_KEY;
+  const canGrade = !!apiKey || defaultKeyAvailable;
   const dispatch = useAppDispatch();
   const act = actions(dispatch);
 
@@ -293,17 +296,22 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={handleGrade}
-                  disabled={!hasAnyAnswer || grading || !apiKey}
+                  disabled={!hasAnyAnswer || grading || !canGrade}
                 >
                   {grading ? 'Grading…' : 'Grade My Answers'}
                 </button>
-                {!grading && apiKey && !hasAnyAnswer && (
+                {!grading && canGrade && !hasAnyAnswer && (
                   <p className="comprehension__hint text-muted" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>
                     Answer at least one question to grade
                   </p>
                 )}
+                {!grading && defaultKeyAvailable && (
+                  <p className="comprehension__hint text-muted" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)', fontStyle: 'italic' }}>
+                    Demo mode — <a href="#" onClick={e => { e.preventDefault(); onOpenSettings?.(); }} style={{ color: 'var(--color-accent)' }}>Add your own key</a> for faster grading.
+                  </p>
+                )}
               </div>
-              {!apiKey && (
+              {!canGrade && (
                 <p className="comprehension__hint" style={{ marginTop: '0.75rem', fontSize: '0.9rem', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
                   API key required for grading. Open Settings to add your key.
                 </p>

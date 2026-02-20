@@ -181,3 +181,22 @@
   font-family: var(--font-display);
   margin-top: calc(-1 * var(--space-3));
 }
+
+.topic-form__demo-banner {
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary, var(--color-text-muted));
+  font-family: var(--font-display);
+  margin-top: calc(-1 * var(--space-2));
+  padding: var(--space-3);
+  background: var(--color-accent-light, rgba(74, 124, 126, 0.08));
+  border: 1px solid var(--color-accent-border, rgba(74, 124, 126, 0.2));
+  border-radius: var(--radius);
+  line-height: 1.5;
+}
+
+.topic-form__demo-banner a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

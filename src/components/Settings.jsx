@@ -435,6 +435,13 @@ export default function Settings({ onClose }) {
         {/* ═══ AI Provider tab ═══ */}
         {activeTab === 'ai' && (<>
 
+        {/* Demo key callout */}
+        {!hasAnyKey && !!import.meta.env.VITE_DEFAULT_GEMINI_KEY && (
+          <div className="settings-demo-callout">
+            You're currently using the <strong>demo API key</strong>. Add your own key below for faster responses and higher limits.
+          </div>
+        )}
+
         {/* AI Provider */}
         <section className="settings-section">
           <h3 className="settings-section__title form-label">AI Provider</h3>

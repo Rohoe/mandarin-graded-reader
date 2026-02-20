@@ -3,19 +3,22 @@ import { AppContext } from '../context/AppContext';
 import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { generateSyllabus, generateReader } from '../lib/api';
-import { buildLLMConfig } from '../lib/llmConfig';
+import { buildLLMConfig, hasAnyUserKey } from '../lib/llmConfig';
 import { getProvider } from '../lib/providers';
 import { parseReaderResponse } from '../lib/parser';
 import { getLang, getAllLanguages, DEFAULT_LANG_ID } from '../lib/languages';
 import GenerationProgress from './GenerationProgress';
 import './TopicForm.css';
 
-export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStandaloneGenerating, onCancel }) {
+export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStandaloneGenerating, onCancel, onOpenSettings }) {
   const { apiKey, defaultLevel, defaultTopikLevel, defaultYueLevel, learnedVocabulary, maxTokens, loading, providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
     apiKey: s.apiKey, defaultLevel: s.defaultLevel, defaultTopikLevel: s.defaultTopikLevel, defaultYueLevel: s.defaultYueLevel,
     learnedVocabulary: s.learnedVocabulary, maxTokens: s.maxTokens, loading: s.loading,
     providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
   }));
+
+  const defaultKeyAvailable = !hasAnyUserKey(providerKeys) && !!import.meta.env.VITE_DEFAULT_GEMINI_KEY;
+  const canGenerate = !!apiKey || defaultKeyAvailable;
   const dispatch = useAppDispatch();
   const { pushGeneratedReader } = useContext(AppContext);
   const act = actions(dispatch);
@@ -228,7 +231,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
       <button
         type="submit"
         className="btn btn-primary btn-lg topic-form__submit"
-        disabled={loading || !topic.trim() || !apiKey}
+        disabled={loading || !topic.trim() || !canGenerate}
       >
         {loading
           ? '生成中…'
@@ -237,7 +240,14 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
             : 'Generate Reader'}
       </button>
 
-      {!loading && apiKey && (
+      {!loading && defaultKeyAvailable && (
+        <p className="topic-form__demo-banner">
+          <strong>Demo mode</strong> — Using a shared API key with limited usage.{' '}
+          <a href="#" onClick={e => { e.preventDefault(); onOpenSettings?.(); }}>Add your own key in Settings</a> for unlimited access.
+        </p>
+      )}
+
+      {!loading && apiKey && !defaultKeyAvailable && (
         <p className="topic-form__hint" style={{ opacity: 0.5 }}>
           Using {(() => {
             const prov = getProvider(activeProvider);
@@ -248,11 +258,11 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
         </p>
       )}
 
-      {!loading && !apiKey && (
+      {!loading && !canGenerate && (
         <p className="topic-form__hint">API key required. Open Settings to add your key.</p>
       )}
 
-      {!loading && apiKey && !topic.trim() && (
+      {!loading && canGenerate && !topic.trim() && (
         <p className="topic-form__hint">Enter a topic above to get started</p>
       )}
 
