@@ -161,12 +161,15 @@ export default function SyllabusPanel({
   const hasFilteredContent = filteredSyllabi.length > 0 || filteredStandalone.length > 0;
   const isFiltering = searchQuery || langFilter !== 'all' || viewMode !== 'all';
 
-  // Language pill config
-  const langOptions = [
-    { id: 'all', label: 'All' },
+  // Language pill config — only show languages present in user's content
+  const allLangOptions = [
     { id: 'zh', label: '中文' },
     { id: 'yue', label: '粵語' },
     { id: 'ko', label: '한국어' },
+  ];
+  const langOptions = [
+    { id: 'all', label: 'All' },
+    ...allLangOptions.filter(l => contentLanguages.has(l.id)),
   ];
 
   return (
@@ -374,6 +377,11 @@ export default function SyllabusPanel({
             );
           })}
 
+          {/* Divider between syllabi and standalone readers */}
+          {filteredSyllabi.length > 0 && filteredStandalone.length > 0 && (
+            <div className="syllabus-panel__divider" />
+          )}
+
           {/* Standalone readers: series groups */}
           {Object.entries(seriesGroups).map(([sId, episodes]) => {
             const firstEp = episodes[0];
@@ -473,74 +481,74 @@ export default function SyllabusPanel({
               </div>
             </div>
           ))}
-        </div>
-      )}
 
-      {/* Archived section */}
-      {archivedCount > 0 && (
-        <div className="syllabus-panel__archived-section">
-          <button
-            className="syllabus-panel__archived-header"
-            onClick={() => setArchivedOpen(o => !o)}
-            aria-expanded={archivedOpen}
-            aria-controls="archived-items-list"
-          >
-            <span className="form-label text-muted">Archived ({archivedCount})</span>
-            <span className="syllabus-panel__caret-btn">{archivedOpen ? '▾' : '▸'}</span>
-          </button>
-          {archivedOpen && (
-            <ul id="archived-items-list" className="syllabus-panel__list" role="list">
-              {archivedSyllabi.map(s => (
-                <li key={s.id}>
-                  <div className="syllabus-panel__lesson-btn syllabus-panel__standalone-item syllabus-panel__archived-item">
-                    <span className="syllabus-panel__lesson-text">
-                      <span className="syllabus-panel__lesson-zh text-chinese">{s.topic}</span>
-                      <span className="syllabus-panel__lesson-en text-muted">
-                        {getLang(s.langId).proficiency.name} {s.level} · Syllabus
-                      </span>
-                    </span>
-                    <button
-                      className="btn btn-ghost btn-sm syllabus-panel__archive-btn"
-                      onClick={() => act.unarchiveSyllabus(s.id)}
-                      aria-label="Unarchive syllabus"
-                      title="Unarchive"
-                    >↩</button>
-                    <button
-                      className="btn btn-ghost btn-sm syllabus-panel__delete-btn"
-                      onClick={() => requestDelete(s.id, s.topic, 'syllabus')}
-                      aria-label="Delete syllabus"
-                      title="Delete permanently"
-                    >×</button>
-                  </div>
-                </li>
-              ))}
-              {archivedStandalone.map(r => (
-                <li key={r.key}>
-                  <div className="syllabus-panel__lesson-btn syllabus-panel__standalone-item syllabus-panel__archived-item">
-                    <span className="syllabus-panel__lesson-text">
-                      <span className="syllabus-panel__lesson-zh text-chinese">
-                        {r.titleZh || generatedReaders[r.key]?.titleZh || r.topic}
-                      </span>
-                      <span className="syllabus-panel__lesson-en text-muted">
-                        {getLang(r.langId).proficiency.name} {r.level}
-                      </span>
-                    </span>
-                    <button
-                      className="btn btn-ghost btn-sm syllabus-panel__archive-btn"
-                      onClick={() => act.unarchiveStandaloneReader(r.key)}
-                      aria-label="Unarchive reader"
-                      title="Unarchive"
-                    >↩</button>
-                    <button
-                      className="btn btn-ghost btn-sm syllabus-panel__delete-btn"
-                      onClick={() => requestDelete(r.key, r.topic, 'standalone')}
-                      aria-label="Delete reader"
-                      title="Delete permanently"
-                    >×</button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+          {/* Archived section (inside content list so it scrolls) */}
+          {archivedCount > 0 && (
+            <div className="syllabus-panel__archived-section">
+              <button
+                className="syllabus-panel__archived-header"
+                onClick={() => setArchivedOpen(o => !o)}
+                aria-expanded={archivedOpen}
+                aria-controls="archived-items-list"
+              >
+                <span className="form-label text-muted">Archived ({archivedCount})</span>
+                <span className="syllabus-panel__caret-btn">{archivedOpen ? '▾' : '▸'}</span>
+              </button>
+              {archivedOpen && (
+                <ul id="archived-items-list" className="syllabus-panel__list" role="list">
+                  {archivedSyllabi.map(s => (
+                    <li key={s.id}>
+                      <div className="syllabus-panel__lesson-btn syllabus-panel__standalone-item syllabus-panel__archived-item">
+                        <span className="syllabus-panel__lesson-text">
+                          <span className="syllabus-panel__lesson-zh text-chinese">{s.topic}</span>
+                          <span className="syllabus-panel__lesson-en text-muted">
+                            {getLang(s.langId).proficiency.name} {s.level} · Syllabus
+                          </span>
+                        </span>
+                        <button
+                          className="btn btn-ghost btn-sm syllabus-panel__archive-btn"
+                          onClick={() => act.unarchiveSyllabus(s.id)}
+                          aria-label="Unarchive syllabus"
+                          title="Unarchive"
+                        >↩</button>
+                        <button
+                          className="btn btn-ghost btn-sm syllabus-panel__delete-btn"
+                          onClick={() => requestDelete(s.id, s.topic, 'syllabus')}
+                          aria-label="Delete syllabus"
+                          title="Delete permanently"
+                        >×</button>
+                      </div>
+                    </li>
+                  ))}
+                  {archivedStandalone.map(r => (
+                    <li key={r.key}>
+                      <div className="syllabus-panel__lesson-btn syllabus-panel__standalone-item syllabus-panel__archived-item">
+                        <span className="syllabus-panel__lesson-text">
+                          <span className="syllabus-panel__lesson-zh text-chinese">
+                            {r.titleZh || generatedReaders[r.key]?.titleZh || r.topic}
+                          </span>
+                          <span className="syllabus-panel__lesson-en text-muted">
+                            {getLang(r.langId).proficiency.name} {r.level}
+                          </span>
+                        </span>
+                        <button
+                          className="btn btn-ghost btn-sm syllabus-panel__archive-btn"
+                          onClick={() => act.unarchiveStandaloneReader(r.key)}
+                          aria-label="Unarchive reader"
+                          title="Unarchive"
+                        >↩</button>
+                        <button
+                          className="btn btn-ghost btn-sm syllabus-panel__delete-btn"
+                          onClick={() => requestDelete(r.key, r.topic, 'standalone')}
+                          aria-label="Delete reader"
+                          title="Delete permanently"
+                        >×</button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           )}
         </div>
       )}
