@@ -5,6 +5,13 @@ import { getAllLanguages } from '../../lib/languages';
 import { calculateSRS, sortCardsBySRS, getMasteryLevel } from './srs';
 import './FlashcardReview.css';
 
+function formatInterval(days) {
+  if (days <= 0) return '<1d';
+  if (days < 14) return `${days}d`;
+  if (days < 30) return `${Math.round(days / 7)}w`;
+  return `${Math.round(days / 30)}mo`;
+}
+
 export default function FlashcardReview({ onClose }) {
   const { state, dispatch } = useApp();
   const act = actions(dispatch);
@@ -30,6 +37,7 @@ export default function FlashcardReview({ onClose }) {
       romanization: data.romanization || data.pinyin || '',
       translation: data.translation || data.english || '',
       langId: data.langId || 'zh',
+      exampleSentence: data.exampleSentence || '',
       // SRS fields (defaults for legacy words without them)
       interval: data.interval ?? 0,
       ease: data.ease ?? 2.5,
@@ -55,21 +63,46 @@ export default function FlashcardReview({ onClose }) {
   const [phase, setPhase] = useState('front');
   const [cardIdx, setCardIdx] = useState(0);
   const [results, setResults] = useState({ got: 0, almost: 0, missed: 0 });
+  const [history, setHistory] = useState([]);
 
   // Reset card position when filter/mode changes
   useEffect(() => {
     setCardIdx(0);
     setResults({ got: 0, almost: 0, missed: 0 });
     setPhase('front');
+    setHistory([]);
   }, [langFilter, reviewMode]);
 
   const currentCard = sortedCards[cardIdx] || null;
   const totalCards = sortedCards.length;
 
+  // SRS interval previews for judgment buttons
+  const previews = useMemo(() => {
+    if (!currentCard) return {};
+    return {
+      got:    formatInterval(calculateSRS('got', currentCard).interval),
+      almost: formatInterval(calculateSRS('almost', currentCard).interval),
+      missed: formatInterval(calculateSRS('missed', currentCard).interval),
+    };
+  }, [currentCard]);
+
   const handleReveal = useCallback(() => setPhase('back'), []);
 
   const handleJudge = useCallback((judgment) => {
     if (!currentCard) return;
+
+    // Save snapshot for undo
+    setHistory(prev => [...prev, {
+      word: currentCard.target,
+      judgment,
+      previousSRS: {
+        interval: currentCard.interval,
+        ease: currentCard.ease,
+        nextReview: currentCard.nextReview,
+        reviewCount: currentCard.reviewCount,
+        lapses: currentCard.lapses,
+      },
+    }]);
 
     act.logActivity('flashcard_reviewed', { word: currentCard.target, judgment });
 
@@ -86,16 +119,45 @@ export default function FlashcardReview({ onClose }) {
     }
   }, [cardIdx, totalCards, currentCard, act]);
 
+  const handleUndo = useCallback(() => {
+    if (history.length === 0) return;
+    const last = history[history.length - 1];
+    setHistory(prev => prev.slice(0, -1));
+
+    // Restore SRS
+    act.updateVocabSRS(last.word, last.previousSRS);
+
+    // Decrement the result counter
+    setResults(prev => ({ ...prev, [last.judgment]: prev[last.judgment] - 1 }));
+
+    // Go back to the previous card, showing the back
+    if (phase === 'done') {
+      setCardIdx(totalCards - 1);
+    } else {
+      setCardIdx(i => i - 1);
+    }
+    setPhase('back');
+  }, [history, phase, totalCards, act]);
+
   const handleRestart = useCallback(() => {
     setCardIdx(0);
     setResults({ got: 0, almost: 0, missed: 0 });
     setPhase('front');
+    setHistory([]);
   }, []);
 
   // Close on Escape, keyboard navigation for flashcards
   useEffect(() => {
     function handleKeyDown(e) {
       if (e.key === 'Escape') { onClose?.(); return; }
+
+      // Undo: Ctrl+Z / Cmd+Z
+      if ((e.key === 'z' || e.key === 'Z') && (e.metaKey || e.ctrlKey) && history.length > 0) {
+        e.preventDefault();
+        handleUndo();
+        return;
+      }
+
       if (phase === 'front' && (e.key === ' ' || e.key === 'Enter')) {
         e.preventDefault();
         handleReveal();
@@ -107,7 +169,7 @@ export default function FlashcardReview({ onClose }) {
     }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose, phase, handleReveal, handleJudge]);
+  }, [onClose, phase, handleReveal, handleJudge, handleUndo, history.length]);
 
   // Mastery stats for done screen
   const masteryStats = useMemo(() => {
@@ -262,6 +324,11 @@ export default function FlashcardReview({ onClose }) {
             )}
 
             <div className="flashcard-done__actions">
+              {history.length > 0 && (
+                <button className="btn btn-ghost btn-sm flashcard-undo" onClick={handleUndo} title="Undo last judgment (Ctrl+Z)">
+                  ↩ Undo
+                </button>
+              )}
               <button className="btn btn-secondary btn-sm" onClick={handleRestart}>Review again</button>
               <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
             </div>
@@ -269,8 +336,15 @@ export default function FlashcardReview({ onClose }) {
         ) : (
           /* Card view */
           <>
-            <div className="flashcard-progress text-muted">
-              {cardIdx + 1} / {totalCards}
+            <div className="flashcard-progress">
+              <span className="flashcard-progress__count text-muted">
+                {cardIdx + 1} / {totalCards}
+              </span>
+              {history.length > 0 && (
+                <button className="btn btn-ghost btn-sm flashcard-undo" onClick={handleUndo} title="Undo last judgment (Ctrl+Z)">
+                  ↩ Undo
+                </button>
+              )}
             </div>
 
             <div className="flashcard-card" data-lang={currentCard.langId}>
@@ -284,6 +358,9 @@ export default function FlashcardReview({ onClose }) {
                     <span className="flashcard-card__romanization text-muted">{currentCard.romanization}</span>
                   )}
                   <span className="flashcard-card__translation">{currentCard.translation}</span>
+                  {currentCard.exampleSentence && (
+                    <span className="flashcard-card__example text-muted">{currentCard.exampleSentence}</span>
+                  )}
                 </div>
               )}
             </div>
@@ -294,9 +371,18 @@ export default function FlashcardReview({ onClose }) {
               </div>
             ) : (
               <div className="flashcard-actions">
-                <button className="btn btn-sm flashcard-btn--got" onClick={() => handleJudge('got')}>Got it</button>
-                <button className="btn btn-sm flashcard-btn--almost" onClick={() => handleJudge('almost')}>Almost</button>
-                <button className="btn btn-sm flashcard-btn--missed" onClick={() => handleJudge('missed')}>Missed it</button>
+                <button className="btn btn-sm flashcard-btn--got" onClick={() => handleJudge('got')}>
+                  Got it
+                  <span className="flashcard-btn__interval">{previews.got}</span>
+                </button>
+                <button className="btn btn-sm flashcard-btn--almost" onClick={() => handleJudge('almost')}>
+                  Almost
+                  <span className="flashcard-btn__interval">{previews.almost}</span>
+                </button>
+                <button className="btn btn-sm flashcard-btn--missed" onClick={() => handleJudge('missed')}>
+                  Missed it
+                  <span className="flashcard-btn__interval">{previews.missed}</span>
+                </button>
               </div>
             )}
           </>

@@ -447,6 +447,8 @@ export function mergeVocabulary(existing, wordList) {
         nextReview:  null,
         reviewCount: 0,
         lapses:      0,
+        // Example sentence from reader (if available)
+        ...(word.exampleSentence ? { exampleSentence: word.exampleSentence } : {}),
       };
     }
   }

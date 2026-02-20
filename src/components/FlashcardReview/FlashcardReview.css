@@ -122,9 +122,16 @@
 
 /* Progress counter */
 .flashcard-progress {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
   font-family: var(--font-mono);
   font-size: var(--text-sm);
+}
+
+.flashcard-progress__count {
+  /* inherits text-muted */
 }
 
 /* Card */
@@ -166,9 +173,31 @@
   font-weight: 600;
 }
 
+.flashcard-card__example {
+  font-size: var(--text-sm);
+  font-family: var(--font-target);
+  text-align: center;
+  line-height: 1.6;
+  max-width: 320px;
+  margin-top: var(--space-1);
+}
+
 @keyframes flashcard-reveal {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Undo button */
+.flashcard-undo {
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #6b7280);
+  opacity: 0.7;
+  padding: 2px var(--space-2);
+}
+
+.flashcard-undo:hover {
+  opacity: 1;
+  color: var(--color-accent);
 }
 
 /* Action buttons */
@@ -177,6 +206,24 @@
   gap: var(--space-3);
   justify-content: center;
   flex-wrap: wrap;
+}
+
+.flashcard-btn--got,
+.flashcard-btn--almost,
+.flashcard-btn--missed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 80px;
+}
+
+.flashcard-btn__interval {
+  display: block;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  opacity: 0.7;
+  font-weight: 400;
 }
 
 .flashcard-btn--got {
@@ -336,4 +383,12 @@
 
 [data-theme="dark"] .flashcard-btn--almost {
   border-color: color-mix(in srgb, var(--color-accent) 60%, transparent);
+}
+
+[data-theme="dark"] .flashcard-undo {
+  color: var(--color-text-muted, #9ca3af);
+}
+
+[data-theme="dark"] .flashcard-card__example {
+  color: var(--color-text-muted, #9ca3af);
 }

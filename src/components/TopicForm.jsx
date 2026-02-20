@@ -84,9 +84,17 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
       if (parsed.titleZh || parsed.titleEn) {
         act.updateStandaloneReaderMeta({ key: lessonKey, titleZh: parsed.titleZh, titleEn: parsed.titleEn });
       }
-      if (parsed.ankiJson?.length > 0) {
+      if (parsed.vocabulary?.length > 0) {
+        act.addVocabulary(parsed.vocabulary.map(v => ({
+          target: v.target, romanization: v.romanization, translation: v.translation,
+          chinese: v.chinese, korean: v.korean, pinyin: v.pinyin, english: v.english,
+          langId: langId,
+          exampleSentence: v.exampleStory || '',
+        })));
+      } else if (parsed.ankiJson?.length > 0) {
         act.addVocabulary(parsed.ankiJson.map(c => ({
           chinese: c.chinese, korean: c.korean, pinyin: c.pinyin, romanization: c.romanization, english: c.english, langId: langId,
+          exampleSentence: c.exampleStory || '',
         })));
       }
       act.notify('success', `Reader ready: "${topicStr}"`);

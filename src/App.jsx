@@ -130,11 +130,20 @@ function AppShell() {
   function handleMarkComplete() {
     // Learn vocabulary from this reader on completion
     const reader = state.generatedReaders[activeLessonKey];
-    if (reader?.ankiJson?.length > 0) {
+    const readerLangId = currentSyllabus?.langId || reader?.langId || 'zh';
+    if (reader?.vocabulary?.length > 0) {
+      act.addVocabulary(reader.vocabulary.map(v => ({
+        target: v.target, romanization: v.romanization, translation: v.translation,
+        chinese: v.chinese, korean: v.korean, pinyin: v.pinyin, english: v.english,
+        langId: readerLangId,
+        exampleSentence: v.exampleStory || '',
+      })));
+    } else if (reader?.ankiJson?.length > 0) {
       act.addVocabulary(reader.ankiJson.map(c => ({
         chinese: c.chinese, korean: c.korean, target: c.target,
         pinyin: c.pinyin, romanization: c.romanization, english: c.english,
-        langId: currentSyllabus?.langId || reader.langId || 'zh',
+        langId: readerLangId,
+        exampleSentence: c.exampleStory || '',
       })));
     }
     act.markLessonComplete(activeSyllabusId, lessonIndex);
