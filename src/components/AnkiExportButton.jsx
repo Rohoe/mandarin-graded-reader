@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
-import { generateAnkiExport, downloadFile } from '../lib/anki';
+import { generateAnkiExport, generateAnkiApkgExport, downloadFile, downloadBlob } from '../lib/anki';
 import { translateText } from '../lib/translate';
 import './AnkiExportButton.css';
 
@@ -12,6 +12,8 @@ export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes,
 
   const [exported, setExported] = useState(false);
   const [translating, setTranslating] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [format, setFormat] = useState('apkg'); // 'apkg' | 'txt'
 
   if (!ankiJson || ankiJson.length === 0) return null;
 
@@ -24,10 +26,9 @@ export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes,
 
   const allExported = newCount === 0;
 
-  async function handleExport() {
+  async function batchTranslate() {
     let finalTranslations = vocabTranslations || {};
 
-    // Batch-translate missing example sentences when verboseVocab is ON
     if (verboseVocab) {
       const missing = [];
       ankiJson.forEach((card, i) => {
@@ -59,19 +60,56 @@ export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes,
       }
     }
 
-    const result = generateAnkiExport(ankiJson, topic, level, exportedWords, { forceAll: allExported, grammarNotes, langId, verboseVocab, romanizer, vocabTranslations: finalTranslations });
+    return finalTranslations;
+  }
 
-    if (result.content) {
-      downloadFile(result.content, result.filename);
-      act.addExportedWords(result.exportedChinese);
-      setExported(true);
-      act.notify('success',
-        `Exported ${result.stats.exported} card${result.stats.exported !== 1 ? 's' : ''}` +
-        (result.stats.skipped > 0 ? `, skipped ${result.stats.skipped} duplicate${result.stats.skipped !== 1 ? 's' : ''}` : '') +
-        '.'
-      );
+  async function handleExport() {
+    const finalTranslations = await batchTranslate();
+    const opts = { forceAll: allExported, grammarNotes, langId, verboseVocab, romanizer, vocabTranslations: finalTranslations };
+
+    if (format === 'apkg') {
+      setGenerating(true);
+      try {
+        const result = await generateAnkiApkgExport(ankiJson, topic, level, exportedWords, opts);
+        if (result.blob) {
+          downloadBlob(result.blob, result.filename);
+          act.addExportedWords(result.exportedChinese);
+          setExported(true);
+          act.notify('success',
+            `Exported ${result.stats.exported} card${result.stats.exported !== 1 ? 's' : ''} as .apkg` +
+            (result.stats.skipped > 0 ? `, skipped ${result.stats.skipped} duplicate${result.stats.skipped !== 1 ? 's' : ''}` : '') +
+            '.'
+          );
+        }
+      } catch (err) {
+        console.error('APKG export failed:', err);
+        act.notify('error', 'APKG export failed. Try .txt format instead.');
+      } finally {
+        setGenerating(false);
+      }
+    } else {
+      const result = generateAnkiExport(ankiJson, topic, level, exportedWords, opts);
+      if (result.content) {
+        downloadFile(result.content, result.filename);
+        act.addExportedWords(result.exportedChinese);
+        setExported(true);
+        act.notify('success',
+          `Exported ${result.stats.exported} card${result.stats.exported !== 1 ? 's' : ''}` +
+          (result.stats.skipped > 0 ? `, skipped ${result.stats.skipped} duplicate${result.stats.skipped !== 1 ? 's' : ''}` : '') +
+          '.'
+        );
+      }
     }
   }
+
+  const busy = translating || generating;
+  const buttonLabel = translating
+    ? 'Translating\u2026'
+    : generating
+      ? 'Generating\u2026'
+      : allExported
+        ? 'Re-download Cards'
+        : 'Export Anki Cards';
 
   return (
     <div className="anki-export">
@@ -85,14 +123,35 @@ export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes,
         {exported && <span className="anki-export__done text-accent">✓ Downloaded</span>}
       </div>
 
-      <button
-        className={`btn ${newCount > 0 ? 'btn-secondary' : 'btn-ghost'} btn-sm anki-export__btn`}
-        onClick={handleExport}
-        disabled={translating}
-        title={allExported ? `Re-download all ${skipCount} cards` : `Export ${newCount} new Anki cards`}
-      >
-        {translating ? 'Translating…' : allExported ? 'Re-download Cards' : 'Export Anki Cards'}
-      </button>
+      <div className="anki-export__actions">
+        <div className="anki-export__format-toggle" role="group" aria-label="Export format">
+          <button
+            type="button"
+            className={`anki-export__fmt-btn ${format === 'apkg' ? 'anki-export__fmt-btn--active' : ''}`}
+            onClick={() => setFormat('apkg')}
+            title="Anki package — import directly on mobile or desktop"
+          >
+            .apkg
+          </button>
+          <button
+            type="button"
+            className={`anki-export__fmt-btn ${format === 'txt' ? 'anki-export__fmt-btn--active' : ''}`}
+            onClick={() => setFormat('txt')}
+            title="Tab-separated text — for manual Anki import"
+          >
+            .txt
+          </button>
+        </div>
+
+        <button
+          className={`btn ${newCount > 0 ? 'btn-secondary' : 'btn-ghost'} btn-sm anki-export__btn`}
+          onClick={handleExport}
+          disabled={busy}
+          title={allExported ? `Re-download all ${skipCount} cards` : `Export ${newCount} new Anki cards`}
+        >
+          {buttonLabel}
+        </button>
+      </div>
     </div>
   );
 }
