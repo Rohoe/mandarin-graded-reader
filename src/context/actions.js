@@ -34,6 +34,7 @@ export function actions(dispatch) {
     // Vocabulary
     addVocabulary:         words  => dispatch({ type: 'ADD_VOCABULARY', payload: words }),
     clearVocabulary:       ()     => dispatch({ type: 'CLEAR_VOCABULARY' }),
+    updateVocabSRS:        (word, srsData) => dispatch({ type: 'UPDATE_VOCAB_SRS', payload: { word, ...srsData } }),
     addExportedWords:      words  => dispatch({ type: 'ADD_EXPORTED_WORDS', payload: words }),
     clearExportedWords:    ()     => dispatch({ type: 'CLEAR_EXPORTED_WORDS' }),
     // UI

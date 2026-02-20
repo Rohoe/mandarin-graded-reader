@@ -441,6 +441,12 @@ export function mergeVocabulary(existing, wordList) {
         english:   word.translation  || word.english || '',
         langId:    word.langId  || undefined,
         dateAdded: now,
+        // SRS defaults
+        interval:    0,
+        ease:        2.5,
+        nextReview:  null,
+        reviewCount: 0,
+        lapses:      0,
       };
     }
   }
