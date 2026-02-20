@@ -1,9 +1,10 @@
 /**
  * Anki export logic.
- * Generates tab-separated .txt files for Anki import.
+ * Generates tab-separated .txt files and .apkg packages for Anki import.
  */
 
 import { getLang, DEFAULT_LANG_ID } from './languages';
+import { generateApkgBlob } from './ankiApkg';
 
 // ── Duplicate filtering ───────────────────────────────────────
 
@@ -136,12 +137,101 @@ function sanitize(str) {
   return (str || '').replace(/\t/g, ' ').replace(/\r?\n/g, '<br>');
 }
 
+// ── .apkg export ─────────────────────────────────────────────
+
+/**
+ * Build card objects suitable for .apkg generation from ankiJson data.
+ * Reuses the same example-building logic as the .txt export.
+ */
+function buildApkgCards(toExport, level, topicTag, date, langConfig, verboseVocab, romanizer, vocabTranslations) {
+  const targetField = langConfig.fields.target;
+  const romField = langConfig.fields.romanization;
+  const transField = langConfig.fields.translation;
+  const profName = langConfig.proficiency.name;
+  const scriptRegex = langConfig.scriptRegex;
+
+  return toExport.map((card, idx) => {
+    // Build examples HTML (same logic as formatRow)
+    const exampleParts = [];
+    if (card.example_story) {
+      exampleParts.push(card.example_story);
+      if (verboseVocab && romanizer && scriptRegex) {
+        const rom = romanizeForExport(card.example_story, romanizer, scriptRegex);
+        if (rom) exampleParts.push(`<i>${rom}</i>`);
+      }
+      const storyTrans = vocabTranslations[`story-${idx}`] || card.example_story_translation;
+      if (verboseVocab && storyTrans) exampleParts.push(`<i>${storyTrans}</i>`);
+      if (card.usage_note_story) exampleParts.push(`<i>${card.usage_note_story}</i>`);
+    }
+    if (card.example_extra) {
+      if (exampleParts.length > 0) exampleParts.push('');
+      exampleParts.push(card.example_extra);
+      if (verboseVocab && romanizer && scriptRegex) {
+        const rom = romanizeForExport(card.example_extra, romanizer, scriptRegex);
+        if (rom) exampleParts.push(`<i>${rom}</i>`);
+      }
+      const extraTrans = vocabTranslations[`extra-${idx}`] || card.example_extra_translation;
+      if (verboseVocab && extraTrans) exampleParts.push(`<i>${extraTrans}</i>`);
+      if (card.usage_note_extra) exampleParts.push(`<i>${card.usage_note_extra}</i>`);
+    }
+
+    const tags = card._isGrammar
+      ? `${profName}${level} ${topicTag} ${date} Grammar`
+      : `${profName}${level} ${topicTag} ${date}`;
+
+    return {
+      target:        card[targetField] || card.chinese || card.korean || '',
+      romanization:  card[romField] || card.pinyin || card.romanization || '',
+      translation:   card[transField] || card.english || '',
+      examples:      exampleParts.join('<br>'),
+      tags,
+    };
+  });
+}
+
+export async function generateAnkiApkgExport(ankiJson, topic, level, exportedWords, { forceAll = false, grammarNotes = [], langId = DEFAULT_LANG_ID, verboseVocab = false, romanizer = null, vocabTranslations = {} } = {}) {
+  const langConfig = getLang(langId);
+  const targetField = langConfig.fields.target;
+  const profName = langConfig.proficiency.name;
+
+  const allCards = [...ankiJson, ...grammarNotesToCards(grammarNotes)];
+  const { toExport: newCards, skipped } = prepareExport(allCards, exportedWords, langId);
+
+  const today    = new Date().toISOString().split('T')[0];
+  const topicTag = topic.replace(/[\s/\\:*?"<>|]+/g, '_').replace(/_+/g, '_');
+  const filename = `anki_cards_${topicTag}_${profName}${level}_${today}.apkg`;
+
+  const toExport = forceAll ? allCards.filter(c => (c[targetField] || c.chinese || c.korean)) : newCards;
+
+  let blob = null;
+  if (toExport.length > 0) {
+    const deckName = `Graded Reader::${profName}${level} - ${topic}`;
+    const apkgCards = buildApkgCards(toExport, level, topicTag, today, langConfig, verboseVocab, romanizer, vocabTranslations);
+    blob = await generateApkgBlob(apkgCards, deckName, langId);
+  }
+
+  return {
+    blob,
+    filename,
+    stats:          { exported: toExport.length, skipped: forceAll ? 0 : skipped.length },
+    exportedChinese: new Set(toExport.map(c => c[targetField] || c.chinese || c.korean)),
+  };
+}
+
 // ── Browser download ──────────────────────────────────────────
 
 export function downloadFile(content, filename) {
   const bom  = '\uFEFF'; // UTF-8 BOM for Excel compatibility
   const blob = new Blob([bom + content], { type: 'text/plain;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
+  triggerDownload(blob, filename);
+}
+
+export function downloadBlob(blob, filename) {
+  triggerDownload(blob, filename);
+}
+
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
 
   const a = document.createElement('a');
   a.href     = url;
