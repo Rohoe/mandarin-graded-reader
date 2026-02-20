@@ -10,6 +10,7 @@ import { DEMO_READER_KEY } from './lib/demoReader';
 import SyllabusPanel from './components/SyllabusPanel';
 import SyllabusHome from './components/SyllabusHome';
 import ReaderView from './components/ReaderView';
+import TopicForm from './components/TopicForm';
 import Settings from './components/Settings';
 import StatsDashboard from './components/StatsDashboard';
 import FlashcardReview from './components/FlashcardReview';
@@ -41,6 +42,7 @@ function AppShell() {
   const [showSettings,   setShowSettings]     = useState(false);
   const [showStats,      setShowStats]       = useState(false);
   const [showFlashcards, setShowFlashcards]  = useState(false);
+  const [showNewForm,    setShowNewForm]     = useState(false);
   const [sidebarOpen,    setSidebarOpen]     = useState(false);
 
   // Restore last session, falling back to first non-archived syllabus
@@ -66,6 +68,15 @@ function AppShell() {
   useEffect(() => {
     saveLastSession({ syllabusId: activeSyllabusId, syllabusView, standaloneKey });
   }, [activeSyllabusId, syllabusView, standaloneKey]);
+
+  // Auto-show new form modal for new users with no content
+  const nonArchSyllabi = syllabi.filter(s => !s.archived);
+  const nonArchStandalone = state.standaloneReaders.filter(r => !r.archived);
+  useEffect(() => {
+    if (nonArchSyllabi.length === 0 && nonArchStandalone.length === 0) {
+      setShowNewForm(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Lock body scroll when mobile sidebar is open
   useEffect(() => {
@@ -257,15 +268,13 @@ function AppShell() {
             standaloneKey={standaloneKey}
             syllabusView={syllabusView}
             onSelectLesson={handleSelectLesson}
-            onNewSyllabus={handleNewSyllabus}
             onShowSettings={() => setShowSettings(true)}
             onShowStats={() => setShowStats(true)}
             onShowFlashcards={() => setShowFlashcards(true)}
-            onStandaloneGenerated={onStandaloneGenerated}
             onSwitchSyllabus={handleSwitchSyllabus}
             onSelectStandalone={handleSelectStandalone}
-            onStandaloneGenerating={handleStandaloneGenerating}
             onGoSyllabusHome={handleGoSyllabusHome}
+            onShowNewForm={() => setShowNewForm(true)}
           />
         </ErrorBoundary>
       </div>
@@ -325,6 +334,24 @@ function AppShell() {
         <ErrorBoundary name="flashcards">
           <FlashcardReview onClose={() => setShowFlashcards(false)} />
         </ErrorBoundary>
+      )}
+
+      {/* ─ New reader modal ──────────────────────────────── */}
+      {showNewForm && (
+        <div className="settings-overlay" onClick={e => e.target === e.currentTarget && setShowNewForm(false)}>
+          <div className="settings-panel card card-padded fade-in">
+            <div className="settings-panel__header">
+              <h2 className="font-display" style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>New Reader</h2>
+              <button className="btn btn-ghost settings-panel__close" onClick={() => setShowNewForm(false)} aria-label="Close">✕</button>
+            </div>
+            <TopicForm
+              onNewSyllabus={(id) => { setShowNewForm(false); handleNewSyllabus(id); }}
+              onStandaloneGenerated={(key) => { setShowNewForm(false); onStandaloneGenerated(key); }}
+              onStandaloneGenerating={handleStandaloneGenerating}
+              onCancel={() => setShowNewForm(false)}
+            />
+          </div>
+        </div>
       )}
 
       {/* ─ Sync conflict dialog ──────────────────────────── */}
