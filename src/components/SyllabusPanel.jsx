@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { getLang, getLessonTitle } from '../lib/languages';
@@ -32,11 +32,75 @@ export default function SyllabusPanel({
   const activeStandalone = standaloneReaders.filter(r => !r.archived);
   const archivedCount    = archivedSyllabi.length + archivedStandalone.length;
 
-  // Group standalone readers by seriesId for continuation chains
-  const { ungrouped, seriesGroups } = (() => {
+  // ── Toolbar state ──────────────────────────
+  const [viewMode, setViewMode] = useState('all');          // 'all' | 'courses' | 'readers'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [langFilter, setLangFilter] = useState('all');       // 'all' | 'zh' | 'yue' | 'ko'
+  const [sortBy, setSortBy] = useState('recent');             // 'recent' | 'alpha'
+  const [expandedSyllabi, setExpandedSyllabi] = useState(new Set());
+
+  // Auto-expand the active syllabus
+  useEffect(() => {
+    if (activeSyllabusId && !standaloneKey) {
+      setExpandedSyllabi(prev => {
+        if (prev.has(activeSyllabusId)) return prev;
+        const next = new Set(prev);
+        next.add(activeSyllabusId);
+        return next;
+      });
+    }
+  }, [activeSyllabusId, standaloneKey]);
+
+  // Detect if content spans multiple languages
+  const contentLanguages = useMemo(() => {
+    const langs = new Set();
+    for (const s of activeSyllabi) langs.add(s.langId || 'zh');
+    for (const r of activeStandalone) langs.add(r.langId || 'zh');
+    return langs;
+  }, [activeSyllabi, activeStandalone]);
+  const multiLang = contentLanguages.size > 1;
+
+  // ── Filtering & sorting ────────────────────
+  const { filteredSyllabi, filteredStandalone } = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim();
+
+    let fSyllabi = activeSyllabi;
+    let fStandalone = activeStandalone;
+
+    // View mode filter
+    if (viewMode === 'readers') fSyllabi = [];
+    if (viewMode === 'courses') fStandalone = [];
+
+    // Language filter
+    if (langFilter !== 'all') {
+      fSyllabi = fSyllabi.filter(s => (s.langId || 'zh') === langFilter);
+      fStandalone = fStandalone.filter(r => (r.langId || 'zh') === langFilter);
+    }
+
+    // Search filter
+    if (query) {
+      fSyllabi = fSyllabi.filter(s => s.topic.toLowerCase().includes(query));
+      fStandalone = fStandalone.filter(r => r.topic.toLowerCase().includes(query));
+    }
+
+    // Sort
+    if (sortBy === 'alpha') {
+      fSyllabi = [...fSyllabi].sort((a, b) => a.topic.localeCompare(b.topic));
+      fStandalone = [...fStandalone].sort((a, b) => a.topic.localeCompare(b.topic));
+    } else {
+      // 'recent' — createdAt descending (already default order, but ensure it)
+      fSyllabi = [...fSyllabi].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      fStandalone = [...fStandalone].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    }
+
+    return { filteredSyllabi: fSyllabi, filteredStandalone: fStandalone };
+  }, [activeSyllabi, activeStandalone, viewMode, langFilter, searchQuery, sortBy]);
+
+  // Group standalone readers by seriesId (after filtering)
+  const { ungrouped, seriesGroups } = useMemo(() => {
     const groups = {};
     const solo = [];
-    for (const r of activeStandalone) {
+    for (const r of filteredStandalone) {
       if (r.seriesId) {
         if (!groups[r.seriesId]) groups[r.seriesId] = [];
         groups[r.seriesId].push(r);
@@ -48,7 +112,7 @@ export default function SyllabusPanel({
       g.sort((a, b) => (a.episodeNumber || 0) - (b.episodeNumber || 0));
     }
     return { ungrouped: solo, seriesGroups: groups };
-  })();
+  }, [filteredStandalone]);
 
   const [expandedSeries, setExpandedSeries] = useState({});
   const [archivedOpen, setArchivedOpen] = useState(false);
@@ -83,7 +147,27 @@ export default function SyllabusPanel({
     }
   }
 
+  function toggleSyllabusExpand(e, id) {
+    e.stopPropagation();
+    setExpandedSyllabi(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   const hasContent = activeSyllabi.length > 0 || activeStandalone.length > 0;
+  const hasFilteredContent = filteredSyllabi.length > 0 || filteredStandalone.length > 0;
+  const isFiltering = searchQuery || langFilter !== 'all' || viewMode !== 'all';
+
+  // Language pill config
+  const langOptions = [
+    { id: 'all', label: 'All' },
+    { id: 'zh', label: '中文' },
+    { id: 'yue', label: '粵語' },
+    { id: 'ko', label: '한국어' },
+  ];
 
   return (
     <aside className="syllabus-panel">
@@ -106,7 +190,89 @@ export default function SyllabusPanel({
         </button>
       </div>
 
-      {/* Empty state */}
+      {/* Toolbar (only when there's content) */}
+      {hasContent && (
+        <div className="syllabus-panel__toolbar">
+          {/* View toggle */}
+          <div className="syllabus-panel__view-toggle" role="group" aria-label="View mode">
+            {[
+              { id: 'all', label: 'All' },
+              { id: 'courses', label: 'Courses' },
+              { id: 'readers', label: 'Readers' },
+            ].map(v => (
+              <button
+                key={v.id}
+                className={`syllabus-panel__toggle-btn ${viewMode === v.id ? 'syllabus-panel__toggle-btn--active' : ''}`}
+                onClick={() => setViewMode(v.id)}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Search */}
+          <div className="syllabus-panel__search">
+            <input
+              type="text"
+              className="syllabus-panel__search-input"
+              placeholder="Search topics…"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                className="syllabus-panel__search-clear"
+                onClick={() => setSearchQuery('')}
+                aria-label="Clear search"
+              >×</button>
+            )}
+          </div>
+
+          {/* Language pills + sort */}
+          {(multiLang || langFilter !== 'all') && (
+            <div className="syllabus-panel__filters">
+              <div className="syllabus-panel__lang-pills" role="group" aria-label="Language filter">
+                {langOptions.map(l => (
+                  <button
+                    key={l.id}
+                    className={`syllabus-panel__lang-pill ${langFilter === l.id ? 'syllabus-panel__lang-pill--active' : ''}`}
+                    onClick={() => setLangFilter(l.id)}
+                  >
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+              <select
+                className="syllabus-panel__sort-select"
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value)}
+                aria-label="Sort order"
+              >
+                <option value="recent">Recent</option>
+                <option value="alpha">A–Z</option>
+              </select>
+            </div>
+          )}
+
+          {/* Sort (when single language) */}
+          {!multiLang && langFilter === 'all' && (
+            <div className="syllabus-panel__filters">
+              <div style={{ flex: 1 }} />
+              <select
+                className="syllabus-panel__sort-select"
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value)}
+                aria-label="Sort order"
+              >
+                <option value="recent">Recent</option>
+                <option value="alpha">A–Z</option>
+              </select>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Empty state (no content at all) */}
       {!hasContent && (
         <div className="syllabus-panel__empty">
           <p className="syllabus-panel__empty-text text-muted">No readers yet</p>
@@ -116,16 +282,23 @@ export default function SyllabusPanel({
         </div>
       )}
 
+      {/* No filter results */}
+      {hasContent && !hasFilteredContent && isFiltering && (
+        <div className="syllabus-panel__no-results">
+          <p className="text-muted">No matching readers</p>
+        </div>
+      )}
+
       {/* Unified content list */}
-      {hasContent && (
+      {hasFilteredContent && (
         <div className="syllabus-panel__content-list">
           {/* Syllabi */}
-          {activeSyllabi.map(s => {
+          {filteredSyllabi.map(s => {
             const sLang = getLang(s.langId);
             const prog = syllabusProgress[s.id] || { lessonIndex: 0, completedLessons: [] };
             const completedSet = new Set(prog.completedLessons);
             const isActive = s.id === activeSyllabusId && !standaloneKey;
-            const isExpanded = isActive;
+            const isExpanded = expandedSyllabi.has(s.id);
             const lessons = s.lessons || [];
 
             return (
@@ -140,20 +313,34 @@ export default function SyllabusPanel({
                       {sLang.proficiency.name} {s.level} · {completedSet.size}/{lessons.length}
                     </span>
                   </span>
+                  {lessons.length > 0 && (
+                    <span
+                      className="syllabus-panel__caret-btn"
+                      onClick={(e) => toggleSyllabusExpand(e, s.id)}
+                      role="button"
+                      aria-label={isExpanded ? 'Collapse lessons' : 'Expand lessons'}
+                    >
+                      {isExpanded ? '▾' : '▸'}
+                    </span>
+                  )}
                 </button>
+
+                {/* Always-visible progress bar */}
+                {lessons.length > 0 && (
+                  <div className="syllabus-panel__progress-bar syllabus-panel__progress-bar--always">
+                    <div
+                      className="syllabus-panel__progress-fill"
+                      style={{ width: `${(completedSet.size / lessons.length) * 100}%` }}
+                    />
+                  </div>
+                )}
 
                 {/* Nested lessons when expanded */}
                 {isExpanded && lessons.length > 0 && (
                   <div className="syllabus-panel__nested-lessons">
-                    <div className="syllabus-panel__progress-bar">
-                      <div
-                        className="syllabus-panel__progress-fill"
-                        style={{ width: `${(completedSet.size / lessons.length) * 100}%` }}
-                      />
-                    </div>
                     <ul className="syllabus-panel__list" role="list">
                       {lessons.map((lesson, idx) => {
-                        const lessonActive = idx === prog.lessonIndex && syllabusView === 'lesson' && !standaloneKey;
+                        const lessonActive = idx === prog.lessonIndex && syllabusView === 'lesson' && !standaloneKey && isActive;
                         const isCompleted = completedSet.has(idx);
                         return (
                           <li key={idx}>
