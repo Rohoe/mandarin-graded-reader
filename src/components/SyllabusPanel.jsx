@@ -16,6 +16,7 @@ export default function SyllabusPanel({
   onSelectStandalone,
   onGoSyllabusHome,
   onShowNewForm,
+  onShowSignIn,
 }) {
   const { syllabi, syllabusProgress, standaloneReaders, generatedReaders, loading, pendingReaders, cloudUser, cloudSyncing, cloudLastSynced, lastModified } = useAppSelector(s => ({
     syllabi: s.syllabi, syllabusProgress: s.syllabusProgress, standaloneReaders: s.standaloneReaders,
@@ -116,6 +117,9 @@ export default function SyllabusPanel({
 
   const [expandedSeries, setExpandedSeries] = useState({});
   const [archivedOpen, setArchivedOpen] = useState(false);
+
+  // Unsaved progress banner dismiss state (session only)
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   // Confirmation dialog state
   const [confirmPending, setConfirmPending] = useState(null);
@@ -553,6 +557,18 @@ export default function SyllabusPanel({
         </div>
       )}
 
+      {/* Unsaved progress banner */}
+      {!cloudUser && !bannerDismissed && (activeSyllabi.length > 0 || activeStandalone.filter(r => !r.isDemo).length > 0) && (
+        <div className="syllabus-panel__save-banner" onClick={onShowSignIn} role="button" tabIndex={0}>
+          <span className="syllabus-panel__save-banner-text">Sign in to save your progress</span>
+          <button
+            className="syllabus-panel__save-banner-dismiss"
+            onClick={e => { e.stopPropagation(); setBannerDismissed(true); }}
+            aria-label="Dismiss"
+          >×</button>
+        </div>
+      )}
+
       {/* Footer: sync status + settings */}
       <div className="syllabus-panel__footer">
         <div className="syllabus-panel__sync-status">
@@ -574,7 +590,7 @@ export default function SyllabusPanel({
               <span className="syllabus-panel__sync-icon syllabus-panel__sync-icon--off" title="Not signed in">☁</span>
               <span className="syllabus-panel__sync-label syllabus-panel__sync-label--off">
                 Not signed in
-                <button className="syllabus-panel__sign-in-link" onClick={onShowSettings}>Sign in</button>
+                <button className="syllabus-panel__sign-in-link" onClick={onShowSignIn}>Sign in</button>
               </span>
             </>
           )}

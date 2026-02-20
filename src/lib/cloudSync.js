@@ -153,5 +153,93 @@ export function detectConflict(localState, cloudData) {
     localDate: new Date(localTs).toLocaleString(),
     cloudSyllabusCount: cloudData.syllabi?.length || 0,
     localSyllabusCount: localState.syllabi?.length || 0,
+    cloudStandaloneCount: cloudData.standalone_readers?.length || 0,
+    localStandaloneCount: localState.standaloneReaders?.length || 0,
+    cloudVocabCount: Object.keys(cloudData.learned_vocabulary || {}).length,
+    localVocabCount: Object.keys(localState.learnedVocabulary || {}).length,
   };
+}
+
+// Union-merge local state and cloud data. Returns cloud-row shaped data
+// suitable for HYDRATE_FROM_CLOUD / MERGE_WITH_CLOUD.
+export function mergeData(localState, cloudData) {
+  // Syllabi: union by id
+  const syllabusMap = new Map();
+  for (const s of (cloudData.syllabi || [])) syllabusMap.set(s.id, s);
+  for (const s of (localState.syllabi || [])) syllabusMap.set(s.id, s); // local wins on conflict
+  const syllabi = [...syllabusMap.values()];
+
+  // Standalone readers: union by key
+  const standaloneMap = new Map();
+  for (const r of (cloudData.standalone_readers || [])) standaloneMap.set(r.key, r);
+  for (const r of (localState.standaloneReaders || [])) standaloneMap.set(r.key, r);
+  const standalone_readers = [...standaloneMap.values()];
+
+  // Syllabus progress: union by syllabus ID; merge completedLessons + max lessonIndex
+  const syllabus_progress = { ...(cloudData.syllabus_progress || {}) };
+  for (const [id, local] of Object.entries(localState.syllabusProgress || {})) {
+    const cloud = syllabus_progress[id];
+    if (!cloud) {
+      syllabus_progress[id] = local;
+    } else {
+      const mergedCompleted = [...new Set([...(cloud.completedLessons || []), ...(local.completedLessons || [])])];
+      syllabus_progress[id] = {
+        lessonIndex: Math.max(cloud.lessonIndex || 0, local.lessonIndex || 0),
+        completedLessons: mergedCompleted,
+      };
+    }
+  }
+
+  // Generated readers: union by lesson key; local wins (has user answers, grading)
+  const generated_readers = {
+    ...(cloudData.generated_readers || {}),
+    ...(localState.generatedReaders || {}),
+  };
+
+  // Learned vocabulary: union by word; prefer newer dateAdded
+  const learned_vocabulary = { ...(cloudData.learned_vocabulary || {}) };
+  for (const [word, local] of Object.entries(localState.learnedVocabulary || {})) {
+    const cloud = learned_vocabulary[word];
+    if (!cloud) {
+      learned_vocabulary[word] = local;
+    } else {
+      const localDate = local.dateAdded || 0;
+      const cloudDate = cloud.dateAdded || 0;
+      learned_vocabulary[word] = localDate >= cloudDate ? local : cloud;
+    }
+  }
+
+  // Exported words: set union
+  const cloudExported = Array.isArray(cloudData.exported_words) ? cloudData.exported_words : [];
+  const localExported = localState.exportedWords instanceof Set
+    ? [...localState.exportedWords]
+    : Array.isArray(localState.exportedWords) ? localState.exportedWords : [];
+  const exported_words = [...new Set([...cloudExported, ...localExported])];
+
+  return {
+    syllabi,
+    syllabus_progress,
+    standalone_readers,
+    generated_readers,
+    learned_vocabulary,
+    exported_words,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+// Push pre-merged data to cloud (includes generated_readers).
+export async function pushMergedToCloud(mergedData) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+  const { error } = await supabase.from('user_data').upsert({
+    user_id:            user.id,
+    syllabi:            mergedData.syllabi,
+    syllabus_progress:  mergedData.syllabus_progress,
+    standalone_readers: mergedData.standalone_readers,
+    generated_readers:  mergedData.generated_readers,
+    learned_vocabulary: mergedData.learned_vocabulary,
+    exported_words:     mergedData.exported_words,
+    updated_at:         mergedData.updated_at || new Date().toISOString(),
+  });
+  if (error) throw error;
 }

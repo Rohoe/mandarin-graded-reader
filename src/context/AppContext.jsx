@@ -84,7 +84,7 @@ import {
   pickDirectory,
   isSupported,
 } from '../lib/fileStorage';
-import { pushToCloud, pullFromCloud, pushReaderToCloud, detectConflict, fetchCloudReaderKeys, pullReaderFromCloud } from '../lib/cloudSync';
+import { signOut, pushToCloud, pullFromCloud, pushReaderToCloud, detectConflict, fetchCloudReaderKeys, pullReaderFromCloud, mergeData, pushMergedToCloud } from '../lib/cloudSync';
 import { DEMO_READER_KEY, DEMO_READER_DATA } from '../lib/demoReader';
 
 // ── Initial state ─────────────────────────────────────────────
@@ -166,7 +166,6 @@ const DATA_ACTIONS = new Set([
   'SET_READER', 'CLEAR_READER',
   'ADD_VOCABULARY', 'CLEAR_VOCABULARY', 'UPDATE_VOCAB_SRS',
   'ADD_EXPORTED_WORDS', 'CLEAR_EXPORTED_WORDS',
-  'RESTORE_FROM_BACKUP',
 ]);
 
 // ── Reducer ───────────────────────────────────────────────────
@@ -585,6 +584,22 @@ function baseReducer(state, action) {
       };
     }
 
+    case 'MERGE_WITH_CLOUD': {
+      const d = action.payload;
+      const normalizedSyllabi = normalizeSyllabi(d.syllabi);
+      const normalizedStandalone = normalizeStandaloneReaders(d.standalone_readers);
+      return {
+        ...state,
+        syllabi:           normalizedSyllabi,
+        syllabusProgress:  d.syllabus_progress,
+        standaloneReaders: normalizedStandalone,
+        generatedReaders:  d.generated_readers || {},
+        learnedVocabulary: d.learned_vocabulary,
+        exportedWords:     new Set(d.exported_words),
+        lastModified:      Date.now(),
+      };
+    }
+
     case 'SET_EVICTED_READER_KEYS':
       return { ...state, evictedReaderKeys: action.payload };
 
@@ -626,6 +641,7 @@ export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, null, buildInitialState);
   const stateRef = useRef(state);
   const startupSyncDoneRef = useRef(false);
+  const syncPausedRef = useRef(false);
   const listenersRef = useRef(new Set());
   stateRef.current = state; // synchronous update for useSyncExternalStore
 
@@ -759,7 +775,18 @@ export function AppProvider({ children }) {
     return false;
   }
 
-  // Resolves a sync conflict by choosing either 'cloud' or 'local' data
+  // Clears all data safely: signs out of cloud first to prevent auto-push of empty state
+  async function clearAllData() {
+    syncPausedRef.current = true;
+    if (stateRef.current.cloudUser) {
+      try { await signOut(); } catch (e) { console.warn('[AppContext] Sign-out during clear failed:', e.message); }
+    }
+    dispatch({ type: 'CLEAR_ALL_DATA' });
+    startupSyncDoneRef.current = false;
+    // syncPausedRef stays true — resumed only on next sign-in + startup sync
+  }
+
+  // Resolves a sync conflict by choosing 'cloud', 'local', or 'merge'
   async function resolveSyncConflict(choice) {
     if (!state.syncConflict) return;
 
@@ -776,6 +803,13 @@ export function AppProvider({ children }) {
         await pushToCloud(stateRef.current);
         dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: Date.now() });
         dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'success', message: 'Pushed to cloud.' } });
+      } else if (choice === 'merge') {
+        // Union-merge both sides, push merged result to cloud
+        const merged = mergeData(stateRef.current, state.syncConflict.cloudData);
+        dispatch({ type: 'MERGE_WITH_CLOUD', payload: merged });
+        await pushMergedToCloud(merged);
+        dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: Date.now() });
+        dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'success', message: 'Data merged successfully.' } });
       }
     } catch (e) {
       dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'error', message: `Sync failed: ${e.message}` } });
@@ -930,8 +964,15 @@ export function AppProvider({ children }) {
         if (data) {
           const cloudTs = new Date(data.updated_at).getTime();
 
-          // If cloud is clearly newer, auto-pull
+          // If cloud is clearly newer, auto-pull (but preserve any local-only readers)
           if (cloudTs > stateRef.current.lastModified) {
+            const localReaders = stateRef.current.generatedReaders;
+            const cloudReaders = data.generated_readers || {};
+            const mergedReaders = { ...cloudReaders };
+            for (const [k, v] of Object.entries(localReaders)) {
+              if (!mergedReaders[k]) mergedReaders[k] = v;
+            }
+            data.generated_readers = mergedReaders;
             dispatch({ type: 'HYDRATE_FROM_CLOUD', payload: data });
             dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: cloudTs });
             dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'success', message: 'Synced from cloud.' } });
@@ -947,10 +988,16 @@ export function AppProvider({ children }) {
               dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: cloudTs });
             }
           }
-          // If local is newer AND we've synced before, auto-push (safe)
+          // If local is newer AND we've synced before, check for real differences
           else if (stateRef.current.lastModified > cloudTs + 1000) {
-            await pushToCloud(stateRef.current);
-            dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: Date.now() });
+            const conflict = detectConflict(stateRef.current, data);
+            if (conflict) {
+              // Data differs — show conflict dialog instead of silently pushing
+              dispatch({ type: 'SHOW_SYNC_CONFLICT', payload: { cloudData: data, conflictInfo: conflict } });
+            } else {
+              // Data is identical, just update timestamp
+              dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: Date.now() });
+            }
           }
         } else {
           // No cloud data yet — upload local as initial backup
@@ -962,6 +1009,7 @@ export function AppProvider({ children }) {
         dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'error', message: 'Cloud sync failed. Your data may be out of date.' } });
       } finally {
         dispatch({ type: 'SET_CLOUD_SYNCING', payload: false });
+        syncPausedRef.current = false;
         startupSyncDoneRef.current = true;
       }
     }
@@ -971,8 +1019,10 @@ export function AppProvider({ children }) {
 
   // Debounced auto-push: 3s after any data change, once startup sync is done
   useEffect(() => {
-    if (!state.cloudUser || !startupSyncDoneRef.current) return;
+    if (!state.cloudUser || !startupSyncDoneRef.current || stateRef.current.syncConflict || syncPausedRef.current) return;
     const timer = setTimeout(async () => {
+      // Skip if we just synced (e.g., after merge/pull set cloudLastSynced)
+      if (stateRef.current.cloudLastSynced >= stateRef.current.lastModified) return;
       try {
         await pushToCloud(stateRef.current);
         dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: Date.now() });
@@ -1005,6 +1055,7 @@ export function AppProvider({ children }) {
     pickSaveFolder,
     removeSaveFolder,
     pushGeneratedReader,
+    clearAllData,
     resolveSyncConflict,
     restoreEvictedReader,
   }), []); // eslint-disable-line react-hooks/exhaustive-deps

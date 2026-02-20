@@ -67,6 +67,7 @@ export function actions(dispatch) {
     setCloudLastSynced:    ts     => dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: ts }),
     showSyncConflict:      data   => dispatch({ type: 'SHOW_SYNC_CONFLICT', payload: data }),
     hideSyncConflict:      ()     => dispatch({ type: 'HIDE_SYNC_CONFLICT' }),
+    mergeWithCloud:        data   => dispatch({ type: 'MERGE_WITH_CLOUD', payload: data }),
     // Learning activity
     logActivity:           (type, extra) => dispatch({ type: 'LOG_ACTIVITY', payload: { type, ...extra } }),
   };

@@ -14,6 +14,7 @@ import TopicForm from './components/TopicForm';
 import Settings from './components/Settings';
 import StatsDashboard from './components/StatsDashboard';
 import FlashcardReview from './components/FlashcardReview';
+import SignInModal from './components/SignInModal';
 import SyncConflictDialog from './components/SyncConflictDialog';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingIndicator from './components/LoadingIndicator';
@@ -43,6 +44,7 @@ function AppShell() {
   const [showStats,      setShowStats]       = useState(false);
   const [showFlashcards, setShowFlashcards]  = useState(false);
   const [showNewForm,    setShowNewForm]     = useState(false);
+  const [showSignIn,     setShowSignIn]      = useState(false);
   const [sidebarOpen,    setSidebarOpen]     = useState(false);
 
   // Restore last session, falling back to first non-archived syllabus
@@ -284,6 +286,7 @@ function AppShell() {
             onSelectStandalone={handleSelectStandalone}
             onGoSyllabusHome={handleGoSyllabusHome}
             onShowNewForm={() => setShowNewForm(true)}
+            onShowSignIn={() => setShowSignIn(true)}
           />
         </ErrorBoundary>
       </div>
@@ -329,6 +332,13 @@ function AppShell() {
       {showSettings && (
         <ErrorBoundary name="settings">
           <Settings onClose={() => setShowSettings(false)} />
+        </ErrorBoundary>
+      )}
+
+      {/* ─ Sign-in modal ─────────────────────────────────── */}
+      {showSignIn && (
+        <ErrorBoundary name="sign-in">
+          <SignInModal onClose={() => setShowSignIn(false)} />
         </ErrorBoundary>
       )}
 

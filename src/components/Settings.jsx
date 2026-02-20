@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
 import { getStorageUsage, loadAllReaders, exportAllData } from '../lib/storage';
 import { parseReaderResponse } from '../lib/parser';
-import { signInWithGoogle, signInWithApple, signOut, pushToCloud } from '../lib/cloudSync';
+import { signInWithGoogle, signInWithApple, signOut, pushToCloud, pullFromCloud, mergeData, pushMergedToCloud } from '../lib/cloudSync';
 import { PROVIDERS, getProvider } from '../lib/providers';
 import './Settings.css';
 
@@ -15,7 +15,7 @@ const TABS = [
 ];
 
 export default function Settings({ onClose }) {
-  const { state, dispatch, pickSaveFolder, removeSaveFolder } = useApp();
+  const { state, dispatch, pickSaveFolder, removeSaveFolder, clearAllData } = useApp();
   const act = actions(dispatch);
 
   const hasAnyKey = Object.values(state.providerKeys).some(k => k);
@@ -131,22 +131,43 @@ export default function Settings({ onClose }) {
     e.target.value = '';
   }
 
-  async function handleSyncNow() {
+  async function handlePushToCloud() {
     act.setCloudSyncing(true);
     try {
       await pushToCloud(state);
       act.setCloudLastSynced(Date.now());
-      act.notify('success', 'Synced to cloud.');
+      act.notify('success', 'Pushed to cloud.');
     } catch (e) {
-      act.notify('error', `Sync failed: ${e.message}`);
+      act.notify('error', `Push failed: ${e.message}`);
     } finally {
       act.setCloudSyncing(false);
     }
   }
 
-  function handleClearAll() {
+  async function handlePullFromCloud() {
+    act.setCloudSyncing(true);
+    try {
+      const cloudData = await pullFromCloud();
+      if (!cloudData) {
+        act.notify('error', 'No cloud data found.');
+        return;
+      }
+      // Merge cloud data with local (additive, no data loss)
+      const merged = mergeData(state, cloudData);
+      dispatch({ type: 'MERGE_WITH_CLOUD', payload: merged });
+      await pushMergedToCloud(merged);
+      act.setCloudLastSynced(Date.now());
+      act.notify('success', 'Pulled and merged from cloud.');
+    } catch (e) {
+      act.notify('error', `Pull failed: ${e.message}`);
+    } finally {
+      act.setCloudSyncing(false);
+    }
+  }
+
+  async function handleClearAll() {
     if (!confirmClear) { setConfirmClear(true); return; }
-    act.clearAll();
+    await clearAllData();
     act.notify('success', 'All app data cleared.');
     setConfirmClear(false);
     onClose?.();
@@ -692,13 +713,20 @@ export default function Settings({ onClose }) {
                   Sign out
                 </button>
               </div>
-              <div style={{ marginTop: 'var(--space-3)' }}>
+              <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-3)', flexWrap: 'wrap' }}>
                 <button
                   className="btn btn-secondary btn-sm"
-                  onClick={handleSyncNow}
+                  onClick={handlePushToCloud}
                   disabled={state.cloudSyncing}
                 >
-                  {state.cloudSyncing ? 'Syncing…' : 'Sync now'}
+                  {state.cloudSyncing ? 'Syncing…' : 'Push to cloud'}
+                </button>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={handlePullFromCloud}
+                  disabled={state.cloudSyncing}
+                >
+                  {state.cloudSyncing ? 'Syncing…' : 'Pull from cloud'}
                 </button>
               </div>
             </>

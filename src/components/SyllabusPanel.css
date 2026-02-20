@@ -589,6 +589,43 @@
   color: #fff;
 }
 
+/* ── Unsaved progress banner ──────────── */
+.syllabus-panel__save-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  background: rgba(74, 124, 126, 0.08);
+  border-top: 1px solid var(--color-border-light);
+  cursor: pointer;
+  font-size: var(--text-xs);
+  color: var(--color-accent);
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.syllabus-panel__save-banner:hover {
+  background: rgba(74, 124, 126, 0.14);
+}
+
+.syllabus-panel__save-banner-text {
+  flex: 1;
+}
+
+.syllabus-panel__save-banner-dismiss {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  font-size: var(--text-sm);
+  color: var(--color-text-subtle);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.syllabus-panel__save-banner-dismiss:hover {
+  color: var(--color-text);
+}
+
 /* ── Footer ─────────────────────────────── */
 .syllabus-panel__footer {
   padding: var(--space-4) var(--space-5);
