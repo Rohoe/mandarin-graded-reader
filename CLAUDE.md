@@ -210,8 +210,13 @@ src/
     VocabularyList            Collapsible accordion of vocab cards with examples.
                               Accepts `renderChars` prop — applies ruby romanization to word headers
                               and example sentences when romanization toggle is on.
-                              Accepts `verboseVocab` prop — shows English translations below example
-                              sentences (stored as `exampleStoryTranslation`/`exampleExtraTranslation`).
+                              Accepts TTS props (`speakText`, `speakingKey`, `ttsSupported`) and
+                              translation props (`onTranslateExample`, `translatingKey`,
+                              `vocabTranslations`). When `showParagraphTools` is true, renders
+                              inline TTS (🔊) and EN buttons on each example sentence.
+                              EN button fetches on-demand via Google Translate and caches in
+                              `reader.vocabTranslations`; falls back to old LLM translations
+                              (`exampleStoryTranslation`) for backward compat.
     ComprehensionQuestions    Collapsible question list with interactive answer input and AI grading.
                               Input mode: textarea per question + "Grade My Answers" button (disabled
                               if no API key; shows warning). Results mode: per-question score badge
@@ -223,9 +228,12 @@ src/
                               results survive page reload. Accepts renderChars prop from ReaderView;
                               when set (romanization toggle is on), question text is rendered with
                               <ruby> romanization annotations instead of plain renderInline().
-                              Accepts verboseVocab prop; when enabled, shows English translation
-                              below each question. Questions are { text, translation } objects
-                              (parser extracts trailing parenthesized translations).
+                              Accepts TTS props (`speakText`, `speakingKey`, `ttsSupported`) —
+                              renders inline TTS button before each question's EN button when
+                              `showParagraphTools` is true. EN button fetches on-demand via
+                              Google Translate. Questions are { text, translation } objects
+                              (parser extracts trailing parenthesized translations; translation
+                              no longer requested from LLM in new readers).
     GrammarNotes              Collapsible section showing 3–5 grammar pattern cards per reader.
                               Accepts `renderChars` prop — applies ruby romanization to `note.pattern`
                               and `note.example` when romanization toggle is on.
@@ -235,6 +243,10 @@ src/
     AnkiExportButton          Shows new/skip counts; triggers download on click.
                               Accepts grammarNotes prop; merges grammar pattern cards
                               into preview counts and export (tagged Grammar).
+                              When `verboseVocab` is ON, batch-translates missing example
+                              sentences via Google Translate before exporting (async with
+                              "Translating…" state). Caches translations back to reader
+                              via `onCacheVocabTranslations`.
     LoadingIndicator          Animated ink-wash Chinese characters (读写学文语书)
     GenerationProgress        Timed phase-based progress bar shown during API calls.
                               type='reader': 6 phases (~30s budget); shown in ReaderView
@@ -302,7 +314,7 @@ src/
   generatedReaders:  { [lessonKey]: parsedReaderData },  // in-memory + localStorage + file
                      // parsedReaderData fields: raw, titleZh, titleEn, story, vocabulary[],
                      //   questions[], ankiJson[], grammarNotes[], parseError,
-                     //   userAnswers, gradingResults, topic, level, langId, lessonKey
+                     //   userAnswers, gradingResults, vocabTranslations, topic, level, langId, lessonKey
   learnedVocabulary: { [targetWord]: { romanization, pinyin, translation, english, langId?, dateAdded } },
   exportedWords:     Set<string>,     // serialised as array in localStorage + file
   loading:           boolean,
@@ -318,7 +330,7 @@ src/
   ttsYueVoiceURI:    string | null,   // Preferred Cantonese TTS voice URI, or null
   ttsSpeechRate:     number,          // TTS speed multiplier (0.5–2.0), default 1.0
   romanizationOn:    boolean,         // Show ruby romanization annotations (persisted, default false)
-  verboseVocab:      boolean,         // Show example translations in vocab + comprehension + Anki export (default false)
+  verboseVocab:      boolean,         // Include example translations in Anki exports via Google Translate (default false)
   useStructuredOutput: boolean,      // Use provider-native structured output (default false)
   // Reader eviction tracking (persisted to localStorage)
   evictedReaderKeys: Set<string>,     // lesson keys evicted from localStorage but available in backup
@@ -384,7 +396,7 @@ The `learnedVocabulary` object keys are passed to the LLM in each new reader req
 - Sections delimited by `### 1. Title`, `### 2. Story`, `### 3. Vocabulary`, `### 4. Comprehension`, `### 5. Anki`
 - If section extraction fails, the component falls back to showing raw text with a "Regenerate" button
 - `parseStorySegments()` splits story text into `{ type: 'text'|'bold'|'italic', content }` segments for rendering
-- `parseQuestions()` returns `{ text, translation }` objects; extracts trailing parenthesized English translations (e.g. `问题？(Translation?)`) when present
+- `parseQuestions()` returns `{ text, translation }` objects; extracts trailing parenthesized English translations (e.g. `问题？(Translation?)`) when present in old readers. New readers no longer request question translations from the LLM; translations are fetched on-demand via Google Translate
 - Vocabulary items include both canonical fields (`target`, `romanization`, `translation`) and legacy aliases (`chinese`, `pinyin`, `english`) for backward compatibility
 
 **Structured parser (opt-in):** `normalizeStructuredReader(rawJson, langId)` converts structured JSON from provider-native structured output into the same shape as `parseReaderResponse`. Falls back to the regex parser if JSON parsing fails. Vocabulary, questions, and grammar notes are mapped directly from the JSON schema fields.
