@@ -123,6 +123,10 @@ src/
                               fetchCloudReaderKeys() returns Set of reader keys in cloud
                               (for eviction verification). pullReaderFromCloud(lessonKey)
                               fetches a single reader's data for on-demand restore.
+                              mergeData(localState, cloudData) performs union merge of
+                              syllabi, standalone readers, vocabulary, exported words, and
+                              generated readers. pushMergedToCloud(merged) upserts the
+                              merged result to Supabase.
 
   prompts/
     syllabusPrompt.js         buildSyllabusPrompt(langConfig, topic, level, lessonCount)
@@ -468,17 +472,27 @@ To prevent stale local data from overwriting newer cloud data (e.g., old browser
 1. **Hash-based comparison:** Local and cloud data are hashed to detect actual content differences (ignoring timestamp-only changes)
 2. **First-sync detection:** If `cloudLastSynced` is `null` (device has never synced before) AND local data differs from cloud, show `SyncConflictDialog`
 3. **User choice:** Dialog shows comparison (timestamps, syllabus counts) and lets user choose which data to keep
-4. **Safe auto-sync:** If device has synced before (`cloudLastSynced` exists), auto-push/pull proceeds normally (trusted device)
+4. **Safe auto-sync:** If device has synced before (`cloudLastSynced` exists) and data differs, show conflict dialog instead of silently pushing
 
 **Conflict resolution:**
 - **Use Cloud Data:** Calls `HYDRATE_FROM_CLOUD` to overwrite local state with cloud data
 - **Use Local Data:** Pushes local state to cloud via `pushToCloud()`, overwriting cloud
+- **Merge:** Union-merges both sides via `mergeData()`, pushes merged result to cloud
 - **Decide Later:** Closes dialog without syncing; user can manually sync via Settings
 
 **Implementation:**
 - `detectConflict(localState, cloudData)` returns `null` if data is identical, or a `conflictInfo` object with comparison metadata
 - `state.syncConflict` stores `{ cloudData, conflictInfo }` when conflict detected
-- `resolveSyncConflict(choice)` in `AppContext` handles user's choice and triggers appropriate sync action
+- `resolveSyncConflict(choice)` in `AppContext` handles user's choice ('cloud', 'local', or 'merge')
+- `mergeData(localState, cloudData)` in `cloudSync.js` performs union merge of syllabi, readers, vocabulary, etc.
+- `pushMergedToCloud(merged)` pushes the merged result to Supabase
+
+**Auto-push safety guards:**
+- `syncPausedRef` blocks auto-push during `clearAllData()` and until next startup sync completes
+- Auto-push skips if `cloudLastSynced >= lastModified` (data already in sync, e.g. after merge/pull)
+- `clearAllData()` calls `signOut()` before dispatching `CLEAR_ALL_DATA` to prevent empty-state push
+- `RESTORE_FROM_BACKUP` does not bump `lastModified` (removed from `DATA_ACTIONS`) to prevent accidental cloud overwrite
+- Startup sync preserves local-only readers (e.g. in-flight generation) when hydrating from cloud
 
 ## Deployment (Vercel)
 
