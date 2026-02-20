@@ -19,9 +19,11 @@ function getSql() {
     _sqlPromise = import('sql.js').then(mod => {
       const initSqlJs = mod.default;
       return initSqlJs({
-        locateFile: file =>
-          `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.14.0/${file}`,
+        locateFile: file => `/${file}`,
       });
+    }).catch(err => {
+      _sqlPromise = null;
+      throw err;
     });
   }
   return _sqlPromise;
@@ -314,7 +316,7 @@ export async function generateApkgBlob(cards, deckName, langId = 'zh') {
   );
 
   // Insert notes and cards
-  const baseId = Date.now();
+  const baseId = deckId + 1000;
 
   for (let i = 0; i < cards.length; i++) {
     const card = cards[i];
