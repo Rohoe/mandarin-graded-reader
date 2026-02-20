@@ -879,6 +879,11 @@ export function AppProvider({ children }) {
       if (curr[key] !== prev[key]) {
         const { quotaExceeded } = saveReaderSafe(key, curr[key]);
         if (quotaExceeded) dispatch({ type: 'SET_QUOTA_WARNING', payload: true });
+        // Push updated reader to cloud (handles grading results, user answers, etc.)
+        if (stateRef.current.cloudUser) {
+          pushReaderToCloud(key, curr[key])
+            .catch(e => console.warn('[AppContext] Reader cloud sync failed:', e.message));
+        }
       }
     }
     // Delete removed readers
