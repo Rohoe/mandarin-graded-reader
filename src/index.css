@@ -95,6 +95,16 @@
   --shadow-lg: 0 12px 32px rgba(0,0,0,0.40), 0 4px 8px rgba(0,0,0,0.22);
 }
 
+[data-theme="dark"] input[type="range"] {
+  accent-color: var(--color-accent);
+}
+[data-theme="dark"] input[type="range"]::-webkit-slider-runnable-track {
+  background: rgba(255, 255, 255, 0.15);
+}
+[data-theme="dark"] input[type="range"]::-moz-range-track {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 [data-theme="dark"] .card {
   background: var(--color-bg-elevated);
 }
@@ -220,6 +230,13 @@ a:hover { text-decoration: underline; }
   cursor: not-allowed;
 }
 
+.btn-primary:disabled {
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+  opacity: 1;
+}
+
 .btn-sm {
   padding: var(--space-2) var(--space-4);
   font-size: var(--text-sm);
@@ -242,6 +259,7 @@ a:hover { text-decoration: underline; }
   color: var(--color-text-muted);
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  margin-bottom: var(--space-1);
 }
 
 .form-input,

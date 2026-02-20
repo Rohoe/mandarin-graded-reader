@@ -164,17 +164,19 @@ export default function FlashcardReview({ onClose }) {
         </div>
 
         {/* Language filter pills */}
-        <div className="flashcard-lang-pills">
-          {availableLangs.map(l => (
-            <button
-              key={l.id}
-              className={`flashcard-lang-pill ${langFilter === l.id ? 'flashcard-lang-pill--active' : ''}`}
-              onClick={() => setLangFilter(l.id)}
-            >
-              {l.label}
-            </button>
-          ))}
-        </div>
+        {availableLangs.length > 1 && (
+          <div className="flashcard-lang-pills">
+            {availableLangs.map(l => (
+              <button
+                key={l.id}
+                className={`flashcard-lang-pill ${langFilter === l.id ? 'flashcard-lang-pill--active' : ''}`}
+                onClick={() => setLangFilter(l.id)}
+              >
+                {l.nameNative}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Session stats + mode toggle */}
         {phase !== 'done' && (
@@ -182,12 +184,13 @@ export default function FlashcardReview({ onClose }) {
             <span className="flashcard-stat-badge flashcard-stat-badge--due">{dueCount} due</span>
             <span className="flashcard-stat-badge flashcard-stat-badge--new">{newCount} new</span>
             <span className="flashcard-stat-badge flashcard-stat-badge--total">{allCards.filter(c => c.langId === langFilter).length} total</span>
+            {availableLangs.length === 1 && <span className="flashcard-stat-badge">{availableLangs[0].nameNative}</span>}
             <button
               className={`flashcard-mode-toggle ${reviewMode === 'all' ? 'flashcard-mode-toggle--active' : ''}`}
               onClick={() => setReviewMode(m => m === 'due' ? 'all' : 'due')}
               title={reviewMode === 'due' ? 'Showing due + new cards. Click for all.' : 'Showing all cards. Click for due only.'}
             >
-              {reviewMode === 'due' ? 'Due only' : 'All cards'}
+              {reviewMode === 'due' ? '⚡ Due only' : '✦ All cards'}
             </button>
           </div>
         )}

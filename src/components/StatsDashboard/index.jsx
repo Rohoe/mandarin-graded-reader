@@ -100,7 +100,7 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
                 const lang = languages.find(l => l.id === langId);
                 return (
                   <div key={langId} className="stats-lang-row">
-                    <span className="stats-lang-row__name">{lang?.label || langId}</span>
+                    <span className="stats-lang-row__name">{lang?.nameNative || langId}</span>
                     <span className="stats-lang-row__count">{count} words</span>
                     <div className="stats-lang-row__bar-wrap">
                       <div className="stats-lang-row__bar" style={{ width: `${(count / stats.totalWords) * 100}%` }} />
