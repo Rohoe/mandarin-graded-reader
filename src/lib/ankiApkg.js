@@ -17,15 +17,19 @@ let _sqlPromise = null;
 // CDN fallback URL for the WASM binary.  Used when the local copy in
 // /public can't be fetched (e.g. service-worker doesn't cache .wasm,
 // mobile browser network hiccup, etc.).
-const WASM_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.14.0/sql-wasm.wasm';
+const WASM_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/sql-wasm.wasm';
 
 function getSql() {
   if (!_sqlPromise) {
     _sqlPromise = import('sql.js').then(async mod => {
       const initSqlJs = mod.default;
       try {
-        // Try local copy first (from /public/sql-wasm.wasm)
-        return await initSqlJs({ locateFile: file => `/${file}` });
+        // Try local copy first (from /public/sql-wasm.wasm).
+        // The browser bundle of sql.js requests "sql-wasm-browser.wasm" but
+        // we ship "sql-wasm.wasm" in public/, so normalise the filename.
+        return await initSqlJs({
+          locateFile: file => `/${file.replace('-browser', '')}`,
+        });
       } catch {
         // Fallback: fetch WASM from CDN and pass the binary directly
         const resp = await fetch(WASM_CDN);
@@ -243,6 +247,16 @@ function defaultDconf() {
   });
 }
 
+// ── sql.js browser-build workaround ──────────────────────────
+// db.run(sql, params) silently ignores params in the browser WASM build
+// of sql.js 1.14.  Use prepare/bind/step/free instead.
+function runWithParams(db, sql, params) {
+  const stmt = db.prepare(sql);
+  stmt.bind(params);
+  stmt.step();
+  stmt.free();
+}
+
 // ── Main export function ─────────────────────────────────────
 
 /**
@@ -308,7 +322,7 @@ export async function generateApkgBlob(cards, deckName, langId = 'zh') {
   const models = buildModel(MODEL_ID, langId);
   const decks = buildDeck(deckId, deckName);
 
-  db.run(
+  runWithParams(db,
     `INSERT INTO col VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       1,                             // id
@@ -346,7 +360,7 @@ export async function generateApkgBlob(cards, deckName, langId = 'zh') {
     const csum = await fieldChecksum(sfld);
 
     // Insert note
-    db.run(
+    runWithParams(db,
       `INSERT INTO notes VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         noteId,           // id
@@ -364,7 +378,7 @@ export async function generateApkgBlob(cards, deckName, langId = 'zh') {
     );
 
     // Insert card
-    db.run(
+    runWithParams(db,
       `INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         cardId,  // id
