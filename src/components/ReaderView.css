@@ -534,11 +534,8 @@ rt {
   line-height: 1.6;
 }
 
-.sentence-popover__romanization {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: var(--text-sm);
-  color: var(--color-accent);
+.sentence-popover__original--ruby {
+  line-height: 2.8;
 }
 
 .sentence-popover__translation {
@@ -559,6 +556,17 @@ rt {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
   word-break: break-word;
+}
+
+.sentence-popover__word {
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.15s ease;
+}
+
+.sentence-popover__word:hover,
+.sentence-popover__word--hover {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
 
 /* ── Selection popover ──────────────────── */
