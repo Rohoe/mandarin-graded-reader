@@ -37,6 +37,32 @@ export function computeStats(state) {
   // ── Streak ─────────────────────────────────────────────────
   const streak = getStreak(learningActivity);
 
+  // ── Flashcard stats ───────────────────────────────────────
+  const flashcardActivities = (learningActivity || []).filter(a => a.type === 'flashcard_reviewed');
+  const totalFlashcardReviews = flashcardActivities.length;
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayMs = todayStart.getTime();
+  const reviewsToday = flashcardActivities.filter(a => (a.timestamp || 0) >= todayMs).length;
+
+  const gotCount = flashcardActivities.filter(a => a.judgment === 'got').length;
+  const retentionRate = totalFlashcardReviews > 0
+    ? Math.round(gotCount / totalFlashcardReviews * 100)
+    : null;
+
+  // Mastery breakdown from learnedVocabulary
+  let fcMastered = 0, fcLearning = 0, fcNew = 0;
+  for (const [, info] of vocabEntries) {
+    const rc = info.reviewCount ?? 0;
+    const interval = info.interval ?? 0;
+    if (rc === 0) fcNew++;
+    else if (interval >= 21) fcMastered++;
+    else fcLearning++;
+  }
+
+  const flashcardStreak = getFlashcardStreak(learningActivity);
+
   return {
     totalWords,
     wordsByLang,
@@ -49,6 +75,12 @@ export function computeStats(state) {
     syllabusCount: syllabi.length,
     streak,
     quizCount: quizActivities.length,
+    // Flashcard stats
+    totalFlashcardReviews,
+    reviewsToday,
+    retentionRate,
+    flashcardMastery: { mastered: fcMastered, learning: fcLearning, new: fcNew },
+    flashcardStreak,
   };
 }
 
@@ -91,6 +123,13 @@ export function getStreak(activity) {
   }
 
   return streak;
+}
+
+export function getFlashcardStreak(activity) {
+  if (!activity || activity.length === 0) return 0;
+  const fcActivities = activity.filter(a => a.type === 'flashcard_reviewed');
+  if (fcActivities.length === 0) return 0;
+  return getStreak(fcActivities);
 }
 
 export function getWordsByPeriod(vocab, period = 'week') {

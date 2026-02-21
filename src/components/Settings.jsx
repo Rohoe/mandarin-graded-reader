@@ -314,6 +314,28 @@ export default function Settings({ onClose }) {
           </>
         )}
 
+        {/* New flashcards per day */}
+        <section className="settings-section">
+          <h3 className="settings-section__title form-label">New Flashcards Per Day</h3>
+          <p className="settings-section__desc text-muted">
+            Maximum number of new cards introduced in each daily session.
+          </p>
+          <div className="settings-slider-row">
+            <span className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>5</span>
+            <span className="settings-slider-value">{state.newCardsPerDay}</span>
+            <span className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>50</span>
+          </div>
+          <input
+            type="range"
+            className="settings-slider"
+            min={5} max={50} step={5}
+            value={state.newCardsPerDay}
+            onChange={e => act.setNewCardsPerDay(e.target.value)}
+          />
+        </section>
+
+        <hr className="divider" />
+
         {/* Default HSK level */}
         <section className="settings-section">
           <h3 className="settings-section__title form-label">Default HSK Level</h3>

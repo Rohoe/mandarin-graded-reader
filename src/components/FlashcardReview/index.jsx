@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import { actions } from '../../context/actions';
 import { getAllLanguages } from '../../lib/languages';
-import { calculateSRS, sortCardsBySRS, getMasteryLevel } from './srs';
+import { loadFlashcardSession, saveFlashcardSession } from '../../lib/storage';
+import { calculateSRS, getMasteryLevel, buildDailySession } from './srs';
 import './FlashcardReview.css';
 
 function formatInterval(days) {
@@ -28,7 +29,6 @@ export default function FlashcardReview({ onClose }) {
   const [langFilter, setLangFilter] = useState(() =>
     availableLangs.length > 0 ? availableLangs[0].id : 'zh'
   );
-  const [reviewMode, setReviewMode] = useState('due'); // 'due' | 'all'
 
   // Build card list from learnedVocabulary
   const allCards = useMemo(() => {
@@ -38,86 +38,127 @@ export default function FlashcardReview({ onClose }) {
       translation: data.translation || data.english || '',
       langId: data.langId || 'zh',
       exampleSentence: data.exampleSentence || '',
-      // SRS fields (defaults for legacy words without them)
+      // Forward SRS fields
       interval: data.interval ?? 0,
       ease: data.ease ?? 2.5,
       nextReview: data.nextReview ?? null,
       reviewCount: data.reviewCount ?? 0,
       lapses: data.lapses ?? 0,
+      // Reverse SRS fields
+      reverseInterval: data.reverseInterval ?? 0,
+      reverseEase: data.reverseEase ?? 2.5,
+      reverseNextReview: data.reverseNextReview ?? null,
+      reverseReviewCount: data.reverseReviewCount ?? 0,
+      reverseLapses: data.reverseLapses ?? 0,
     }));
   }, [state.learnedVocabulary]);
 
-  const { sortedCards, dueCount, newCount } = useMemo(() => {
-    const langCards = allCards.filter(c => c.langId === langFilter);
-    const { due, newCards, sorted } = sortCardsBySRS(langCards);
+  const langCards = useMemo(() => allCards.filter(c => c.langId === langFilter), [allCards, langFilter]);
 
-    if (reviewMode === 'due') {
-      // Show due + new cards only
-      const dueAndNew = [...due, ...newCards];
-      return { sortedCards: dueAndNew, dueCount: due.length, newCount: newCards.length };
-    }
-    return { sortedCards: sorted, dueCount: due.length, newCount: newCards.length };
-  }, [allCards, langFilter, reviewMode]);
+  // Session management
+  const [session, setSession] = useState(() => {
+    const saved = loadFlashcardSession();
+    return buildDailySession(langCards, state.newCardsPerDay, saved, langFilter);
+  });
+
+  // Rebuild session when language filter changes
+  useEffect(() => {
+    const saved = loadFlashcardSession();
+    const newSession = buildDailySession(langCards, state.newCardsPerDay, saved, langFilter);
+    setSession(newSession);
+    setHistory([]);
+    setPhase(newSession.index >= newSession.cardKeys.length ? 'done' : 'front');
+  }, [langFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Persist session to localStorage on change
+  useEffect(() => {
+    saveFlashcardSession(session);
+  }, [session]);
 
   // State machine: 'front' | 'back' | 'done'
-  const [phase, setPhase] = useState('front');
-  const [cardIdx, setCardIdx] = useState(0);
-  const [results, setResults] = useState({ got: 0, almost: 0, missed: 0 });
+  const [phase, setPhase] = useState(() =>
+    session.index >= session.cardKeys.length ? 'done' : 'front'
+  );
   const [history, setHistory] = useState([]);
 
-  // Reset card position when filter/mode changes
-  useEffect(() => {
-    setCardIdx(0);
-    setResults({ got: 0, almost: 0, missed: 0 });
-    setPhase('front');
-    setHistory([]);
-  }, [langFilter, reviewMode]);
+  // Current card data
+  const currentCardKey = session.cardKeys[session.index] || null;
+  const currentDirection = session.cardDirections[session.index] || 'forward';
+  const currentCard = useMemo(() => {
+    if (!currentCardKey) return null;
+    return langCards.find(c => c.target === currentCardKey) || null;
+  }, [currentCardKey, langCards]);
 
-  const currentCard = sortedCards[cardIdx] || null;
-  const totalCards = sortedCards.length;
+  const totalCards = session.cardKeys.length;
+  const cardIdx = session.index;
+
+  // Count due and new for display
+  const { dueCount, newCount } = useMemo(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const nowMs = now.getTime();
+    let due = 0, nc = 0;
+    for (const card of langCards) {
+      const rc = card.reviewCount ?? 0;
+      const nr = card.nextReview ? new Date(card.nextReview).getTime() : null;
+      if (rc === 0 && !nr) nc++;
+      else if (!nr || nr <= nowMs) due++;
+    }
+    return { dueCount: due, newCount: nc };
+  }, [langCards]);
 
   // SRS interval previews for judgment buttons
   const previews = useMemo(() => {
     if (!currentCard) return {};
     return {
-      got:    formatInterval(calculateSRS('got', currentCard).interval),
-      almost: formatInterval(calculateSRS('almost', currentCard).interval),
-      missed: formatInterval(calculateSRS('missed', currentCard).interval),
+      got:    formatInterval(Object.values(calculateSRS('got', currentCard, currentDirection))[0]),
+      almost: formatInterval(Object.values(calculateSRS('almost', currentCard, currentDirection))[0]),
+      missed: formatInterval(Object.values(calculateSRS('missed', currentCard, currentDirection))[0]),
     };
-  }, [currentCard]);
+  }, [currentCard, currentDirection]);
 
   const handleReveal = useCallback(() => setPhase('back'), []);
 
   const handleJudge = useCallback((judgment) => {
     if (!currentCard) return;
 
+    const direction = currentDirection;
+    const prefix = direction === 'reverse' ? 'reverse' : '';
+    const key = (field) => prefix ? `${prefix}${field.charAt(0).toUpperCase()}${field.slice(1)}` : field;
+
     // Save snapshot for undo
     setHistory(prev => [...prev, {
       word: currentCard.target,
       judgment,
+      direction,
       previousSRS: {
-        interval: currentCard.interval,
-        ease: currentCard.ease,
-        nextReview: currentCard.nextReview,
-        reviewCount: currentCard.reviewCount,
-        lapses: currentCard.lapses,
+        [key('interval')]: currentCard[key('interval')],
+        [key('ease')]: currentCard[key('ease')],
+        [key('nextReview')]: currentCard[key('nextReview')],
+        [key('reviewCount')]: currentCard[key('reviewCount')],
+        [key('lapses')]: currentCard[key('lapses')],
       },
+      previousSessionIndex: session.index,
+      previousResults: { ...session.results },
     }]);
 
-    act.logActivity('flashcard_reviewed', { word: currentCard.target, judgment });
+    act.logActivity('flashcard_reviewed', { word: currentCard.target, judgment, direction });
 
     // Calculate and persist SRS update
-    const srsUpdate = calculateSRS(judgment, currentCard);
+    const srsUpdate = calculateSRS(judgment, currentCard, direction);
     act.updateVocabSRS(currentCard.target, srsUpdate);
 
-    setResults(prev => ({ ...prev, [judgment]: prev[judgment] + 1 }));
-    if (cardIdx + 1 >= totalCards) {
+    const newResults = { ...session.results, [judgment]: session.results[judgment] + 1 };
+    const newIndex = session.index + 1;
+
+    setSession(prev => ({ ...prev, index: newIndex, results: newResults }));
+
+    if (newIndex >= totalCards) {
       setPhase('done');
     } else {
-      setCardIdx(i => i + 1);
       setPhase('front');
     }
-  }, [cardIdx, totalCards, currentCard, act]);
+  }, [cardIdx, totalCards, currentCard, currentDirection, session, act]);
 
   const handleUndo = useCallback(() => {
     if (history.length === 0) return;
@@ -127,24 +168,22 @@ export default function FlashcardReview({ onClose }) {
     // Restore SRS
     act.updateVocabSRS(last.word, last.previousSRS);
 
-    // Decrement the result counter
-    setResults(prev => ({ ...prev, [last.judgment]: prev[last.judgment] - 1 }));
+    // Restore session state
+    setSession(prev => ({
+      ...prev,
+      index: last.previousSessionIndex,
+      results: last.previousResults,
+    }));
 
-    // Go back to the previous card, showing the back
-    if (phase === 'done') {
-      setCardIdx(totalCards - 1);
-    } else {
-      setCardIdx(i => i - 1);
-    }
     setPhase('back');
-  }, [history, phase, totalCards, act]);
+  }, [history, act]);
 
-  const handleRestart = useCallback(() => {
-    setCardIdx(0);
-    setResults({ got: 0, almost: 0, missed: 0 });
-    setPhase('front');
+  const handleNextSession = useCallback(() => {
+    const newSession = buildDailySession(langCards, state.newCardsPerDay, session, langFilter);
+    setSession(newSession);
     setHistory([]);
-  }, []);
+    setPhase(newSession.cardKeys.length === 0 ? 'done' : 'front');
+  }, [langCards, state.newCardsPerDay, session, langFilter]);
 
   // Close on Escape, keyboard navigation for flashcards
   useEffect(() => {
@@ -173,10 +212,9 @@ export default function FlashcardReview({ onClose }) {
 
   // Mastery stats for done screen
   const masteryStats = useMemo(() => {
-    const langCards = allCards.filter(c => c.langId === langFilter);
     let mastered = 0, learning = 0, newCount = 0;
     for (const card of langCards) {
-      const level = getMasteryLevel(card);
+      const level = getMasteryLevel(card, 'forward');
       if (level === 'mastered') mastered++;
       else if (level === 'learning') learning++;
       else newCount++;
@@ -199,7 +237,14 @@ export default function FlashcardReview({ onClose }) {
     }
 
     return { mastered, learning, new: newCount, total: langCards.length, dueTomorrow, dueIn3Days };
-  }, [allCards, langFilter]);
+  }, [langCards]);
+
+  // Check if more cards are available beyond this session
+  const hasMoreCards = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const testSession = buildDailySession(langCards, state.newCardsPerDay, session, langFilter);
+    return testSession.cardKeys.length > 0 && testSession.index < testSession.cardKeys.length;
+  }, [langCards, state.newCardsPerDay, session, langFilter]);
 
   if (allCards.length === 0) {
     return (
@@ -240,26 +285,19 @@ export default function FlashcardReview({ onClose }) {
           </div>
         )}
 
-        {/* Session stats + mode toggle */}
+        {/* Session stats */}
         {phase !== 'done' && (
           <div className="flashcard-session-stats">
             <span className="flashcard-stat-badge flashcard-stat-badge--due">{dueCount} due</span>
             <span className="flashcard-stat-badge flashcard-stat-badge--new">{newCount} new</span>
-            <span className="flashcard-stat-badge flashcard-stat-badge--total">{allCards.filter(c => c.langId === langFilter).length} total</span>
+            <span className="flashcard-stat-badge flashcard-stat-badge--total">{langCards.length} total</span>
             {availableLangs.length === 1 && <span className="flashcard-stat-badge">{availableLangs[0].nameNative}</span>}
-            <button
-              className={`flashcard-mode-toggle ${reviewMode === 'all' ? 'flashcard-mode-toggle--active' : ''}`}
-              onClick={() => setReviewMode(m => m === 'due' ? 'all' : 'due')}
-              title={reviewMode === 'due' ? 'Showing due + new cards. Click for all.' : 'Showing all cards. Click for due only.'}
-            >
-              {reviewMode === 'due' ? '⚡ Due only' : '✦ All cards'}
-            </button>
           </div>
         )}
 
-        {totalCards === 0 ? (
+        {totalCards === 0 || (phase !== 'done' && cardIdx >= totalCards) ? (
           <div className="flashcard-done">
-            <h3 className="font-display flashcard-done__title">All caught up!</h3>
+            <h3 className="font-display flashcard-done__title">All done for today!</h3>
             <p className="text-muted">No cards due for review right now.</p>
             {masteryStats.dueTomorrow > 0 && (
               <p className="text-muted flashcard-forecast">
@@ -267,7 +305,6 @@ export default function FlashcardReview({ onClose }) {
               </p>
             )}
             <div className="flashcard-done__actions">
-              <button className="btn btn-secondary btn-sm" onClick={() => setReviewMode('all')}>Review all cards</button>
               <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
             </div>
           </div>
@@ -276,9 +313,9 @@ export default function FlashcardReview({ onClose }) {
           <div className="flashcard-done">
             <h3 className="font-display flashcard-done__title">Session Complete</h3>
             <div className="flashcard-done__stats">
-              <span className="flashcard-done__stat flashcard-done__stat--got">{results.got} correct</span>
-              <span className="flashcard-done__stat flashcard-done__stat--almost">{results.almost} almost</span>
-              <span className="flashcard-done__stat flashcard-done__stat--missed">{results.missed} missed</span>
+              <span className="flashcard-done__stat flashcard-done__stat--got">{session.results.got} correct</span>
+              <span className="flashcard-done__stat flashcard-done__stat--almost">{session.results.almost} almost</span>
+              <span className="flashcard-done__stat flashcard-done__stat--missed">{session.results.missed} missed</span>
             </div>
             <p className="text-muted">{totalCards} card{totalCards !== 1 ? 's' : ''} reviewed</p>
 
@@ -329,7 +366,9 @@ export default function FlashcardReview({ onClose }) {
                   ↩ Undo
                 </button>
               )}
-              <button className="btn btn-secondary btn-sm" onClick={handleRestart}>Review again</button>
+              {hasMoreCards && (
+                <button className="btn btn-secondary btn-sm" onClick={handleNextSession}>Start next session</button>
+              )}
               <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
             </div>
           </div>
@@ -347,21 +386,48 @@ export default function FlashcardReview({ onClose }) {
               )}
             </div>
 
-            <div className="flashcard-card" data-lang={currentCard.langId}>
-              <div className="flashcard-card__front">
-                <span className="flashcard-card__target text-target">{currentCard.target}</span>
-              </div>
+            <div className="flashcard-card" data-lang={currentCard?.langId}>
+              {currentDirection === 'forward' ? (
+                /* Forward card: target on front */
+                <>
+                  <div className="flashcard-card__front">
+                    <span className="flashcard-card__direction-badge">→ EN</span>
+                    <span className="flashcard-card__target text-target">{currentCard?.target}</span>
+                  </div>
 
-              {phase === 'back' && (
-                <div className="flashcard-card__back">
-                  {currentCard.romanization && (
-                    <span className="flashcard-card__romanization text-muted">{currentCard.romanization}</span>
+                  {phase === 'back' && (
+                    <div className="flashcard-card__back">
+                      {currentCard?.romanization && (
+                        <span className="flashcard-card__romanization text-muted">{currentCard.romanization}</span>
+                      )}
+                      <span className="flashcard-card__translation">{currentCard?.translation}</span>
+                      {currentCard?.exampleSentence && (
+                        <span className="flashcard-card__example text-muted">{currentCard.exampleSentence}</span>
+                      )}
+                    </div>
                   )}
-                  <span className="flashcard-card__translation">{currentCard.translation}</span>
-                  {currentCard.exampleSentence && (
-                    <span className="flashcard-card__example text-muted">{currentCard.exampleSentence}</span>
+                </>
+              ) : (
+                /* Reverse card: translation on front */
+                <>
+                  <div className="flashcard-card__front flashcard-card__front--reverse">
+                    <span className="flashcard-card__direction-badge">EN →</span>
+                    <span className="flashcard-card__translation-front">{currentCard?.translation}</span>
+                    <span className="flashcard-card__recall-hint text-muted">Recall the word</span>
+                  </div>
+
+                  {phase === 'back' && (
+                    <div className="flashcard-card__back">
+                      <span className="flashcard-card__target text-target">{currentCard?.target}</span>
+                      {currentCard?.romanization && (
+                        <span className="flashcard-card__romanization text-muted">{currentCard.romanization}</span>
+                      )}
+                      {currentCard?.exampleSentence && (
+                        <span className="flashcard-card__example text-muted">{currentCard.exampleSentence}</span>
+                      )}
+                    </div>
                   )}
-                </div>
+                </>
               )}
             </div>
 

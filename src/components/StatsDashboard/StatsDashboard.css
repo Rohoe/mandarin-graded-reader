@@ -184,8 +184,58 @@
   color: var(--color-text-muted);
 }
 
+/* ── Flashcard mastery bar ────────────── */
+.stats-mastery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.stats-mastery__bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.stats-mastery__segment {
+  min-width: 4px;
+  transition: flex 0.3s ease;
+}
+
+.stats-mastery__segment--mastered { background: var(--color-accent); }
+.stats-mastery__segment--learning { background: #f59e0b; }
+.stats-mastery__segment--new      { background: color-mix(in srgb, var(--color-text) 20%, transparent); }
+
+.stats-mastery__labels {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+  font-size: 0.7rem;
+  color: var(--color-text-muted, #6b7280);
+}
+
+.stats-mastery__label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stats-mastery__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.stats-mastery__dot--mastered { background: var(--color-accent); }
+.stats-mastery__dot--learning { background: #f59e0b; }
+.stats-mastery__dot--new      { background: color-mix(in srgb, var(--color-text) 20%, transparent); }
+
 @media (max-width: 480px) {
   .stats-dashboard__summary {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }

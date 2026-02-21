@@ -56,6 +56,7 @@ export function actions(dispatch) {
     setRomanizationOn:     val    => dispatch({ type: 'SET_ROMANIZATION_ON', payload: Boolean(val) }),
     setTranslateButtons:   val    => dispatch({ type: 'SET_TRANSLATE_BUTTONS', payload: Boolean(val) }),
     setStructuredOutput:   val    => dispatch({ type: 'SET_STRUCTURED_OUTPUT', payload: Boolean(val) }),
+    setNewCardsPerDay:     n      => dispatch({ type: 'SET_NEW_CARDS_PER_DAY', payload: Number(n) }),
     // Background generation tracking
     startPendingReader:    key    => dispatch({ type: 'START_PENDING_READER', payload: key }),
     clearPendingReader:    key    => dispatch({ type: 'CLEAR_PENDING_READER', payload: key }),

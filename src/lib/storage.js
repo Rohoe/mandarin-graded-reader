@@ -57,6 +57,8 @@ const KEYS = {
   ROMANIZATION_ON:    'gradedReader_romanizationOn',
   TRANSLATE_BUTTONS:  'gradedReader_translateButtons',
   EVICTED_READER_KEYS: 'gradedReader_evictedReaderKeys',
+  NEW_CARDS_PER_DAY:   'gradedReader_newCardsPerDay',
+  FLASHCARD_SESSION:   'gradedReader_flashcardSession',
 };
 
 const READER_KEY_PREFIX = 'gradedReader_reader_';
@@ -702,6 +704,26 @@ export function stashOldActivity(activity) {
 
 export function loadActivityStash() {
   return load(ACTIVITY_STASH_KEY, []);
+}
+
+// ── New cards per day preference ──────────────────────────────
+
+export function loadNewCardsPerDay() {
+  return load(KEYS.NEW_CARDS_PER_DAY, 20);
+}
+
+export function saveNewCardsPerDay(n) {
+  save(KEYS.NEW_CARDS_PER_DAY, n);
+}
+
+// ── Flashcard session (ephemeral, no file fanout) ────────────
+
+export function loadFlashcardSession() {
+  return load(KEYS.FLASHCARD_SESSION, null);
+}
+
+export function saveFlashcardSession(session) {
+  save(KEYS.FLASHCARD_SESSION, session);
 }
 
 // ── Reader eviction (LRU) ─────────────────────────────────────

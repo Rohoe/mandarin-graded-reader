@@ -112,6 +112,64 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
           </div>
         )}
 
+        {/* Flashcard Review stats */}
+        {stats.totalFlashcardReviews > 0 && (
+          <div className="stats-dashboard__section">
+            <h3 className="stats-dashboard__section-title font-display">Flashcard Review</h3>
+            <div className="stats-dashboard__summary" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+              <div className="stats-card">
+                <span className="stats-card__value">{stats.totalFlashcardReviews}</span>
+                <span className="stats-card__label">Total Reviews</span>
+              </div>
+              <div className="stats-card">
+                <span className="stats-card__value">{stats.reviewsToday}</span>
+                <span className="stats-card__label">Today</span>
+              </div>
+              <div className="stats-card">
+                <span className="stats-card__value">{stats.flashcardStreak}</span>
+                <span className="stats-card__label">Review Streak</span>
+              </div>
+              <div className="stats-card">
+                <span className="stats-card__value">{stats.retentionRate != null ? `${stats.retentionRate}%` : '—'}</span>
+                <span className="stats-card__label">Retention</span>
+              </div>
+            </div>
+            {/* Mastery breakdown bar */}
+            {stats.totalWords > 0 && (
+              <div className="stats-mastery">
+                <div className="stats-mastery__bar">
+                  {stats.flashcardMastery.mastered > 0 && (
+                    <div
+                      className="stats-mastery__segment stats-mastery__segment--mastered"
+                      style={{ flex: stats.flashcardMastery.mastered }}
+                      title={`${stats.flashcardMastery.mastered} mastered`}
+                    />
+                  )}
+                  {stats.flashcardMastery.learning > 0 && (
+                    <div
+                      className="stats-mastery__segment stats-mastery__segment--learning"
+                      style={{ flex: stats.flashcardMastery.learning }}
+                      title={`${stats.flashcardMastery.learning} learning`}
+                    />
+                  )}
+                  {stats.flashcardMastery.new > 0 && (
+                    <div
+                      className="stats-mastery__segment stats-mastery__segment--new"
+                      style={{ flex: stats.flashcardMastery.new }}
+                      title={`${stats.flashcardMastery.new} new`}
+                    />
+                  )}
+                </div>
+                <div className="stats-mastery__labels">
+                  <span className="stats-mastery__label"><span className="stats-mastery__dot stats-mastery__dot--mastered"></span>{stats.flashcardMastery.mastered} mastered</span>
+                  <span className="stats-mastery__label"><span className="stats-mastery__dot stats-mastery__dot--learning"></span>{stats.flashcardMastery.learning} learning</span>
+                  <span className="stats-mastery__label"><span className="stats-mastery__dot stats-mastery__dot--new"></span>{stats.flashcardMastery.new} new</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Activity counts */}
         <div className="stats-dashboard__section">
           <h3 className="stats-dashboard__section-title font-display">Activity</h3>

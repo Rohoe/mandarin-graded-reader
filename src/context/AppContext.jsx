@@ -73,6 +73,8 @@ import {
   loadEvictedReaderKeys,
   saveEvictedReaderKeys,
   unmarkEvicted,
+  loadNewCardsPerDay,
+  saveNewCardsPerDay,
 } from '../lib/storage';
 import {
   loadDirectoryHandle,
@@ -141,6 +143,7 @@ function buildInitialState() {
     translateButtons:  loadTranslateButtons(),
     verboseVocab:      loadVerboseVocab(),
     useStructuredOutput: loadStructuredOutput(),
+    newCardsPerDay:    loadNewCardsPerDay(),
     // Evicted reader keys (persisted)
     evictedReaderKeys: loadEvictedReaderKeys(),
     // Background generation tracking (ephemeral, not persisted)
@@ -547,6 +550,9 @@ function baseReducer(state, action) {
     case 'SET_STRUCTURED_OUTPUT':
       return { ...state, useStructuredOutput: action.payload };
 
+    case 'SET_NEW_CARDS_PER_DAY':
+      return { ...state, newCardsPerDay: action.payload };
+
     case 'START_PENDING_READER':
       return { ...state, pendingReaders: { ...state.pendingReaders, [action.payload]: true } };
 
@@ -911,6 +917,7 @@ export function AppProvider({ children }) {
   useEffect(() => { if (mountedRef.current) saveRomanizationOn(state.romanizationOn); }, [state.romanizationOn]);
   useEffect(() => { if (mountedRef.current) saveTranslateButtons(state.translateButtons); }, [state.translateButtons]);
   useEffect(() => { if (mountedRef.current) saveStructuredOutput(state.useStructuredOutput); }, [state.useStructuredOutput]);
+  useEffect(() => { if (mountedRef.current) saveNewCardsPerDay(state.newCardsPerDay); }, [state.newCardsPerDay]);
   useEffect(() => { if (mountedRef.current) saveCloudLastSynced(state.cloudLastSynced); }, [state.cloudLastSynced]);
 
   // Generated readers — diff-based persistence
