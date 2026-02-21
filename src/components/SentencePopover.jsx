@@ -159,12 +159,9 @@ const SentencePopoverInner = forwardRef(function SentencePopoverInner(
 
   return (
     <div ref={ref} className="reader-view__popover sentence-popover" style={style}>
-      <span className={`sentence-popover__original text-target${pinyinOn && romanizer ? ' sentence-popover__original--ruby' : ''}`}>
-        {renderSentenceText()}
-      </span>
-      <div className="sentence-popover__row">
-        <span className="sentence-popover__translation">
-          {translation || '\u2026'}
+      <div className="popover-tts-row">
+        <span className={`sentence-popover__original text-target${pinyinOn && romanizer ? ' sentence-popover__original--ruby' : ''}`}>
+          {renderSentenceText()}
         </span>
         {ttsSupported && speakText && (
           <button
@@ -177,6 +174,9 @@ const SentencePopoverInner = forwardRef(function SentencePopoverInner(
           </button>
         )}
       </div>
+      <span className="sentence-popover__translation">
+        {translation || '\u2026'}
+      </span>
       {subText && (
         <div className="sentence-popover__sub">
           <span className="sentence-popover__sub-label">

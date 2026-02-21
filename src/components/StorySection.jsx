@@ -152,41 +152,45 @@ export default function StorySection({
       </div>
       {activeVocab && createPortal(
         <div ref={popoverRef} className="reader-view__popover" style={getPopoverPosition(activeVocab.rect)}>
-          <span className="reader-view__popover-chinese text-target">{activeVocab.word.target || activeVocab.word.chinese}</span>
+          <div className="popover-tts-row">
+            <span className="reader-view__popover-chinese text-target">{activeVocab.word.target || activeVocab.word.chinese}</span>
+            {ttsSupported && (
+              <button
+                className={`popover-tts-btn${speakingKey === `vocab-${activeVocab.word.target || activeVocab.word.chinese}` ? ' popover-tts-btn--active' : ''}`}
+                onClick={(e) => { e.stopPropagation(); speakText(activeVocab.word.target || activeVocab.word.chinese, `vocab-${activeVocab.word.target || activeVocab.word.chinese}`); }}
+                title={speakingKey === `vocab-${activeVocab.word.target || activeVocab.word.chinese}` ? 'Stop' : 'Listen'}
+                aria-label={speakingKey === `vocab-${activeVocab.word.target || activeVocab.word.chinese}` ? 'Stop speaking' : 'Listen to word'}
+              >
+                {speakingKey === `vocab-${activeVocab.word.target || activeVocab.word.chinese}` ? '■' : 'TTS'}
+              </button>
+            )}
+          </div>
           <span className="reader-view__popover-pinyin">{activeVocab.word.romanization || activeVocab.word.pinyin}</span>
           <span className="reader-view__popover-english">{activeVocab.word.translation || activeVocab.word.english}</span>
-          {ttsSupported && (
-            <button
-              className={`popover-tts-btn${speakingKey === `vocab-${activeVocab.word.target || activeVocab.word.chinese}` ? ' popover-tts-btn--active' : ''}`}
-              onClick={(e) => { e.stopPropagation(); speakText(activeVocab.word.target || activeVocab.word.chinese, `vocab-${activeVocab.word.target || activeVocab.word.chinese}`); }}
-              title={speakingKey === `vocab-${activeVocab.word.target || activeVocab.word.chinese}` ? 'Stop' : 'Listen'}
-              aria-label={speakingKey === `vocab-${activeVocab.word.target || activeVocab.word.chinese}` ? 'Stop speaking' : 'Listen to word'}
-            >
-              {speakingKey === `vocab-${activeVocab.word.target || activeVocab.word.chinese}` ? '■' : 'TTS'}
-            </button>
-          )}
         </div>,
         document.body
       )}
       {selectionPopover && createPortal(
         <div ref={selectionPopoverRef} className="reader-view__popover reader-view__selection-popover" style={getPopoverPosition(selectionPopover.rect)}>
-          <span className="reader-view__selection-text text-target">{selectionPopover.text}</span>
+          <div className="popover-tts-row">
+            <span className="reader-view__selection-text text-target">{selectionPopover.text}</span>
+            {ttsSupported && (
+              <button
+                className={`popover-tts-btn${speakingKey === `sel-${selectionPopover.text}` ? ' popover-tts-btn--active' : ''}`}
+                onClick={(e) => { e.stopPropagation(); speakText(selectionPopover.text, `sel-${selectionPopover.text}`); }}
+                title={speakingKey === `sel-${selectionPopover.text}` ? 'Stop' : 'Listen'}
+                aria-label={speakingKey === `sel-${selectionPopover.text}` ? 'Stop speaking' : 'Listen to selection'}
+              >
+                {speakingKey === `sel-${selectionPopover.text}` ? '■' : 'TTS'}
+              </button>
+            )}
+          </div>
           {selectionPopover.romanization && (
             <span className="reader-view__selection-romanization">{selectionPopover.romanization}</span>
           )}
           <span className="reader-view__selection-translation">
             {selectionPopover.translation || '\u2026'}
           </span>
-          {ttsSupported && (
-            <button
-              className={`popover-tts-btn${speakingKey === `sel-${selectionPopover.text}` ? ' popover-tts-btn--active' : ''}`}
-              onClick={(e) => { e.stopPropagation(); speakText(selectionPopover.text, `sel-${selectionPopover.text}`); }}
-              title={speakingKey === `sel-${selectionPopover.text}` ? 'Stop' : 'Listen'}
-              aria-label={speakingKey === `sel-${selectionPopover.text}` ? 'Stop speaking' : 'Listen to selection'}
-            >
-              {speakingKey === `sel-${selectionPopover.text}` ? '■' : 'TTS'}
-            </button>
-          )}
         </div>,
         document.body
       )}

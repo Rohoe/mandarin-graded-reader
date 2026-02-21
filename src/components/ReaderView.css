@@ -555,11 +555,10 @@ rt {
   .sentence-popover__sub-label { font-size: var(--text-sm); }
 }
 
-.sentence-popover__row {
+.popover-tts-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--space-2);
-  justify-content: space-between;
 }
 
 .sentence-popover__sub {
