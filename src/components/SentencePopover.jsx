@@ -93,10 +93,11 @@ const SentencePopoverInner = forwardRef(function SentencePopoverInner(
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed) return;
     const text = sel.toString().trim();
-    if (text && text !== sentenceText) {
-      onSubSelection(text);
-    }
-  }, [sentenceText, onSubSelection]);
+    if (!text || text === sentenceText) return;
+    // Skip sub-selection if text contains no target-script characters
+    if (scriptRegex && !scriptRegex.test(text)) return;
+    onSubSelection(text);
+  }, [sentenceText, onSubSelection, scriptRegex]);
 
   // Listen for mouseup within the popover for sub-selection drill-down
   useEffect(() => {
@@ -109,8 +110,10 @@ const SentencePopoverInner = forwardRef(function SentencePopoverInner(
   const handleWordClick = useCallback((word) => {
     // Clear any text selection so it doesn't interfere
     window.getSelection()?.removeAllRanges();
+    // Skip if word contains no target-script characters
+    if (scriptRegex && !scriptRegex.test(word)) return;
     onSubSelection(word);
-  }, [onSubSelection]);
+  }, [onSubSelection, scriptRegex]);
 
   /** Render text for a single segment, with optional ruby annotations. */
   const renderSegText = (text, keyPrefix) => {

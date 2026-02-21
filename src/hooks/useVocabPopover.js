@@ -35,9 +35,9 @@ export function useVocabPopover(reader, langConfig) {
     return null;
   }
 
-  function getPopoverPosition(rect) {
+  function getPopoverPosition(rect, width = 220) {
     const gap = 8;
-    const popoverWidth = 220;
+    const popoverWidth = width;
     let left = rect.left + rect.width / 2 - popoverWidth / 2;
     left = Math.max(8, Math.min(left, window.innerWidth - popoverWidth - 8));
     const preferAbove = rect.top - gap > 120;

@@ -60,13 +60,17 @@ export default function StorySection({
     const popoverWidth = width;
     let left = rect.left + rect.width / 2 - popoverWidth / 2;
     left = Math.max(8, Math.min(left, window.innerWidth - popoverWidth - 8));
-    const preferAbove = rect.top - gap > 120;
+    // Always use top-anchored positioning so the popover grows downward
+    // (prevents expanding upward off-screen when sub-translation is added)
+    const estimatedHeight = 120;
+    const preferAbove = rect.top - gap - estimatedHeight > 8;
+    const top = preferAbove ? rect.top - gap - estimatedHeight : rect.bottom + gap;
     return {
       position: 'fixed',
       zIndex: 60,
       width: popoverWidth,
       left,
-      ...(preferAbove ? { bottom: window.innerHeight - rect.top + gap } : { top: rect.bottom + gap }),
+      top: Math.max(8, top),
     };
   }
 
@@ -87,6 +91,7 @@ export default function StorySection({
                   <span
                     key={si}
                     className="reader-view__sentence"
+                    title="Click to translate"
                     onClick={(e) => onSentenceClick && onSentenceClick(e, sentence, pi)}
                   >
                     {sentence.segments.map((seg, i) => {
