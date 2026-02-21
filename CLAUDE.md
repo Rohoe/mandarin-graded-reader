@@ -217,11 +217,19 @@ src/
                               card directions with independent SRS tracking per direction.
                               Reverse cards unlock after a word has been reviewed forward ≥1 time.
                               Shows SRS interval previews below judgment buttons (e.g. "3d", "2w").
-                              Undo via Ctrl+Z restores previous card's SRS state. Example
-                              sentences shown on card back when available. Session is resumable
-                              on same day; resets at midnight. Language filter pills when vocab
-                              spans multiple languages. Session summary on completion with
-                              mastery breakdown. Logs flashcard_reviewed activity with direction.
+                              Missed/almost cards are re-queued at the end of the session until
+                              all are judged "Got it". Undo via Ctrl+Z restores previous card's
+                              SRS state. Example sentences shown on card back when available.
+                              Romanization ruby annotations shown on forward card front when
+                              romanization toggle is on (uses useRomanization hook).
+                              Sessions persisted per-language (storage key includes langId);
+                              resumable on same day, reset at midnight. Done screen offers
+                              "Start next session" (carries over new-card budget from current
+                              session) or "New session" (resets budget, passes null for
+                              existingSession — only new cards appear, respects SRS scheduling).
+                              Language filter pills when vocab spans multiple languages.
+                              Session summary on completion with mastery breakdown.
+                              Logs flashcard_reviewed activity with direction.
     VocabularyList            Collapsible accordion of vocab cards with examples.
                               Accepts `renderChars` prop — applies ruby romanization to word headers
                               and example sentences when romanization toggle is on.
