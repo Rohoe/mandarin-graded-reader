@@ -172,7 +172,6 @@ export default function StorySection({
         romanizer={romanizer}
         onSubSelection={onSubSelection}
         langId={langId}
-        pinyinOn={pinyinOn}
       />
     </div>
   );

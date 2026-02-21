@@ -49,7 +49,6 @@ export default function SentencePopover({
   romanizer,
   onSubSelection,
   langId,
-  pinyinOn,
 }) {
   if (!sentencePopover) return null;
 
@@ -66,7 +65,7 @@ export default function SentencePopover({
       style={style}
       onSubSelection={onSubSelection}
       langId={langId}
-      romanizer={pinyinOn ? romanizer : null}
+      romanizer={romanizer}
     />,
     document.body
   );
