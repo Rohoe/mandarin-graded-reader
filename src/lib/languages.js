@@ -8,6 +8,7 @@ const zhConfig = {
   id: 'zh',
   name: 'Mandarin Chinese',
   nameNative: '中文',
+  deckLabel: 'Chinese',
 
   // Proficiency system
   proficiency: {
@@ -100,6 +101,7 @@ const koConfig = {
   id: 'ko',
   name: 'Korean',
   nameNative: '한국어',
+  deckLabel: 'Korean',
 
   proficiency: {
     name: 'TOPIK',
@@ -197,6 +199,7 @@ const yueConfig = {
   id: 'yue',
   name: 'Cantonese',
   nameNative: '粵語',
+  deckLabel: 'Cantonese',
 
   proficiency: {
     name: 'YUE',

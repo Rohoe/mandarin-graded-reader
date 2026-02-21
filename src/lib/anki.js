@@ -205,7 +205,7 @@ export async function generateAnkiApkgExport(ankiJson, topic, level, exportedWor
 
   let blob = null;
   if (toExport.length > 0) {
-    const deckName = `Graded Reader::${profName}${level}`;
+    const deckName = `${langConfig.deckLabel || 'Graded'} Reader::${profName}${level}`;
     const apkgCards = buildApkgCards(toExport, level, topicTag, today, langConfig, verboseVocab, romanizer, vocabTranslations);
     blob = await generateApkgBlob(apkgCards, deckName, langId);
   }
