@@ -49,12 +49,16 @@ function getSql() {
 
 const FIELD_SEP = '\x1f'; // Anki field separator
 
-function guid64() {
-  const chars =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&()*+,-./:;<=>?@[]^_`{|}~';
+const GUID_CHARS =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&()*+,-./:;<=>?@[]^_`{|}~';
+
+async function guidForCard(target, translation) {
+  const key = `${target}\x1f${translation}`;
+  const buf = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(key));
+  const bytes = new Uint8Array(buf);
   let result = '';
   for (let i = 0; i < 10; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    result += GUID_CHARS.charAt(bytes[i] % GUID_CHARS.length);
   }
   return result;
 }
@@ -360,11 +364,12 @@ export async function generateApkgBlob(cards, deckName, langId = 'zh') {
     const csum = await fieldChecksum(sfld);
 
     // Insert note
+    const guid = await guidForCard(card.target || '', card.translation || '');
     runWithParams(db,
       `INSERT INTO notes VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         noteId,           // id
-        guid64(),         // guid
+        guid,             // guid (deterministic: same word+translation = same guid)
         MODEL_ID,         // mid (model id)
         now,              // mod
         -1,               // usn
