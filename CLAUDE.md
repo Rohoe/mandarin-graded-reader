@@ -225,8 +225,8 @@ src/
                               Sessions persisted per-language (storage key includes langId);
                               resumable on same day, reset at midnight. Done screen offers
                               "Start next session" (carries over new-card budget from current
-                              session) or "New session" (resets budget, passes null for
-                              existingSession — only new cards appear, respects SRS scheduling).
+                              session) or "New session" (resets budget with { newOnly: true },
+                              skips due cards entirely — only never-reviewed cards appear).
                               Language filter pills when vocab spans multiple languages.
                               Session summary on completion with mastery breakdown.
                               Logs flashcard_reviewed activity with direction.
