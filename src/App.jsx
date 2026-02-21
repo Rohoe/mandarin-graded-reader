@@ -379,6 +379,7 @@ function AppShell() {
       {state.syncConflict && (
         <SyncConflictDialog
           conflict={state.syncConflict.conflictInfo}
+          syncing={state.cloudSyncing}
           onResolve={resolveSyncConflict}
           onCancel={() => act.hideSyncConflict()}
         />

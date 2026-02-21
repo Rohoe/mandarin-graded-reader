@@ -82,6 +82,21 @@
   margin-bottom: 0;
 }
 
+.sync-conflict-same-counts {
+  margin: 0 0 1.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-bg-secondary, #f5f5f5);
+  border-left: 3px solid var(--color-accent);
+  border-radius: 0 0.5rem 0.5rem 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary, #666);
+}
+
+[data-theme="dark"] .sync-conflict-same-counts {
+  background: rgba(255, 255, 255, 0.05);
+}
+
 .sync-conflict-actions {
   display: flex;
   flex-direction: column;
