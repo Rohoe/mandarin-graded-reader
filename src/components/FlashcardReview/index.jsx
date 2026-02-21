@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import { actions } from '../../context/actions';
-import { getAllLanguages } from '../../lib/languages';
+import { getAllLanguages, getLang } from '../../lib/languages';
 import { loadFlashcardSession, saveFlashcardSession } from '../../lib/storage';
+import { useRomanization } from '../../hooks/useRomanization';
 import { calculateSRS, getMasteryLevel, buildDailySession } from './srs';
 import './FlashcardReview.css';
 
@@ -30,6 +31,10 @@ export default function FlashcardReview({ onClose }) {
     availableLangs.length > 0 ? availableLangs[0].id : 'zh'
   );
 
+  // Romanization for flashcard front
+  const langConfig = getLang(langFilter);
+  const { renderChars: renderRomanization, romanizer } = useRomanization(langFilter, langConfig, state.romanizationOn);
+
   // Build card list from learnedVocabulary
   const allCards = useMemo(() => {
     return Object.entries(state.learnedVocabulary).map(([word, data]) => ({
@@ -55,24 +60,24 @@ export default function FlashcardReview({ onClose }) {
 
   const langCards = useMemo(() => allCards.filter(c => c.langId === langFilter), [allCards, langFilter]);
 
-  // Session management
+  // Session management (per-language persistence)
   const [session, setSession] = useState(() => {
-    const saved = loadFlashcardSession();
+    const saved = loadFlashcardSession(langFilter);
     return buildDailySession(langCards, state.newCardsPerDay, saved, langFilter);
   });
 
   // Rebuild session when language filter changes
   useEffect(() => {
-    const saved = loadFlashcardSession();
+    const saved = loadFlashcardSession(langFilter);
     const newSession = buildDailySession(langCards, state.newCardsPerDay, saved, langFilter);
     setSession(newSession);
     setHistory([]);
     setPhase(newSession.index >= newSession.cardKeys.length ? 'done' : 'front');
   }, [langFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Persist session to localStorage on change
+  // Persist session to localStorage on change (per-language key)
   useEffect(() => {
-    saveFlashcardSession(session);
+    saveFlashcardSession(session, session.langId);
   }, [session]);
 
   // State machine: 'front' | 'back' | 'done'
@@ -203,6 +208,16 @@ export default function FlashcardReview({ onClose }) {
     setHistory([]);
     setPhase(newSession.cardKeys.length === 0 ? 'done' : 'front');
   }, [langCards, state.newCardsPerDay, session, langFilter]);
+
+  const handleNewSession = useCallback(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    const newSession = buildDailySession(langCards, state.newCardsPerDay, null, langFilter, { dateOverride: tomorrow });
+    setSession(newSession);
+    setHistory([]);
+    setPhase(newSession.cardKeys.length === 0 ? 'done' : 'front');
+  }, [langCards, state.newCardsPerDay, langFilter]);
 
   // Close on Escape, keyboard navigation for flashcards
   useEffect(() => {
@@ -391,7 +406,7 @@ export default function FlashcardReview({ onClose }) {
               {hasMoreCards ? (
                 <button className="btn btn-secondary btn-sm" onClick={handleNextSession}>Start next session</button>
               ) : (
-                <button className="btn btn-secondary btn-sm" onClick={handleNextSession}>New session</button>
+                <button className="btn btn-secondary btn-sm" onClick={handleNewSession}>New session</button>
               )}
               <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
             </div>
@@ -415,7 +430,9 @@ export default function FlashcardReview({ onClose }) {
                 /* Forward card: target on front */
                 <>
                   <div className="flashcard-card__front">
-                    <span className="flashcard-card__target text-target">{currentCard?.target}</span>
+                    <span className="flashcard-card__target text-target">
+                      {state.romanizationOn && romanizer && currentCard ? renderRomanization(currentCard.target, 'fc') : currentCard?.target}
+                    </span>
                   </div>
 
                   {phase === 'back' && (

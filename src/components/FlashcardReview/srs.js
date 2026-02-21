@@ -134,10 +134,10 @@ export function getMasteryLevel(word, direction = 'forward') {
  * @param {string} langId - Current language filter
  * @returns {object} Session object
  */
-export function buildDailySession(cards, newCardsPerDay, existingSession, langId) {
-  const today = new Date().toISOString().slice(0, 10);
-  const now = new Date();
+export function buildDailySession(cards, newCardsPerDay, existingSession, langId, { dateOverride } = {}) {
+  const now = dateOverride ? new Date(dateOverride) : new Date();
   now.setHours(0, 0, 0, 0);
+  const today = now.toISOString().slice(0, 10);
   const nowMs = now.getTime();
 
   // Resume existing session if same day + language and still valid

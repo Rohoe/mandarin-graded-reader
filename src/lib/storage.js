@@ -718,12 +718,14 @@ export function saveNewCardsPerDay(n) {
 
 // ── Flashcard session (ephemeral, no file fanout) ────────────
 
-export function loadFlashcardSession() {
+export function loadFlashcardSession(langId) {
+  if (langId) return load(`${KEYS.FLASHCARD_SESSION}_${langId}`, null);
   return load(KEYS.FLASHCARD_SESSION, null);
 }
 
-export function saveFlashcardSession(session) {
-  save(KEYS.FLASHCARD_SESSION, session);
+export function saveFlashcardSession(session, langId) {
+  if (langId) save(`${KEYS.FLASHCARD_SESSION}_${langId}`, session);
+  else save(KEYS.FLASHCARD_SESSION, session);
 }
 
 // ── Reader eviction (LRU) ─────────────────────────────────────
