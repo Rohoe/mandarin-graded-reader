@@ -126,11 +126,14 @@ export default function FlashcardReview({ onClose }) {
     const prefix = direction === 'reverse' ? 'reverse' : '';
     const key = (field) => prefix ? `${prefix}${field.charAt(0).toUpperCase()}${field.slice(1)}` : field;
 
+    const wasRequeued = judgment !== 'got';
+
     // Save snapshot for undo
     setHistory(prev => [...prev, {
       word: currentCard.target,
       judgment,
       direction,
+      wasRequeued,
       previousSRS: {
         [key('interval')]: currentCard[key('interval')],
         [key('ease')]: currentCard[key('ease')],
@@ -151,14 +154,22 @@ export default function FlashcardReview({ onClose }) {
     const newResults = { ...session.results, [judgment]: session.results[judgment] + 1 };
     const newIndex = session.index + 1;
 
-    setSession(prev => ({ ...prev, index: newIndex, results: newResults }));
+    setSession(prev => {
+      const updated = { ...prev, index: newIndex, results: newResults };
+      // Re-queue missed/almost cards at the end
+      if (wasRequeued) {
+        updated.cardKeys = [...prev.cardKeys, currentCardKey];
+        updated.cardDirections = [...prev.cardDirections, currentDirection];
+      }
+      return updated;
+    });
 
-    if (newIndex >= totalCards) {
+    if (newIndex >= totalCards + (wasRequeued ? 1 : 0)) {
       setPhase('done');
     } else {
       setPhase('front');
     }
-  }, [cardIdx, totalCards, currentCard, currentDirection, session, act]);
+  }, [cardIdx, totalCards, currentCard, currentCardKey, currentDirection, session, act]);
 
   const handleUndo = useCallback(() => {
     if (history.length === 0) return;
@@ -169,11 +180,19 @@ export default function FlashcardReview({ onClose }) {
     act.updateVocabSRS(last.word, last.previousSRS);
 
     // Restore session state
-    setSession(prev => ({
-      ...prev,
-      index: last.previousSessionIndex,
-      results: last.previousResults,
-    }));
+    setSession(prev => {
+      const updated = {
+        ...prev,
+        index: last.previousSessionIndex,
+        results: last.previousResults,
+      };
+      // Remove the re-queued card from the end
+      if (last.wasRequeued) {
+        updated.cardKeys = prev.cardKeys.slice(0, -1);
+        updated.cardDirections = prev.cardDirections.slice(0, -1);
+      }
+      return updated;
+    });
 
     setPhase('back');
   }, [history, act]);
@@ -317,7 +336,10 @@ export default function FlashcardReview({ onClose }) {
               <span className="flashcard-done__stat flashcard-done__stat--almost">{session.results.almost} almost</span>
               <span className="flashcard-done__stat flashcard-done__stat--missed">{session.results.missed} missed</span>
             </div>
-            <p className="text-muted">{totalCards} card{totalCards !== 1 ? 's' : ''} reviewed</p>
+            <p className="text-muted">
+              {session.results.got} card{session.results.got !== 1 ? 's' : ''} completed
+              {totalCards > session.results.got && ` in ${totalCards} attempts`}
+            </p>
 
             {/* Mastery breakdown */}
             <div className="flashcard-mastery">
@@ -366,8 +388,10 @@ export default function FlashcardReview({ onClose }) {
                   ↩ Undo
                 </button>
               )}
-              {hasMoreCards && (
+              {hasMoreCards ? (
                 <button className="btn btn-secondary btn-sm" onClick={handleNextSession}>Start next session</button>
+              ) : (
+                <button className="btn btn-secondary btn-sm" onClick={handleNextSession}>New session</button>
               )}
               <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
             </div>
@@ -377,7 +401,7 @@ export default function FlashcardReview({ onClose }) {
           <>
             <div className="flashcard-progress">
               <span className="flashcard-progress__count text-muted">
-                {cardIdx + 1} / {totalCards}
+                {totalCards - cardIdx} remaining
               </span>
               {history.length > 0 && (
                 <button className="btn btn-ghost btn-sm flashcard-undo" onClick={handleUndo} title="Undo last judgment (Ctrl+Z)">
