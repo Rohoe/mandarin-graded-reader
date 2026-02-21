@@ -1002,7 +1002,6 @@ export function AppProvider({ children }) {
             dispatch({ type: 'SET_NOTIFICATION', payload: {
               type: 'success',
               message: summary,
-              action: { label: 'Undo', type: 'REVERT_MERGE' },
               timeout: 10000,
             } });
             dispatch({ type: 'SET_HAS_MERGE_SNAPSHOT' });
