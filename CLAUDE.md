@@ -59,4 +59,4 @@ For in-depth reference, see the docs in `docs/`:
 
 ## Keeping docs current
 
-When making changes that affect architecture, components, APIs, or state shape, update the relevant `docs/` file in the same commit. This CLAUDE.md should stay concise (~60 lines); put details in `docs/`.
+When making changes that affect architecture, components, APIs, or state shape, update the relevant `docs/` file and `README.md` in the same commit. This CLAUDE.md should stay concise (~60 lines); put details in `docs/`.
