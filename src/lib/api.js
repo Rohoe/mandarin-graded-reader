@@ -17,7 +17,7 @@ import { buildExtendSyllabusPrompt } from '../prompts/extendSyllabusPrompt';
 const MAX_RETRIES   = 2;
 const BASE_DELAY_MS = 1000;
 
-function isRetryable(status) {
+export function isRetryable(status) {
   return status >= 500 || status === 429;
 }
 

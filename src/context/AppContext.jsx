@@ -1076,3 +1076,6 @@ export function AppProvider({ children }) {
 
 export { useApp } from './useApp';
 export { useAppSelector, useAppDispatch } from './useAppSelector';
+
+// Test-only exports for direct reducer testing
+export { baseReducer as _baseReducer, reducer as _reducer, DATA_ACTIONS as _DATA_ACTIONS };
