@@ -72,7 +72,7 @@ export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes,
       try {
         const result = await generateAnkiApkgExport(ankiJson, topic, level, exportedWords, opts);
         if (result.blob) {
-          downloadBlob(result.blob, result.filename);
+          await downloadBlob(result.blob, result.filename);
           act.addExportedWords(result.exportedChinese);
           setExported(true);
           act.notify('success',
@@ -90,7 +90,7 @@ export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes,
     } else {
       const result = generateAnkiExport(ankiJson, topic, level, exportedWords, opts);
       if (result.content) {
-        downloadFile(result.content, result.filename);
+        await downloadFile(result.content, result.filename);
         act.addExportedWords(result.exportedChinese);
         setExported(true);
         act.notify('success',

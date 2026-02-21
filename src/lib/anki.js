@@ -220,24 +220,58 @@ export async function generateAnkiApkgExport(ankiJson, topic, level, exportedWor
 
 // ── Browser download ──────────────────────────────────────────
 
-export function downloadFile(content, filename) {
+export async function downloadFile(content, filename) {
   const bom  = '\uFEFF'; // UTF-8 BOM for Excel compatibility
   const blob = new Blob([bom + content], { type: 'text/plain;charset=utf-8' });
-  triggerDownload(blob, filename);
+  await triggerDownload(blob, filename);
 }
 
-export function downloadBlob(blob, filename) {
-  triggerDownload(blob, filename);
+export async function downloadBlob(blob, filename) {
+  await triggerDownload(blob, filename);
 }
 
-function triggerDownload(blob, filename) {
+function isMobile() {
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+}
+
+function canShareFile(blob, filename) {
+  if (!navigator.share || !navigator.canShare) return false;
+  try {
+    const file = new File([blob], filename, { type: blob.type });
+    return navigator.canShare({ files: [file] });
+  } catch {
+    return false;
+  }
+}
+
+async function triggerDownload(blob, filename) {
+  // On mobile, prefer the Web Share API — it lets the user send the file
+  // directly to Anki, Files, or any other app.
+  if (isMobile() && canShareFile(blob, filename)) {
+    try {
+      const file = new File([blob], filename, { type: blob.type });
+      await navigator.share({ files: [file] });
+      return;
+    } catch (err) {
+      // User cancelled or share failed — fall through to <a> download
+      if (err.name === 'AbortError') return; // user cancelled, nothing to do
+    }
+  }
+
+  // Fallback: classic <a download> approach.
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement('a');
   a.href     = url;
   a.download = filename;
+  a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+
+  // Delay cleanup — mobile browsers need time to initiate the download
+  // before the blob URL is revoked.
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 60_000);
 }

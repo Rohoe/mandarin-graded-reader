@@ -14,13 +14,25 @@ import { zipSync, strToU8 } from 'fflate';
 
 let _sqlPromise = null;
 
+// CDN fallback URL for the WASM binary.  Used when the local copy in
+// /public can't be fetched (e.g. service-worker doesn't cache .wasm,
+// mobile browser network hiccup, etc.).
+const WASM_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.14.0/sql-wasm.wasm';
+
 function getSql() {
   if (!_sqlPromise) {
-    _sqlPromise = import('sql.js').then(mod => {
+    _sqlPromise = import('sql.js').then(async mod => {
       const initSqlJs = mod.default;
-      return initSqlJs({
-        locateFile: file => `/${file}`,
-      });
+      try {
+        // Try local copy first (from /public/sql-wasm.wasm)
+        return await initSqlJs({ locateFile: file => `/${file}` });
+      } catch {
+        // Fallback: fetch WASM from CDN and pass the binary directly
+        const resp = await fetch(WASM_CDN);
+        if (!resp.ok) throw new Error(`Failed to fetch sql-wasm.wasm from CDN (${resp.status})`);
+        const wasmBinary = await resp.arrayBuffer();
+        return await initSqlJs({ wasmBinary });
+      }
     }).catch(err => {
       _sqlPromise = null;
       throw err;
