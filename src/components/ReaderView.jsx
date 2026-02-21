@@ -218,7 +218,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   }
 
   // Proficiency badge text
-  const profBadge = `${langConfig.proficiency.name} ${reader?.level || lessonMeta?.level || ''}`;
+  const profBadge = `${langConfig.proficiency.name} ${reader?.level ?? lessonMeta?.level ?? ''}`;
 
   // ── Empty state ─────────────────────────────────────────────
   if (!lessonKey) {
@@ -459,7 +459,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         lessonKey={lessonKey}
         reader={reader}
         story={reader.story}
-        level={reader.level || lessonMeta?.level || 3}
+        level={reader.level ?? lessonMeta?.level ?? 3}
         langId={langId}
         renderChars={renderChars}
         showParagraphTools={translateButtons}
@@ -490,7 +490,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         <AnkiExportButton
           ankiJson={reader.ankiJson}
           topic={reader.topic || lessonMeta?.title_en || 'lesson'}
-          level={reader.level || 3}
+          level={reader.level ?? 3}
           grammarNotes={reader.grammarNotes}
           langId={langId}
           verboseVocab={verboseVocab}
@@ -535,7 +535,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         <div className="reader-view__continue-row">
           <button
             className="btn btn-primary"
-            onClick={() => onContinueStory({ story: reader.story, topic: reader.topic || lessonMeta?.title_en || 'story', level: reader.level || lessonMeta?.level || 3, langId })}
+            onClick={() => onContinueStory({ story: reader.story, topic: reader.topic || lessonMeta?.title_en || 'story', level: reader.level ?? lessonMeta?.level ?? 3, langId })}
           >
             Next episode →
           </button>

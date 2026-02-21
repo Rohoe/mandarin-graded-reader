@@ -27,11 +27,11 @@ export function useReaderGeneration(lessonKey, lessonMeta, reader, langId, isPen
       topic = titleTarget
         ? `${titleTarget} — ${lessonMeta.title_en || ''}: ${lessonMeta.description || ''}`
         : lessonMeta.topic || '';
-      level = lessonMeta.level || 3;
+      level = lessonMeta.level ?? 3;
       readerLangId = lessonMeta.langId || langId;
     } else if (reader) {
       topic = reader.topic || '';
-      level = reader.level || 3;
+      level = reader.level ?? 3;
       readerLangId = reader.langId || langId;
     } else {
       return;
