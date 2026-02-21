@@ -105,6 +105,11 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     }
 
     const { text, rect } = selection;
+    // Don't show popover for pure English / non-target-script selections
+    if (langConfig.scriptRegex && !langConfig.scriptRegex.test(text)) {
+      setSelectionPopover(null);
+      return;
+    }
     let romanization = null;
     if (romanizer) {
       try {
