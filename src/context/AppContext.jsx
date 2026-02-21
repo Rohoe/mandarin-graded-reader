@@ -86,7 +86,7 @@ import {
   pickDirectory,
   isSupported,
 } from '../lib/fileStorage';
-import { signOut, pushToCloud, pullFromCloud, pushReaderToCloud, detectConflict, fetchCloudReaderKeys, pullReaderFromCloud, mergeData, pushMergedToCloud } from '../lib/cloudSync';
+import { signOut, pushToCloud, pullFromCloud, pushReaderToCloud, detectConflict, fetchCloudReaderKeys, pullReaderFromCloud, mergeData, pushMergedToCloud, computeMergeSummary } from '../lib/cloudSync';
 import { DEMO_READER_KEY, DEMO_READER_DATA } from '../lib/demoReader';
 
 // ── Initial state ─────────────────────────────────────────────
@@ -155,7 +155,7 @@ function buildInitialState() {
     cloudSyncing:      false,
     cloudLastSynced:   loadCloudLastSynced(),
     lastModified:      loadLastModified() ?? Date.now(),
-    syncConflict:      null, // { cloudData, conflictInfo } when conflict detected
+    hasMergeSnapshot:  !!localStorage.getItem('gradedReader_preMergeSnapshot'),
   };
 }
 
@@ -468,6 +468,7 @@ function baseReducer(state, action) {
 
     case 'CLEAR_ALL_DATA':
       clearAllAppData();
+      localStorage.removeItem('gradedReader_preMergeSnapshot');
       return {
         ...buildInitialState(),
         apiKey:          state.apiKey,
@@ -620,11 +621,47 @@ function baseReducer(state, action) {
       };
     }
 
-    case 'SHOW_SYNC_CONFLICT':
-      return { ...state, syncConflict: action.payload };
+    case 'SET_HAS_MERGE_SNAPSHOT':
+      return { ...state, hasMergeSnapshot: true };
 
-    case 'HIDE_SYNC_CONFLICT':
-      return { ...state, syncConflict: null };
+    case 'CLEAR_MERGE_SNAPSHOT':
+      return { ...state, hasMergeSnapshot: false };
+
+    case 'REVERT_MERGE': {
+      const raw = localStorage.getItem('gradedReader_preMergeSnapshot');
+      if (!raw) return { ...state, hasMergeSnapshot: false };
+      try {
+        const snapshot = JSON.parse(raw);
+        const snapshotTs = snapshot.timestamp || 0;
+        const s = snapshot.state;
+        // Preserve items created after the snapshot (union by createdAt > snapshotTs)
+        const revertedSyllabi = [...(s.syllabi || [])];
+        const revertedSyllabiIds = new Set(revertedSyllabi.map(x => x.id));
+        for (const curr of state.syllabi) {
+          if (!revertedSyllabiIds.has(curr.id) && curr.createdAt > snapshotTs) revertedSyllabi.push(curr);
+        }
+        const revertedStandalone = [...(s.standaloneReaders || [])];
+        const revertedStandaloneKeys = new Set(revertedStandalone.map(x => x.key));
+        for (const curr of state.standaloneReaders) {
+          if (!revertedStandaloneKeys.has(curr.key) && curr.createdAt > snapshotTs) revertedStandalone.push(curr);
+        }
+        localStorage.removeItem('gradedReader_preMergeSnapshot');
+        return {
+          ...state,
+          syllabi: revertedSyllabi,
+          syllabusProgress: s.syllabusProgress || state.syllabusProgress,
+          standaloneReaders: revertedStandalone,
+          learnedVocabulary: s.learnedVocabulary || state.learnedVocabulary,
+          exportedWords: new Set(s.exportedWords || []),
+          hasMergeSnapshot: false,
+          lastModified: Date.now(),
+        };
+      } catch (e) {
+        console.warn('[AppContext] Failed to revert merge:', e.message);
+        localStorage.removeItem('gradedReader_preMergeSnapshot');
+        return { ...state, hasMergeSnapshot: false };
+      }
+    }
 
     default:
       return state;
@@ -792,40 +829,6 @@ export function AppProvider({ children }) {
     // syncPausedRef stays true — resumed only on next sign-in + startup sync
   }
 
-  // Resolves a sync conflict by choosing 'cloud', 'local', or 'merge'
-  async function resolveSyncConflict(choice) {
-    if (!state.syncConflict) return;
-
-    dispatch({ type: 'SET_CLOUD_SYNCING', payload: true });
-    try {
-      if (choice === 'cloud') {
-        // Pull cloud data, overwrite local
-        dispatch({ type: 'HYDRATE_FROM_CLOUD', payload: state.syncConflict.cloudData });
-        const cloudTs = new Date(state.syncConflict.cloudData.updated_at).getTime();
-        dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: cloudTs });
-        dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'success', message: 'Synced from cloud.' } });
-      } else if (choice === 'local') {
-        // Push local data, overwrite cloud
-        await pushToCloud(stateRef.current);
-        dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: Date.now() });
-        dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'success', message: 'Pushed to cloud.' } });
-      } else if (choice === 'merge') {
-        // Union-merge both sides, push merged result to cloud
-        const merged = mergeData(stateRef.current, state.syncConflict.cloudData);
-        dispatch({ type: 'MERGE_WITH_CLOUD', payload: merged });
-        await pushMergedToCloud(merged);
-        dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: Date.now() });
-        dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'success', message: 'Data merged successfully.' } });
-      }
-    } catch (e) {
-      dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'error', message: `Sync failed: ${e.message}` } });
-    } finally {
-      dispatch({ type: 'HIDE_SYNC_CONFLICT' });
-      dispatch({ type: 'SET_CLOUD_SYNCING', payload: false });
-      startupSyncDoneRef.current = true;
-    }
-  }
-
   // Prune old learning activity entries to stash on startup
   useEffect(() => {
     if (!state.fsInitialized) return;
@@ -969,42 +972,40 @@ export function AppProvider({ children }) {
       try {
         const data = await pullFromCloud();
         if (data) {
-          const cloudTs = new Date(data.updated_at).getTime();
+          const conflict = detectConflict(stateRef.current, data);
+          if (!conflict) {
+            // Data is identical — just update timestamp
+            const cloudTs = new Date(data.updated_at).getTime();
+            dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: Math.max(cloudTs, stateRef.current.lastModified) });
+          } else {
+            // Data differs — auto-merge
+            const preState = stateRef.current;
+            // Capture pre-merge snapshot for undo
+            const snapshot = {
+              timestamp: Date.now(),
+              state: {
+                syllabi: preState.syllabi,
+                syllabusProgress: preState.syllabusProgress,
+                standaloneReaders: preState.standaloneReaders,
+                learnedVocabulary: preState.learnedVocabulary,
+                exportedWords: [...preState.exportedWords],
+              },
+            };
+            localStorage.setItem('gradedReader_preMergeSnapshot', JSON.stringify(snapshot));
 
-          // If cloud is clearly newer, auto-pull (but preserve any local-only readers)
-          if (cloudTs > stateRef.current.lastModified) {
-            const localReaders = stateRef.current.generatedReaders;
-            const cloudReaders = data.generated_readers || {};
-            const mergedReaders = { ...cloudReaders };
-            for (const [k, v] of Object.entries(localReaders)) {
-              if (!mergedReaders[k]) mergedReaders[k] = v;
-            }
-            data.generated_readers = mergedReaders;
-            dispatch({ type: 'HYDRATE_FROM_CLOUD', payload: data });
-            dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: cloudTs });
-            dispatch({ type: 'SET_NOTIFICATION', payload: { type: 'success', message: 'Synced from cloud.' } });
-          }
-          // If local is newer but we have NEVER synced before, show conflict dialog
-          else if (!stateRef.current.cloudLastSynced && stateRef.current.lastModified > cloudTs + 1000) {
-            const conflict = detectConflict(stateRef.current, data);
-            if (conflict) {
-              // Show conflict dialog - user will decide
-              dispatch({ type: 'SHOW_SYNC_CONFLICT', payload: { cloudData: data, conflictInfo: conflict } });
-            } else {
-              // Data is identical, just update timestamp
-              dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: cloudTs });
-            }
-          }
-          // If local is newer AND we've synced before, check for real differences
-          else if (stateRef.current.lastModified > cloudTs + 1000) {
-            const conflict = detectConflict(stateRef.current, data);
-            if (conflict) {
-              // Data differs — show conflict dialog instead of silently pushing
-              dispatch({ type: 'SHOW_SYNC_CONFLICT', payload: { cloudData: data, conflictInfo: conflict } });
-            } else {
-              // Data is identical, just update timestamp
-              dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: Date.now() });
-            }
+            const merged = mergeData(preState, data);
+            dispatch({ type: 'MERGE_WITH_CLOUD', payload: merged });
+            pushMergedToCloud(merged).catch(e => console.warn('[AppContext] Post-merge push failed:', e.message));
+            dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: Date.now() });
+
+            const summary = computeMergeSummary(preState, merged);
+            dispatch({ type: 'SET_NOTIFICATION', payload: {
+              type: 'success',
+              message: summary,
+              action: { label: 'Undo', type: 'REVERT_MERGE' },
+              timeout: 10000,
+            } });
+            dispatch({ type: 'SET_HAS_MERGE_SNAPSHOT' });
           }
         } else {
           // No cloud data yet — upload local as initial backup
@@ -1026,13 +1027,18 @@ export function AppProvider({ children }) {
 
   // Debounced auto-push: 3s after any data change, once startup sync is done
   useEffect(() => {
-    if (!state.cloudUser || !startupSyncDoneRef.current || stateRef.current.syncConflict || syncPausedRef.current) return;
+    if (!state.cloudUser || !startupSyncDoneRef.current || syncPausedRef.current) return;
     const timer = setTimeout(async () => {
       // Skip if we just synced (e.g., after merge/pull set cloudLastSynced)
       if (stateRef.current.cloudLastSynced >= stateRef.current.lastModified) return;
       try {
         await pushToCloud(stateRef.current);
         dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: Date.now() });
+        // Clear merge snapshot after successful push (merge is now committed)
+        if (stateRef.current.hasMergeSnapshot) {
+          localStorage.removeItem('gradedReader_preMergeSnapshot');
+          dispatch({ type: 'CLEAR_MERGE_SNAPSHOT' });
+        }
       } catch (e) {
         console.warn('[AppContext] Auto-sync failed:', e.message);
         // Only show notification if the last one wasn't also a sync failure (avoid spam from 3s debounce)
@@ -1048,7 +1054,7 @@ export function AppProvider({ children }) {
   // Auto-clear notifications after 5 s
   useEffect(() => {
     if (!state.notification) return;
-    const id = setTimeout(() => dispatch({ type: 'CLEAR_NOTIFICATION' }), 5000);
+    const id = setTimeout(() => dispatch({ type: 'CLEAR_NOTIFICATION' }), state.notification.timeout || 5000);
     return () => clearTimeout(id);
   }, [state.notification]);
 
@@ -1063,7 +1069,6 @@ export function AppProvider({ children }) {
     removeSaveFolder,
     pushGeneratedReader,
     clearAllData,
-    resolveSyncConflict,
     restoreEvictedReader,
   }), []); // eslint-disable-line react-hooks/exhaustive-deps
 

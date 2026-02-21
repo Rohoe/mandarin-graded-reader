@@ -15,7 +15,7 @@ import Settings from './components/Settings';
 import StatsDashboard from './components/StatsDashboard';
 import FlashcardReview from './components/FlashcardReview';
 import SignInModal from './components/SignInModal';
-import SyncConflictDialog from './components/SyncConflictDialog';
+
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingIndicator from './components/LoadingIndicator';
 import './App.css';
@@ -24,11 +24,23 @@ import './App.css';
 
 function Notification() {
   const notification = useAppSelector(s => s.notification);
+  const { dispatch } = useApp();
   if (!notification) return null;
   return (
     <div className={`app-notification app-notification--${notification.type} fade-in`}>
       <span>{notification.type === 'success' ? '✓' : '⚠'}</span>
       <span>{notification.message}</span>
+      {notification.action && (
+        <button
+          className="app-notification__action"
+          onClick={() => {
+            dispatch({ type: notification.action.type });
+            dispatch({ type: 'CLEAR_NOTIFICATION' });
+          }}
+        >
+          {notification.action.label}
+        </button>
+      )}
     </div>
   );
 }
@@ -36,7 +48,7 @@ function Notification() {
 // ── App shell ──────────────────────────────────────────────────
 
 function AppShell() {
-  const { state, dispatch, pushGeneratedReader, resolveSyncConflict } = useApp();
+  const { state, dispatch, pushGeneratedReader } = useApp();
   const act = actions(dispatch);
   const { syllabi, syllabusProgress } = state;
 
@@ -373,16 +385,6 @@ function AppShell() {
             />
           </div>
         </div>
-      )}
-
-      {/* ─ Sync conflict dialog ──────────────────────────── */}
-      {state.syncConflict && (
-        <SyncConflictDialog
-          conflict={state.syncConflict.conflictInfo}
-          syncing={state.cloudSyncing}
-          onResolve={resolveSyncConflict}
-          onCancel={() => act.hideSyncConflict()}
-        />
       )}
 
       {/* ─ Toast notification ────────────────────────────── */}

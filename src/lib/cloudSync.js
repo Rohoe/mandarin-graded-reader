@@ -227,6 +227,25 @@ export function mergeData(localState, cloudData) {
   };
 }
 
+// Compute a human-readable summary of what changed during a merge.
+// preState: local state before merge (app state shape)
+// postMerged: merged result (cloud-row shape from mergeData)
+export function computeMergeSummary(preState, postMerged) {
+  const parts = [];
+
+  const syllabiDiff = (postMerged.syllabi?.length || 0) - (preState.syllabi?.length || 0);
+  if (syllabiDiff > 0) parts.push(`+${syllabiDiff} ${syllabiDiff === 1 ? 'syllabus' : 'syllabi'}`);
+
+  const standaloneDiff = (postMerged.standalone_readers?.length || 0) - (preState.standaloneReaders?.length || 0);
+  if (standaloneDiff > 0) parts.push(`+${standaloneDiff} ${standaloneDiff === 1 ? 'reader' : 'readers'}`);
+
+  const vocabDiff = Object.keys(postMerged.learned_vocabulary || {}).length - Object.keys(preState.learnedVocabulary || {}).length;
+  if (vocabDiff > 0) parts.push(`+${vocabDiff} vocab ${vocabDiff === 1 ? 'word' : 'words'}`);
+
+  if (parts.length > 0) return `Synced from cloud: ${parts.join(', ')}`;
+  return 'Synced from cloud (content updated)';
+}
+
 // Push pre-merged data to cloud (includes generated_readers).
 export async function pushMergedToCloud(mergedData) {
   const { data: { user } } = await supabase.auth.getUser();

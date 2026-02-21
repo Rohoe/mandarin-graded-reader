@@ -43,7 +43,7 @@ export function createMinimalState(overrides = {}) {
     cloudSyncing: false,
     cloudLastSynced: null,
     lastModified: 1000000,
-    syncConflict: null,
+    hasMergeSnapshot: false,
     ...overrides,
   };
 }

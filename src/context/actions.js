@@ -66,9 +66,8 @@ export function actions(dispatch) {
     setCloudUser:          user   => dispatch({ type: 'SET_CLOUD_USER', payload: user }),
     setCloudSyncing:       val    => dispatch({ type: 'SET_CLOUD_SYNCING', payload: val }),
     setCloudLastSynced:    ts     => dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: ts }),
-    showSyncConflict:      data   => dispatch({ type: 'SHOW_SYNC_CONFLICT', payload: data }),
-    hideSyncConflict:      ()     => dispatch({ type: 'HIDE_SYNC_CONFLICT' }),
     mergeWithCloud:        data   => dispatch({ type: 'MERGE_WITH_CLOUD', payload: data }),
+    clearMergeSnapshot:    ()     => dispatch({ type: 'CLEAR_MERGE_SNAPSHOT' }),
     // Learning activity
     logActivity:           (type, extra) => dispatch({ type: 'LOG_ACTIVITY', payload: { type, ...extra } }),
   };

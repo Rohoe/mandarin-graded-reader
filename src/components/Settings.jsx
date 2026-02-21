@@ -32,6 +32,7 @@ export default function Settings({ onClose }) {
     return !!(provModel && provModel !== prov.defaultModel);
   });
   const [confirmClear, setConfirmClear] = useState(false);
+  const [confirmRevert, setConfirmRevert] = useState(false);
   const [confirmRestore, setConfirmRestore] = useState(false);
   const [restoreError, setRestoreError] = useState(null);
   const [chineseVoices, setChineseVoices] = useState([]);
@@ -136,6 +137,11 @@ export default function Settings({ onClose }) {
     try {
       await pushToCloud(state);
       act.setCloudLastSynced(Date.now());
+      // Clear merge snapshot — push commits the merge
+      if (state.hasMergeSnapshot) {
+        localStorage.removeItem('gradedReader_preMergeSnapshot');
+        act.clearMergeSnapshot();
+      }
       act.notify('success', 'Pushed to cloud.');
     } catch (e) {
       act.notify('error', `Push failed: ${e.message}`);
@@ -157,6 +163,11 @@ export default function Settings({ onClose }) {
       dispatch({ type: 'MERGE_WITH_CLOUD', payload: merged });
       await pushMergedToCloud(merged);
       act.setCloudLastSynced(Date.now());
+      // Clear merge snapshot — pull commits the merge
+      if (state.hasMergeSnapshot) {
+        localStorage.removeItem('gradedReader_preMergeSnapshot');
+        act.clearMergeSnapshot();
+      }
       act.notify('success', 'Pulled and merged from cloud.');
     } catch (e) {
       act.notify('error', `Pull failed: ${e.message}`);
@@ -768,6 +779,51 @@ export default function Settings({ onClose }) {
             </>
           )}
         </section>
+
+        {/* Revert last sync — only when a merge snapshot exists and user is signed in */}
+        {state.hasMergeSnapshot && state.cloudUser && (() => {
+          let snapshotDate = '';
+          try {
+            const raw = localStorage.getItem('gradedReader_preMergeSnapshot');
+            if (raw) {
+              const snap = JSON.parse(raw);
+              snapshotDate = new Date(snap.timestamp).toLocaleString();
+            }
+          } catch {}
+          return (
+            <>
+              <hr className="divider" />
+              <section className="settings-section">
+                <h3 className="settings-section__title form-label">Revert Last Sync</h3>
+                <p className="settings-section__desc text-muted">
+                  Undo the auto-merge that ran on startup{snapshotDate ? ` (${snapshotDate})` : ''}. Restores your local data to its pre-merge state.
+                </p>
+                {!confirmRevert ? (
+                  <button className="btn btn-secondary btn-sm" onClick={() => setConfirmRevert(true)}>
+                    Revert last sync
+                  </button>
+                ) : (
+                  <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      style={{ color: 'var(--color-error)' }}
+                      onClick={() => {
+                        dispatch({ type: 'REVERT_MERGE' });
+                        setConfirmRevert(false);
+                        act.notify('success', 'Reverted to pre-merge state.');
+                      }}
+                    >
+                      Confirm revert
+                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setConfirmRevert(false)}>
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </section>
+            </>
+          );
+        })()}
 
         <hr className="divider" />
 
