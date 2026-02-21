@@ -30,3 +30,9 @@ dist-ssr
 
 # MCP tool config
 .playwright-mcp/
+
+# Test & audit artifacts
+playwright-report/
+test-results/
+ui-audit-screenshots/
+ui-audit.md
