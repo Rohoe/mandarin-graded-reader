@@ -13,6 +13,8 @@ import {
   saveCustomBaseUrl,
   loadCustomModelName,
   saveCustomModelName,
+  loadGradingModels,
+  saveGradingModels,
   loadCompatPreset,
   saveCompatPreset,
   loadSyllabi,
@@ -111,6 +113,7 @@ function buildInitialState() {
     providerKeys,
     activeProvider,
     activeModels:      loadActiveModels(),
+    gradingModels:     loadGradingModels(),
     customBaseUrl:     loadCustomBaseUrl(),
     customModelName:   loadCustomModelName(),
     compatPreset:      loadCompatPreset(),
@@ -198,6 +201,11 @@ function baseReducer(state, action) {
     case 'SET_ACTIVE_MODEL': {
       const { provider: prov, model } = action.payload;
       return { ...state, activeModels: { ...state.activeModels, [prov]: model } };
+    }
+
+    case 'SET_GRADING_MODEL': {
+      const { provider: prov, model } = action.payload;
+      return { ...state, gradingModels: { ...state.gradingModels, [prov]: model } };
     }
 
     case 'SET_CUSTOM_BASE_URL':
@@ -475,6 +483,7 @@ function baseReducer(state, action) {
         providerKeys:    state.providerKeys,
         activeProvider:  state.activeProvider,
         activeModels:    state.activeModels,
+        gradingModels:   state.gradingModels,
         customBaseUrl:   state.customBaseUrl,
         customModelName: state.customModelName,
         compatPreset:    state.compatPreset,
@@ -902,6 +911,7 @@ export function AppProvider({ children }) {
   useEffect(() => { if (mountedRef.current) saveProviderKeys(state.providerKeys); }, [state.providerKeys]);
   useEffect(() => { if (mountedRef.current) saveActiveProvider(state.activeProvider); }, [state.activeProvider]);
   useEffect(() => { if (mountedRef.current) saveActiveModels(state.activeModels); }, [state.activeModels]);
+  useEffect(() => { if (mountedRef.current) saveGradingModels(state.gradingModels); }, [state.gradingModels]);
   useEffect(() => { if (mountedRef.current) saveCustomBaseUrl(state.customBaseUrl); }, [state.customBaseUrl]);
   useEffect(() => { if (mountedRef.current) saveCustomModelName(state.customModelName); }, [state.customModelName]);
   useEffect(() => { if (mountedRef.current) saveCompatPreset(state.compatPreset); }, [state.compatPreset]);

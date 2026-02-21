@@ -10,6 +10,7 @@ export const PROVIDERS = {
     name: 'Anthropic (Claude)',
     keyPlaceholder: 'sk-ant-api03-...',
     defaultModel: 'claude-sonnet-4-20250514',
+    defaultGradingModel: 'claude-haiku-4-20250414',
     models: [
       { id: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4' },
       { id: 'claude-haiku-4-20250414', label: 'Claude Haiku 4' },
@@ -20,6 +21,7 @@ export const PROVIDERS = {
     name: 'OpenAI',
     keyPlaceholder: 'sk-...',
     defaultModel: 'gpt-4o',
+    defaultGradingModel: 'gpt-4o-mini',
     models: [
       { id: 'gpt-4o', label: 'GPT-4o' },
       { id: 'gpt-4o-mini', label: 'GPT-4o Mini' },
@@ -32,6 +34,7 @@ export const PROVIDERS = {
     name: 'Google Gemini',
     keyPlaceholder: 'AIza...',
     defaultModel: 'gemini-2.5-pro',
+    defaultGradingModel: 'gemini-2.5-flash',
     models: [
       { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
       { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
@@ -42,6 +45,7 @@ export const PROVIDERS = {
     name: 'OpenAI-Compatible',
     keyPlaceholder: 'API key (if required)',
     defaultModel: '',
+    defaultGradingModel: null,
     models: [],
     presets: [
       { id: 'deepseek', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com', defaultModel: 'deepseek-chat' },

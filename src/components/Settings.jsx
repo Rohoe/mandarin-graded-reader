@@ -639,6 +639,41 @@ export default function Settings({ onClose }) {
             );
           })()}
 
+          {/* Grading model selector */}
+          {(() => {
+            const prov = getProvider(state.activeProvider);
+            if (state.activeProvider === 'openai_compatible' || prov.models.length === 0) return null;
+            const gradingModel = state.gradingModels?.[state.activeProvider] || prov.defaultGradingModel || prov.defaultModel;
+            const gradingLabel = prov.models.find(m => m.id === gradingModel)?.label || gradingModel;
+            const isDefault = !state.gradingModels?.[state.activeProvider];
+            return (
+              <p className="settings-section__desc text-muted" style={{ marginBottom: 'var(--space-3)' }}>
+                Grading model: <strong>{gradingLabel}</strong>
+                {isDefault && <span style={{ fontSize: 'var(--text-xs)', opacity: 0.7 }}> (default)</span>}
+                {' '}<select
+                  className="form-select"
+                  value={gradingModel}
+                  onChange={e => act.setGradingModel(state.activeProvider, e.target.value)}
+                  style={{ maxWidth: '14rem', display: 'inline-block', verticalAlign: 'middle', fontSize: 'var(--text-sm)', padding: '2px var(--space-2)' }}
+                >
+                  {prov.models.map(m => (
+                    <option key={m.id} value={m.id}>{m.label}</option>
+                  ))}
+                </select>
+                {!isDefault && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    style={{ fontSize: 'var(--text-xs)', padding: '0 var(--space-2)', marginLeft: 'var(--space-1)' }}
+                    onClick={() => act.setGradingModel(state.activeProvider, null)}
+                  >
+                    Reset
+                  </button>
+                )}
+              </p>
+            );
+          })()}
+
           {/* API key input */}
           <p className="settings-section__desc text-muted">
             API key for {getProvider(state.activeProvider).name}.

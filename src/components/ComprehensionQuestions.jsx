@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { gradeAnswers } from '../lib/api';
-import { buildLLMConfig, hasAnyUserKey } from '../lib/llmConfig';
+import { buildGradingLLMConfig, hasAnyUserKey } from '../lib/llmConfig';
 import { translateText } from '../lib/translate';
 import './ComprehensionQuestions.css';
 
@@ -34,8 +34,8 @@ function stripMarkdown(text) {
 }
 
 export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars, showParagraphTools, speakText, speakingKey, ttsSupported, onOpenSettings }) {
-  const { apiKey, providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
-    apiKey: s.apiKey, providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
+  const { apiKey, providerKeys, activeProvider, activeModels, gradingModels, customBaseUrl } = useAppSelector(s => ({
+    apiKey: s.apiKey, providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, gradingModels: s.gradingModels, customBaseUrl: s.customBaseUrl,
   }));
 
   const defaultKeyAvailable = !hasAnyUserKey(providerKeys) && !!import.meta.env.VITE_DEFAULT_GEMINI_KEY;
@@ -129,7 +129,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
     setGradingError(null);
     try {
       const answersArray = questions.map((_, i) => answers[i] || '');
-      const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModels, customBaseUrl });
+      const llmConfig = buildGradingLLMConfig({ providerKeys, activeProvider, activeModels, gradingModels, customBaseUrl });
       const result = await gradeAnswers(llmConfig, questions, answersArray, story, level, 2048, langId);
       setResults(result);
       if (lessonKey) {

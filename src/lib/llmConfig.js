@@ -10,6 +10,17 @@ export function hasAnyUserKey(providerKeys) {
   return Object.values(providerKeys || {}).some(k => k);
 }
 
+export function buildGradingLLMConfig(state) {
+  const base = buildLLMConfig(state);
+  const provider = base.provider;
+  const providerDef = getProvider(provider);
+  const gradingModel = state.gradingModels?.[provider];
+  return {
+    ...base,
+    model: gradingModel || providerDef.defaultGradingModel || base.model,
+  };
+}
+
 export function buildLLMConfig(state) {
   const userHasKey = hasAnyUserKey(state.providerKeys);
 

@@ -24,5 +24,6 @@ Do NOT echo the question or answer text back. Use only ASCII characters in keys.
 
 Score 1–5: 5=fully correct, 4=mostly correct, 3=partial, 2=mostly wrong, 1=incorrect/blank.
 Overall score = sum / (questions × 5).
-Always include "suggestedAnswer" for every question, even when score is 5/5. It should be a concise ideal answer in the same language the student used (English or ${p.targetLanguage}).`;
+Always include "suggestedAnswer" for every question, even when score is 5/5.
+IMPORTANT: "suggestedAnswer" must be the CORRECT ideal answer derived from the passage — NOT a rephrasing or echo of the student's answer. Even if the student scored 5/5, write the ideal answer independently based on the text. Use the same language the student used (English or ${p.targetLanguage}).`;
 }

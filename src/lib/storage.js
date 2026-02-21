@@ -52,6 +52,7 @@ const KEYS = {
   ACTIVE_MODEL:       'gradedReader_activeModel',
   CUSTOM_BASE_URL:    'gradedReader_customBaseUrl',
   CUSTOM_MODEL_NAME:  'gradedReader_customModelName',
+  GRADING_MODELS:     'gradedReader_gradingModels',
   COMPAT_PRESET:      'gradedReader_compatPreset',
   TTS_SPEECH_RATE:    'gradedReader_ttsSpeechRate',
   ROMANIZATION_ON:    'gradedReader_romanizationOn',
@@ -202,6 +203,16 @@ export function loadCustomModelName() {
 
 export function saveCustomModelName(name) {
   save(KEYS.CUSTOM_MODEL_NAME, name);
+}
+
+// ── Grading models (per-provider) ─────────────────────────────
+
+export function loadGradingModels() {
+  return load(KEYS.GRADING_MODELS, { anthropic: null, openai: null, gemini: null, openai_compatible: null });
+}
+
+export function saveGradingModels(map) {
+  save(KEYS.GRADING_MODELS, map);
 }
 
 export function loadCompatPreset() {
