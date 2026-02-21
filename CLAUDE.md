@@ -129,7 +129,9 @@ src/
                               mergeData(localState, cloudData) performs union merge of
                               syllabi, standalone readers, vocabulary, exported words, and
                               generated readers. pushMergedToCloud(merged) upserts the
-                              merged result to Supabase.
+                              merged result to Supabase. computeMergeSummary(preState, postMerged)
+                              generates a human-readable summary of merge changes (e.g.
+                              "Synced from cloud: +2 syllabi, +5 vocab words").
 
   prompts/
     syllabusPrompt.js         buildSyllabusPrompt(langConfig, topic, level, lessonCount)
@@ -287,18 +289,13 @@ src/
                               warning dot when no key configured, collapsible model picker,
                               API key input, base URL for custom.
                               **Sync**: storage usage meter, backup & restore,
-                              cloud sync (sign-in + push/pull), save folder picker.
+                              cloud sync (sign-in + push/pull), "Revert last sync"
+                              (visible when a merge snapshot exists), save folder picker.
                               **Advanced**: output tokens slider (4096–16384), structured
                               output toggle (opt-in), re-parse cached readers button,
                               danger zone (clear-all data).
                               Sticky header (title + close button stay visible when scrolling).
                               Close button enlarged to 32×32px for easier tap target.
-    SyncConflictDialog        Modal shown when local and cloud data differ (e.g., old browser
-                              tab with stale localStorage). Displays comparison of cloud vs
-                              local data (last updated timestamps, syllabus counts). User
-                              chooses which to keep. Prevents accidental overwrite of newer
-                              data by stale local state. Triggered on first sync from a device
-                              that has never synced before when data differs.
 ```
 
 ## State shape (AppContext)
@@ -347,7 +344,7 @@ src/
   loading:           boolean,
   loadingMessage:    string,
   error:             string | null,
-  notification:      { type: 'success'|'error', message } | null,
+  notification:      { type: 'success'|'error', message, action?: { label, type }, timeout?: number } | null,
   // API preferences (persisted to localStorage, not cleared by CLEAR_ALL_DATA)
   maxTokens:         number,          // API output ceiling, default 8192
   defaultLevel:      number,          // Default HSK level for TopicForm, default 3
@@ -375,7 +372,7 @@ src/
   cloudSyncing:      boolean,         // push/pull in progress
   cloudLastSynced:   number | null,   // timestamp of last successful push/pull
   lastModified:      number,          // timestamp bumped on every syncable data change
-  syncConflict:      { cloudData, conflictInfo } | null, // shown when local/cloud differ
+  hasMergeSnapshot:  boolean,          // true when a pre-merge snapshot exists in localStorage
 }
 ```
 
@@ -488,35 +485,29 @@ function saveWithFile(lsKey, value, fileKey) {
 - While initializing, `App.jsx` renders a loading spinner (`fsInitialized === false`)
 - Once done (with or without a folder), `fsInitialized` is set to `true` and normal UI renders
 
-## Cloud sync conflict detection
+## Cloud sync: auto-merge with undo
 
-To prevent stale local data from overwriting newer cloud data (e.g., old browser tab with outdated localStorage), the app implements conflict detection via `detectConflict()` in `cloudSync.js`:
+On startup, the app automatically merges local and cloud data when they differ. No user-facing dialog is shown — the union merge is always safe for this single-user multi-device app.
 
 **How it works:**
-1. **Hash-based comparison:** Local and cloud data are hashed to detect actual content differences (ignoring timestamp-only changes)
-2. **First-sync detection:** If `cloudLastSynced` is `null` (device has never synced before) AND local data differs from cloud, show `SyncConflictDialog`
-3. **User choice:** Dialog shows comparison (timestamps, syllabus counts) and lets user choose which data to keep
-4. **Safe auto-sync:** If device has synced before (`cloudLastSynced` exists) and data differs, show conflict dialog instead of silently pushing
-
-**Conflict resolution:**
-- **Use Cloud Data:** Calls `HYDRATE_FROM_CLOUD` to overwrite local state with cloud data
-- **Use Local Data:** Pushes local state to cloud via `pushToCloud()`, overwriting cloud
-- **Merge:** Union-merges both sides via `mergeData()`, pushes merged result to cloud
-- **Decide Later:** Closes dialog without syncing; user can manually sync via Settings
+1. **Hash-based comparison:** `detectConflict()` hashes local and cloud data to detect actual content differences (ignoring timestamp-only changes)
+2. **Auto-merge:** If data differs, `mergeData()` performs a union merge (syllabi, readers, vocabulary, exported words — local wins on per-item conflict by `dateAdded`/`createdAt`)
+3. **Snapshot + undo:** Before merging, a pre-merge snapshot of local state is saved to `localStorage` key `gradedReader_preMergeSnapshot`. A toast with "Undo" button appears for 10 seconds. `REVERT_MERGE` restores from the snapshot, preserving any items created after the snapshot timestamp.
+4. **Settings revert:** Until the next push commits the merge, a "Revert last sync" section appears in Settings > Sync tab with inline confirmation.
+5. **Snapshot cleared:** The snapshot is removed after the next successful push to cloud (via auto-push, manual push, or pull).
 
 **Implementation:**
-- `detectConflict(localState, cloudData)` returns `null` if data is identical, or a `conflictInfo` object with comparison metadata
-- `state.syncConflict` stores `{ cloudData, conflictInfo }` when conflict detected
-- `resolveSyncConflict(choice)` in `AppContext` handles user's choice ('cloud', 'local', or 'merge')
-- `mergeData(localState, cloudData)` in `cloudSync.js` performs union merge of syllabi, readers, vocabulary, etc.
-- `pushMergedToCloud(merged)` pushes the merged result to Supabase
+- `detectConflict(localState, cloudData)` returns `null` if data is identical, or a `conflictInfo` object
+- `computeMergeSummary(preState, postMerged)` generates a human-readable summary (e.g. "Synced from cloud: +2 syllabi, +5 vocab words")
+- `state.hasMergeSnapshot` (boolean) controls visibility of the "Revert last sync" UI
+- Notification supports `action: { label, type }` for inline undo buttons and `timeout` for custom duration
+- `REVERT_MERGE` reducer restores from snapshot, union-merges items created after snapshot timestamp, clears the snapshot
 
 **Auto-push safety guards:**
 - `syncPausedRef` blocks auto-push during `clearAllData()` and until next startup sync completes
 - Auto-push skips if `cloudLastSynced >= lastModified` (data already in sync, e.g. after merge/pull)
-- `clearAllData()` calls `signOut()` before dispatching `CLEAR_ALL_DATA` to prevent empty-state push
+- `clearAllData()` calls `signOut()` before dispatching `CLEAR_ALL_DATA` to prevent empty-state push; also removes the merge snapshot
 - `RESTORE_FROM_BACKUP` does not bump `lastModified` (removed from `DATA_ACTIONS`) to prevent accidental cloud overwrite
-- Startup sync preserves local-only readers (e.g. in-flight generation) when hydrating from cloud
 
 ## Deployment (Vercel)
 
