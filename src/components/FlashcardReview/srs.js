@@ -132,9 +132,11 @@ export function getMasteryLevel(word, direction = 'forward') {
  * @param {number} newCardsPerDay - Maximum new cards (forward + reverse) per day
  * @param {object|null} existingSession - Previously saved session from localStorage
  * @param {string} langId - Current language filter
+ * @param {object} [options] - Options
+ * @param {boolean} [options.newOnly] - If true, skip due cards and only include new cards
  * @returns {object} Session object
  */
-export function buildDailySession(cards, newCardsPerDay, existingSession, langId) {
+export function buildDailySession(cards, newCardsPerDay, existingSession, langId, { newOnly } = {}) {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   const today = now.toISOString().slice(0, 10);
@@ -151,28 +153,32 @@ export function buildDailySession(cards, newCardsPerDay, existingSession, langId
     // Rebuild if cards changed
   }
 
-  // Collect due forward cards
+  // Collect due forward cards (skip when newOnly — only new cards wanted)
   const dueForward = [];
-  for (const card of cards) {
-    const rc = card.reviewCount ?? 0;
-    const nr = card.nextReview ? new Date(card.nextReview).getTime() : null;
-    if (rc > 0 && (nr === null || nr <= nowMs)) {
-      dueForward.push({ ...card, _overdueBy: nr ? nowMs - nr : Infinity, _direction: 'forward' });
+  if (!newOnly) {
+    for (const card of cards) {
+      const rc = card.reviewCount ?? 0;
+      const nr = card.nextReview ? new Date(card.nextReview).getTime() : null;
+      if (rc > 0 && (nr === null || nr <= nowMs)) {
+        dueForward.push({ ...card, _overdueBy: nr ? nowMs - nr : Infinity, _direction: 'forward' });
+      }
     }
+    dueForward.sort((a, b) => b._overdueBy - a._overdueBy);
   }
-  dueForward.sort((a, b) => b._overdueBy - a._overdueBy);
 
-  // Collect due reverse cards (words reviewed at least once forward, reverse is overdue)
+  // Collect due reverse cards (skip when newOnly)
   const dueReverse = [];
-  for (const card of cards) {
-    const fwdRc = card.reviewCount ?? 0;
-    const revRc = card.reverseReviewCount ?? 0;
-    const revNr = card.reverseNextReview ? new Date(card.reverseNextReview).getTime() : null;
-    if (fwdRc >= 1 && revRc > 0 && (revNr === null || revNr <= nowMs)) {
-      dueReverse.push({ ...card, _overdueBy: revNr ? nowMs - revNr : Infinity, _direction: 'reverse' });
+  if (!newOnly) {
+    for (const card of cards) {
+      const fwdRc = card.reviewCount ?? 0;
+      const revRc = card.reverseReviewCount ?? 0;
+      const revNr = card.reverseNextReview ? new Date(card.reverseNextReview).getTime() : null;
+      if (fwdRc >= 1 && revRc > 0 && (revNr === null || revNr <= nowMs)) {
+        dueReverse.push({ ...card, _overdueBy: revNr ? nowMs - revNr : Infinity, _direction: 'reverse' });
+      }
     }
+    dueReverse.sort((a, b) => b._overdueBy - a._overdueBy);
   }
-  dueReverse.sort((a, b) => b._overdueBy - a._overdueBy);
 
   // Collect new forward cards (never reviewed)
   const newForward = [];

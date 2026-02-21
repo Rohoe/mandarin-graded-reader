@@ -210,7 +210,7 @@ export default function FlashcardReview({ onClose }) {
   }, [langCards, state.newCardsPerDay, session, langFilter]);
 
   const handleNewSession = useCallback(() => {
-    const newSession = buildDailySession(langCards, state.newCardsPerDay, null, langFilter);
+    const newSession = buildDailySession(langCards, state.newCardsPerDay, null, langFilter, { newOnly: true });
     setSession(newSession);
     setHistory([]);
     setPhase(newSession.cardKeys.length === 0 ? 'done' : 'front');
