@@ -391,7 +391,6 @@ export default function FlashcardReview({ onClose }) {
                 /* Forward card: target on front */
                 <>
                   <div className="flashcard-card__front">
-                    <span className="flashcard-card__direction-badge">→ EN</span>
                     <span className="flashcard-card__target text-target">{currentCard?.target}</span>
                   </div>
 
@@ -411,7 +410,6 @@ export default function FlashcardReview({ onClose }) {
                 /* Reverse card: translation on front */
                 <>
                   <div className="flashcard-card__front flashcard-card__front--reverse">
-                    <span className="flashcard-card__direction-badge">EN →</span>
                     <span className="flashcard-card__translation-front">{currentCard?.translation}</span>
                     <span className="flashcard-card__recall-hint text-muted">Recall the word</span>
                   </div>
