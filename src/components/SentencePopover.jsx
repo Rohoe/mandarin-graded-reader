@@ -50,6 +50,9 @@ export default function SentencePopover({
   pinyinOn,
   onSubSelection,
   langId,
+  ttsSupported,
+  speakText,
+  speakingKey,
 }) {
   if (!sentencePopover) return null;
 
@@ -68,6 +71,9 @@ export default function SentencePopover({
       langId={langId}
       romanizer={romanizer}
       pinyinOn={pinyinOn}
+      ttsSupported={ttsSupported}
+      speakText={speakText}
+      speakingKey={speakingKey}
     />,
     document.body
   );
@@ -76,7 +82,7 @@ export default function SentencePopover({
 import { forwardRef } from 'react';
 
 const SentencePopoverInner = forwardRef(function SentencePopoverInner(
-  { sentenceText, translation, subText, subTranslation, style, onSubSelection, langId, romanizer, pinyinOn },
+  { sentenceText, translation, subText, subTranslation, style, onSubSelection, langId, romanizer, pinyinOn, ttsSupported, speakText, speakingKey },
   ref
 ) {
   const [hoveredIdx, setHoveredIdx] = useState(null);
@@ -156,9 +162,21 @@ const SentencePopoverInner = forwardRef(function SentencePopoverInner(
       <span className={`sentence-popover__original text-target${pinyinOn && romanizer ? ' sentence-popover__original--ruby' : ''}`}>
         {renderSentenceText()}
       </span>
-      <span className="sentence-popover__translation">
-        {translation || '\u2026'}
-      </span>
+      <div className="sentence-popover__row">
+        <span className="sentence-popover__translation">
+          {translation || '\u2026'}
+        </span>
+        {ttsSupported && speakText && (
+          <button
+            className={`popover-tts-btn${speakingKey === `sent-${sentenceText}` ? ' popover-tts-btn--active' : ''}`}
+            onClick={(e) => { e.stopPropagation(); speakText(sentenceText, `sent-${sentenceText}`); }}
+            title={speakingKey === `sent-${sentenceText}` ? 'Stop' : 'Listen'}
+            aria-label={speakingKey === `sent-${sentenceText}` ? 'Stop speaking' : 'Listen to sentence'}
+          >
+            {speakingKey === `sent-${sentenceText}` ? '■' : 'TTS'}
+          </button>
+        )}
+      </div>
       {subText && (
         <div className="sentence-popover__sub">
           <span className="sentence-popover__sub-label">

@@ -555,6 +555,13 @@ rt {
   .sentence-popover__sub-label { font-size: var(--text-sm); }
 }
 
+.sentence-popover__row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  justify-content: space-between;
+}
+
 .sentence-popover__sub {
   border-top: 1px solid var(--color-border);
   padding-top: var(--space-1);
@@ -606,6 +613,41 @@ rt {
   font-family: var(--font-display);
   font-size: var(--text-sm);
   color: var(--color-text-muted);
+}
+
+/* ── Popover TTS button (shared) ──────────── */
+.popover-tts-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--color-accent-dim);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-text-subtle);
+  padding: 1px 5px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, background 0.15s ease;
+  line-height: 1.4;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.popover-tts-btn:hover {
+  opacity: 1;
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+  border-color: var(--color-accent-dim);
+}
+
+.popover-tts-btn--active {
+  opacity: 1;
+  color: var(--color-accent);
+  border-color: var(--color-accent-dim);
 }
 
 /* ── Bottom actions ──────────────────────── */
