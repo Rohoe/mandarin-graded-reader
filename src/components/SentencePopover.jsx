@@ -47,6 +47,7 @@ export default function SentencePopover({
   popoverRef,
   getPopoverPosition,
   romanizer,
+  pinyinOn,
   onSubSelection,
   langId,
 }) {
@@ -66,6 +67,7 @@ export default function SentencePopover({
       onSubSelection={onSubSelection}
       langId={langId}
       romanizer={romanizer}
+      pinyinOn={pinyinOn}
     />,
     document.body
   );
@@ -74,7 +76,7 @@ export default function SentencePopover({
 import { forwardRef } from 'react';
 
 const SentencePopoverInner = forwardRef(function SentencePopoverInner(
-  { sentenceText, translation, subText, subTranslation, style, onSubSelection, langId, romanizer },
+  { sentenceText, translation, subText, subTranslation, style, onSubSelection, langId, romanizer, pinyinOn },
   ref
 ) {
   const [hoveredIdx, setHoveredIdx] = useState(null);
@@ -117,10 +119,16 @@ const SentencePopoverInner = forwardRef(function SentencePopoverInner(
 
   /** Render text for a single segment, with optional ruby annotations. */
   const renderSegText = (text, keyPrefix) => {
-    if (romanizer && scriptRegex) {
+    if (pinyinOn && romanizer && scriptRegex) {
       return rubyAnnotate(text, romanizer, scriptRegex, keyPrefix);
     }
     return text;
+  };
+
+  /** Get plain romanization string for a text (used in sub-selection). */
+  const getRomanization = (text) => {
+    if (!romanizer || !scriptRegex) return null;
+    try { return romanizer.romanize(text).join(''); } catch { return null; }
   };
 
   const renderSentenceText = () => {
@@ -145,7 +153,7 @@ const SentencePopoverInner = forwardRef(function SentencePopoverInner(
 
   return (
     <div ref={ref} className="reader-view__popover sentence-popover" style={style}>
-      <span className={`sentence-popover__original text-target${romanizer ? ' sentence-popover__original--ruby' : ''}`}>
+      <span className={`sentence-popover__original text-target${pinyinOn && romanizer ? ' sentence-popover__original--ruby' : ''}`}>
         {renderSentenceText()}
       </span>
       <span className="sentence-popover__translation">
@@ -154,7 +162,7 @@ const SentencePopoverInner = forwardRef(function SentencePopoverInner(
       {subText && (
         <div className="sentence-popover__sub">
           <span className="sentence-popover__sub-label">
-            {subText}: {subTranslation || '\u2026'}
+            {subText}{getRomanization(subText) ? <span className="sentence-popover__sub-rom"> ({getRomanization(subText)})</span> : null}: {subTranslation || '\u2026'}
           </span>
         </div>
       )}

@@ -568,6 +568,10 @@ rt {
   word-break: break-word;
 }
 
+.sentence-popover__sub-rom {
+  color: var(--color-accent);
+}
+
 .sentence-popover__word {
   cursor: pointer;
   border-radius: 2px;

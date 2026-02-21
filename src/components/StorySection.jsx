@@ -175,6 +175,7 @@ export default function StorySection({
         popoverRef={sentencePopoverRef}
         getPopoverPosition={getSentencePopoverPosition}
         romanizer={romanizer}
+        pinyinOn={pinyinOn}
         onSubSelection={onSubSelection}
         langId={langId}
       />
