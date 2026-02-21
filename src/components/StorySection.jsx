@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { parseStorySegments } from '../lib/parser';
+import { splitParagraphIntoSentences } from '../lib/sentenceSplitter';
+import SentencePopover from './SentencePopover';
 
 function stripMarkdown(text) {
   return text.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1');
@@ -24,6 +25,12 @@ export default function StorySection({
   showParagraphTools,
   selectionPopover,
   selectionPopoverRef,
+  langId,
+  sentencePopover,
+  sentencePopoverRef,
+  onSentenceClick,
+  onSubSelection,
+  romanizer,
 }) {
   const [visibleTranslations, setVisibleTranslations] = useState(new Set());
 
@@ -48,6 +55,21 @@ export default function StorySection({
     speakText(stripMarkdown(para), paraKey);
   }
 
+  function getSentencePopoverPosition(rect, width = 320) {
+    const gap = 8;
+    const popoverWidth = width;
+    let left = rect.left + rect.width / 2 - popoverWidth / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - popoverWidth - 8));
+    const preferAbove = rect.top - gap > 120;
+    return {
+      position: 'fixed',
+      zIndex: 60,
+      width: popoverWidth,
+      left,
+      ...(preferAbove ? { bottom: window.innerHeight - rect.top + gap } : { top: rect.bottom + gap }),
+    };
+  }
+
   return (
     <div className="reader-view__story-section">
       <div className={`reader-view__story text-target ${pinyinOn ? 'reader-view__story--pinyin' : ''}`}>
@@ -57,32 +79,41 @@ export default function StorySection({
           const isTranslating = translatingIndex === pi;
           const translation = paragraphTranslations && paragraphTranslations[pi];
           const showTranslation = visibleTranslations.has(pi) && translation;
+          const sentences = splitParagraphIntoSentences(para, langId);
           return (
             <div key={pi} className="reader-view__para-wrapper">
               <p className={`reader-view__paragraph ${isSpeaking ? 'reader-view__paragraph--speaking' : ''}`}>
-                {parseStorySegments(para).map((seg, i) => {
-                  if (seg.type === 'bold') {
-                    const entry = lookupVocab(seg.content);
-                    if (entry) {
-                      return (
-                        <button
-                          key={i}
-                          className="reader-view__vocab-btn"
-                          onClick={(e) => handleVocabClick(e, entry)}
-                        >
-                          {renderChars(seg.content, `${pi}-b${i}`)}
-                        </button>
-                      );
-                    }
-                    return (
-                      <strong key={i} className="reader-view__vocab">
-                        {renderChars(seg.content, `${pi}-b${i}`)}
-                      </strong>
-                    );
-                  }
-                  if (seg.type === 'italic') return <em key={i}>{renderChars(seg.content, `${pi}-em${i}`)}</em>;
-                  return <span key={i}>{renderChars(seg.content, `${pi}-s${i}`)}</span>;
-                })}
+                {sentences.map((sentence, si) => (
+                  <span
+                    key={si}
+                    className="reader-view__sentence"
+                    onClick={(e) => onSentenceClick && onSentenceClick(e, sentence, pi)}
+                  >
+                    {sentence.segments.map((seg, i) => {
+                      if (seg.type === 'bold') {
+                        const entry = lookupVocab(seg.content);
+                        if (entry) {
+                          return (
+                            <button
+                              key={i}
+                              className="reader-view__vocab-btn"
+                              onClick={(e) => handleVocabClick(e, entry)}
+                            >
+                              {renderChars(seg.content, `${pi}-${si}-b${i}`)}
+                            </button>
+                          );
+                        }
+                        return (
+                          <strong key={i} className="reader-view__vocab">
+                            {renderChars(seg.content, `${pi}-${si}-b${i}`)}
+                          </strong>
+                        );
+                      }
+                      if (seg.type === 'italic') return <em key={i}>{renderChars(seg.content, `${pi}-${si}-em${i}`)}</em>;
+                      return <span key={i}>{renderChars(seg.content, `${pi}-${si}-s${i}`)}</span>;
+                    })}
+                  </span>
+                ))}
                 {showParagraphTools && ttsSupported && (
                   <button
                     className={`reader-view__para-tts-btn ${isSpeaking ? 'reader-view__para-tts-btn--active' : ''}`}
@@ -134,6 +165,13 @@ export default function StorySection({
         </div>,
         document.body
       )}
+      <SentencePopover
+        sentencePopover={sentencePopover}
+        popoverRef={sentencePopoverRef}
+        getPopoverPosition={getSentencePopoverPosition}
+        romanizer={romanizer}
+        onSubSelection={onSubSelection}
+      />
     </div>
   );
 }

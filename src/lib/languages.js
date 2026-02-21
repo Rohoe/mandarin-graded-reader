@@ -32,6 +32,7 @@ const zhConfig = {
   punctuation: '\uff0c\u3002\uff01\uff1f\u3001\uff1b\uff1a\u201c\u201d\u2018\u2019\uff08\uff09\u3010\u3011',
   charUnit: 'Chinese characters (字)',
   charUnitShort: '字',
+  sentenceEndRegex: /([。！？；])/,
 
   // Typography
   fonts: {
@@ -122,6 +123,7 @@ const koConfig = {
   punctuation: '\uff0c\u3002\uff01\uff1f\u3001\uff1b\uff1a\u201c\u201d\u2018\u2019\uff08\uff09\u3010\u3011',
   charUnit: 'Korean syllables',
   charUnitShort: '자',
+  sentenceEndRegex: /([。.！!？?])/,
 
   fonts: {
     target: "'Noto Serif KR', 'Batang', 'Gungsuh', Georgia, serif",
@@ -220,6 +222,7 @@ const yueConfig = {
   punctuation: '\uff0c\u3002\uff01\uff1f\u3001\uff1b\uff1a\u201c\u201d\u2018\u2019\uff08\uff09\u3010\u3011',
   charUnit: 'Chinese characters (字)',
   charUnitShort: '字',
+  sentenceEndRegex: /([。！？；])/,
 
   fonts: {
     target: "'Noto Serif TC', 'Noto Serif SC', 'PMingLiU', Georgia, serif",

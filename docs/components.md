@@ -10,10 +10,13 @@ Left sidebar: syllabus dropdown, lesson list, standalone readers list, progress 
 Overview page (syllabusView='home'). Topic, HSK badge, date, AI summary, lesson list with completion status. "Add more lessons" panel (slider 2–6). Delete Syllabus with inline confirmation. Fixed LoadingIndicator overlay during loading.
 
 ## `ReaderView`
-Main content area. Orchestrates hooks: useTTS, useRomanization, useVocabPopover, useReaderGeneration. Sets `data-lang` attribute. Demo reader detection (dismissible banner, hides Mark Complete/Regenerate). Evicted reader detection with "Restore from backup" button.
+Main content area. Orchestrates hooks: useTTS, useRomanization, useVocabPopover, useReaderGeneration, useSentenceTranslate. Sets `data-lang` attribute. Demo reader detection (dismissible banner, hides Mark Complete/Regenerate). Evicted reader detection with "Restore from backup" button. Mutual exclusion between vocab, selection, and sentence popovers.
 
 ## `StorySection`
-Renders story paragraphs with vocab buttons, TTS click-to-read, popover portal for vocab definitions.
+Renders story paragraphs with vocab buttons, TTS click-to-read, popover portal for vocab definitions. Paragraphs are split into clickable sentence spans via `splitParagraphIntoSentences()`. New props: `langId`, `onSentenceClick`, `sentencePopover`, `sentencePopoverRef`, `onSubSelection`, `romanizer`.
+
+## `SentencePopover`
+Portal-based popover shown on sentence click. Displays original sentence (selectable), romanization (if enabled), and translation (via Google Translate). Supports word drill-down: drag-select text within the popover to see a sub-translation.
 
 ## `VocabularyList`
 Collapsible accordion of vocab cards. Props: `renderChars` (ruby romanization), TTS props (`speakText`, `speakingKey`, `ttsSupported`), translation props (`onTranslateExample`, `translatingKey`, `vocabTranslations`). Inline TTS (🔊) and EN buttons when `showParagraphTools` is true.

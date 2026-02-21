@@ -11,6 +11,7 @@ import { useRomanization } from '../hooks/useRomanization';
 import { useVocabPopover } from '../hooks/useVocabPopover';
 import { useReaderGeneration } from '../hooks/useReaderGeneration';
 import { useTextSelection } from '../hooks/useTextSelection';
+import { useSentenceTranslate } from '../hooks/useSentenceTranslate';
 import { DEMO_READER_KEY } from '../lib/demoReader';
 import StorySection from './StorySection';
 import VocabularyList from './VocabularyList';
@@ -89,6 +90,8 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   const { selection, popoverRef: selectionPopoverRef, clearSelection } = useTextSelection(scrollRef);
   const [selectionPopover, setSelectionPopover] = useState(null);
 
+  const { sentencePopover, sentencePopoverRef, handleSentenceClick, handleSubSelection, closeSentencePopover } = useSentenceTranslate(langId);
+
   // Build selection popover data when selection changes
   useEffect(() => {
     if (!selection) {
@@ -130,8 +133,14 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   useEffect(() => {
     if (activeVocab) {
       clearSelection();
+      closeSentencePopover();
     }
-  }, [activeVocab, clearSelection]);
+  }, [activeVocab, clearSelection, closeSentencePopover]);
+
+  // Close sentence popover when selection popover opens
+  useEffect(() => {
+    if (selectionPopover) closeSentencePopover();
+  }, [selectionPopover, closeSentencePopover]);
 
   const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModels, customBaseUrl });
   const { handleGenerate } = useReaderGeneration(
@@ -143,6 +152,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     stopSpeaking();
     setActiveVocab(null);
     clearSelection();
+    closeSentencePopover();
   }, [lessonKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load from cache to avoid flash of "Generate Reader" button.
@@ -427,6 +437,12 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         showParagraphTools={translateButtons}
         selectionPopover={selectionPopover}
         selectionPopoverRef={selectionPopoverRef}
+        langId={langId}
+        sentencePopover={sentencePopover}
+        sentencePopoverRef={sentencePopoverRef}
+        onSentenceClick={handleSentenceClick}
+        onSubSelection={handleSubSelection}
+        romanizer={romanizer}
       />
 
       <hr className="divider" />
