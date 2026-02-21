@@ -17,8 +17,8 @@ A single-page web app for generating graded readers in **Mandarin Chinese**, **C
 - **Configurable length** — Sliders for syllabus lesson count (2–12) and reader story length (150–2000 characters). Short readers (≤250 chars) automatically scale down to fewer vocabulary words, questions, and grammar notes — ideal for absolute beginners
 - **Dark mode** — Toggle in Settings; persists across sessions. Overrides all colour tokens via `[data-theme="dark"]` on the root element
 - **Story continuation** — "Next episode →" button generates a follow-up reader that continues the narrative from the previous story, maintaining characters and setting. Continuation chains are grouped as series in the sidebar with episode numbers
-- **Flashcard review** — Built-in flashcard mode for reviewing learned vocabulary. Front shows the target word; flip to reveal romanization and translation. Judge each card as "Got it", "Almost", or "Missed it". Filter by language. Accessible from the sidebar footer or Stats dashboard
-- **Demo reader** — New users see a sample HSK 2 reader on first launch to explore the UI before adding an API key
+- **Flashcard review** — Built-in SRS flashcard system with daily sessions. Forward cards (target→EN) and reverse cards (EN→target) with independent spaced repetition tracking. Reverse cards unlock after a word is reviewed forward at least once. Configurable new cards per day (default 20). SRS interval previews below judgment buttons show upcoming intervals. Undo (Ctrl+Z) restores the previous card. Example sentences shown on card backs. Sessions resume on the same day; reset at midnight. Filter by language. Accessible from the sidebar footer or Stats dashboard
+- **Demo mode** — New users see a sample HSK 2 reader on first launch. A default free Gemini API key enables basic generation without setup; add your own key for faster responses and higher limits
 - **Extend syllabus** — "Add more lessons" panel on the syllabus home page appends 2–6 AI-generated lessons to an existing syllabus
 - **Collapsible sidebar sections** — Syllabus lesson list and standalone readers list can be collapsed/expanded via caret buttons in their section headers
 - **Text-to-speech** — 🔊 icon button reads the full story aloud; click any paragraph to hear just that sentence. Inline TTS buttons also appear on vocabulary example sentences and comprehension questions when Paragraph Tools is enabled. Separate voice preferences for Chinese, Korean, and Cantonese, configurable in Settings. Adjustable reading speed (0.5×–2.0×) via slider in Settings. Auto-selects the best available voice for each language (Chinese: Google neural, macOS Tingting/Meijia; Korean: Google, Yuna)
@@ -27,7 +27,7 @@ A single-page web app for generating graded readers in **Mandarin Chinese**, **C
 - **Verbose Vocabulary** — Toggle in Settings to include English translations of example sentences in Anki flashcard exports; translations are fetched on-demand via Google Translate at export time and cached for reuse
 - **Disk persistence** — Optionally save all data as JSON files to a folder on your computer (Chrome/Edge only)
 - **Cloud Sync** — Sign in with Google or Apple to push/pull all your data to/from Supabase. Manual sync via explicit Push/Pull buttons in Settings; API key stays local. The sidebar footer shows sync status: signed-in state, "Synced"/"Unsynced" indicator based on whether local data has changed since the last push
-- **Learning Stats Dashboard** — Track vocabulary growth, quiz scores, day streaks, and per-language breakdowns. CSS-only bar charts show words learned over time. Activity log stashes entries older than 90 days to avoid memory bloat; "Load full history" button in Stats. Accessible via the "Stats" button in the sidebar footer
+- **Learning Stats Dashboard** — Track vocabulary growth, quiz scores, day streaks, and per-language breakdowns. Flashcard stats: total reviews, reviews today, retention rate, flashcard streak, and mastery breakdown (mastered/learning/new). CSS-only bar charts show words learned over time. Activity log stashes entries older than 90 days to avoid memory bloat; "Load full history" button in Stats. Accessible via the "Stats" button in the sidebar footer
 - **Structured output** — Opt-in setting (Settings → Advanced) to use provider-native structured output (Anthropic tool use, OpenAI JSON schema, Gemini response schema) for more reliable parsing. Default off; OpenAI-compatible endpoints fall back to the standard regex parser
 - **PWA / Offline Support** — Install the app on your home screen; cached readers and the full UI work offline. Service worker powered by Workbox with runtime caching for Google Fonts
 
@@ -140,10 +140,24 @@ Once configured, open Settings → Cloud Sync → sign in with Google or Apple. 
 
 Your API keys are stored in plain text in `localStorage` and sent directly to the selected provider's API from your browser. Keys are never synced to file storage or the cloud. This is acceptable for personal use. Do not share the URL with others if you have keys pre-filled.
 
+## Testing
+
+```bash
+npm test              # run all unit tests (Vitest)
+npm run test:watch    # watch mode
+npm run test:coverage # with V8 coverage
+npm run test:e2e      # run E2E tests (Playwright)
+npm run test:e2e:ui   # Playwright UI mode
+```
+
+- **201 unit tests** (Vitest) — parser, reducer, stats, anki, storage, cloudSync, and more
+- **22 E2E tests** (Playwright) — demo reader, settings, reader generation, flashcards, mobile layout
+
 ## Tech stack
 
 - React 18 + Vite 5
 - No backend required
+- Testing: Vitest + Playwright
 - Fonts: Noto Serif SC (Chinese), Noto Serif TC (Cantonese), Noto Serif KR (Korean), Cormorant Garamond (English)
 - Zero UI framework dependencies — pure CSS with custom design tokens
 - Language-specific libraries loaded lazily (`pinyin-pro` for Chinese, `to-jyutping` for Cantonese, `hangul-romanization` for Korean)

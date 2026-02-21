@@ -12,6 +12,8 @@ Single-page React + Vite app that generates graded readers in **Mandarin Chinese
 npm install        # first time only
 npm run dev        # starts at http://localhost:5173 (or 5174 if port taken)
 npm run build      # production build to dist/
+npm test           # run unit tests (Vitest)
+npm run test:e2e   # run E2E tests (Playwright)
 ```
 
 No `.env` file is required for basic use. The app can be used without an API key to browse existing readers, review vocabulary, and access all non-generative features. To generate new readers or grade comprehension questions, users select a provider and add their API key in Settings. Each provider stores its own key in `localStorage` — switching providers doesn't lose keys. For cloud sync, a `.env` file with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` is needed (see README for setup).
@@ -33,7 +35,8 @@ src/
                               useEffect hooks in AppProvider keyed to state slices.
                               Uses mountedRef to skip initial-render saves.
                               Generated readers use prevReadersRef diffing.
-                              Exports: AppContext, AppProvider, useApp (re-export)
+                              Exports: AppContext, AppProvider, useApp (re-export).
+                              Test-only exports: _baseReducer, _reducer, _DATA_ACTIONS.
     useApp.js                 useApp hook (separate file — ESLint fast-refresh rule)
     actions.js                actions() helper factory (separate file — same reason)
 
@@ -202,15 +205,23 @@ src/
                               and popover portal for vocab definitions.
     StatsDashboard/           Modal showing learning stats: vocab growth bar chart, per-language
                               breakdown, quiz scores, streak counter, activity counts.
-                              Uses computeStats() from lib/stats.js. CSS-only charts.
-                              "Load full history" button merges stashed activity entries.
-                              "Review flashcards" button opens FlashcardReview modal.
-    FlashcardReview/          Modal with state machine: front → back → done. Shows
-                              target word in large script font; reveals romanization +
-                              translation on flip. Three judgment buttons (Got it / Almost
-                              / Missed it). Language filter pills when vocab spans multiple
-                              languages. Session summary on completion. Logs
-                              flashcard_reviewed activity.
+                              Flashcard stats section: total reviews, reviews today, retention
+                              rate (% "got"), flashcard streak, mastery breakdown (mastered
+                              ≥21d interval / learning / new). Uses computeStats() from
+                              lib/stats.js. CSS-only charts. "Load full history" button
+                              merges stashed activity entries. "Review flashcards" button
+                              opens FlashcardReview modal.
+    FlashcardReview/          Modal with daily session SRS. buildDailySession() in srs.js
+                              collects due + new cards per day (configurable newCardsPerDay,
+                              default 20). Supports forward (target→EN) and reverse (EN→target)
+                              card directions with independent SRS tracking per direction.
+                              Reverse cards unlock after a word has been reviewed forward ≥1 time.
+                              Shows SRS interval previews below judgment buttons (e.g. "3d", "2w").
+                              Undo via Ctrl+Z restores previous card's SRS state. Example
+                              sentences shown on card back when available. Session is resumable
+                              on same day; resets at midnight. Language filter pills when vocab
+                              spans multiple languages. Session summary on completion with
+                              mastery breakdown. Logs flashcard_reviewed activity with direction.
     VocabularyList            Collapsible accordion of vocab cards with examples.
                               Accepts `renderChars` prop — applies ruby romanization to word headers
                               and example sentences when romanization toggle is on.
@@ -319,7 +330,11 @@ src/
                      // parsedReaderData fields: raw, titleZh, titleEn, story, vocabulary[],
                      //   questions[], ankiJson[], grammarNotes[], parseError,
                      //   userAnswers, gradingResults, vocabTranslations, topic, level, langId, lessonKey
-  learnedVocabulary: { [targetWord]: { romanization, pinyin, translation, english, langId?, dateAdded } },
+  learnedVocabulary: { [targetWord]: { romanization, pinyin, translation, english, langId?, dateAdded,
+                       // Forward SRS: interval, ease, nextReview, reviewCount, lapses
+                       // Reverse SRS: reverseInterval, reverseEase, reverseNextReview, reverseReviewCount, reverseLapses
+                       // exampleSentence (string, from reader vocab)
+                     } },
   exportedWords:     Set<string>,     // serialised as array in localStorage + file
   loading:           boolean,
   loadingMessage:    string,
@@ -336,6 +351,7 @@ src/
   romanizationOn:    boolean,         // Show ruby romanization annotations (persisted, default false)
   verboseVocab:      boolean,         // Include example translations in Anki exports via Google Translate (default false)
   useStructuredOutput: boolean,      // Use provider-native structured output (default false)
+  newCardsPerDay:    number,          // Max new flashcards per daily session, default 20
   // Reader eviction tracking (persisted to localStorage)
   evictedReaderKeys: Set<string>,     // lesson keys evicted from localStorage but available in backup
   // Background generation (ephemeral, not persisted)
@@ -503,6 +519,37 @@ The app is hosted at: `https://mandarin-graded-reader.vercel.app` (update when f
 - **Required env vars in Vercel dashboard:** `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 - **Supabase redirect URL:** Add the Vercel production URL to Supabase → Authentication → URL Configuration → Redirect URLs. Without this, Google/Apple OAuth will fail in production.
 - **`VITE_ANTHROPIC_API_KEY` is not set** — users enter their own key at runtime
+
+## Testing
+
+**Unit tests (Vitest):** 201 tests across 11 files, colocated with source (`*.test.js`).
+
+```bash
+npm test              # run all unit tests
+npm run test:watch    # watch mode
+npm run test:coverage # with V8 coverage
+```
+
+Test files: `parser.test.js` (36), `reducer.test.js` (36), `stats.test.js` (21), `vocabNormalizer.test.js` (21), `storage.test.js` (21), `anki.test.js` (16), `prompts.test.js` (15), `cloudSync.test.js` (11), `llmConfig.test.js` (10), `api.test.js` (8), `providers.test.js` (6).
+
+**E2E tests (Playwright):** 22 tests across 6 spec files in `e2e/`.
+
+```bash
+npm run test:e2e      # run all E2E tests
+npm run test:e2e:ui   # Playwright UI mode
+```
+
+Two projects: Desktop Chrome + iPhone 14 (mobile). Dev server starts automatically.
+E2E specs: `demo-reader`, `settings`, `standalone-reader`, `syllabus-flow`, `flashcard`, `mobile`.
+API mocking via `page.route()` interception (see `e2e/fixtures/mockApiResponses.js`).
+Helpers: `e2e/helpers/appHelpers.js` — `seedLocalStorage()`, `mockLLMApis()`.
+
+**Test infrastructure:**
+- `src/test/setup.js` — jest-dom/vitest, localStorage mock, matchMedia mock
+- `src/test/fixtures/` — `sampleReaderMarkdown.js`, `sampleState.js`
+- `playwright.config.js` — Desktop Chrome + iPhone 14 projects
+- Test-only exports: `AppContext.jsx` exports `_baseReducer`, `_reducer`, `_DATA_ACTIONS`
+- `api.js` exports `isRetryable` for direct testing
 
 ## Known limitations / future work
 
