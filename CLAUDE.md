@@ -56,3 +56,7 @@ For in-depth reference, see the docs in `docs/`:
 - **[docs/components.md](docs/components.md)** — Component descriptions and prop contracts
 - **[docs/api-and-parsing.md](docs/api-and-parsing.md)** — LLM provider integration, prompt system, response parsing
 - **[docs/deployment.md](docs/deployment.md)** — Vercel deployment, testing infrastructure, known limitations
+
+## Keeping docs current
+
+When making changes that affect architecture, components, APIs, or state shape, update the relevant `docs/` file in the same commit. This CLAUDE.md should stay concise (~60 lines); put details in `docs/`.
