@@ -150,7 +150,7 @@ npm run test:e2e      # run E2E tests (Playwright)
 npm run test:e2e:ui   # Playwright UI mode
 ```
 
-- **201 unit tests** (Vitest) — parser, reducer, stats, anki, storage, cloudSync, and more
+- **241 unit tests** (Vitest) — parser, reducer, stats, anki, storage, cloudSync, useReaderGeneration, difficultyValidator, and more
 - **22 E2E tests** (Playwright) — demo reader, settings, reader generation, flashcards, mobile layout
 
 ## Tech stack

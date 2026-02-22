@@ -13,6 +13,7 @@
 
 - `callLLM(llmConfig, systemPrompt, userMessage, maxTokens)` → dispatches to `callAnthropic`, `callOpenAI`, `callGemini`
 - `callLLMStructured(...)` → `callAnthropicStructured` (tool use), `callOpenAIStructured` (json_schema), `callGeminiStructured` (responseMimeType); OpenAI-compatible falls back to `callLLM`
+- `generateReaderStream(llmConfig, ...)` → async generator yielding text chunks via Anthropic SSE streaming (`stream: true`). Anthropic-only; used by `useReaderGeneration` to show a live streaming preview while generating.
 - AbortController with 60s timeout; `generateReader` accepts external signal
 - `fetchWithRetry()`: exponential backoff (2 retries for 5xx/429)
 - Prompt templates are provider-agnostic, built from `langConfig.prompts`
@@ -28,7 +29,9 @@
 
 ### Regex parser (default)
 - Sections: `### 1. Title`, `### 2. Story`, `### 3. Vocabulary`, `### 4. Comprehension`, `### 5. Anki`
-- `#{2,4}\s*N\.` tolerates 2–4 hash marks
+- `#{2,4}\s*N\.` tolerates 2–4 hash marks. Also handles alternative heading formats (CJK headings, unnumbered headings) via fallback extraction.
+- `parseWarnings` array in output tracks which fallback paths were used (e.g. "Title extracted via fallback").
+- `parseVocabularySection` handles numbered vocab lines (e.g. `1. 词语 ...`) in addition to bullet/dash formats.
 - Fallback: raw text with "Regenerate" button
 - `parseStorySegments()` → `{ type: 'text'|'bold'|'italic', content }[]`
 - `parseQuestions()` → `{ text, translation }[]` (extracts trailing parenthesized translations)
