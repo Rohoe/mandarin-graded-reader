@@ -74,3 +74,23 @@ export function wrapGeminiResponse(text) {
     candidates: [{ content: { parts: [{ text }] } }],
   };
 }
+
+/**
+ * Builds an Anthropic-format SSE stream from a text response.
+ * Splits text into ~3 chunks wrapped in content_block_delta events.
+ */
+export function buildAnthropicSSE(text) {
+  const chunkSize = Math.ceil(text.length / 3);
+  const chunks = [];
+  for (let i = 0; i < text.length; i += chunkSize) {
+    chunks.push(text.slice(i, i + chunkSize));
+  }
+  let sse = 'data: {"type":"message_start","message":{"id":"msg_test","type":"message","role":"assistant","content":[]}}\n\n';
+  sse += 'data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}\n\n';
+  for (const chunk of chunks) {
+    sse += `data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":${JSON.stringify(chunk)}}}\n\n`;
+  }
+  sse += 'data: {"type":"content_block_stop","index":0}\n\n';
+  sse += 'data: {"type":"message_stop"}\n\n';
+  return sse;
+}
