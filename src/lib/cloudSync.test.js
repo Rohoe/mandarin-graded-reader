@@ -238,6 +238,89 @@ describe('mergeData', () => {
     expect(result.generated_readers.key2.story).toBe('cloud-only');
   });
 
+  it('handles identical local and cloud data (no duplicates)', () => {
+    const localState = {
+      syllabi: [{ id: 's1', topic: 'shared' }],
+      syllabusProgress: { s1: { lessonIndex: 2, completedLessons: [0, 1] } },
+      standaloneReaders: [{ key: 'sr1', topic: 'reader' }],
+      generatedReaders: { key1: { story: 'same-story' } },
+      learnedVocabulary: { '猫': { pinyin: 'māo', dateAdded: 1000 } },
+      exportedWords: new Set(['猫']),
+    };
+    const cloudData = {
+      syllabi: [{ id: 's1', topic: 'shared' }],
+      syllabus_progress: { s1: { lessonIndex: 2, completedLessons: [0, 1] } },
+      standalone_readers: [{ key: 'sr1', topic: 'reader' }],
+      generated_readers: { key1: { story: 'same-story' } },
+      learned_vocabulary: { '猫': { pinyin: 'māo', dateAdded: 1000 } },
+      exported_words: ['猫'],
+    };
+    const result = mergeData(localState, cloudData);
+    expect(result.syllabi.length).toBe(1);
+    expect(result.standalone_readers.length).toBe(1);
+    expect(Object.keys(result.learned_vocabulary).length).toBe(1);
+    expect(result.exported_words.length).toBe(1);
+  });
+
+  it('merges overlapping syllabi with different lessons', () => {
+    const localState = {
+      syllabi: [
+        { id: 's1', topic: 'topic-a', lessons: [{ title: 'L1' }] },
+        { id: 's2', topic: 'local-only' },
+      ],
+      syllabusProgress: {},
+      standaloneReaders: [],
+      generatedReaders: {},
+      learnedVocabulary: {},
+      exportedWords: new Set(),
+    };
+    const cloudData = {
+      syllabi: [
+        { id: 's1', topic: 'topic-a-cloud', lessons: [{ title: 'L1' }, { title: 'L2' }] },
+        { id: 's3', topic: 'cloud-only' },
+      ],
+      syllabus_progress: {},
+      standalone_readers: [],
+      generated_readers: {},
+      learned_vocabulary: {},
+      exported_words: [],
+    };
+    const result = mergeData(localState, cloudData);
+    expect(result.syllabi.length).toBe(3);
+    // Local wins for s1
+    const s1 = result.syllabi.find(s => s.id === 's1');
+    expect(s1.topic).toBe('topic-a');
+    expect(result.syllabi.find(s => s.id === 's2')).toBeTruthy();
+    expect(result.syllabi.find(s => s.id === 's3')).toBeTruthy();
+  });
+
+  it('handles vocabulary conflict with same word different translations', () => {
+    const localState = {
+      syllabi: [],
+      syllabusProgress: {},
+      standaloneReaders: [],
+      generatedReaders: {},
+      learnedVocabulary: {
+        '猫': { pinyin: 'māo', english: 'cat (local)', dateAdded: 2000 },
+      },
+      exportedWords: new Set(),
+    };
+    const cloudData = {
+      syllabi: [],
+      syllabus_progress: {},
+      standalone_readers: [],
+      generated_readers: {},
+      learned_vocabulary: {
+        '猫': { pinyin: 'māo', english: 'cat (cloud)', dateAdded: 3000 },
+      },
+      exported_words: [],
+    };
+    const result = mergeData(localState, cloudData);
+    // Cloud is newer, so cloud wins
+    expect(result.learned_vocabulary['猫'].english).toBe('cat (cloud)');
+    expect(result.learned_vocabulary['猫'].dateAdded).toBe(3000);
+  });
+
   it('merges syllabus progress with max lessonIndex and union completedLessons', () => {
     const localState = {
       syllabi: [],
