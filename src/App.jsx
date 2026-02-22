@@ -125,8 +125,9 @@ function AppShell() {
       ? `lesson_${activeSyllabusId}_${lessonIndex}`
       : null;
 
-  function handleSelectLesson(idx) {
-    act.setLessonIndex(activeSyllabusId, idx);
+  function handleSelectLesson(syllabusId, idx) {
+    setActiveSyllabusId(syllabusId);
+    act.setLessonIndex(syllabusId, idx);
     setStandaloneKey(null);
     setSyllabusView('lesson');
     setSidebarOpen(false);

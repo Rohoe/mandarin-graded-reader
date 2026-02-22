@@ -140,9 +140,9 @@ export default function SyllabusPanel({
     setConfirmPending(null);
   }
 
-  function handleLessonClick(idx) {
+  function handleLessonClick(syllabusId, idx) {
     if (loading) return;
-    onSelectLesson?.(idx);
+    onSelectLesson?.(syllabusId, idx);
   }
 
   function handleSyllabusClick(id) {
@@ -358,7 +358,7 @@ export default function SyllabusPanel({
                                 ${lessonActive ? 'syllabus-panel__lesson-btn--active' : ''}
                                 ${isCompleted ? 'syllabus-panel__lesson-btn--completed' : ''}
                               `}
-                              onClick={() => handleLessonClick(idx)}
+                              onClick={() => handleLessonClick(s.id, idx)}
                               disabled={loading}
                             >
                               <span className="syllabus-panel__lesson-num">
