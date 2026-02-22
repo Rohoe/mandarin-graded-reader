@@ -59,7 +59,7 @@ async function fetchWithRetry(url, options, extractText, providerLabel) {
       const data = await response.json();
       return extractText(data);
     } catch (err) {
-      if (err.name === 'AbortError') throw new Error('Request timed out after 60 seconds. Try again or switch to a faster provider.');
+      if (err.name === 'AbortError') throw new Error('Request timed out. Try again or switch to a faster provider.');
       if (err.status !== undefined) throw err;
       if (attempt === MAX_RETRIES) throw err;
       lastError = err;
@@ -149,7 +149,7 @@ function callGemini(apiKey, model, systemPrompt, userMessage, maxTokens, signal)
 
 // ── Unified dispatcher ──────────────────────────────────────────
 
-const DEFAULT_TIMEOUT_MS = 60_000;
+const DEFAULT_TIMEOUT_MS = 300_000;
 
 async function callLLM(llmConfig, systemPrompt, userMessage, maxTokens = 4096, { signal: externalSignal } = {}) {
   const { provider, apiKey, model, baseUrl } = llmConfig;

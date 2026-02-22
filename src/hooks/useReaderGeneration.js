@@ -80,7 +80,7 @@ export function useReaderGeneration(lessonKey, lessonMeta, reader, langId, isPen
     } catch (err) {
       setStreamingText(null);
       if (err.message?.includes('timed out') || err.name === 'AbortError') {
-        act.notify('error', 'Request timed out after 60 seconds. Try again or switch to a faster provider.');
+        act.notify('error', 'Request timed out. Try again or switch to a faster provider.');
       } else {
         act.notify('error', `Generation failed: ${err.message.slice(0, 80)}`);
       }
