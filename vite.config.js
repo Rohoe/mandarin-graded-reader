@@ -14,6 +14,15 @@ export default defineConfig({
       include: ['src/lib/**', 'src/context/**', 'src/prompts/**'],
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'romanization': ['pinyin-pro', 'to-jyutping', 'hangul-romanization'],
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({

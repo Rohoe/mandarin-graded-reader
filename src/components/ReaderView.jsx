@@ -19,6 +19,8 @@ import ComprehensionQuestions from './ComprehensionQuestions';
 import AnkiExportButton from './AnkiExportButton';
 import GenerationProgress from './GenerationProgress';
 import GrammarNotes from './GrammarNotes';
+import ReaderHeader from './ReaderHeader';
+import ReaderActions from './ReaderActions';
 import './ReaderView.css';
 
 // Track which lesson keys we've already tried to load from cache
@@ -26,13 +28,18 @@ import './ReaderView.css';
 const _loadedKeys = new Set();
 
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar, onOpenSettings }) {
-  const { generatedReaders, learnedVocabulary, error, pendingReaders, maxTokens, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate, romanizationOn, translateButtons, verboseVocab, quotaWarning, providerKeys, activeProvider, activeModels, customBaseUrl, useStructuredOutput, evictedReaderKeys } = useAppSelector(s => ({
+  // Split selectors to prevent settings changes from re-rendering reader content
+  const { generatedReaders, learnedVocabulary, error, pendingReaders, evictedReaderKeys, quotaWarning } = useAppSelector(s => ({
     generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, error: s.error,
-    pendingReaders: s.pendingReaders, maxTokens: s.maxTokens,
+    pendingReaders: s.pendingReaders, evictedReaderKeys: s.evictedReaderKeys, quotaWarning: s.quotaWarning,
+  }));
+  const { ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate, romanizationOn, translateButtons, verboseVocab } = useAppSelector(s => ({
     ttsVoiceURI: s.ttsVoiceURI, ttsKoVoiceURI: s.ttsKoVoiceURI, ttsYueVoiceURI: s.ttsYueVoiceURI, ttsSpeechRate: s.ttsSpeechRate,
-    romanizationOn: s.romanizationOn, translateButtons: s.translateButtons, verboseVocab: s.verboseVocab, quotaWarning: s.quotaWarning,
+    romanizationOn: s.romanizationOn, translateButtons: s.translateButtons, verboseVocab: s.verboseVocab,
+  }));
+  const { providerKeys, activeProvider, activeModels, customBaseUrl, maxTokens, useStructuredOutput } = useAppSelector(s => ({
     providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
-    useStructuredOutput: s.useStructuredOutput, evictedReaderKeys: s.evictedReaderKeys,
+    maxTokens: s.maxTokens, useStructuredOutput: s.useStructuredOutput,
   }));
   const dispatch = useAppDispatch();
   const { restoreEvictedReader } = useContext(AppContext);
@@ -396,30 +403,17 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       )}
 
       {/* Title + TTS */}
-      <header className="reader-view__header">
-        <div className="reader-view__header-text">
-          <div className="reader-view__meta text-subtle font-display">
-            {reader.level && profBadge}
-            {reader.topic && ` · ${reader.topic.charAt(0).toUpperCase() + reader.topic.slice(1)}`}
-          </div>
-          <h1 className="reader-view__title text-target-title">
-            {reader.titleZh || getLessonTitle(lessonMeta, langId) || ''}
-          </h1>
-          {reader.titleEn && <p className="reader-view__title-en font-display text-muted">{reader.titleEn}</p>}
-        </div>
-        {ttsSupported && (
-          <div className="reader-view__header-actions">
-            <button
-              className={`btn btn-ghost btn-sm reader-view__tts-btn ${speakingKey === 'story' ? 'reader-view__tts-btn--active' : ''}`}
-              onClick={() => speakingKey ? (window.speechSynthesis.cancel(), stopSpeaking()) : speakText(storyText.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1'), 'story')}
-              title={speakingKey ? 'Stop' : 'Listen to story'}
-              aria-label={speakingKey ? 'Stop' : 'Listen to story'}
-            >
-              {speakingKey ? '⏹' : '🔊'}
-            </button>
-          </div>
-        )}
-      </header>
+      <ReaderHeader
+        reader={reader}
+        lessonMeta={lessonMeta}
+        langId={langId}
+        profBadge={profBadge}
+        storyText={storyText}
+        ttsSupported={ttsSupported}
+        speakingKey={speakingKey}
+        speakText={speakText}
+        stopSpeaking={stopSpeaking}
+      />
 
       <hr className="divider" />
 
@@ -503,47 +497,21 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         />
       )}
 
-      {/* Mark complete */}
-      {!isDemo && !isCompleted && onMarkComplete && (
-        <div className="reader-view__complete-row">
-          <button className="btn btn-primary reader-view__complete-btn" onClick={onMarkComplete}>{lessonKey?.startsWith('standalone_') ? 'Mark Complete ✓' : 'Mark Lesson Complete ✓'}</button>
-        </div>
-      )}
-      {isCompleted && (
-        <div className="reader-view__completed-badge">
-          <span>✓ {lessonKey?.startsWith('standalone_') ? 'Completed' : 'Lesson completed'}</span>
-          {onUnmarkComplete && (
-            <button className="btn btn-ghost btn-sm reader-view__unmark-btn" onClick={onUnmarkComplete}>Undo</button>
-          )}
-        </div>
-      )}
-
-      {/* Regenerate */}
-      {!isDemo && (
-        <div className="reader-view__regen-row">
-          {confirmRegen ? (
-            <>
-              <span className="reader-view__regen-prompt text-muted">Replace this reader?</span>
-              <button className="btn btn-ghost btn-sm" onClick={() => setConfirmRegen(false)}>Cancel</button>
-              <button className="btn btn-sm reader-view__regen-confirm-btn" onClick={handleRegenConfirm}>Regenerate</button>
-            </>
-          ) : (
-            <button className="btn btn-ghost btn-sm" onClick={() => setConfirmRegen(true)}>Regenerate reader</button>
-          )}
-        </div>
-      )}
-
-      {/* Continue story */}
-      {!isDemo && onContinueStory && reader.story && !isPending && (
-        <div className="reader-view__continue-row">
-          <button
-            className="btn btn-primary"
-            onClick={() => onContinueStory({ story: reader.story, topic: reader.topic || lessonMeta?.title_en || 'story', level: reader.level ?? lessonMeta?.level ?? 3, langId })}
-          >
-            Next episode →
-          </button>
-        </div>
-      )}
+      <ReaderActions
+        isDemo={isDemo}
+        isCompleted={isCompleted}
+        onMarkComplete={onMarkComplete}
+        onUnmarkComplete={onUnmarkComplete}
+        lessonKey={lessonKey}
+        confirmRegen={confirmRegen}
+        setConfirmRegen={setConfirmRegen}
+        handleRegenConfirm={handleRegenConfirm}
+        onContinueStory={onContinueStory}
+        reader={reader}
+        lessonMeta={lessonMeta}
+        isPending={isPending}
+        langId={langId}
+      />
     </article>
   );
 }
