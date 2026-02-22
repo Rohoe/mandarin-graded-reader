@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { seedWithReader, seedLocalStorage } from './helpers/appHelpers.js';
 
-test.describe('Undo delete & difficulty badge', () => {
+test.describe('Undo delete', () => {
   test('delete standalone reader and undo restores it', async ({ page, isMobile }) => {
     await seedWithReader(page, { topic: 'Street food' });
     await page.goto('/');
@@ -94,29 +94,5 @@ test.describe('Undo delete & difficulty badge', () => {
       // Syllabus should reappear
       await expect(page.locator('body')).toContainText('Chinese food culture', { timeout: 5000 });
     }
-  });
-
-  test('difficulty badge shows correct assessment', async ({ page, isMobile }) => {
-    // Seed reader with 5 vocab words, 2 of which are "known"
-    // ratio = 3/5 = 0.6 → assessment "good" → label "Good level"
-    await seedWithReader(page, {
-      learnedVocabulary: {
-        '小吃': { pinyin: 'xiǎo chī', english: 'snack', langId: 'zh', dateAdded: new Date().toISOString(), interval: 1, ease: 2.5, nextReview: null, reviewCount: 1, lapses: 0 },
-        '包子': { pinyin: 'bāo zi', english: 'steamed bun', langId: 'zh', dateAdded: new Date().toISOString(), interval: 1, ease: 2.5, nextReview: null, reviewCount: 1, lapses: 0 },
-      },
-    });
-    await page.goto('/');
-    await expect(page.locator('body')).toContainText('街头小吃', { timeout: 10000 });
-
-    // On mobile, we might need to scroll up to see the header
-    if (isMobile) {
-      await page.evaluate(() => window.scrollTo(0, 0));
-      await page.waitForTimeout(300);
-    }
-
-    // Difficulty badge should be visible with "Good level" text
-    const badge = page.locator('.reader-view__difficulty-badge');
-    await expect(badge).toBeVisible({ timeout: 3000 });
-    await expect(badge).toContainText('Good level');
   });
 });

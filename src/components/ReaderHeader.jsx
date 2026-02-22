@@ -1,23 +1,11 @@
 import { getLessonTitle } from '../lib/languages';
-import { assessDifficulty, assessmentLabel, assessmentClass } from '../lib/difficultyValidator';
 
-export default function ReaderHeader({ reader, lessonMeta, langId, profBadge, storyText, ttsSupported, speakingKey, speakText, stopSpeaking, learnedVocabulary }) {
-  const difficulty = reader.vocabulary?.length > 0
-    ? assessDifficulty(reader.vocabulary, learnedVocabulary || {}, reader.level)
-    : null;
-  const diffLabel = difficulty ? assessmentLabel(difficulty.assessment) : '';
-  const diffClass = difficulty ? assessmentClass(difficulty.assessment) : '';
-
+export default function ReaderHeader({ reader, lessonMeta, langId, profBadge, storyText, ttsSupported, speakingKey, speakText, stopSpeaking }) {
   return (
     <header className="reader-view__header">
       <div className="reader-view__header-text">
         <div className="reader-view__meta text-subtle font-display">
           {reader.level && profBadge}
-          {diffLabel && (
-            <span className={`reader-view__difficulty-badge ${diffClass}`} title={`${difficulty.newWordCount} new / ${difficulty.totalWords} total vocab words`}>
-              {diffLabel}
-            </span>
-          )}
           {reader.topic && ` · ${reader.topic.charAt(0).toUpperCase() + reader.topic.slice(1)}`}
         </div>
         <h1 className="reader-view__title text-target-title">
