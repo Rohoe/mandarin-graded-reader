@@ -113,9 +113,11 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
 
   return (
     <form className="topic-form" onSubmit={onSubmit}>
-      <div className="topic-form__modes">
+      <div className="topic-form__modes" role="radiogroup" aria-label="Generation mode">
         <button
           type="button"
+          role="radio"
+          aria-checked={mode === 'syllabus'}
           className={`topic-form__mode-btn ${mode === 'syllabus' ? 'active' : ''}`}
           onClick={() => setMode('syllabus')}
         >
@@ -123,6 +125,8 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
         </button>
         <button
           type="button"
+          role="radio"
+          aria-checked={mode === 'standalone'}
           className={`topic-form__mode-btn ${mode === 'standalone' ? 'active' : ''}`}
           onClick={() => setMode('standalone')}
         >
@@ -134,11 +138,30 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
       {languages.length > 1 && (
         <div className="form-group">
           <label className="form-label">Language</label>
-          <div className="topic-form__lang-pills">
+          <div
+            className="topic-form__lang-pills"
+            role="radiogroup"
+            aria-label="Language"
+            onKeyDown={(e) => {
+              if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+              const idx = languages.findIndex(l => l.id === langId);
+              const next = e.key === 'ArrowRight'
+                ? languages[(idx + 1) % languages.length]
+                : languages[(idx - 1 + languages.length) % languages.length];
+              setLangId(next.id);
+              setLevel(next.id === 'ko' ? (defaultTopikLevel ?? 2) : next.id === 'yue' ? (defaultYueLevel ?? 2) : (defaultLevel ?? 3));
+              requestAnimationFrame(() => {
+                e.currentTarget.querySelector('[aria-checked="true"]')?.focus?.();
+              });
+            }}
+          >
             {languages.map(lang => (
               <button
                 key={lang.id}
                 type="button"
+                role="radio"
+                aria-checked={langId === lang.id}
+                tabIndex={langId === lang.id ? 0 : -1}
                 className={`topic-form__lang-pill ${langId === lang.id ? 'active' : ''}`}
                 onClick={() => { setLangId(lang.id); setLevel(lang.id === 'ko' ? (defaultTopikLevel ?? 2) : lang.id === 'yue' ? (defaultYueLevel ?? 2) : (defaultLevel ?? 3)); }}
                 disabled={loading}
@@ -167,11 +190,29 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
 
       <div className="form-group">
         <label className="form-label">{langConfig.proficiency.name} Level</label>
-        <div className="topic-form__hsk-pills">
+        <div
+          className="topic-form__hsk-pills"
+          role="radiogroup"
+          aria-label={`${langConfig.proficiency.name} Level`}
+          onKeyDown={(e) => {
+            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+            const idx = profLevels.findIndex(l => l.value === level);
+            const next = e.key === 'ArrowRight'
+              ? profLevels[(idx + 1) % profLevels.length]
+              : profLevels[(idx - 1 + profLevels.length) % profLevels.length];
+            setLevel(next.value);
+            requestAnimationFrame(() => {
+              e.currentTarget.querySelector('[aria-checked="true"]')?.focus?.();
+            });
+          }}
+        >
           {profLevels.map(l => (
             <button
               key={l.value}
               type="button"
+              role="radio"
+              aria-checked={level === l.value}
+              tabIndex={level === l.value ? 0 : -1}
               className={`topic-form__hsk-pill ${level === l.value ? 'active' : ''}`}
               onClick={() => setLevel(l.value)}
               disabled={loading}

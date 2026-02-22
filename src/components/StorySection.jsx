@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { splitParagraphIntoSentences } from '../lib/sentenceSplitter';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import SentencePopover from './SentencePopover';
 
 function stripMarkdown(text) {
@@ -31,8 +32,19 @@ export default function StorySection({
   onSentenceClick,
   onSubSelection,
   romanizer,
+  onCloseVocab,
+  onCloseSelection,
+  onCloseSentence,
 }) {
   const [visibleTranslations, setVisibleTranslations] = useState(new Set());
+
+  // Focus traps for popovers
+  const stableCloseVocab = useCallback(() => onCloseVocab?.(), [onCloseVocab]);
+  const stableCloseSelection = useCallback(() => onCloseSelection?.(), [onCloseSelection]);
+  const stableCloseSentence = useCallback(() => onCloseSentence?.(), [onCloseSentence]);
+  useFocusTrap(popoverRef, !!activeVocab, stableCloseVocab);
+  useFocusTrap(selectionPopoverRef, !!selectionPopover, stableCloseSelection);
+  useFocusTrap(sentencePopoverRef, !!sentencePopover, stableCloseSentence);
 
   function handleTranslateClick(e, index, para) {
     e.stopPropagation();
@@ -92,7 +104,15 @@ export default function StorySection({
                     key={si}
                     className="reader-view__sentence"
                     title="Click to translate"
+                    tabIndex={0}
+                    role="button"
                     onClick={(e) => onSentenceClick && onSentenceClick(e, sentence, pi)}
+                    onKeyDown={(e) => {
+                      if ((e.key === 'Enter' || e.key === ' ') && onSentenceClick) {
+                        e.preventDefault();
+                        onSentenceClick(e, sentence, pi);
+                      }
+                    }}
                   >
                     {sentence.segments.map((seg, i) => {
                       if (seg.type === 'bold') {
@@ -151,7 +171,7 @@ export default function StorySection({
         })}
       </div>
       {activeVocab && createPortal(
-        <div ref={popoverRef} className="reader-view__popover" style={getPopoverPosition(activeVocab.rect)}>
+        <div ref={popoverRef} className="reader-view__popover" role="dialog" aria-label="Vocabulary details" style={getPopoverPosition(activeVocab.rect)}>
           <div className="popover-tts-row">
             <span className="reader-view__popover-chinese text-target">{activeVocab.word.target || activeVocab.word.chinese}</span>
             {ttsSupported && (
@@ -171,7 +191,7 @@ export default function StorySection({
         document.body
       )}
       {selectionPopover && createPortal(
-        <div ref={selectionPopoverRef} className="reader-view__popover reader-view__selection-popover" style={getPopoverPosition(selectionPopover.rect)}>
+        <div ref={selectionPopoverRef} className="reader-view__popover reader-view__selection-popover" role="dialog" aria-label="Selection translation" style={getPopoverPosition(selectionPopover.rect)}>
           <div className="popover-tts-row">
             <span className="reader-view__selection-text text-target">{selectionPopover.text}</span>
             {ttsSupported && (

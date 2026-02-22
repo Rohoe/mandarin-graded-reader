@@ -202,10 +202,30 @@ export default function Settings({ onClose }) {
         </div>
 
         {/* Tab bar */}
-        <div className="settings-tabs">
+        <div
+          className="settings-tabs"
+          role="tablist"
+          onKeyDown={(e) => {
+            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+            const idx = TABS.findIndex(t => t.id === activeTab);
+            const next = e.key === 'ArrowRight'
+              ? TABS[(idx + 1) % TABS.length]
+              : TABS[(idx - 1 + TABS.length) % TABS.length];
+            setActiveTab(next.id);
+            // Focus the newly active tab button
+            e.currentTarget.querySelector(`[aria-selected="true"]`)?.focus?.();
+            // Defer focus since aria-selected changes after render
+            requestAnimationFrame(() => {
+              e.currentTarget.querySelector(`[aria-selected="true"]`)?.focus?.();
+            });
+          }}
+        >
           {TABS.map(tab => (
             <button
               key={tab.id}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              tabIndex={activeTab === tab.id ? 0 : -1}
               className={`settings-tabs__tab ${activeTab === tab.id ? 'settings-tabs__tab--active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
             >

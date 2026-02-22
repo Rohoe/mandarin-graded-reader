@@ -158,7 +158,7 @@ const SentencePopoverInner = forwardRef(function SentencePopoverInner(
   };
 
   return (
-    <div ref={ref} className="reader-view__popover sentence-popover" style={style}>
+    <div ref={ref} className="reader-view__popover sentence-popover" role="dialog" aria-label="Sentence translation" style={style}>
       <div className="popover-tts-row">
         <span className={`sentence-popover__original text-target${pinyinOn && romanizer ? ' sentence-popover__original--ruby' : ''}`}>
           {renderSentenceText()}

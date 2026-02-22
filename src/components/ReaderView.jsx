@@ -448,6 +448,9 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         onSentenceClick={handleSentenceClick}
         onSubSelection={handleSubSelection}
         romanizer={romanizer}
+        onCloseVocab={() => setActiveVocab(null)}
+        onCloseSelection={() => { setSelectionPopover(null); clearSelection(); }}
+        onCloseSentence={closeSentencePopover}
       />
 
       <hr className="divider" />

@@ -58,7 +58,14 @@ export default function GenerationProgress({ type = 'reader' }) {
 
   return (
     <div className="gen-progress">
-      <div className="gen-progress__bar-track">
+      <div
+        className="gen-progress__bar-track"
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={label}
+      >
         <div
           className="gen-progress__bar-fill"
           style={{ width: `${pct}%` }}
