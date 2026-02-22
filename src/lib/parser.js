@@ -20,6 +20,7 @@ export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
     questions:    [],
     ankiJson:     [],
     grammarNotes: [],
+    parseWarnings: [],
     parseError:   null,
     langId,
   };
@@ -31,7 +32,7 @@ export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
 
   try {
     // ── 1. Title ──────────────────────────────────────────────
-    const titleSectionMatch = rawText.match(/#{2,4}\s*1\.\s*Title\s*\n+([\s\S]*?)(?=#{2,4}\s*2\.)/i);
+    const titleSectionMatch = rawText.match(/#{2,4}\s*(?:1\.\s*)?(?:Title|标题|제목)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:2\.|Story|故事|이야기))/i);
     if (titleSectionMatch) {
       const titleBlock = titleSectionMatch[1].trim();
       const lines = titleBlock.split('\n').map(l => l.trim()).filter(Boolean);
@@ -40,24 +41,32 @@ export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
     } else {
       // Fallback: first # heading
       const h1 = rawText.match(/^#{1,3}\s+(.+)$/m);
-      if (h1) result.titleZh = h1[1].trim();
+      if (h1) {
+        result.titleZh = h1[1].trim();
+        result.parseWarnings.push('Title extracted via fallback (no "## 1. Title" heading found)');
+      }
     }
 
     // ── 2. Story ──────────────────────────────────────────────
-    const storySectionMatch = rawText.match(/#{2,4}\s*2\.\s*Story\s*\n+([\s\S]*?)(?=#{2,4}\s*3\.)/i);
+    const storySectionMatch = rawText.match(/#{2,4}\s*(?:2\.\s*)?(?:Story|故事|이야기)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:3\.|Vocabulary|词汇|어휘))/i);
     if (storySectionMatch) {
       result.story = storySectionMatch[1].trim();
     } else {
       // Fallback: strip heading lines from top, take text up to the next ## section
       const withoutTopHeadings = rawText.replace(/^(#{1,4}[^\n]*\n)+\s*/, '');
       const bodyMatch = withoutTopHeadings.match(/^([\s\S]*?)(?=\n#{1,4}\s)/);
-      if (bodyMatch) result.story = bodyMatch[1].trim();
-      else {
+      if (bodyMatch) {
+        result.story = bodyMatch[1].trim();
+        result.parseWarnings.push('Story extracted via fallback (no "## 2. Story" heading found)');
+      } else {
         // Build a regex for detecting 200+ target script chars
         const scriptCharClass = scriptRegex.source;
         const blockRegex = new RegExp(`([${scriptCharClass.slice(1, -1)}\\s*_.,，。！？、；：""''（）【】]{200,})`);
         const scriptBlock = rawText.match(blockRegex);
-        if (scriptBlock) result.story = scriptBlock[1].trim();
+        if (scriptBlock) {
+          result.story = scriptBlock[1].trim();
+          result.parseWarnings.push('Story extracted via block regex fallback');
+        }
       }
     }
 
@@ -66,7 +75,7 @@ export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
 
     // ── 3. Vocabulary ─────────────────────────────────────────
     const vocabSectionMatch = rawText.match(
-      /#{2,4}\s*(?:3\.[^\n]*|词汇[表列]?)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:4\.|理解|comprehension|```anki-json)|```anki-json|$)/i
+      /#{2,4}\s*(?:3\.[^\n]*|(?:Vocabulary|词汇|어휘)[^\n]*)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:4\.|Questions|理解|Comprehension|이해|```anki-json)|```anki-json|$)/i
     );
     if (vocabSectionMatch) {
       result.vocabulary = parseVocabularySection(vocabSectionMatch[1], scriptRegex);
@@ -74,7 +83,7 @@ export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
 
     // ── 4. Comprehension Questions ────────────────────────────
     const questionsSectionMatch = rawText.match(
-      /#{2,4}\s*(?:4\.[^\n]*|理解[题问]?[^\n]*)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:5\.|anki)|```anki-json|$)/i
+      /#{2,4}\s*(?:4\.[^\n]*|(?:Questions|Comprehension|理解|이해)[^\n]*)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:5\.|Anki|anki)|```anki-json|$)/i
     );
     if (questionsSectionMatch) {
       result.questions = parseQuestions(questionsSectionMatch[1]);
@@ -92,7 +101,7 @@ export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
 
     // ── 6. Grammar Notes ──────────────────────────────────────
     const grammarSectionMatch = rawText.match(
-      /#{2,4}\s*6\.[^\n]*\s*\n+([\s\S]*?)(?=#{2,4}\s*7\.|$)/i
+      /#{2,4}\s*(?:6\.[^\n]*|(?:Grammar|语法|문법)[^\n]*)\s*\n+([\s\S]*?)(?=#{2,4}\s*7\.|$)/i
     );
     if (grammarSectionMatch) {
       result.grammarNotes = parseGrammarNotes(grammarSectionMatch[1]);
@@ -202,6 +211,17 @@ function parseVocabularySection(text, scriptRegex) {
     );
   }
 
+  // Pattern C: numbered list — 1. **word** (pinyin): definition
+  const patternC = /^\d+\.\s*\*\*([^*\n]+)\*\*\s*[([]([^)\]\n]{1,40})[)\]]\s*[:：]\s*([^\n]+)/gm;
+  while ((match = patternC.exec(text)) !== null) {
+    pushItem(
+      match[1].trim(),
+      match[2].trim(),
+      match[3].trim(),
+      text.slice(match.index + match[0].length),
+    );
+  }
+
   return items;
 }
 
@@ -284,8 +304,8 @@ function parseQuestions(text) {
 function parseGrammarNotes(text) {
   if (!text) return [];
   const items = [];
-  // Match: **Pattern** (English name) — explanation
-  const headerPattern = /\*\*([^*]+)\*\*\s*\(([^)]+)\)\s*[-–—]\s*([^\n]+)/g;
+  // Match: **Pattern** (English name) — explanation  (also accepts colon as separator)
+  const headerPattern = /\*\*([^*]+)\*\*\s*\(([^)]+)\)\s*[-–—:：]\s*([^\n]+)/g;
   let match;
   while ((match = headerPattern.exec(text)) !== null) {
     const pattern     = match[1].trim();

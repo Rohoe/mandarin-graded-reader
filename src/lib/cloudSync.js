@@ -40,7 +40,7 @@ let _readerSyncQueue = Promise.resolve();
 
 // Merges a single newly-generated reader into the cloud row (read-then-write).
 export function pushReaderToCloud(lessonKey, readerData) {
-  _readerSyncQueue = _readerSyncQueue.then(() => _pushReaderToCloudImpl(lessonKey, readerData)).catch(() => {});
+  _readerSyncQueue = _readerSyncQueue.then(() => _pushReaderToCloudImpl(lessonKey, readerData)).catch(err => { console.warn('[cloudSync] pushReaderToCloud failed:', err.message || err); });
   return _readerSyncQueue;
 }
 

@@ -10,6 +10,8 @@ export function buildReaderSystem(langConfig, level, topic, charRange, targetCha
 
   return `Create an educational graded reader in ${p.targetLanguage} for ${profName} ${level} learners.
 
+CRITICAL: Follow the exact section format below. Never omit sections or change heading numbering.
+
 ## VOCABULARY REQUIREMENTS
 - Select ${vocabRange} new vocabulary items appropriate for the specified ${profName} level
 - Items may include single words, compound words, collocations, or idiomatic expressions

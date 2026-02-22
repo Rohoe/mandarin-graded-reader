@@ -125,6 +125,221 @@ describe('parseReaderResponse', () => {
     });
   });
 
+  describe('Alternative heading formats (I8)', () => {
+    it('parses headings without numbers (## Story, ## Vocabulary)', () => {
+      const md = `## Title
+小猫的冒险
+The Kitten's Adventure
+
+## Story
+**小猫**很喜欢在公园里玩。每天早上，它都会跑到大树下面。它看到了蝴蝶很开心。
+
+## Vocabulary
+**小猫** (xiǎo māo) — kitten
+- **小猫**很喜欢在公园里玩。
+- *Main character.*
+- 我家有一只**小猫**。
+- *With measure word.*
+
+## Questions
+1. 小猫做什么？
+
+## Anki Cards Data (JSON)
+\`\`\`anki-json
+[{"chinese": "小猫", "pinyin": "xiǎo māo", "english": "kitten", "example_story": "", "usage_note_story": "", "example_extra": "", "usage_note_extra": ""}]
+\`\`\`
+
+## Grammar Notes
+**V + 到** (Directional complement) — Indicates arrival at a destination.
+- 跑到大树下面。
+`;
+      const result = parseReaderResponse(md, 'zh');
+      expect(result.titleZh).toBe('小猫的冒险');
+      expect(result.titleEn).toBe("The Kitten's Adventure");
+      expect(result.story).toContain('**小猫**很喜欢在公园里玩');
+      expect(result.vocabulary.length).toBeGreaterThanOrEqual(1);
+      expect(result.questions.length).toBe(1);
+      expect(result.grammarNotes.length).toBe(1);
+    });
+
+    it('parses CJK section headings (## 故事, ## 词汇)', () => {
+      const md = `## 标题
+小猫的冒险
+The Kitten's Adventure
+
+## 故事
+**小猫**很喜欢在公园里玩。它看到了蝴蝶很开心。
+
+## 词汇
+**小猫** (xiǎo māo) — kitten
+- **小猫**很喜欢在公园里玩。
+- *Main character.*
+
+## 理解
+1. 小猫做什么？
+
+## Anki Cards Data (JSON)
+\`\`\`anki-json
+[{"chinese": "小猫", "pinyin": "xiǎo māo", "english": "kitten", "example_story": "", "usage_note_story": "", "example_extra": "", "usage_note_extra": ""}]
+\`\`\`
+
+## 语法
+**V + 到** (Directional complement) — Indicates arrival.
+- 跑到大树下面。
+`;
+      const result = parseReaderResponse(md, 'zh');
+      expect(result.titleZh).toBe('小猫的冒险');
+      expect(result.story).toContain('**小猫**很喜欢在公园里玩');
+      expect(result.vocabulary.length).toBeGreaterThanOrEqual(1);
+      expect(result.questions.length).toBe(1);
+      expect(result.grammarNotes.length).toBe(1);
+    });
+
+    it('parses numbered vocab list format: 1. **word** (pinyin): definition', () => {
+      const md = `### 1. Title
+测试
+Test
+
+### 2. Story
+**猫**很可爱。这只猫每天都跑步，非常开心地在公园里玩耍。
+
+### 3. Vocabulary List
+1. **猫** (māo): cat
+2. **跑** (pǎo): to run
+
+### 4. Comprehension Questions
+1. 什么？
+
+### 5. Anki Cards Data (JSON)
+\`\`\`anki-json
+[{"chinese": "猫", "pinyin": "māo", "english": "cat", "example_story": "", "usage_note_story": "", "example_extra": "", "usage_note_extra": ""}]
+\`\`\`
+
+### 6. Grammar Notes
+`;
+      const result = parseReaderResponse(md, 'zh');
+      expect(result.vocabulary.length).toBeGreaterThanOrEqual(2);
+      expect(result.vocabulary.find(v => v.target === '猫')).toBeTruthy();
+      expect(result.vocabulary.find(v => v.target === '跑')).toBeTruthy();
+    });
+
+    it('parses grammar notes with colon separator', () => {
+      const md = `### 1. Title
+测试
+Test
+
+### 2. Story
+**猫**很可爱。这只猫看到了蝴蝶然后跑到了公园里面去追它。
+
+### 3. Vocabulary List
+
+### 4. Comprehension Questions
+
+### 5. Anki Cards Data (JSON)
+\`\`\`anki-json
+[]
+\`\`\`
+
+### 6. Grammar Notes
+**V + 到** (Directional complement): Indicates arrival at a destination.
+- 跑到大树下面。
+`;
+      const result = parseReaderResponse(md, 'zh');
+      expect(result.grammarNotes.length).toBe(1);
+      expect(result.grammarNotes[0].pattern).toContain('V + 到');
+    });
+
+    it('returns parseWarnings when fallback title extraction is used', () => {
+      const md = `# 小猫的故事
+
+小猫很可爱。这是一个关于小猫的故事。小猫每天都在公园里玩耍。它看到了很多蝴蝶和花朵。小猫非常开心，因为公园里有很多有趣的东西。它跑啊跑，直到累了才停下来。后来一个小女孩帮助它回到了家里。小猫觉得很温暖。
+`;
+      const result = parseReaderResponse(md, 'zh');
+      expect(result.parseWarnings.length).toBeGreaterThan(0);
+    });
+
+    it('handles empty sections without crashing', () => {
+      const md = `### 1. Title
+
+### 2. Story
+
+### 3. Vocabulary List
+
+### 4. Comprehension Questions
+
+### 5. Anki Cards Data (JSON)
+
+### 6. Grammar Notes
+`;
+      const result = parseReaderResponse(md, 'zh');
+      expect(result.parseError).toBeNull();
+      expect(result.vocabulary).toEqual([]);
+      expect(result.questions).toEqual([]);
+      expect(result.grammarNotes).toEqual([]);
+    });
+
+    it('handles response with only story content (no other sections)', () => {
+      // 200+ Chinese characters to trigger block regex fallback
+      const md = `小猫很喜欢在公园里玩。每天早上，它都会跑到大树下面。它看到了蝴蝶。小猫追蝴蝶追了很久。后来它累了，坐在树下休息。一个小女孩走过来，温柔地抱起了小猫，带它回家了。小猫觉得很幸福。这是一个快乐的故事。小猫从此以后每天都和小女孩一起在公园里玩耍。它们成了最好的朋友。公园里的花开得很美丽，蝴蝶飞来飞去。小猫再也不害怕了，因为有朋友在身边。这是一个关于友谊和勇气的温暖故事。每一天都充满了欢笑和快乐。小猫和小女孩的友谊越来越深厚。`;
+      const result = parseReaderResponse(md, 'zh');
+      expect(result.parseError).toBeNull();
+      // Story should be extracted via block regex fallback (200+ Chinese chars)
+      expect(result.story.length).toBeGreaterThan(100);
+    });
+
+    it('handles malformed anki-json block gracefully', () => {
+      const md = `### 1. Title
+测试
+Test
+
+### 2. Story
+**猫**很可爱。它在公园里面跑步。
+
+### 3. Vocabulary List
+
+### 4. Comprehension Questions
+
+### 5. Anki Cards Data (JSON)
+\`\`\`anki-json
+{ this is not valid json [[[
+\`\`\`
+
+### 6. Grammar Notes
+`;
+      const result = parseReaderResponse(md, 'zh');
+      expect(result.ankiJson).toEqual([]);
+      expect(result.parseError).toBeNull();
+    });
+
+    it('handles missing section numbers in headings', () => {
+      const md = `### Title
+小猫
+Kitten
+
+### Story
+**小猫**在公园玩。它跑来跑去很开心。
+
+### Vocabulary List
+**小猫** (xiǎo māo) — kitten
+
+### Comprehension Questions
+1. 小猫在哪里？
+
+### Anki Cards Data (JSON)
+\`\`\`anki-json
+[]
+\`\`\`
+
+### Grammar Notes
+`;
+      const result = parseReaderResponse(md, 'zh');
+      expect(result.titleZh).toBe('小猫');
+      expect(result.story).toContain('**小猫**在公园玩');
+      expect(result.vocabulary.length).toBe(1);
+      expect(result.questions.length).toBe(1);
+    });
+  });
+
   describe('Edge cases', () => {
     it('returns parse error for empty input', () => {
       const result = parseReaderResponse(emptyResponse, 'zh');

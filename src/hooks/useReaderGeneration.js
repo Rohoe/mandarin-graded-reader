@@ -49,6 +49,9 @@ export function useReaderGeneration(lessonKey, lessonMeta, reader, langId, isPen
       const parsed = useStructuredOutput
         ? normalizeStructuredReader(raw, readerLangId)
         : parseReaderResponse(raw, readerLangId);
+      if (parsed.parseWarnings?.length) {
+        act.notify('warning', 'Some sections used fallback parsing');
+      }
       pushGeneratedReader(lessonKey, { ...parsed, topic, level, langId: readerLangId, lessonKey });
       // Update sidebar metadata with generated titles so they persist across reloads
       if ((parsed.titleZh || parsed.titleEn) && lessonKey.startsWith('standalone_')) {

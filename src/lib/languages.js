@@ -90,7 +90,7 @@ const zhConfig = {
       };
       return `- Calibrate language complexity to HSK ${level}:\n${bands[level] || bands[3]}\n${suffix}`;
     },
-    vocabFormat: `- **Word** (pinyin) - English definition`,
+    vocabFormat: `- **Word** (pinyin) — English definition\n- Story example sentence using the word\n- *Brief usage note about the story example*\n- New example sentence (different context)\n- *Brief usage note about the new example*`,
     ankiFields: `{ "chinese": "词", "pinyin": "cí", "english": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
     grammarContext: 'Mandarin grammar patterns',
     gradingContext: 'Chinese language teacher',
@@ -189,7 +189,7 @@ const koConfig = {
       };
       return `- Calibrate language complexity to TOPIK ${level}:\n${bands[level] || bands[3]}\n${suffix}`;
     },
-    vocabFormat: `- **Word** (romanization) - English definition`,
+    vocabFormat: `- **Word** (romanization) — English definition\n- Story example sentence using the word\n- *Brief usage note about the story example*\n- New example sentence (different context)\n- *Brief usage note about the new example*`,
     ankiFields: `{ "korean": "단어", "romanization": "dan-eo", "english": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
     grammarContext: 'Korean grammar patterns',
     gradingContext: 'Korean language teacher',
@@ -288,7 +288,7 @@ const yueConfig = {
       };
       return `${cantoPrefix}\n- Calibrate language complexity to YUE ${level}:\n${bands[level] || bands[3]}\n${suffix}`;
     },
-    vocabFormat: `- **Word** (jyutping) - English definition`,
+    vocabFormat: `- **Word** (jyutping) — English definition\n- Story example sentence using the word\n- *Brief usage note about the story example*\n- New example sentence (different context)\n- *Brief usage note about the new example*`,
     ankiFields: `{ "chinese": "詞", "jyutping": "ci4", "english": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
     grammarContext: 'Cantonese grammar patterns',
     gradingContext: 'Cantonese language teacher',
