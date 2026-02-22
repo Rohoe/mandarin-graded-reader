@@ -132,8 +132,10 @@ export default function SyllabusPanel({
     if (!confirmPending) return;
     if (confirmPending.type === 'syllabus') {
       act.removeSyllabus(confirmPending.id);
+      act.notify('success', `Deleted "${confirmPending.label}"`, { type: 'UNDO_REMOVE_SYLLABUS', label: 'Undo' });
     } else {
       act.removeStandaloneReader(confirmPending.id);
+      act.notify('success', `Deleted "${confirmPending.label}"`, { type: 'UNDO_REMOVE_STANDALONE_READER', label: 'Undo' });
     }
     setConfirmPending(null);
   }

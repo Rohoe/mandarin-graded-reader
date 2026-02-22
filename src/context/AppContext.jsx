@@ -99,6 +99,7 @@ function buildInitialState() {
     loadingMessage:    '',
     error:             null,
     notification:      null,
+    _recentlyDeleted:  null,  // ephemeral, not persisted — holds data for undo
     quotaWarning:      false,
     // File storage
     fsInitialized:     false,
@@ -218,17 +219,38 @@ function baseReducer(state, action) {
 
     case 'REMOVE_SYLLABUS': {
       const id = action.payload;
+      const removedSyllabus = state.syllabi.find(s => s.id === id);
+      const removedProgress = state.syllabusProgress[id];
+      const removedReaders = {};
+      const prefix = `lesson_${id}_`;
+      Object.keys(state.generatedReaders).forEach(k => {
+        if (k.startsWith(prefix)) removedReaders[k] = state.generatedReaders[k];
+      });
       const newSyllabi = state.syllabi.filter(s => s.id !== id);
       const newProgress = { ...state.syllabusProgress };
       delete newProgress[id];
-      const newReaders = { ...state.generatedReaders };
-      Object.keys(newReaders).forEach(k => {
-        if (k.startsWith(`lesson_${id}_`)) delete newReaders[k];
+      const newGenReaders = { ...state.generatedReaders };
+      Object.keys(newGenReaders).forEach(k => {
+        if (k.startsWith(prefix)) delete newGenReaders[k];
       });
-      // Clean up evicted keys for this syllabus
-      const prefix = `lesson_${id}_`;
       const newEvicted = new Set([...state.evictedReaderKeys].filter(k => !k.startsWith(prefix)));
-      return { ...state, syllabi: newSyllabi, syllabusProgress: newProgress, generatedReaders: newReaders, evictedReaderKeys: newEvicted };
+      return {
+        ...state, syllabi: newSyllabi, syllabusProgress: newProgress,
+        generatedReaders: newGenReaders, evictedReaderKeys: newEvicted,
+        _recentlyDeleted: { kind: 'syllabus', syllabus: removedSyllabus, progress: removedProgress, readers: removedReaders },
+      };
+    }
+
+    case 'UNDO_REMOVE_SYLLABUS': {
+      const d = state._recentlyDeleted;
+      if (!d || d.kind !== 'syllabus' || !d.syllabus) return state;
+      return {
+        ...state,
+        syllabi: [...state.syllabi, d.syllabus],
+        syllabusProgress: d.progress ? { ...state.syllabusProgress, [d.syllabus.id]: d.progress } : state.syllabusProgress,
+        generatedReaders: { ...state.generatedReaders, ...d.readers },
+        _recentlyDeleted: null,
+      };
     }
 
     case 'SET_LESSON_INDEX': {
@@ -281,13 +303,28 @@ function baseReducer(state, action) {
 
     case 'REMOVE_STANDALONE_READER': {
       const key = action.payload;
+      const removedMeta = state.standaloneReaders.find(r => r.key === key);
+      const removedReader = state.generatedReaders[key];
       const newList = state.standaloneReaders.filter(r => r.key !== key);
       const newReaders = { ...state.generatedReaders };
       delete newReaders[key];
-      // Clean up evicted key
       const newEvicted = new Set(state.evictedReaderKeys);
       newEvicted.delete(key);
-      return { ...state, standaloneReaders: newList, generatedReaders: newReaders, evictedReaderKeys: newEvicted };
+      return {
+        ...state, standaloneReaders: newList, generatedReaders: newReaders, evictedReaderKeys: newEvicted,
+        _recentlyDeleted: { kind: 'standalone', meta: removedMeta, reader: removedReader, key },
+      };
+    }
+
+    case 'UNDO_REMOVE_STANDALONE_READER': {
+      const d = state._recentlyDeleted;
+      if (!d || d.kind !== 'standalone' || !d.meta) return state;
+      return {
+        ...state,
+        standaloneReaders: [d.meta, ...state.standaloneReaders],
+        generatedReaders: d.reader ? { ...state.generatedReaders, [d.key]: d.reader } : state.generatedReaders,
+        _recentlyDeleted: null,
+      };
     }
 
     // ── Reader cache actions ──────────────────────────────────

@@ -42,7 +42,7 @@ export function actions(dispatch) {
     setLoading:            (loading, message) => dispatch({ type: 'SET_LOADING', payload: { loading, message } }),
     setError:              msg    => dispatch({ type: 'SET_ERROR', payload: msg }),
     clearError:            ()     => dispatch({ type: 'CLEAR_ERROR' }),
-    notify:                (type, message) => dispatch({ type: 'SET_NOTIFICATION', payload: { type, message } }),
+    notify:                (type, message, action) => dispatch({ type: 'SET_NOTIFICATION', payload: { type, message, ...(action ? { action } : {}) } }),
     clearAll:              ()     => dispatch({ type: 'CLEAR_ALL_DATA' }),
     setMaxTokens:          n      => dispatch({ type: 'SET_MAX_TOKENS', payload: Number(n) }),
     setDefaultLevel:       n      => dispatch({ type: 'SET_DEFAULT_LEVEL', payload: Number(n) }),

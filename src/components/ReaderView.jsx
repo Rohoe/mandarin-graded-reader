@@ -433,6 +433,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         speakingKey={speakingKey}
         speakText={speakText}
         stopSpeaking={stopSpeaking}
+        learnedVocabulary={learnedVocabulary}
       />
 
       <hr className="divider" />
