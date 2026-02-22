@@ -23,8 +23,10 @@ vi.mock('../context/actions', () => ({
 }));
 
 const mockGenerateReader = vi.fn();
+const mockGenerateReaderStream = vi.fn();
 vi.mock('../lib/api', () => ({
   generateReader: (...args) => mockGenerateReader(...args),
+  generateReaderStream: (...args) => mockGenerateReaderStream(...args),
 }));
 
 const mockParseReaderResponse = vi.fn();
@@ -57,7 +59,9 @@ function wrapper({ children }) {
   );
 }
 
-const baseLlmConfig = { provider: 'anthropic', apiKey: 'test-key', model: 'test' };
+// Use openai provider by default so tests go through non-streaming generateReader path
+const baseLlmConfig = { provider: 'openai', apiKey: 'test-key', model: 'test' };
+const anthropicLlmConfig = { provider: 'anthropic', apiKey: 'test-key', model: 'test' };
 const baseReader = { topic: 'cats', level: 2, langId: 'zh' };
 const parsedResult = {
   titleZh: '小猫', titleEn: 'Kitten', story: 'Story text.',
@@ -223,12 +227,38 @@ describe('useReaderGeneration', () => {
       { wrapper }
     );
 
-    act(() => { result.current.handleGenerate(); });
+    // Start generation (don't await)
+    let genPromise;
+    act(() => { genPromise = result.current.handleGenerate(); });
 
     unmount();
 
-    // Clean up the dangling promise
+    // Reject the dangling promise and wait for it to settle
     rejectFn(new Error('aborted'));
+    await genPromise;
+  });
+
+  it('uses streaming for Anthropic provider', async () => {
+    // Create async generator mock
+    async function* fakeStream() {
+      yield 'Hello ';
+      yield 'World';
+    }
+    mockGenerateReaderStream.mockReturnValue(fakeStream());
+
+    const { result } = renderHook(
+      () => useReaderGeneration(
+        'standalone_123', null, baseReader, 'zh', false,
+        anthropicLlmConfig, {}, 2000, 300, false
+      ),
+      { wrapper }
+    );
+
+    await act(async () => { await result.current.handleGenerate(); });
+
+    expect(mockGenerateReaderStream).toHaveBeenCalledOnce();
+    expect(mockGenerateReader).not.toHaveBeenCalled();
+    expect(mockParseReaderResponse).toHaveBeenCalledWith('Hello World', 'zh');
   });
 
   it('clears pending reader even on error', async () => {

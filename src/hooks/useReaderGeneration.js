@@ -1,8 +1,8 @@
-import { useCallback, useContext, useRef, useEffect } from 'react';
+import { useCallback, useContext, useRef, useEffect, useState } from 'react';
 import { AppContext } from '../context/AppContext';
 import { useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
-import { generateReader } from '../lib/api';
+import { generateReader, generateReaderStream } from '../lib/api';
 import { parseReaderResponse, normalizeStructuredReader } from '../lib/parser';
 import { getLang } from '../lib/languages';
 
@@ -11,6 +11,7 @@ export function useReaderGeneration(lessonKey, lessonMeta, reader, langId, isPen
   const { pushGeneratedReader } = useContext(AppContext);
   const act = actions(dispatch);
   const abortRef = useRef(null);
+  const [streamingText, setStreamingText] = useState(null);
 
   // Abort in-flight request on unmount
   useEffect(() => {
@@ -44,8 +45,26 @@ export function useReaderGeneration(lessonKey, lessonMeta, reader, langId, isPen
 
     act.startPendingReader(lessonKey);
     act.clearError();
+
+    // Use streaming for Anthropic when not using structured output
+    const useStreaming = llmConfig.provider === 'anthropic' && !useStructuredOutput;
+
     try {
-      const raw    = await generateReader(llmConfig, topic, level, learnedVocabulary, readerLength, maxTokens, null, readerLangId, { signal: controller.signal, structured: useStructuredOutput });
+      let raw;
+      if (useStreaming) {
+        let accumulated = '';
+        setStreamingText('');
+        const stream = generateReaderStream(llmConfig, topic, level, learnedVocabulary, readerLength, maxTokens, null, readerLangId, { signal: controller.signal });
+        for await (const chunk of stream) {
+          accumulated += chunk;
+          setStreamingText(accumulated);
+        }
+        raw = accumulated;
+        setStreamingText(null);
+      } else {
+        raw = await generateReader(llmConfig, topic, level, learnedVocabulary, readerLength, maxTokens, null, readerLangId, { signal: controller.signal, structured: useStructuredOutput });
+      }
+
       const parsed = useStructuredOutput
         ? normalizeStructuredReader(raw, readerLangId)
         : parseReaderResponse(raw, readerLangId);
@@ -59,6 +78,7 @@ export function useReaderGeneration(lessonKey, lessonMeta, reader, langId, isPen
       }
       act.notify('success', `Reader ready: ${lessonMeta?.title_en || topic}`);
     } catch (err) {
+      setStreamingText(null);
       if (err.message?.includes('timed out') || err.name === 'AbortError') {
         act.notify('error', 'Request timed out after 60 seconds. Try again or switch to a faster provider.');
       } else {
@@ -70,5 +90,5 @@ export function useReaderGeneration(lessonKey, lessonMeta, reader, langId, isPen
     }
   }, [isPending, lessonKey, lessonMeta, reader, langId, llmConfig, learnedVocabulary, readerLength, maxTokens, useStructuredOutput, act, pushGeneratedReader]);
 
-  return { handleGenerate, act };
+  return { handleGenerate, act, streamingText };
 }

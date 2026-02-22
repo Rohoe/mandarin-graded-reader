@@ -182,6 +182,115 @@ async function callLLM(llmConfig, systemPrompt, userMessage, maxTokens = 4096, {
   }
 }
 
+// ── Anthropic streaming ──────────────────────────────────────
+
+/**
+ * Async generator that streams text deltas from Anthropic's messages API.
+ * Yields string chunks as they arrive.
+ */
+async function* callAnthropicStream(apiKey, model, systemPrompt, userMessage, maxTokens, signal) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: maxTokens,
+      stream: true,
+      ...(systemPrompt ? { system: systemPrompt } : {}),
+      messages: [{ role: 'user', content: userMessage }],
+    }),
+    signal,
+  });
+
+  if (!response.ok) {
+    let msg = `[Anthropic] API error ${response.status}`;
+    try {
+      const err = await response.json();
+      msg = err.error?.message || err.message || msg;
+    } catch { /* ignore */ }
+    throw new Error(msg);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // keep incomplete line in buffer
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6);
+        if (data === '[DONE]') return;
+        try {
+          const event = JSON.parse(data);
+          if (event.type === 'content_block_delta' && event.delta?.text) {
+            yield event.delta.text;
+          }
+        } catch { /* skip non-JSON lines */ }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+/**
+ * Streaming variant of generateReader. Returns an async generator of text chunks.
+ * Only supports Anthropic provider.
+ */
+export async function* generateReaderStream(llmConfig, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192, previousStory = null, langId = DEFAULT_LANG_ID, { signal: externalSignal } = {}) {
+  const { apiKey, model } = llmConfig;
+  if (!apiKey) throw new Error('No API key provided. Please add your API key in Settings.');
+
+  const langConfig = getLang(langId);
+  const rangePadding = targetChars <= 300 ? 50 : 100;
+  const charRange = `${targetChars - rangePadding}-${targetChars + rangePadding}`;
+  const system = buildReaderSystem(langConfig, level, topic, charRange, targetChars);
+
+  const MAX_VOCAB_LIST = 200;
+  const learnedList = Object.keys(learnedWords)
+    .filter(w => !learnedWords[w].langId || learnedWords[w].langId === langId)
+    .sort((a, b) => (learnedWords[b].dateAdded || 0) - (learnedWords[a].dateAdded || 0))
+    .slice(0, MAX_VOCAB_LIST);
+  const learnedSection = learnedList.length > 0
+    ? `\n\nPreviously introduced vocabulary (do not reuse as "new" vocabulary — you may use these words freely in the story but do not list them in the vocabulary section):\n${learnedList.join(', ')}`
+    : '';
+
+  const truncatedStory = previousStory && previousStory.length > 600
+    ? '[Earlier story truncated]\n…' + previousStory.slice(-600)
+    : previousStory;
+  const continuationSection = truncatedStory
+    ? `\n\nThis is a continuation. Previous episode for narrative context:\n---\n${truncatedStory}\n---\nContinue the story with new events, maintaining the same characters and setting.`
+    : '';
+
+  const userMessage = `Generate a graded reader for the topic: ${topic}${learnedSection}${continuationSection}`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+  if (externalSignal) {
+    if (externalSignal.aborted) { clearTimeout(timeoutId); controller.abort(); }
+    else externalSignal.addEventListener('abort', () => { clearTimeout(timeoutId); controller.abort(); }, { once: true });
+  }
+
+  try {
+    yield* callAnthropicStream(apiKey, model, system, userMessage, maxTokens, controller.signal);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 // ── Syllabus generation ───────────────────────────────────────
 
 export async function generateSyllabus(llmConfig, topic, level, lessonCount = 6, langId = DEFAULT_LANG_ID) {

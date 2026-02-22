@@ -734,6 +734,32 @@ rt {
   }
 }
 
+/* ── Streaming preview ─────────────────── */
+.reader-view__streaming-text {
+  white-space: pre-wrap;
+  font-family: var(--font-target);
+  font-size: var(--text-lg);
+  line-height: 1.8;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: var(--space-4) 0;
+}
+
+.reader-view__streaming-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.2em;
+  background: var(--color-accent);
+  vertical-align: text-bottom;
+  margin-left: 1px;
+  animation: streaming-blink 0.8s step-end infinite;
+}
+
+@keyframes streaming-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 @media (max-width: 768px) {
   .reader-view {
     padding: var(--space-6) var(--space-4);
