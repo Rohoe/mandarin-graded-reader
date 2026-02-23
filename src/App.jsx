@@ -161,14 +161,22 @@ function AppShell() {
         exampleSentence: c.exampleStory || '',
       })));
     }
-    act.markLessonComplete(activeSyllabusId, lessonIndex);
-    if (currentSyllabus && lessonIndex < lessons.length - 1) {
-      act.setLessonIndex(activeSyllabusId, lessonIndex + 1);
+    if (standaloneKey) {
+      act.updateStandaloneReaderMeta(standaloneKey, { completedAt: Date.now() });
+    } else {
+      act.markLessonComplete(activeSyllabusId, lessonIndex);
+      if (currentSyllabus && lessonIndex < lessons.length - 1) {
+        act.setLessonIndex(activeSyllabusId, lessonIndex + 1);
+      }
     }
   }
 
   function handleUnmarkComplete() {
-    act.unmarkLessonComplete(activeSyllabusId, lessonIndex);
+    if (standaloneKey) {
+      act.updateStandaloneReaderMeta(standaloneKey, { completedAt: null });
+    } else {
+      act.unmarkLessonComplete(activeSyllabusId, lessonIndex);
+    }
   }
 
   function handleNewSyllabus(newSyllabusId) {
@@ -331,7 +339,9 @@ function AppShell() {
                 : null)}
               onMarkComplete={handleMarkComplete}
               onUnmarkComplete={handleUnmarkComplete}
-              isCompleted={!standaloneKey && completedSet.has(lessonIndex)}
+              isCompleted={standaloneKey
+                ? !!state.standaloneReaders.find(r => r.key === standaloneKey)?.completedAt
+                : completedSet.has(lessonIndex)}
               onContinueStory={handleContinueStory}
               onOpenSidebar={() => setSidebarOpen(true)}
               onOpenSettings={() => setShowSettings(true)}

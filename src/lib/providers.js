@@ -10,10 +10,10 @@ export const PROVIDERS = {
     name: 'Anthropic (Claude)',
     keyPlaceholder: 'sk-ant-api03-...',
     defaultModel: 'claude-sonnet-4-20250514',
-    defaultGradingModel: 'claude-haiku-4-20250414',
+    defaultGradingModel: 'claude-haiku-4-5-20251001',
     models: [
       { id: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4' },
-      { id: 'claude-haiku-4-20250414', label: 'Claude Haiku 4' },
+      { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
     ],
   },
   openai: {

@@ -56,10 +56,10 @@ describe('buildLLMConfig', () => {
     const state = {
       providerKeys: { anthropic: 'sk-test', openai: '', gemini: '', openai_compatible: '' },
       activeProvider: 'anthropic',
-      activeModels: { anthropic: 'claude-haiku-4-20250414' },
+      activeModels: { anthropic: 'claude-haiku-4-5-20251001' },
     };
     const config = buildLLMConfig(state);
-    expect(config.model).toBe('claude-haiku-4-20250414');
+    expect(config.model).toBe('claude-haiku-4-5-20251001');
   });
 
   it('includes baseUrl for openai_compatible provider', () => {
