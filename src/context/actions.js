@@ -69,6 +69,8 @@ export function actions(dispatch) {
     setCloudLastSynced:    ts     => dispatch({ type: 'SET_CLOUD_LAST_SYNCED', payload: ts }),
     mergeWithCloud:        data   => dispatch({ type: 'MERGE_WITH_CLOUD', payload: data }),
     clearMergeSnapshot:    ()     => dispatch({ type: 'CLEAR_MERGE_SNAPSHOT' }),
+    // Fetched models
+    setFetchedModels:      (provider, models) => dispatch({ type: 'SET_FETCHED_MODELS', payload: { provider, models } }),
     // Learning activity
     logActivity:           (type, extra) => dispatch({ type: 'LOG_ACTIVITY', payload: { type, ...extra } }),
   };

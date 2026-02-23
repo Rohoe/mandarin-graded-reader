@@ -12,6 +12,25 @@ import { buildReaderSystem } from '../prompts/readerSystemPrompt';
 import { buildGradingSystem } from '../prompts/gradingPrompt';
 import { buildExtendSyllabusPrompt } from '../prompts/extendSyllabusPrompt';
 
+// ── Error classification ──────────────────────────────────────
+
+/**
+ * Rewrites raw API errors into actionable user-facing messages.
+ * Returns the original message if no classification matches.
+ */
+export function classifyApiError(err, model) {
+  const status = err.status;
+  const msg = (err.message || '').toLowerCase();
+
+  if (status === 404 && (msg.includes('model') || msg.includes('not_found') || msg.includes('not found'))) {
+    return `Model "${model}" is not available. Check the model in Settings or switch to a different one.`;
+  }
+  if (status === 401 || status === 403) {
+    return 'Invalid API key. Check your key in Settings.';
+  }
+  return err.message;
+}
+
 // ── Shared retry logic ─────────────────────────────────────────
 
 const MAX_RETRIES   = 2;
@@ -177,6 +196,8 @@ async function callLLM(llmConfig, systemPrompt, userMessage, maxTokens = 4096, {
       default:
         return await callAnthropic(apiKey, model, systemPrompt, userMessage, maxTokens, signal);
     }
+  } catch (err) {
+    throw new Error(classifyApiError(err, model));
   } finally {
     clearTimeout(timeoutId);
   }
@@ -210,10 +231,12 @@ async function* callAnthropicStream(apiKey, model, systemPrompt, userMessage, ma
   if (!response.ok) {
     let msg = `[Anthropic] API error ${response.status}`;
     try {
-      const err = await response.json();
-      msg = err.error?.message || err.message || msg;
+      const errBody = await response.json();
+      msg = errBody.error?.message || errBody.message || msg;
     } catch { /* ignore */ }
-    throw new Error(msg);
+    const rawErr = new Error(msg);
+    rawErr.status = response.status;
+    throw new Error(classifyApiError(rawErr, model));
   }
 
   const reader = response.body.getReader();
@@ -558,6 +581,8 @@ async function callLLMStructured(llmConfig, systemPrompt, userMessage, maxTokens
       default:
         return await callAnthropicStructured(apiKey, model, systemPrompt, userMessage, maxTokens, signal);
     }
+  } catch (err) {
+    throw new Error(classifyApiError(err, model));
   } finally {
     clearTimeout(timeoutId);
   }

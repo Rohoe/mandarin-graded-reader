@@ -122,6 +122,8 @@ function buildInitialState() {
     newCardsPerDay:    loadNewCardsPerDay(),
     // Evicted reader keys (persisted)
     evictedReaderKeys: loadEvictedReaderKeys(),
+    // Fetched models from provider APIs (ephemeral, not persisted)
+    fetchedModels:     {},
     // Background generation tracking (ephemeral, not persisted)
     pendingReaders:    {},
     // Learning activity log (persisted)
@@ -644,6 +646,17 @@ function baseReducer(state, action) {
 
     case 'CLEAR_MERGE_SNAPSHOT':
       return { ...state, hasMergeSnapshot: false };
+
+    case 'SET_FETCHED_MODELS': {
+      const { provider, models } = action.payload;
+      return {
+        ...state,
+        fetchedModels: {
+          ...state.fetchedModels,
+          [provider]: { models, fetchedAt: Date.now() },
+        },
+      };
+    }
 
     case 'REVERT_MERGE': {
       const raw = localStorage.getItem('gradedReader_preMergeSnapshot');
