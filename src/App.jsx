@@ -162,7 +162,7 @@ function AppShell() {
       })));
     }
     if (standaloneKey) {
-      act.updateStandaloneReaderMeta(standaloneKey, { completedAt: Date.now() });
+      act.updateStandaloneReaderMeta({ key: standaloneKey, completedAt: Date.now() });
     } else {
       act.markLessonComplete(activeSyllabusId, lessonIndex);
       if (currentSyllabus && lessonIndex < lessons.length - 1) {
@@ -173,7 +173,7 @@ function AppShell() {
 
   function handleUnmarkComplete() {
     if (standaloneKey) {
-      act.updateStandaloneReaderMeta(standaloneKey, { completedAt: null });
+      act.updateStandaloneReaderMeta({ key: standaloneKey, completedAt: null });
     } else {
       act.unmarkLessonComplete(activeSyllabusId, lessonIndex);
     }
