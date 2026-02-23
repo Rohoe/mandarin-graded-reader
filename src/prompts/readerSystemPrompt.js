@@ -3,10 +3,14 @@ export function buildReaderSystem(langConfig, level, topic, charRange, targetCha
   const profName = langConfig.proficiency.name;
 
   // Scale content expectations based on reader length
-  const vocabRange = targetChars <= 250 ? '3-5' : targetChars <= 500 ? '6-9' : '12-15';
+  const vocabRange = targetChars <= 250 ? '3-5'
+    : targetChars <= 500 ? '6-9'
+    : targetChars <= 1000 ? '10-14'
+    : targetChars <= 1500 ? '14-18'
+    : '16-22';
   const questionRange = targetChars <= 250 ? '2-3' : '3-5';
   const grammarRange = targetChars <= 250 ? '1-2' : '3-5';
-  const minAppearances = targetChars <= 250 ? 1 : 2;
+  const minAppearances = 1;
 
   return `Create an educational graded reader in ${p.targetLanguage} for ${profName} ${level} learners.
 
@@ -16,8 +20,9 @@ CRITICAL: Follow the exact section format below. Never omit sections or change h
 - Select ${vocabRange} new vocabulary items appropriate for the specified ${profName} level
 - Items may include single words, compound words, collocations, or idiomatic expressions
 - Vocabulary should have high utility for the target proficiency band
-- Each new item must appear at least ${minAppearances} time${minAppearances > 1 ? 's' : ''} throughout the story
+- Each new item must appear at least once in the story; aim to use most items 2+ times where it feels natural
 - Bold all instances of new vocabulary: **새단어**
+- Only bold words that are in the vocabulary list — do not bold other words
 
 ## STORY REQUIREMENTS
 - Length: ${charRange} ${langConfig.charUnit}

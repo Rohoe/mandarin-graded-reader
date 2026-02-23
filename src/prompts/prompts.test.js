@@ -57,7 +57,7 @@ describe('buildReaderSystem', () => {
 
   it('scales vocabulary to longer readers', () => {
     const long = buildReaderSystem(zhConfig, 3, 'Test', '1100-1300', 1200);
-    expect(long).toContain('12-15'); // vocab range for longer readers
+    expect(long).toContain('14-18'); // vocab range for longer readers (1200 chars)
   });
 
   it('includes section headings', () => {
