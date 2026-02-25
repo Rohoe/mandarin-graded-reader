@@ -458,8 +458,8 @@ export default function SyllabusPanel({
                   onClick={() => onSelectStandalone?.(r.key)}
                   disabled={loading}
                 >
+                  {r.completedAt && <span className="syllabus-panel__lesson-num">✓</span>}
                   <span className="syllabus-panel__lesson-text">
-                    {r.completedAt && <span className="syllabus-panel__lesson-num">✓</span>}
                     <span className="syllabus-panel__lesson-zh text-chinese">
                       {r.titleZh || generatedReaders[r.key]?.titleZh || r.topic}
                       {r.isDemo && <span className="text-muted" style={{ fontSize: 'var(--text-xs)', marginLeft: '0.35em' }}>(sample)</span>}
