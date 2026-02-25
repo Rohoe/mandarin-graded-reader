@@ -413,14 +413,14 @@ export default function SyllabusPanel({
                   <ul className="syllabus-panel__nested-lessons syllabus-panel__list" role="list">
                     {episodes.map(r => (
                       <li key={r.key}>
-                        <div className={`syllabus-panel__lesson-btn syllabus-panel__standalone-item ${standaloneKey === r.key ? 'syllabus-panel__lesson-btn--active' : ''}`}>
+                        <div className={`syllabus-panel__lesson-btn syllabus-panel__standalone-item ${standaloneKey === r.key ? 'syllabus-panel__lesson-btn--active' : ''} ${r.completedAt ? 'syllabus-panel__lesson-btn--completed' : ''}`}>
                           <button
                             className="syllabus-panel__standalone-select"
                             onClick={() => onSelectStandalone?.(r.key)}
                             disabled={loading}
                           >
                             <span className="syllabus-panel__lesson-text">
-                              <span className="syllabus-panel__lesson-num">{r.episodeNumber || '·'}</span>
+                              <span className="syllabus-panel__lesson-num">{r.completedAt ? '✓' : (r.episodeNumber || '·')}</span>
                               <span className="syllabus-panel__lesson-zh text-chinese">
                                 {r.titleZh || generatedReaders[r.key]?.titleZh || r.topic}
                               </span>
@@ -451,7 +451,7 @@ export default function SyllabusPanel({
           {ungrouped.map(r => (
             <div key={r.key} className="syllabus-panel__item-group">
               <div
-                className={`syllabus-panel__lesson-btn syllabus-panel__standalone-item ${standaloneKey === r.key ? 'syllabus-panel__lesson-btn--active' : ''}`}
+                className={`syllabus-panel__lesson-btn syllabus-panel__standalone-item ${standaloneKey === r.key ? 'syllabus-panel__lesson-btn--active' : ''} ${r.completedAt ? 'syllabus-panel__lesson-btn--completed' : ''}`}
               >
                 <button
                   className="syllabus-panel__standalone-select"
@@ -459,6 +459,7 @@ export default function SyllabusPanel({
                   disabled={loading}
                 >
                   <span className="syllabus-panel__lesson-text">
+                    {r.completedAt && <span className="syllabus-panel__lesson-num">✓</span>}
                     <span className="syllabus-panel__lesson-zh text-chinese">
                       {r.titleZh || generatedReaders[r.key]?.titleZh || r.topic}
                       {r.isDemo && <span className="text-muted" style={{ fontSize: 'var(--text-xs)', marginLeft: '0.35em' }}>(sample)</span>}
