@@ -510,7 +510,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
           level={reader.level ?? 3}
           grammarNotes={reader.grammarNotes}
           langId={langId}
-          verboseVocab={verboseVocab}
+          verboseVocab={verboseVocab?.[langId] ?? false}
           romanizer={romanizer}
           vocabTranslations={reader?.vocabTranslations || {}}
           onCacheVocabTranslations={handleCacheVocabTranslations}

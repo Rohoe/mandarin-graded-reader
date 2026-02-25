@@ -626,10 +626,24 @@ export function saveTranslateButtons(val) {
   save(KEYS.TRANSLATE_BUTTONS, val);
 }
 
-// ── Verbose vocabulary preference ────────────────────────────
+// ── Verbose vocabulary preference (per-language) ─────────────
+
+const DEFAULT_VERBOSE_VOCAB = { zh: false, ko: false, yue: false };
 
 export function loadVerboseVocab() {
-  return load(KEYS.VERBOSE_VOCAB, false);
+  const stored = load(KEYS.VERBOSE_VOCAB, null);
+  // Migration: old format was a single boolean — apply to all languages
+  if (typeof stored === 'boolean') {
+    return { zh: stored, ko: stored, yue: stored };
+  }
+  if (stored && typeof stored === 'object') {
+    return {
+      zh:  Boolean(stored.zh),
+      ko:  Boolean(stored.ko),
+      yue: Boolean(stored.yue),
+    };
+  }
+  return { ...DEFAULT_VERBOSE_VOCAB };
 }
 
 export function saveVerboseVocab(val) {

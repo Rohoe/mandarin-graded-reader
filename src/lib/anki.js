@@ -126,7 +126,7 @@ function formatRow(card, level, topicTag, date, langConfig, verboseVocab = false
 
   return [
     sanitize(card[targetField] || card.chinese || card.korean || ''),
-    sanitize(card[romField] || card.pinyin || card.romanization || ''),
+    sanitize(verboseVocab ? (card[romField] || card.pinyin || card.romanization || '') : ''),
     sanitize(card[transField] || card.english || ''),
     sanitize(examples),
     sanitize(tags),
@@ -181,7 +181,7 @@ function buildApkgCards(toExport, level, topicTag, date, langConfig, verboseVoca
 
     return {
       target:        card[targetField] || card.chinese || card.korean || '',
-      romanization:  card[romField] || card.pinyin || card.romanization || '',
+      romanization:  verboseVocab ? (card[romField] || card.pinyin || card.romanization || '') : '',
       translation:   card[transField] || card.english || '',
       examples:      exampleParts.join('<br>'),
       tags,
