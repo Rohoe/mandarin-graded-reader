@@ -83,7 +83,7 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
               <li key={idx}>
                 <button
                   className={`syllabus-home__lesson-row ${isCompleted ? 'syllabus-home__lesson-row--completed' : ''}`}
-                  onClick={() => onSelectLesson?.(idx)}
+                  onClick={() => onSelectLesson?.(syllabus.id, idx)}
                 >
                   <span className={`syllabus-home__lesson-status ${isCompleted ? 'syllabus-home__lesson-status--done' : ''}`}>
                     {isCompleted ? '✓' : idx + 1}
@@ -107,7 +107,7 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
         <div className="syllabus-home__cta">
           <button
             className="btn btn-primary"
-            onClick={() => onSelectLesson?.(continueIdx)}
+            onClick={() => onSelectLesson?.(syllabus.id, continueIdx)}
           >
             {allDone ? 'Review from the beginning →' : `Continue → Lesson ${continueIdx + 1}`}
           </button>
