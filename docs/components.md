@@ -34,7 +34,7 @@ Question list with textarea input + "Grade My Answers" button. Results: per-ques
 3–5 grammar pattern cards per reader. Each: pattern (target lang), label, explanation, example sentence. Renders nothing if empty.
 
 ## `AnkiExportButton`
-Shows new/skip counts. Merges grammar cards into export (tagged Grammar). When `verboseVocab` ON, batch-translates examples via Google Translate before export.
+Shows new/skip counts. Merges grammar cards into export (tagged Grammar). Inline checkboxes for per-language sentence romanization and sentence translation. When sentence translation is ON, batch-translates examples via Google Translate before export. Reads `exportSentenceRom` and `exportSentenceTrans` from state directly.
 
 ## `FlashcardReview/`
 Modal with daily SRS session. `buildDailySession()` collects due + new cards. Forward and reverse directions with independent SRS tracking. Interval previews below judgment buttons. Missed/almost re-queued. Undo via Ctrl+Z. Per-language sessions (resumable same day, reset at midnight). Language filter pills.

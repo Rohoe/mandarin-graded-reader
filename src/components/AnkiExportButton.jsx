@@ -5,8 +5,10 @@ import { generateAnkiExport, generateAnkiApkgExport, downloadFile, downloadBlob 
 import { translateText } from '../lib/translate';
 import './AnkiExportButton.css';
 
-export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes, langId, verboseVocab, romanizer, vocabTranslations, onCacheVocabTranslations }) {
+export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes, langId, romanizer, vocabTranslations, onCacheVocabTranslations }) {
   const exportedWords = useAppSelector(s => s.exportedWords);
+  const exportSentenceRom = useAppSelector(s => s.exportSentenceRom?.[langId] ?? false);
+  const exportSentenceTrans = useAppSelector(s => s.exportSentenceTrans?.[langId] ?? false);
   const dispatch = useAppDispatch();
   const act = actions(dispatch);
 
@@ -29,7 +31,7 @@ export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes,
   async function batchTranslate() {
     let finalTranslations = vocabTranslations || {};
 
-    if (verboseVocab) {
+    if (exportSentenceTrans) {
       const missing = [];
       ankiJson.forEach((card, i) => {
         if (card.example_story && !finalTranslations[`story-${i}`] && !card.example_story_translation) {
@@ -65,7 +67,7 @@ export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes,
 
   async function handleExport() {
     const finalTranslations = await batchTranslate();
-    const opts = { forceAll: allExported, grammarNotes, langId, verboseVocab, romanizer, vocabTranslations: finalTranslations };
+    const opts = { forceAll: allExported, grammarNotes, langId, exportSentenceRom, exportSentenceTrans, romanizer, vocabTranslations: finalTranslations };
 
     if (format === 'apkg') {
       setGenerating(true);
@@ -151,6 +153,25 @@ export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes,
         >
           {buttonLabel}
         </button>
+      </div>
+
+      <div className="anki-export__toggles">
+        <label className="anki-export__toggle-label">
+          <input
+            type="checkbox"
+            checked={exportSentenceRom}
+            onChange={e => act.setExportSentenceRom(langId, e.target.checked)}
+          />
+          Sentence romanization
+        </label>
+        <label className="anki-export__toggle-label">
+          <input
+            type="checkbox"
+            checked={exportSentenceTrans}
+            onChange={e => act.setExportSentenceTrans(langId, e.target.checked)}
+          />
+          Sentence translation
+        </label>
       </div>
     </div>
   );

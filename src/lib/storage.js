@@ -44,7 +44,9 @@ const KEYS = {
   TTS_KO_VOICE_URI:   'gradedReader_ttsKoVoiceURI',
   TTS_YUE_VOICE_URI:  'gradedReader_ttsYueVoiceURI',
   CLOUD_LAST_SYNCED:  'gradedReader_cloudLastSynced',
-  VERBOSE_VOCAB:      'gradedReader_verboseVocab',
+  VERBOSE_VOCAB:      'gradedReader_verboseVocab',  // legacy, migrated to new keys
+  EXPORT_SENTENCE_ROM:   'gradedReader_exportSentenceRom',
+  EXPORT_SENTENCE_TRANS: 'gradedReader_exportSentenceTrans',
   STRUCTURED_OUTPUT:  'gradedReader_structuredOutput',
   LEARNING_ACTIVITY:  'gradedReader_learningActivity',
   PROVIDER_KEYS:      'gradedReader_providerKeys',
@@ -626,28 +628,51 @@ export function saveTranslateButtons(val) {
   save(KEYS.TRANSLATE_BUTTONS, val);
 }
 
-// ── Verbose vocabulary preference (per-language) ─────────────
+// ── Export sentence options (per-language) ────────────────────
 
-const DEFAULT_VERBOSE_VOCAB = { zh: false, ko: false, yue: false };
+const DEFAULT_EXPORT_FLAGS = { zh: false, ko: false, yue: false };
 
-export function loadVerboseVocab() {
-  const stored = load(KEYS.VERBOSE_VOCAB, null);
-  // Migration: old format was a single boolean — apply to all languages
-  if (typeof stored === 'boolean') {
-    return { zh: stored, ko: stored, yue: stored };
+function migrateVerboseVocab() {
+  const old = load(KEYS.VERBOSE_VOCAB, null);
+  if (old === null) return;
+  // Migrate old verboseVocab (boolean or per-lang object) → both new keys
+  let flags;
+  if (typeof old === 'boolean') {
+    flags = { zh: old, ko: old, yue: old };
+  } else if (old && typeof old === 'object') {
+    flags = { zh: Boolean(old.zh), ko: Boolean(old.ko), yue: Boolean(old.yue) };
+  } else {
+    flags = { ...DEFAULT_EXPORT_FLAGS };
   }
-  if (stored && typeof stored === 'object') {
-    return {
-      zh:  Boolean(stored.zh),
-      ko:  Boolean(stored.ko),
-      yue: Boolean(stored.yue),
-    };
-  }
-  return { ...DEFAULT_VERBOSE_VOCAB };
+  save(KEYS.EXPORT_SENTENCE_ROM, flags);
+  save(KEYS.EXPORT_SENTENCE_TRANS, flags);
+  localStorage.removeItem(KEYS.VERBOSE_VOCAB);
 }
 
-export function saveVerboseVocab(val) {
-  save(KEYS.VERBOSE_VOCAB, val);
+export function loadExportSentenceRom() {
+  migrateVerboseVocab();
+  const stored = load(KEYS.EXPORT_SENTENCE_ROM, null);
+  if (stored && typeof stored === 'object') {
+    return { zh: Boolean(stored.zh), ko: Boolean(stored.ko), yue: Boolean(stored.yue) };
+  }
+  return { ...DEFAULT_EXPORT_FLAGS };
+}
+
+export function saveExportSentenceRom(val) {
+  save(KEYS.EXPORT_SENTENCE_ROM, val);
+}
+
+export function loadExportSentenceTrans() {
+  migrateVerboseVocab();
+  const stored = load(KEYS.EXPORT_SENTENCE_TRANS, null);
+  if (stored && typeof stored === 'object') {
+    return { zh: Boolean(stored.zh), ko: Boolean(stored.ko), yue: Boolean(stored.yue) };
+  }
+  return { ...DEFAULT_EXPORT_FLAGS };
+}
+
+export function saveExportSentenceTrans(val) {
+  save(KEYS.EXPORT_SENTENCE_TRANS, val);
 }
 
 export function loadStructuredOutput() {

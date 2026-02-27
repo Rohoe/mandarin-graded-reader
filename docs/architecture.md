@@ -73,7 +73,7 @@
   // Preferences (persisted, not cleared by CLEAR_ALL_DATA)
   maxTokens, defaultLevel, defaultTopikLevel, defaultYueLevel,
   ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate,
-  romanizationOn, verboseVocab, useStructuredOutput, newCardsPerDay,
+  romanizationOn, exportSentenceRom, exportSentenceTrans, useStructuredOutput, newCardsPerDay,
 
   // Storage & sync
   evictedReaderKeys: Set<string>,

@@ -168,12 +168,20 @@ describe('type-coercing actions', () => {
     expect(dispatch).toHaveBeenCalledWith({ type: 'SET_DARK_MODE', payload: false });
   });
 
-  it('setVerboseVocab dispatches per-language payload', () => {
+  it('setExportSentenceRom dispatches per-language payload', () => {
     const { dispatch, a } = createActions();
-    a.setVerboseVocab('zh', 'yes');
-    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_VERBOSE_VOCAB', payload: { langId: 'zh', value: true } });
-    a.setVerboseVocab('ko', false);
-    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_VERBOSE_VOCAB', payload: { langId: 'ko', value: false } });
+    a.setExportSentenceRom('zh', 'yes');
+    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_EXPORT_SENTENCE_ROM', payload: { langId: 'zh', value: true } });
+    a.setExportSentenceRom('ko', false);
+    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_EXPORT_SENTENCE_ROM', payload: { langId: 'ko', value: false } });
+  });
+
+  it('setExportSentenceTrans dispatches per-language payload', () => {
+    const { dispatch, a } = createActions();
+    a.setExportSentenceTrans('zh', true);
+    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_EXPORT_SENTENCE_TRANS', payload: { langId: 'zh', value: true } });
+    a.setExportSentenceTrans('yue', 0);
+    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_EXPORT_SENTENCE_TRANS', payload: { langId: 'yue', value: false } });
   });
 
   it('setTtsSpeechRate coerces to Number', () => {

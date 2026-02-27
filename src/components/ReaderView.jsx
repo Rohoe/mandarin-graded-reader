@@ -33,9 +33,9 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, error: s.error,
     pendingReaders: s.pendingReaders, evictedReaderKeys: s.evictedReaderKeys, quotaWarning: s.quotaWarning,
   }));
-  const { ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate, romanizationOn, translateButtons, verboseVocab } = useAppSelector(s => ({
+  const { ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate, romanizationOn, translateButtons } = useAppSelector(s => ({
     ttsVoiceURI: s.ttsVoiceURI, ttsKoVoiceURI: s.ttsKoVoiceURI, ttsYueVoiceURI: s.ttsYueVoiceURI, ttsSpeechRate: s.ttsSpeechRate,
-    romanizationOn: s.romanizationOn, translateButtons: s.translateButtons, verboseVocab: s.verboseVocab,
+    romanizationOn: s.romanizationOn, translateButtons: s.translateButtons,
   }));
   const { providerKeys, activeProvider, activeModels, customBaseUrl, maxTokens, useStructuredOutput } = useAppSelector(s => ({
     providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
@@ -510,7 +510,6 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
           level={reader.level ?? 3}
           grammarNotes={reader.grammarNotes}
           langId={langId}
-          verboseVocab={verboseVocab?.[langId] ?? false}
           romanizer={romanizer}
           vocabTranslations={reader?.vocabTranslations || {}}
           onCacheVocabTranslations={handleCacheVocabTranslations}

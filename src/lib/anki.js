@@ -60,7 +60,7 @@ function romanizeForExport(text, romanizer, scriptRegex) {
   return parts.join(' ');
 }
 
-export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forceAll = false, grammarNotes = [], langId = DEFAULT_LANG_ID, verboseVocab = false, romanizer = null, vocabTranslations = {} } = {}) {
+export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forceAll = false, grammarNotes = [], langId = DEFAULT_LANG_ID, exportSentenceRom = false, exportSentenceTrans = false, romanizer = null, vocabTranslations = {} } = {}) {
   const langConfig = getLang(langId);
   const targetField = langConfig.fields.target;
   const profName = langConfig.proficiency.name;
@@ -78,7 +78,7 @@ export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forc
 
   let content = null;
   if (toExport.length > 0) {
-    const lines = toExport.map((card, idx) => formatRow(card, level, topicTag, today, langConfig, verboseVocab, romanizer, scriptRegex, vocabTranslations, idx));
+    const lines = toExport.map((card, idx) => formatRow(card, level, topicTag, today, langConfig, exportSentenceRom, exportSentenceTrans, romanizer, scriptRegex, vocabTranslations, idx));
     content = lines.join('\n');
   }
 
@@ -90,7 +90,7 @@ export function generateAnkiExport(ankiJson, topic, level, exportedWords, { forc
   };
 }
 
-function formatRow(card, level, topicTag, date, langConfig, verboseVocab = false, romanizer = null, scriptRegex = null, vocabTranslations = {}, cardIndex = 0) {
+function formatRow(card, level, topicTag, date, langConfig, exportSentenceRom = false, exportSentenceTrans = false, romanizer = null, scriptRegex = null, vocabTranslations = {}, cardIndex = 0) {
   const targetField = langConfig.fields.target;
   const romField = langConfig.fields.romanization;
   const transField = langConfig.fields.translation;
@@ -99,23 +99,23 @@ function formatRow(card, level, topicTag, date, langConfig, verboseVocab = false
   const exampleParts = [];
   if (card.example_story) {
     exampleParts.push(card.example_story);
-    if (verboseVocab && romanizer && scriptRegex) {
+    if (exportSentenceRom && romanizer && scriptRegex) {
       const rom = romanizeForExport(card.example_story, romanizer, scriptRegex);
       if (rom) exampleParts.push(`<i>${rom}</i>`);
     }
     const storyTrans = vocabTranslations[`story-${cardIndex}`] || card.example_story_translation;
-    if (verboseVocab && storyTrans) exampleParts.push(`<i>${storyTrans}</i>`);
+    if (exportSentenceTrans && storyTrans) exampleParts.push(`<i>${storyTrans}</i>`);
     if (card.usage_note_story) exampleParts.push(`<i>${card.usage_note_story}</i>`);
   }
   if (card.example_extra) {
     if (exampleParts.length > 0) exampleParts.push('');
     exampleParts.push(card.example_extra);
-    if (verboseVocab && romanizer && scriptRegex) {
+    if (exportSentenceRom && romanizer && scriptRegex) {
       const rom = romanizeForExport(card.example_extra, romanizer, scriptRegex);
       if (rom) exampleParts.push(`<i>${rom}</i>`);
     }
     const extraTrans = vocabTranslations[`extra-${cardIndex}`] || card.example_extra_translation;
-    if (verboseVocab && extraTrans) exampleParts.push(`<i>${extraTrans}</i>`);
+    if (exportSentenceTrans && extraTrans) exampleParts.push(`<i>${extraTrans}</i>`);
     if (card.usage_note_extra) exampleParts.push(`<i>${card.usage_note_extra}</i>`);
   }
   const examples = exampleParts.join('<br>');
@@ -126,7 +126,7 @@ function formatRow(card, level, topicTag, date, langConfig, verboseVocab = false
 
   return [
     sanitize(card[targetField] || card.chinese || card.korean || ''),
-    sanitize(verboseVocab ? (card[romField] || card.pinyin || card.romanization || '') : ''),
+    sanitize(card[romField] || card.pinyin || card.romanization || ''),
     sanitize(card[transField] || card.english || ''),
     sanitize(examples),
     sanitize(tags),
@@ -143,7 +143,7 @@ function sanitize(str) {
  * Build card objects suitable for .apkg generation from ankiJson data.
  * Reuses the same example-building logic as the .txt export.
  */
-function buildApkgCards(toExport, level, topicTag, date, langConfig, verboseVocab, romanizer, vocabTranslations) {
+function buildApkgCards(toExport, level, topicTag, date, langConfig, exportSentenceRom, exportSentenceTrans, romanizer, vocabTranslations) {
   const targetField = langConfig.fields.target;
   const romField = langConfig.fields.romanization;
   const transField = langConfig.fields.translation;
@@ -155,23 +155,23 @@ function buildApkgCards(toExport, level, topicTag, date, langConfig, verboseVoca
     const exampleParts = [];
     if (card.example_story) {
       exampleParts.push(card.example_story);
-      if (verboseVocab && romanizer && scriptRegex) {
+      if (exportSentenceRom && romanizer && scriptRegex) {
         const rom = romanizeForExport(card.example_story, romanizer, scriptRegex);
         if (rom) exampleParts.push(`<i>${rom}</i>`);
       }
       const storyTrans = vocabTranslations[`story-${idx}`] || card.example_story_translation;
-      if (verboseVocab && storyTrans) exampleParts.push(`<i>${storyTrans}</i>`);
+      if (exportSentenceTrans && storyTrans) exampleParts.push(`<i>${storyTrans}</i>`);
       if (card.usage_note_story) exampleParts.push(`<i>${card.usage_note_story}</i>`);
     }
     if (card.example_extra) {
       if (exampleParts.length > 0) exampleParts.push('');
       exampleParts.push(card.example_extra);
-      if (verboseVocab && romanizer && scriptRegex) {
+      if (exportSentenceRom && romanizer && scriptRegex) {
         const rom = romanizeForExport(card.example_extra, romanizer, scriptRegex);
         if (rom) exampleParts.push(`<i>${rom}</i>`);
       }
       const extraTrans = vocabTranslations[`extra-${idx}`] || card.example_extra_translation;
-      if (verboseVocab && extraTrans) exampleParts.push(`<i>${extraTrans}</i>`);
+      if (exportSentenceTrans && extraTrans) exampleParts.push(`<i>${extraTrans}</i>`);
       if (card.usage_note_extra) exampleParts.push(`<i>${card.usage_note_extra}</i>`);
     }
 
@@ -181,7 +181,7 @@ function buildApkgCards(toExport, level, topicTag, date, langConfig, verboseVoca
 
     return {
       target:        card[targetField] || card.chinese || card.korean || '',
-      romanization:  verboseVocab ? (card[romField] || card.pinyin || card.romanization || '') : '',
+      romanization:  card[romField] || card.pinyin || card.romanization || '',
       translation:   card[transField] || card.english || '',
       examples:      exampleParts.join('<br>'),
       tags,
@@ -189,7 +189,7 @@ function buildApkgCards(toExport, level, topicTag, date, langConfig, verboseVoca
   });
 }
 
-export async function generateAnkiApkgExport(ankiJson, topic, level, exportedWords, { forceAll = false, grammarNotes = [], langId = DEFAULT_LANG_ID, verboseVocab = false, romanizer = null, vocabTranslations = {} } = {}) {
+export async function generateAnkiApkgExport(ankiJson, topic, level, exportedWords, { forceAll = false, grammarNotes = [], langId = DEFAULT_LANG_ID, exportSentenceRom = false, exportSentenceTrans = false, romanizer = null, vocabTranslations = {} } = {}) {
   const langConfig = getLang(langId);
   const targetField = langConfig.fields.target;
   const profName = langConfig.proficiency.name;
@@ -206,7 +206,7 @@ export async function generateAnkiApkgExport(ankiJson, topic, level, exportedWor
   let blob = null;
   if (toExport.length > 0) {
     const deckName = `${langConfig.deckLabel || 'Graded'} Reader::${profName}${level}`;
-    const apkgCards = buildApkgCards(toExport, level, topicTag, today, langConfig, verboseVocab, romanizer, vocabTranslations);
+    const apkgCards = buildApkgCards(toExport, level, topicTag, today, langConfig, exportSentenceRom, exportSentenceTrans, romanizer, vocabTranslations);
     blob = await generateApkgBlob(apkgCards, deckName, langId);
   }
 

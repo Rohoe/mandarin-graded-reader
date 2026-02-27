@@ -40,7 +40,8 @@ import {
   loadTtsSpeechRate,
   loadRomanizationOn,
   loadTranslateButtons,
-  loadVerboseVocab,
+  loadExportSentenceRom,
+  loadExportSentenceTrans,
   loadStructuredOutput,
   loadLastModified,
   loadLearningActivity,
@@ -117,7 +118,8 @@ function buildInitialState() {
     ttsSpeechRate:     loadTtsSpeechRate(),
     romanizationOn:    loadRomanizationOn(),
     translateButtons:  loadTranslateButtons(),
-    verboseVocab:      loadVerboseVocab(),
+    exportSentenceRom:   loadExportSentenceRom(),
+    exportSentenceTrans: loadExportSentenceTrans(),
     useStructuredOutput: loadStructuredOutput(),
     newCardsPerDay:    loadNewCardsPerDay(),
     // Evicted reader keys (persisted)
@@ -505,7 +507,8 @@ function baseReducer(state, action) {
         defaultLevel:    state.defaultLevel,
         defaultTopikLevel: state.defaultTopikLevel,
         ttsYueVoiceURI:  state.ttsYueVoiceURI,
-        verboseVocab:    state.verboseVocab,
+        exportSentenceRom:   state.exportSentenceRom,
+        exportSentenceTrans: state.exportSentenceTrans,
         evictedReaderKeys: new Set(),
       };
 
@@ -556,8 +559,11 @@ function baseReducer(state, action) {
     case 'SET_TTS_YUE_VOICE':
       return { ...state, ttsYueVoiceURI: action.payload };
 
-    case 'SET_VERBOSE_VOCAB':
-      return { ...state, verboseVocab: { ...state.verboseVocab, [action.payload.langId]: action.payload.value } };
+    case 'SET_EXPORT_SENTENCE_ROM':
+      return { ...state, exportSentenceRom: { ...state.exportSentenceRom, [action.payload.langId]: action.payload.value } };
+
+    case 'SET_EXPORT_SENTENCE_TRANS':
+      return { ...state, exportSentenceTrans: { ...state.exportSentenceTrans, [action.payload.langId]: action.payload.value } };
 
     case 'SET_TTS_SPEECH_RATE':
       return { ...state, ttsSpeechRate: action.payload };

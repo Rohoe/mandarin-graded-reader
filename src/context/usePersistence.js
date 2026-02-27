@@ -26,7 +26,8 @@ import {
   saveTtsVoiceURI,
   saveTtsKoVoiceURI,
   saveTtsYueVoiceURI,
-  saveVerboseVocab,
+  saveExportSentenceRom,
+  saveExportSentenceTrans,
   saveTtsSpeechRate,
   saveRomanizationOn,
   saveTranslateButtons,
@@ -71,7 +72,8 @@ export function usePersistence(state, dispatch, stateRef) {
   useEffect(() => { if (mountedRef.current) saveTtsVoiceURI(state.ttsVoiceURI); }, [state.ttsVoiceURI]);
   useEffect(() => { if (mountedRef.current) saveTtsKoVoiceURI(state.ttsKoVoiceURI); }, [state.ttsKoVoiceURI]);
   useEffect(() => { if (mountedRef.current) saveTtsYueVoiceURI(state.ttsYueVoiceURI); }, [state.ttsYueVoiceURI]);
-  useEffect(() => { if (mountedRef.current) saveVerboseVocab(state.verboseVocab); }, [state.verboseVocab]);
+  useEffect(() => { if (mountedRef.current) saveExportSentenceRom(state.exportSentenceRom); }, [state.exportSentenceRom]);
+  useEffect(() => { if (mountedRef.current) saveExportSentenceTrans(state.exportSentenceTrans); }, [state.exportSentenceTrans]);
   useEffect(() => { if (mountedRef.current) saveTtsSpeechRate(state.ttsSpeechRate); }, [state.ttsSpeechRate]);
   useEffect(() => { if (mountedRef.current) saveRomanizationOn(state.romanizationOn); }, [state.romanizationOn]);
   useEffect(() => { if (mountedRef.current) saveTranslateButtons(state.translateButtons); }, [state.translateButtons]);
