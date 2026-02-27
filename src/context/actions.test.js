@@ -168,10 +168,12 @@ describe('type-coercing actions', () => {
     expect(dispatch).toHaveBeenCalledWith({ type: 'SET_DARK_MODE', payload: false });
   });
 
-  it('setVerboseVocab coerces to Boolean', () => {
+  it('setVerboseVocab dispatches per-language payload', () => {
     const { dispatch, a } = createActions();
-    a.setVerboseVocab('yes');
-    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_VERBOSE_VOCAB', payload: true });
+    a.setVerboseVocab('zh', 'yes');
+    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_VERBOSE_VOCAB', payload: { langId: 'zh', value: true } });
+    a.setVerboseVocab('ko', false);
+    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_VERBOSE_VOCAB', payload: { langId: 'ko', value: false } });
   });
 
   it('setTtsSpeechRate coerces to Number', () => {

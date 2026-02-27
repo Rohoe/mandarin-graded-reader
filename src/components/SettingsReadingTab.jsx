@@ -94,20 +94,32 @@ export default function SettingsReadingTab({ state, act }) {
 
       {/* Verbose Vocabulary */}
       <section className="settings-section">
-        <div className="settings-toggle-row">
-          <div>
-            <h3 className="settings-section__title form-label">Verbose Vocabulary</h3>
-            <p className="settings-section__desc text-muted">Include English translations of example sentences in Anki flashcard exports (translated via Google Translate at export time).</p>
-          </div>
-          <button
-            role="switch"
-            aria-checked={state.verboseVocab}
-            className={`settings-toggle ${state.verboseVocab ? 'settings-toggle--on' : ''}`}
-            onClick={() => act.setVerboseVocab(!state.verboseVocab)}
-          >
-            <span className="settings-toggle__thumb" />
-          </button>
-        </div>
+        <h3 className="settings-section__title form-label">Verbose Vocabulary</h3>
+        <p className="settings-section__desc text-muted">
+          When enabled for a language, Anki flashcard exports include the word&apos;s romanization,
+          example sentence romanizations, and English translations (translated via Google Translate at export time).
+        </p>
+        {[
+          { langId: 'zh',  label: 'Mandarin Chinese' },
+          { langId: 'yue', label: 'Cantonese' },
+          { langId: 'ko',  label: 'Korean' },
+        ].map(({ langId, label }) => {
+          const on = state.verboseVocab?.[langId] ?? false;
+          return (
+            <div key={langId} className="settings-toggle-row" style={{ marginTop: 'var(--space-2)' }}>
+              <span style={{ fontSize: 'var(--text-sm)' }}>{label}</span>
+              <button
+                role="switch"
+                aria-checked={on}
+                aria-label={`Verbose vocabulary for ${label}`}
+                className={`settings-toggle ${on ? 'settings-toggle--on' : ''}`}
+                onClick={() => act.setVerboseVocab(langId, !on)}
+              >
+                <span className="settings-toggle__thumb" />
+              </button>
+            </div>
+          );
+        })}
       </section>
 
       <hr className="divider" />

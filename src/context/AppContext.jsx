@@ -557,7 +557,7 @@ function baseReducer(state, action) {
       return { ...state, ttsYueVoiceURI: action.payload };
 
     case 'SET_VERBOSE_VOCAB':
-      return { ...state, verboseVocab: action.payload };
+      return { ...state, verboseVocab: { ...state.verboseVocab, [action.payload.langId]: action.payload.value } };
 
     case 'SET_TTS_SPEECH_RATE':
       return { ...state, ttsSpeechRate: action.payload };
