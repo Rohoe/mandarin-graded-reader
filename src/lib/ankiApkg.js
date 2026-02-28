@@ -91,20 +91,16 @@ function buildModel(modelId, langId) {
   font-family: ${targetFont};
   font-size: 16px;
   text-align: center;
-  color: #1a1814;
-  background-color: #faf8f5;
   padding: 20px;
   line-height: 1.6;
 }
 .front { font-size: 42px; line-height: 1.4; margin: 20px 0; }
-.romanization { font-family: sans-serif; font-size: 20px; color: #4a7c7e; margin: 10px 0; }
+.romanization { font-family: sans-serif; font-size: 20px; color: #6bb3b5; margin: 10px 0; }
 .translation  { font-family: sans-serif; font-size: 20px; margin: 10px 0; }
 .hint { font-family: monospace; font-size: 28px; letter-spacing: 0.3em; color: #999; margin: 12px 0; }
 .examples { font-size: 16px; text-align: left; margin-top: 20px; }
-.ex-group { margin-bottom: 14px; padding: 10px 12px; background: rgba(0,0,0,0.03); border-radius: 6px; line-height: 1.7; }
-.ex-group i { display: block; color: #999; font-size: 13px; line-height: 1.5; margin-top: 2px; }
-.night_mode .ex-group { background: rgba(255,255,255,0.06); }
-.night_mode .ex-group i { color: #777; }
+.ex-group { margin-bottom: 14px; padding: 10px 12px; background: rgba(128,128,128,0.1); border-radius: 6px; line-height: 1.7; }
+.ex-group i { display: block; color: #e8a87c; font-size: 13px; line-height: 1.5; margin-top: 2px; }
 `.trim();
 
   // Forward: Target → Translation
