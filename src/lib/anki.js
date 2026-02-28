@@ -168,28 +168,29 @@ function buildApkgCards(toExport, level, topicTag, date, langConfig, exportSente
   const scriptRegex = langConfig.scriptRegex;
 
   return toExport.map((card, idx) => {
-    // Build examples HTML (same logic as formatRow)
-    const exampleParts = [];
+    // Build examples HTML with structured divs for .apkg readability
+    const exampleBlocks = [];
     if (card.example_story) {
-      exampleParts.push(card.example_story);
+      const parts = [card.example_story];
       if (exportSentenceRom && romanizer && scriptRegex) {
         const rom = romanizeForExport(card.example_story, romanizer, scriptRegex);
-        if (rom) exampleParts.push(`<i>${rom}</i>`);
+        if (rom) parts.push(`<i>${rom}</i>`);
       }
       const storyTrans = vocabTranslations[`story-${idx}`] || card.example_story_translation;
-      if (exportSentenceTrans && storyTrans) exampleParts.push(`<i>${storyTrans}</i>`);
-      if (card.usage_note_story) exampleParts.push(`<i>${card.usage_note_story}</i>`);
+      if (exportSentenceTrans && storyTrans) parts.push(`<i>${storyTrans}</i>`);
+      if (card.usage_note_story) parts.push(`<i>${card.usage_note_story}</i>`);
+      exampleBlocks.push(`<div class="ex-group">${parts.join('<br>')}</div>`);
     }
     if (card.example_extra) {
-      if (exampleParts.length > 0) exampleParts.push('');
-      exampleParts.push(card.example_extra);
+      const parts = [card.example_extra];
       if (exportSentenceRom && romanizer && scriptRegex) {
         const rom = romanizeForExport(card.example_extra, romanizer, scriptRegex);
-        if (rom) exampleParts.push(`<i>${rom}</i>`);
+        if (rom) parts.push(`<i>${rom}</i>`);
       }
       const extraTrans = vocabTranslations[`extra-${idx}`] || card.example_extra_translation;
-      if (exportSentenceTrans && extraTrans) exampleParts.push(`<i>${extraTrans}</i>`);
-      if (card.usage_note_extra) exampleParts.push(`<i>${card.usage_note_extra}</i>`);
+      if (exportSentenceTrans && extraTrans) parts.push(`<i>${extraTrans}</i>`);
+      if (card.usage_note_extra) parts.push(`<i>${card.usage_note_extra}</i>`);
+      exampleBlocks.push(`<div class="ex-group">${parts.join('<br>')}</div>`);
     }
 
     const tags = card._isGrammar
@@ -201,7 +202,7 @@ function buildApkgCards(toExport, level, topicTag, date, langConfig, exportSente
       target:        targetWord,
       romanization:  card[romField] || card.pinyin || card.romanization || '',
       translation:   card[transField] || card.english || '',
-      examples:      exampleParts.join('<br>'),
+      examples:      exampleBlocks.join(''),
       hint:          buildCharHint(targetWord, scriptRegex),
       tags,
     };

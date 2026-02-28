@@ -100,8 +100,11 @@ function buildModel(modelId, langId) {
 .romanization { font-family: sans-serif; font-size: 20px; color: #4a7c7e; margin: 10px 0; }
 .translation  { font-family: sans-serif; font-size: 20px; margin: 10px 0; }
 .hint { font-family: monospace; font-size: 28px; letter-spacing: 0.3em; color: #999; margin: 12px 0; }
-.examples { font-size: 15px; text-align: left; color: #555; margin-top: 16px; line-height: 1.8; }
-.examples i { color: #888; font-size: 14px; }
+.examples { font-size: 16px; text-align: left; margin-top: 20px; }
+.ex-group { margin-bottom: 14px; padding: 10px 12px; background: rgba(0,0,0,0.03); border-radius: 6px; line-height: 1.7; }
+.ex-group i { display: block; color: #999; font-size: 13px; line-height: 1.5; margin-top: 2px; }
+.night_mode .ex-group { background: rgba(255,255,255,0.06); }
+.night_mode .ex-group i { color: #777; }
 `.trim();
 
   // Forward: Target → Translation
