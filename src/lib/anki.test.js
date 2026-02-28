@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { prepareExport, generateAnkiExport } from './anki';
+import { prepareExport, generateAnkiExport, buildCharHint } from './anki';
 
 // Mock ankiApkg module
 vi.mock('./ankiApkg', () => ({
@@ -15,6 +15,33 @@ const sampleAnkiJson = [
 const koAnkiJson = [
   { korean: '고양이', romanization: 'go-yang-i', english: 'n. cat', example_story: '고양이가 있어요.', usage_note_story: 'Subject.', example_extra: '', usage_note_extra: '' },
 ];
+
+// ── buildCharHint ────────────────────────────────────────────
+
+describe('buildCharHint', () => {
+  const zhRegex = /[\u4e00-\u9fff]/;
+  const koRegex = /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/;
+
+  it('generates underscores for Chinese characters', () => {
+    expect(buildCharHint('小猫', zhRegex)).toBe('_ _');
+  });
+
+  it('generates underscores for Korean characters', () => {
+    expect(buildCharHint('고양이', koRegex)).toBe('_ _ _');
+  });
+
+  it('counts only script characters, not punctuation', () => {
+    expect(buildCharHint('小猫！', zhRegex)).toBe('_ _');
+  });
+
+  it('returns empty string for empty input', () => {
+    expect(buildCharHint('', zhRegex)).toBe('');
+  });
+
+  it('returns empty string for no matching characters', () => {
+    expect(buildCharHint('hello', zhRegex)).toBe('');
+  });
+});
 
 // ── prepareExport ────────────────────────────────────────────
 
@@ -64,9 +91,9 @@ describe('generateAnkiExport', () => {
     expect(result.content).toBeTruthy();
     const lines = result.content.split('\n');
     expect(lines.length).toBe(3);
-    // Each line should have 5 tab-separated columns
+    // Each line should have 6 tab-separated columns (Target, Rom, Trans, Examples, Hint, Tags)
     lines.forEach(line => {
-      expect(line.split('\t').length).toBe(5);
+      expect(line.split('\t').length).toBe(6);
     });
   });
 
@@ -119,8 +146,8 @@ describe('generateAnkiExport', () => {
     ];
     const result = generateAnkiExport(cards, 'Test', 1, new Set(), { langId: 'zh' });
     const lines = result.content.split('\n');
-    // After sanitization, should still have exactly 5 columns
-    expect(lines[0].split('\t').length).toBe(5);
+    // After sanitization, should still have exactly 6 columns
+    expect(lines[0].split('\t').length).toBe(6);
     // Tabs in fields become spaces, newlines become <br>
     expect(lines[0]).toContain('cè shì');
     expect(lines[0]).toContain('test<br>def');

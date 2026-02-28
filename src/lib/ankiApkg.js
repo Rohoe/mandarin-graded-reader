@@ -99,16 +99,31 @@ function buildModel(modelId, langId) {
 .front { font-size: 42px; line-height: 1.4; margin: 20px 0; }
 .romanization { font-family: sans-serif; font-size: 20px; color: #4a7c7e; margin: 10px 0; }
 .translation  { font-family: sans-serif; font-size: 20px; margin: 10px 0; }
+.hint { font-family: monospace; font-size: 28px; letter-spacing: 0.3em; color: #999; margin: 12px 0; }
 .examples { font-size: 15px; text-align: left; color: #555; margin-top: 16px; line-height: 1.8; }
 .examples i { color: #888; font-size: 14px; }
 `.trim();
 
+  // Forward: Target → Translation
   const qfmt = '<div class="front">{{Target}}</div>';
   const afmt = [
     '{{FrontSide}}',
     '<hr id=answer>',
     '<div class="romanization">{{Romanization}}</div>',
     '<div class="translation">{{Translation}}</div>',
+    '{{#Examples}}<div class="examples">{{Examples}}</div>{{/Examples}}',
+  ].join('\n');
+
+  // Reverse: Translation → Target (with character-count hint)
+  const rqfmt = [
+    '<div class="translation">{{Translation}}</div>',
+    '{{#Hint}}<div class="hint">{{Hint}}</div>{{/Hint}}',
+  ].join('\n');
+  const rafmt = [
+    '{{FrontSide}}',
+    '<hr id=answer>',
+    '<div class="front">{{Target}}</div>',
+    '<div class="romanization">{{Romanization}}</div>',
     '{{#Examples}}<div class="examples">{{Examples}}</div>{{/Examples}}',
   ].join('\n');
 
@@ -125,10 +140,21 @@ function buildModel(modelId, langId) {
       did: 1,
       tmpls: [
         {
-          name: 'Card 1',
+          name: 'Recognition',
           ord: 0,
           qfmt,
           afmt,
+          bqfmt: '',
+          bafmt: '',
+          did: null,
+          bfont: '',
+          bsize: 0,
+        },
+        {
+          name: 'Recall',
+          ord: 1,
+          qfmt: rqfmt,
+          afmt: rafmt,
           bqfmt: '',
           bafmt: '',
           did: null,
@@ -141,12 +167,13 @@ function buildModel(modelId, langId) {
         { name: 'Romanization',  ord: 1, sticky: false, rtl: false, font: 'Arial', size: 20, media: [] },
         { name: 'Translation',   ord: 2, sticky: false, rtl: false, font: 'Arial', size: 20, media: [] },
         { name: 'Examples',      ord: 3, sticky: false, rtl: false, font: 'Arial', size: 20, media: [] },
+        { name: 'Hint',          ord: 4, sticky: false, rtl: false, font: 'Arial', size: 20, media: [] },
       ],
       css,
       latexPre: '\\documentclass[12pt]{article}\n\\special{papersize=3in,5in}\n\\usepackage{amssymb,amsmath}\n\\pagestyle{empty}\n\\setlength{\\parindent}{0in}\n\\begin{document}\n',
       latexPost: '\\end{document}',
       latexsvg: false,
-      req: [[0, 'all', [0]]],
+      req: [[0, 'all', [0]], [1, 'all', [2]]],
       tags: [],
       vers: [],
     },
@@ -358,6 +385,7 @@ export async function generateApkgBlob(cards, deckName, langId = 'zh') {
       card.romanization || '',
       card.translation || '',
       card.examples || '',
+      card.hint || '',
     ].join(FIELD_SEP);
 
     const sfld = card.target || '';
@@ -382,19 +410,19 @@ export async function generateApkgBlob(cards, deckName, langId = 'zh') {
       ],
     );
 
-    // Insert card
+    // Insert forward card (Recognition: Target → Translation)
     runWithParams(db,
       `INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         cardId,  // id
         noteId,  // nid (note id)
         deckId,  // did (deck id)
-        0,       // ord (template ordinal)
+        0,       // ord (template ordinal: Recognition)
         now,     // mod
         -1,      // usn
         0,       // type (0 = new)
         0,       // queue (0 = new)
-        i + 1,   // due (position for new cards)
+        i * 2 + 1, // due (position for new cards)
         0,       // ivl
         0,       // factor
         0,       // reps
@@ -404,6 +432,32 @@ export async function generateApkgBlob(cards, deckName, langId = 'zh') {
         0,       // odid
         0,       // flags
         '',      // data
+      ],
+    );
+
+    // Insert reverse card (Recall: Translation → Target, with hint)
+    const reverseCardId = cardId + cards.length * 2;
+    runWithParams(db,
+      `INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        reverseCardId, // id
+        noteId,        // nid (note id)
+        deckId,        // did (deck id)
+        1,             // ord (template ordinal: Recall)
+        now,           // mod
+        -1,            // usn
+        0,             // type (0 = new)
+        0,             // queue (0 = new)
+        i * 2 + 2,    // due (position for new cards)
+        0,             // ivl
+        0,             // factor
+        0,             // reps
+        0,             // lapses
+        0,             // left
+        0,             // odue
+        0,             // odid
+        0,             // flags
+        '',            // data
       ],
     );
   }

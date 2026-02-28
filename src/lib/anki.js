@@ -6,6 +6,19 @@
 import { getLang, DEFAULT_LANG_ID } from './languages';
 import { generateApkgBlob } from './ankiApkg';
 
+// ── Character-count hint for reverse cards ───────────────────
+
+/**
+ * Build an underscore hint showing the number of target-script characters.
+ * e.g. "小猫" → "_ _", "고양이" → "_ _ _"
+ */
+export function buildCharHint(target, scriptRegex) {
+  if (!target || !scriptRegex) return '';
+  const scriptChars = [...target].filter(ch => scriptRegex.test(ch));
+  if (scriptChars.length === 0) return '';
+  return scriptChars.map(() => '_').join(' ');
+}
+
 // ── Duplicate filtering ───────────────────────────────────────
 
 export function prepareExport(ankiJson, exportedWords, langId = DEFAULT_LANG_ID) {
@@ -124,11 +137,15 @@ function formatRow(card, level, topicTag, date, langConfig, exportSentenceRom = 
     ? `${profName}${level} ${topicTag} ${date} Grammar`
     : `${profName}${level} ${topicTag} ${date}`;
 
+  const targetWord = card[targetField] || card.chinese || card.korean || '';
+  const hint = buildCharHint(targetWord, scriptRegex);
+
   return [
-    sanitize(card[targetField] || card.chinese || card.korean || ''),
+    sanitize(targetWord),
     sanitize(card[romField] || card.pinyin || card.romanization || ''),
     sanitize(card[transField] || card.english || ''),
     sanitize(examples),
+    sanitize(hint),
     sanitize(tags),
   ].join('\t');
 }
@@ -179,11 +196,13 @@ function buildApkgCards(toExport, level, topicTag, date, langConfig, exportSente
       ? `${profName}${level} ${topicTag} ${date} Grammar`
       : `${profName}${level} ${topicTag} ${date}`;
 
+    const targetWord = card[targetField] || card.chinese || card.korean || '';
     return {
-      target:        card[targetField] || card.chinese || card.korean || '',
+      target:        targetWord,
       romanization:  card[romField] || card.pinyin || card.romanization || '',
       translation:   card[transField] || card.english || '',
       examples:      exampleParts.join('<br>'),
+      hint:          buildCharHint(targetWord, scriptRegex),
       tags,
     };
   });
