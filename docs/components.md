@@ -37,10 +37,19 @@ Question list with textarea input + "Grade My Answers" button. Results: per-ques
 Shows new/skip counts. Merges grammar cards into export (tagged Grammar). Inline checkboxes for per-language sentence romanization and sentence translation. When sentence translation is ON, batch-translates examples via Google Translate before export. Reads `exportSentenceRom` and `exportSentenceTrans` from state directly.
 
 ## `FlashcardReview/`
-Modal with daily SRS session. `buildDailySession()` collects due + new cards. Forward and reverse directions with independent SRS tracking. Interval previews below judgment buttons. Missed/almost re-queued. Undo via Ctrl+Z. Per-language sessions (resumable same day, reset at midnight). Language filter pills.
+Modal with daily SRS session. `buildDailySession()` collects due + new cards. Forward and reverse directions with independent SRS tracking. Interval previews below judgment buttons. Missed/almost re-queued. Undo via Ctrl+Z. Per-language sessions (resumable same day, reset at midnight). Language filter pills. Mode tabs switch between standard flashcards and three additional quiz modes:
+
+### `FillBlankMode`
+Cloze-deletion quiz. Shows example sentence with target word blanked out. User types the missing word; graded on match.
+
+### `ListeningMode`
+Audio-first quiz. Plays TTS for the target word; user types what they hear. Tests listening comprehension and spelling.
+
+### `MatchingMode`
+Drag-and-match quiz. Presents a set of target words and translations; user pairs them. Timed, with score tracking.
 
 ## `StatsDashboard/`
-Modal: vocab growth chart, per-language breakdown, quiz scores, streak, activity counts. Flashcard stats: total reviews, retention rate, mastery breakdown. CSS-only charts.
+Modal: vocab growth chart, per-language breakdown, quiz scores, streak, activity counts. Flashcard stats: total reviews, retention rate, mastery breakdown. SRS stats: review forecast chart, retention curve, review heatmap. Reading stats: per-reader reading time, average reading speed. CSS-only charts.
 
 ## `Settings`
 Tabbed modal (4 tabs). Tab bar uses `role="tablist"` / `role="tab"` with `aria-selected` and keyboard navigation. Each tab is extracted into its own component:
@@ -51,6 +60,9 @@ Tabbed modal (4 tabs). Tab bar uses `role="tablist"` / `role="tab"` with `aria-s
 
 ## `LoadingIndicator`
 Animated ink-wash Chinese characters (读写学文语书).
+
+## `PWABanner`
+Dismissible banner prompting users to install the app as a PWA. Uses `usePWA` hook to detect install eligibility. Shows only when `canInstall` is true and user has not dismissed.
 
 ## `GenerationProgress`
 Phase-based progress bar. type='reader' (6 phases, ~30s) or type='syllabus' (4 phases, ~10s). Shows dynamic provider name.

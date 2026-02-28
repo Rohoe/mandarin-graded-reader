@@ -27,6 +27,13 @@ function scoreBadgeClass(scoreStr) {
   return 'comprehension__score-badge--poor';
 }
 
+function scoreIndicator(scoreStr) {
+  const num = parseInt(scoreStr, 10);
+  if (num >= 4) return '\u2713'; // ✓
+  if (num === 3) return '~';
+  return '\u2717'; // ✗
+}
+
 const AUTO_SAVE_DELAY = 1500;
 
 function stripMarkdown(text) {
@@ -246,7 +253,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                       {results.feedback?.[i] && (
                         <div className="comprehension__result-row">
                           <span className={`comprehension__score-badge ${scoreBadgeClass(results.feedback[i].score)}`}>
-                            {results.feedback[i].score}
+                            {results.feedback[i].score}<span aria-hidden="true"> {scoreIndicator(results.feedback[i].score)}</span>
                           </span>
                           <div>
                             <p className="comprehension__result-feedback">

@@ -1,10 +1,14 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useApp } from '../../context/AppContext';
+import { useAppSelector, useAppDispatch } from '../../context/useAppSelector';
 import { actions } from '../../context/actions';
 import { getAllLanguages, getLang } from '../../lib/languages';
 import { loadFlashcardSession, saveFlashcardSession } from '../../lib/storage';
 import { useRomanization } from '../../hooks/useRomanization';
+import { useTTS } from '../../hooks/useTTS';
 import { calculateSRS, getMasteryLevel, buildDailySession } from './srs';
+import FillBlankMode from './FillBlankMode';
+import ListeningMode from './ListeningMode';
+import MatchingMode from './MatchingMode';
 import './FlashcardReview.css';
 
 function formatInterval(days) {
@@ -15,29 +19,43 @@ function formatInterval(days) {
 }
 
 export default function FlashcardReview({ onClose }) {
-  const { state, dispatch } = useApp();
+  const { learnedVocabulary, newCardsPerDay, romanizationOn } = useAppSelector(s => ({
+    learnedVocabulary: s.learnedVocabulary,
+    newCardsPerDay: s.newCardsPerDay,
+    romanizationOn: s.romanizationOn,
+  }));
+  const dispatch = useAppDispatch();
   const act = actions(dispatch);
   const languages = getAllLanguages();
 
   // Detect which languages have vocab
   const availableLangs = useMemo(() => {
     const langIds = new Set(
-      Object.values(state.learnedVocabulary).map(d => d.langId || 'zh')
+      Object.values(learnedVocabulary).map(d => d.langId || 'zh')
     );
     return languages.filter(l => langIds.has(l.id));
-  }, [state.learnedVocabulary, languages]);
+  }, [learnedVocabulary, languages]);
 
   const [langFilter, setLangFilter] = useState(() =>
     availableLangs.length > 0 ? availableLangs[0].id : 'zh'
   );
 
+  const [quizMode, setQuizMode] = useState('flashcard'); // 'flashcard' | 'fillblank' | 'listening' | 'matching'
+
   // Romanization for flashcard front
   const langConfig = getLang(langFilter);
-  const { renderChars: renderRomanization, romanizer } = useRomanization(langFilter, langConfig, state.romanizationOn);
+  const { renderChars: renderRomanization, romanizer } = useRomanization(langFilter, langConfig, romanizationOn);
+
+  // TTS for listening mode
+  const { ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate } = useAppSelector(s => ({
+    ttsVoiceURI: s.ttsVoiceURI, ttsKoVoiceURI: s.ttsKoVoiceURI,
+    ttsYueVoiceURI: s.ttsYueVoiceURI, ttsSpeechRate: s.ttsSpeechRate,
+  }));
+  const { speakText } = useTTS(langConfig, langFilter, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, () => {}, ttsSpeechRate);
 
   // Build card list from learnedVocabulary
   const allCards = useMemo(() => {
-    return Object.entries(state.learnedVocabulary).map(([word, data]) => ({
+    return Object.entries(learnedVocabulary).map(([word, data]) => ({
       target: word,
       romanization: data.romanization || data.pinyin || '',
       translation: data.translation || data.english || '',
@@ -56,20 +74,20 @@ export default function FlashcardReview({ onClose }) {
       reverseReviewCount: data.reverseReviewCount ?? 0,
       reverseLapses: data.reverseLapses ?? 0,
     }));
-  }, [state.learnedVocabulary]);
+  }, [learnedVocabulary]);
 
   const langCards = useMemo(() => allCards.filter(c => c.langId === langFilter), [allCards, langFilter]);
 
   // Session management (per-language persistence)
   const [session, setSession] = useState(() => {
     const saved = loadFlashcardSession(langFilter);
-    return buildDailySession(langCards, state.newCardsPerDay, saved, langFilter);
+    return buildDailySession(langCards, newCardsPerDay, saved, langFilter);
   });
 
   // Rebuild session when language filter changes
   useEffect(() => {
     const saved = loadFlashcardSession(langFilter);
-    const newSession = buildDailySession(langCards, state.newCardsPerDay, saved, langFilter);
+    const newSession = buildDailySession(langCards, newCardsPerDay, saved, langFilter);
     setSession(newSession);
     setHistory([]);
     setPhase(newSession.index >= newSession.cardKeys.length ? 'done' : 'front');
@@ -203,18 +221,28 @@ export default function FlashcardReview({ onClose }) {
   }, [history, act]);
 
   const handleNextSession = useCallback(() => {
-    const newSession = buildDailySession(langCards, state.newCardsPerDay, session, langFilter);
+    const newSession = buildDailySession(langCards, newCardsPerDay, session, langFilter);
     setSession(newSession);
     setHistory([]);
     setPhase(newSession.cardKeys.length === 0 ? 'done' : 'front');
-  }, [langCards, state.newCardsPerDay, session, langFilter]);
+  }, [langCards, newCardsPerDay, session, langFilter]);
 
   const handleNewSession = useCallback(() => {
-    const newSession = buildDailySession(langCards, state.newCardsPerDay, null, langFilter, { newOnly: true });
+    const newSession = buildDailySession(langCards, newCardsPerDay, null, langFilter, { newOnly: true });
     setSession(newSession);
     setHistory([]);
     setPhase(newSession.cardKeys.length === 0 ? 'done' : 'front');
-  }, [langCards, state.newCardsPerDay, langFilter]);
+  }, [langCards, newCardsPerDay, langFilter]);
+
+  // Handler for quiz mode sub-components
+  const handleQuizJudge = useCallback((word, judgment, direction) => {
+    act.logActivity('flashcard_reviewed', { word, judgment, direction });
+    const card = langCards.find(c => c.target === word);
+    if (card) {
+      const srsUpdate = calculateSRS(judgment, card, direction);
+      act.updateVocabSRS(word, srsUpdate);
+    }
+  }, [langCards, act]);
 
   // Close on Escape, keyboard navigation for flashcards
   useEffect(() => {
@@ -273,13 +301,13 @@ export default function FlashcardReview({ onClose }) {
   // Check if more cards are available beyond this session
   const hasMoreCards = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
-    const testSession = buildDailySession(langCards, state.newCardsPerDay, session, langFilter);
+    const testSession = buildDailySession(langCards, newCardsPerDay, session, langFilter);
     return testSession.cardKeys.length > 0 && testSession.index < testSession.cardKeys.length;
-  }, [langCards, state.newCardsPerDay, session, langFilter]);
+  }, [langCards, newCardsPerDay, session, langFilter]);
 
   if (allCards.length === 0) {
     return (
-      <div className="flashcard-overlay" onClick={e => e.target === e.currentTarget && onClose?.()}>
+      <div className="flashcard-overlay" role="dialog" aria-modal="true" aria-label="Flashcard review" onClick={e => e.target === e.currentTarget && onClose?.()}>
         <div className="flashcard-modal card card-padded fade-in">
           <div className="flashcard-modal__header">
             <h2 className="font-display flashcard-modal__title">Flashcard Review</h2>
@@ -294,7 +322,7 @@ export default function FlashcardReview({ onClose }) {
   }
 
   return (
-    <div className="flashcard-overlay" onClick={e => e.target === e.currentTarget && onClose?.()}>
+    <div className="flashcard-overlay" role="dialog" aria-modal="true" aria-label="Flashcard review" onClick={e => e.target === e.currentTarget && onClose?.()}>
       <div className="flashcard-modal card card-padded fade-in">
         <div className="flashcard-modal__header">
           <h2 className="font-display flashcard-modal__title">Flashcard Review</h2>
@@ -316,8 +344,32 @@ export default function FlashcardReview({ onClose }) {
           </div>
         )}
 
-        {/* Session stats */}
-        {phase !== 'done' && (
+        {/* Quiz mode tabs */}
+        <div className="flashcard-mode-tabs">
+          {['flashcard', 'fillblank', 'listening', 'matching'].map(mode => (
+            <button
+              key={mode}
+              className={`flashcard-mode-tab ${quizMode === mode ? 'flashcard-mode-tab--active' : ''}`}
+              onClick={() => setQuizMode(mode)}
+            >
+              {{ flashcard: 'Cards', fillblank: 'Fill Blank', listening: 'Listening', matching: 'Matching' }[mode]}
+            </button>
+          ))}
+        </div>
+
+        {/* Render sub-mode components */}
+        {quizMode === 'fillblank' && (
+          <FillBlankMode cards={langCards} onJudge={handleQuizJudge} onClose={onClose} />
+        )}
+        {quizMode === 'listening' && (
+          <ListeningMode cards={langCards} onJudge={handleQuizJudge} onClose={onClose} speakText={speakText} />
+        )}
+        {quizMode === 'matching' && (
+          <MatchingMode cards={langCards} onJudge={handleQuizJudge} onClose={onClose} />
+        )}
+
+        {/* Session stats (flashcard mode only) */}
+        {quizMode === 'flashcard' && phase !== 'done' && (
           <div className="flashcard-session-stats">
             <span className="flashcard-stat-badge flashcard-stat-badge--due">{dueCount} due</span>
             <span className="flashcard-stat-badge flashcard-stat-badge--new">{newCount} new</span>
@@ -326,7 +378,7 @@ export default function FlashcardReview({ onClose }) {
           </div>
         )}
 
-        {totalCards === 0 || (phase !== 'done' && cardIdx >= totalCards) ? (
+        {quizMode === 'flashcard' && (totalCards === 0 || (phase !== 'done' && cardIdx >= totalCards) ? (
           <div className="flashcard-done">
             <h3 className="font-display flashcard-done__title">All done for today!</h3>
             <p className="text-muted">No cards due for review right now.</p>
@@ -339,7 +391,7 @@ export default function FlashcardReview({ onClose }) {
               <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
             </div>
           </div>
-        ) : phase === 'done' ? (
+        ) : quizMode === 'flashcard' && phase === 'done' ? (
           /* Done screen */
           <div className="flashcard-done">
             <h3 className="font-display flashcard-done__title">Session Complete</h3>
@@ -408,7 +460,7 @@ export default function FlashcardReview({ onClose }) {
               <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
             </div>
           </div>
-        ) : (
+        ) : quizMode === 'flashcard' ? (
           /* Card view */
           <>
             <div className="flashcard-progress">
@@ -428,7 +480,7 @@ export default function FlashcardReview({ onClose }) {
                 <>
                   <div className="flashcard-card__front">
                     <span className="flashcard-card__target text-target">
-                      {state.romanizationOn && romanizer && currentCard ? renderRomanization(currentCard.target, 'fc') : currentCard?.target}
+                      {romanizationOn && romanizer && currentCard ? renderRomanization(currentCard.target, 'fc') : currentCard?.target}
                     </span>
                   </div>
 
@@ -488,7 +540,7 @@ export default function FlashcardReview({ onClose }) {
               </div>
             )}
           </>
-        )}
+        ) : null)}
       </div>
     </div>
   );

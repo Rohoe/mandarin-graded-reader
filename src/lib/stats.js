@@ -3,7 +3,7 @@
  */
 
 export function computeStats(state) {
-  const { learnedVocabulary, syllabi, syllabusProgress, standaloneReaders, learningActivity } = state;
+  const { learnedVocabulary, syllabi, syllabusProgress, standaloneReaders, learningActivity, readingTime, generatedReaders } = state;
 
   // ── Vocabulary stats ───────────────────────────────────────
   const vocabEntries = Object.entries(learnedVocabulary || {});
@@ -62,6 +62,10 @@ export function computeStats(state) {
   }
 
   const flashcardStreak = getFlashcardStreak(learningActivity);
+  const reviewForecast = getReviewForecast(learnedVocabulary);
+  const retentionCurve = getRetentionCurve(learningActivity);
+  const reviewHeatmap = getReviewHeatmap(learningActivity);
+  const readingStats = getReadingStats(readingTime, generatedReaders);
 
   return {
     totalWords,
@@ -81,6 +85,11 @@ export function computeStats(state) {
     retentionRate,
     flashcardMastery: { mastered: fcMastered, learning: fcLearning, new: fcNew },
     flashcardStreak,
+    reviewForecast,
+    retentionCurve,
+    reviewHeatmap,
+    // Reading stats
+    readingStats,
   };
 }
 
@@ -132,6 +141,97 @@ export function getFlashcardStreak(activity) {
   return getStreak(fcActivities);
 }
 
+/**
+ * 7-day review forecast from nextReview/reverseNextReview dates.
+ */
+export function getReviewForecast(learnedVocabulary) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = [];
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() + i);
+    const dayStart = d.getTime();
+    const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+    let count = 0;
+
+    for (const info of Object.values(learnedVocabulary || {})) {
+      if (info.nextReview) {
+        const nr = new Date(info.nextReview).getTime();
+        if (i === 0 ? nr <= dayEnd : (nr >= dayStart && nr < dayEnd)) count++;
+      }
+      if (info.reverseNextReview) {
+        const rr = new Date(info.reverseNextReview).getTime();
+        if (i === 0 ? rr <= dayEnd : (rr >= dayStart && rr < dayEnd)) count++;
+      }
+    }
+
+    const label = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString(undefined, { weekday: 'short' });
+    days.push({ label, count });
+  }
+  return days;
+}
+
+/**
+ * 8-week retention rate from flashcard_reviewed activity.
+ */
+export function getRetentionCurve(learningActivity) {
+  const weeks = [];
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const nowMs = now.getTime();
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+
+  const fcActivities = (learningActivity || []).filter(a => a.type === 'flashcard_reviewed');
+
+  for (let i = 7; i >= 0; i--) {
+    const weekStart = nowMs - (i + 1) * weekMs;
+    const weekEnd = nowMs - i * weekMs;
+    const inWeek = fcActivities.filter(a => a.timestamp >= weekStart && a.timestamp < weekEnd);
+    const gotCount = inWeek.filter(a => a.judgment === 'got').length;
+    const rate = inWeek.length > 0 ? Math.round(gotCount / inWeek.length * 100) : null;
+    const label = i === 0 ? 'This wk' : i === 1 ? 'Last wk' : `${i}wk ago`;
+    weeks.push({ label, rate, total: inWeek.length });
+  }
+  return weeks;
+}
+
+/**
+ * 364-day review heatmap grid with intensity levels 0-4.
+ */
+export function getReviewHeatmap(learningActivity) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  // Count reviews per day
+  const dayCounts = {};
+  const fcActivities = (learningActivity || []).filter(a => a.type === 'flashcard_reviewed');
+  for (const a of fcActivities) {
+    const d = new Date(a.timestamp);
+    d.setHours(0, 0, 0, 0);
+    const key = d.toISOString().slice(0, 10);
+    dayCounts[key] = (dayCounts[key] || 0) + 1;
+  }
+
+  // Build 364-day grid (52 weeks)
+  const grid = [];
+  for (let i = 363; i >= 0; i--) {
+    const d = new Date(today.getTime() - i * dayMs);
+    const key = d.toISOString().slice(0, 10);
+    const count = dayCounts[key] || 0;
+    let level;
+    if (count === 0) level = 0;
+    else if (count <= 5) level = 1;
+    else if (count <= 15) level = 2;
+    else if (count <= 30) level = 3;
+    else level = 4;
+    grid.push({ date: key, count, level });
+  }
+  return grid;
+}
+
 export function getWordsByPeriod(vocab, period = 'week') {
   if (!vocab) return [];
 
@@ -169,4 +269,62 @@ export function getWordsByPeriod(vocab, period = 'week') {
     result.push({ label, count: buckets[i] || 0 });
   }
   return result;
+}
+
+/**
+ * Count readable units in a text string.
+ * For CJK languages (zh, yue): count characters (excluding spaces/punctuation).
+ * For alphabetic languages (ko, en): count words.
+ */
+export function countReadableUnits(text, langId) {
+  if (!text) return 0;
+  if (langId === 'zh' || langId === 'yue') {
+    // Count CJK characters
+    return (text.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g) || []).length;
+  }
+  // Word count for Korean and other languages
+  return text.split(/\s+/).filter(w => w.length > 0).length;
+}
+
+/**
+ * Compute reading stats from readingTime map and generated readers.
+ */
+export function getReadingStats(readingTime, generatedReaders) {
+  if (!readingTime || Object.keys(readingTime).length === 0) return null;
+
+  let totalSeconds = 0;
+  let totalUnits = 0;
+  let sessionsWithText = 0;
+
+  for (const [key, seconds] of Object.entries(readingTime)) {
+    totalSeconds += seconds;
+    const reader = generatedReaders?.[key];
+    if (reader && seconds > 0) {
+      const langId = reader.langId || 'zh';
+      // Sum story text
+      const storyText = (reader.story || []).map(s =>
+        typeof s === 'string' ? s : s.text || ''
+      ).join('');
+      const units = countReadableUnits(storyText, langId);
+      if (units > 0) {
+        totalUnits += units;
+        sessionsWithText++;
+      }
+    }
+  }
+
+  const totalMinutes = Math.round(totalSeconds / 60);
+  const sessionsCount = Object.keys(readingTime).length;
+  // Units per minute (characters/min for CJK, words/min for alphabetic)
+  const unitsPerMinute = totalSeconds > 60 && totalUnits > 0
+    ? Math.round(totalUnits / (totalSeconds / 60))
+    : null;
+
+  return {
+    totalMinutes,
+    sessionsCount,
+    totalUnits,
+    unitsPerMinute,
+    sessionsWithText,
+  };
 }

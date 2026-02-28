@@ -7,7 +7,7 @@ test.describe('Standalone Reader Generation', () => {
     await mockLLMApis(page);
 
     await page.goto('/');
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('.app-sidebar');
 
     // Look for the topic input form
     const topicInput = page.locator('input[placeholder*="topic"], input[placeholder*="day"], textarea').first();
@@ -15,7 +15,7 @@ test.describe('Standalone Reader Generation', () => {
       // May need to click a button to show the form first
       const newBtn = page.locator('button:has-text("New"), button:has-text("Generate"), button:has-text("+")').first();
       if (await newBtn.isVisible()) await newBtn.click();
-      await page.waitForTimeout(500);
+      await page.waitForSelector('.settings-overlay');
     }
 
     if (await topicInput.isVisible()) {

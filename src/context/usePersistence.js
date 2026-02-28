@@ -33,6 +33,7 @@ import {
   saveTranslateButtons,
   saveStructuredOutput,
   saveNewCardsPerDay,
+  saveReadingTime,
   saveCloudLastSynced,
   saveReaderSafe,
   deleteReader,
@@ -53,6 +54,7 @@ export function usePersistence(state, dispatch, stateRef) {
   useEffect(() => { if (mountedRef.current) saveExportedWordsFull(state.exportedWords); }, [state.exportedWords]);
   useEffect(() => { if (mountedRef.current) saveLearningActivity(state.learningActivity); }, [state.learningActivity]);
   useEffect(() => { if (mountedRef.current) saveEvictedReaderKeys(state.evictedReaderKeys); }, [state.evictedReaderKeys]);
+  useEffect(() => { if (mountedRef.current) saveReadingTime(state.readingTime); }, [state.readingTime]);
 
   // Provider/API settings
   useEffect(() => { if (mountedRef.current) saveProviderKeys(state.providerKeys); }, [state.providerKeys]);

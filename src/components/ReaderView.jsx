@@ -12,6 +12,7 @@ import { useVocabPopover } from '../hooks/useVocabPopover';
 import { useReaderGeneration } from '../hooks/useReaderGeneration';
 import { useTextSelection } from '../hooks/useTextSelection';
 import { useSentenceTranslate } from '../hooks/useSentenceTranslate';
+import { useReadingTimer } from '../hooks/useReadingTimer';
 import { DEMO_READER_KEY } from '../lib/demoReader';
 import StorySection from './StorySection';
 import VocabularyList from './VocabularyList';
@@ -23,11 +24,9 @@ import ReaderHeader from './ReaderHeader';
 import ReaderActions from './ReaderActions';
 import './ReaderView.css';
 
-// Track which lesson keys we've already tried to load from cache
-// (module-level to avoid ref-during-render lint errors)
-const _loadedKeys = new Set();
-
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar, onOpenSettings }) {
+  // Track which lesson keys we've already tried to load from cache
+  const loadedKeysRef = useRef(new Set());
   // Split selectors to prevent settings changes from re-rendering reader content
   const { generatedReaders, learnedVocabulary, error, pendingReaders, evictedReaderKeys, quotaWarning } = useAppSelector(s => ({
     generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, error: s.error,
@@ -99,6 +98,9 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
 
   const { sentencePopover, sentencePopoverRef, handleSentenceClick, handleSubSelection, closeSentencePopover } = useSentenceTranslate(langId);
 
+  // Track reading time for this lesson
+  useReadingTimer(reader ? lessonKey : null);
+
   // Build selection popover data when selection changes
   useEffect(() => {
     if (!selection) {
@@ -168,10 +170,9 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   }, [lessonKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load from cache to avoid flash of "Generate Reader" button.
-  // Uses module-level Set to avoid re-dispatching for the same key.
   useEffect(() => {
-    if (lessonKey && !generatedReaders[lessonKey] && !_loadedKeys.has(lessonKey)) {
-      _loadedKeys.add(lessonKey);
+    if (lessonKey && !generatedReaders[lessonKey] && !loadedKeysRef.current.has(lessonKey)) {
+      loadedKeysRef.current.add(lessonKey);
       dispatch({ type: 'LOAD_CACHED_READER', payload: { lessonKey } });
     }
   }, [lessonKey]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -315,7 +316,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     }
 
     return (
-      <div className="reader-view reader-view--pregeneratе">
+      <div className="reader-view reader-view--pregenerate">
         <div className="reader-view__pregenerate card card-padded">
           {lessonMeta && (
             <>
@@ -342,7 +343,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   // ── Not yet generated ───────────────────────────────────────
   if (!reader) {
     return (
-      <div className="reader-view reader-view--pregeneratе">
+      <div className="reader-view reader-view--pregenerate">
         <div className="reader-view__pregenerate card card-padded">
           {lessonMeta && (
             <>

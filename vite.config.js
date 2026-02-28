@@ -11,7 +11,7 @@ export default defineConfig({
     include: ['src/**/*.test.{js,jsx}'],
     coverage: {
       provider: 'v8',
-      include: ['src/lib/**', 'src/context/**', 'src/prompts/**'],
+      include: ['src/lib/**', 'src/context/**', 'src/prompts/**', 'src/components/FlashcardReview/**'],
     },
   },
   build: {

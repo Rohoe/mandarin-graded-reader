@@ -1,25 +1,33 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import { useApp } from '../../context/AppContext';
+import { useAppSelector } from '../../context/useAppSelector';
 import { computeStats } from '../../lib/stats';
 import { getAllLanguages } from '../../lib/languages';
 import { loadActivityStash } from '../../lib/storage';
 import './StatsDashboard.css';
 
 export default function StatsDashboard({ onClose, onShowFlashcards }) {
-  const { state } = useApp();
+  const statsState = useAppSelector(s => ({
+    syllabi: s.syllabi,
+    syllabusProgress: s.syllabusProgress,
+    standaloneReaders: s.standaloneReaders,
+    learnedVocabulary: s.learnedVocabulary,
+    learningActivity: s.learningActivity,
+    readingTime: s.readingTime,
+    generatedReaders: s.generatedReaders,
+  }));
   const [fullActivity, setFullActivity] = useState(null);
   const stateForStats = useMemo(() => {
-    if (!fullActivity) return state;
-    return { ...state, learningActivity: fullActivity };
-  }, [state, fullActivity]);
+    if (!fullActivity) return statsState;
+    return { ...statsState, learningActivity: fullActivity };
+  }, [statsState, fullActivity]);
   const stats = useMemo(() => computeStats(stateForStats), [stateForStats]);
 
   const handleLoadFullHistory = useCallback(() => {
     const stash = loadActivityStash();
     if (stash.length > 0) {
-      setFullActivity([...stash, ...state.learningActivity]);
+      setFullActivity([...stash, ...statsState.learningActivity]);
     }
-  }, [state.learningActivity]);
+  }, [statsState.learningActivity]);
   const languages = getAllLanguages();
 
   // Close on Escape key
@@ -167,6 +175,97 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Review Forecast (7-day) */}
+        {stats.reviewForecast && stats.totalWords > 0 && (
+          <div className="stats-dashboard__section">
+            <h3 className="stats-dashboard__section-title font-display">Review Forecast</h3>
+            <div className="stats-chart">
+              {stats.reviewForecast.map((day, i) => {
+                const maxForecast = Math.max(...stats.reviewForecast.map(d => d.count), 1);
+                return (
+                  <div key={i} className="stats-chart__col">
+                    <div className="stats-chart__bar-wrap">
+                      <div
+                        className="stats-chart__bar stats-chart__bar--forecast"
+                        style={{ height: `${(day.count / maxForecast) * 100}%` }}
+                      />
+                    </div>
+                    <span className="stats-chart__count">{day.count || ''}</span>
+                    <span className="stats-chart__label">{day.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Retention Curve (8-week) */}
+        {stats.retentionCurve && stats.totalFlashcardReviews > 0 && (
+          <div className="stats-dashboard__section">
+            <h3 className="stats-dashboard__section-title font-display">Retention Curve</h3>
+            <div className="stats-chart">
+              {stats.retentionCurve.map((week, i) => (
+                <div key={i} className="stats-chart__col">
+                  <div className="stats-chart__bar-wrap">
+                    <div
+                      className="stats-chart__bar stats-chart__bar--retention"
+                      style={{ height: week.rate != null ? `${week.rate}%` : '0%' }}
+                    />
+                  </div>
+                  <span className="stats-chart__count">{week.rate != null ? `${week.rate}%` : ''}</span>
+                  <span className="stats-chart__label">{week.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Review Heatmap */}
+        {stats.reviewHeatmap && stats.totalFlashcardReviews > 0 && (
+          <div className="stats-dashboard__section">
+            <h3 className="stats-dashboard__section-title font-display">Review Activity</h3>
+            <div className="stats-heatmap">
+              <div className="stats-heatmap__grid">
+                {stats.reviewHeatmap.map((day, i) => (
+                  <div
+                    key={i}
+                    className={`stats-heatmap__cell stats-heatmap__cell--${day.level}`}
+                    title={`${day.date}: ${day.count} reviews`}
+                  />
+                ))}
+              </div>
+              <div className="stats-heatmap__legend">
+                <span className="text-muted" style={{ fontSize: 'var(--text-xs)' }}>Less</span>
+                {[0, 1, 2, 3, 4].map(level => (
+                  <div key={level} className={`stats-heatmap__cell stats-heatmap__cell--${level}`} />
+                ))}
+                <span className="text-muted" style={{ fontSize: 'var(--text-xs)' }}>More</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reading Speed */}
+        {stats.readingStats && (
+          <div className="stats-dashboard__section">
+            <h3 className="stats-dashboard__section-title font-display">Reading</h3>
+            <div className="stats-dashboard__summary" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+              <div className="stats-card">
+                <span className="stats-card__value">{stats.readingStats.totalMinutes}</span>
+                <span className="stats-card__label">Minutes Read</span>
+              </div>
+              <div className="stats-card">
+                <span className="stats-card__value">{stats.readingStats.sessionsCount}</span>
+                <span className="stats-card__label">Sessions</span>
+              </div>
+              <div className="stats-card">
+                <span className="stats-card__value">{stats.readingStats.unitsPerMinute ?? '—'}</span>
+                <span className="stats-card__label">Chars/min</span>
+              </div>
+            </div>
           </div>
         )}
 

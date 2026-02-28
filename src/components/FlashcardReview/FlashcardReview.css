@@ -344,6 +344,191 @@
   font-style: italic;
 }
 
+/* ── Mode tabs ─────────────────────────────────────────────── */
+.flashcard-mode-tabs {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--color-border-light, #e5e2dc);
+  padding-bottom: var(--space-1);
+}
+
+.flashcard-mode-tab {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted, #6b7280);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.flashcard-mode-tab:hover {
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+}
+
+.flashcard-mode-tab--active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+/* ── Fill-in-the-blank mode ───────────────────────────────── */
+.quiz-fillblank {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.quiz-fillblank__sentence {
+  font-size: var(--text-lg);
+  line-height: 1.8;
+  text-align: center;
+  padding: var(--space-4);
+}
+
+.quiz-fillblank__form {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  width: 100%;
+  max-width: 320px;
+}
+
+.quiz-fillblank__input,
+.quiz-listening__input {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border, #d4d0c8);
+  border-radius: var(--radius);
+  font-size: var(--text-base);
+  font-family: var(--font-target);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.quiz-fillblank__input:focus,
+.quiz-listening__input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 25%, transparent);
+}
+
+.quiz-fillblank__feedback,
+.quiz-listening__feedback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  animation: flashcard-reveal 0.2s ease;
+}
+
+.quiz-fillblank__correct {
+  color: var(--color-accent);
+  font-weight: 600;
+  font-size: var(--text-lg);
+}
+
+.quiz-fillblank__incorrect {
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ── Listening mode ───────────────────────────────────────── */
+.quiz-listening {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.quiz-listening__prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) 0;
+}
+
+.quiz-listening__play {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-base);
+}
+
+.quiz-listening__form {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  width: 100%;
+  max-width: 320px;
+}
+
+/* ── Matching mode ────────────────────────────────────────── */
+.quiz-matching {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.quiz-matching__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.quiz-matching__column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.quiz-matching__item {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border, #d4d0c8);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.quiz-matching__item:hover:not(:disabled) {
+  border-color: var(--color-accent);
+}
+
+.quiz-matching__item--selected {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 25%, transparent);
+}
+
+.quiz-matching__item--matched {
+  opacity: 0.4;
+  pointer-events: none;
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+
+.quiz-matching__item--shake {
+  animation: matching-shake 0.4s ease;
+}
+
+@keyframes matching-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
 /* ── Dark mode overrides ────────────────────────────────────── */
 [data-theme="dark"] .flashcard-lang-pill {
   border-color: rgba(255, 255, 255, 0.22);

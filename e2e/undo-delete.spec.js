@@ -11,7 +11,7 @@ test.describe('Undo delete', () => {
     if (isMobile) {
       const hamburger = page.locator('button[aria-label*="menu"], .mobile-header button').first();
       if (await hamburger.isVisible()) await hamburger.click();
-      await page.waitForTimeout(500);
+      await page.waitForSelector('.app-sidebar--open');
     }
 
     // Find and click the delete button for the reader
@@ -59,7 +59,7 @@ test.describe('Undo delete', () => {
       'gradedReader_syllabi': JSON.stringify([syllabusData]),
     });
     await page.goto('/');
-    await page.waitForTimeout(1500);
+    await page.waitForSelector('.app-sidebar');
 
     // Verify syllabus is visible in sidebar
     await expect(page.locator('body')).toContainText('Chinese food culture', { timeout: 5000 });

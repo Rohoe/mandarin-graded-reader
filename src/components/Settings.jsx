@@ -19,7 +19,7 @@ const TABS = [
 ];
 
 export default function Settings({ onClose }) {
-  const { state, dispatch, pickSaveFolder, removeSaveFolder, clearAllData } = useApp();
+  const { state, dispatch, pickSaveFolder, removeSaveFolder, clearAllData, performRestore, performRevertMerge } = useApp();
   const act = actions(dispatch);
 
   const hasAnyKey = Object.values(state.providerKeys).some(k => k);
@@ -96,7 +96,7 @@ export default function Settings({ onClose }) {
         if (!data || typeof data !== 'object' || !data.syllabi) {
           throw new Error('Invalid backup file: missing syllabi field.');
         }
-        act.restoreFromBackup(data);
+        performRestore(data);
         act.notify('success', 'Backup restored successfully.');
         setConfirmRestore(false);
       } catch (err) {
@@ -253,6 +253,7 @@ export default function Settings({ onClose }) {
             fsSupported={fsSupported}
             pickSaveFolder={pickSaveFolder}
             removeSaveFolder={removeSaveFolder}
+            performRevertMerge={performRevertMerge}
           />
         )}
 

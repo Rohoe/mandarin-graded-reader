@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { computeStats, getStreak, getWordsByPeriod } from './stats';
+import { computeStats, getStreak, getFlashcardStreak, getWordsByPeriod } from './stats';
 
 // ── getStreak ─────────────────────────────────────────────────
 
@@ -231,5 +231,91 @@ describe('computeStats', () => {
     };
     const stats = computeStats(state);
     expect(stats.readersGenerated).toBe(2);
+  });
+
+  it('computes flashcard mastery breakdown', () => {
+    const state = {
+      learnedVocabulary: {
+        '猫': { langId: 'zh', reviewCount: 0 },         // new
+        '狗': { langId: 'zh', reviewCount: 5, interval: 25 }, // mastered
+        '鸟': { langId: 'zh', reviewCount: 2, interval: 3 },  // learning
+      },
+      syllabi: [],
+      syllabusProgress: {},
+      standaloneReaders: [],
+      learningActivity: [],
+    };
+    const stats = computeStats(state);
+    expect(stats.flashcardMastery.new).toBe(1);
+    expect(stats.flashcardMastery.mastered).toBe(1);
+    expect(stats.flashcardMastery.learning).toBe(1);
+  });
+
+  it('computes flashcard review stats', () => {
+    const todayMs = Date.now();
+    const state = {
+      learnedVocabulary: {},
+      syllabi: [],
+      syllabusProgress: {},
+      standaloneReaders: [],
+      learningActivity: [
+        { type: 'flashcard_reviewed', judgment: 'got', timestamp: todayMs },
+        { type: 'flashcard_reviewed', judgment: 'got', timestamp: todayMs },
+        { type: 'flashcard_reviewed', judgment: 'missed', timestamp: todayMs },
+      ],
+    };
+    const stats = computeStats(state);
+    expect(stats.totalFlashcardReviews).toBe(3);
+    expect(stats.reviewsToday).toBe(3);
+    expect(stats.retentionRate).toBe(67); // 2/3
+  });
+
+  it('returns null retention rate with no flashcard reviews', () => {
+    const state = {
+      learnedVocabulary: {},
+      syllabi: [],
+      syllabusProgress: {},
+      standaloneReaders: [],
+      learningActivity: [],
+    };
+    const stats = computeStats(state);
+    expect(stats.retentionRate).toBeNull();
+  });
+});
+
+// ── getFlashcardStreak ──────────────────────────────────────
+
+describe('getFlashcardStreak', () => {
+  it('returns 0 for empty activity', () => {
+    expect(getFlashcardStreak([])).toBe(0);
+    expect(getFlashcardStreak(null)).toBe(0);
+  });
+
+  it('returns 0 when no flashcard activities', () => {
+    expect(getFlashcardStreak([
+      { type: 'quiz_graded', timestamp: Date.now() },
+    ])).toBe(0);
+  });
+
+  it('returns streak for consecutive flashcard review days', () => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    expect(getFlashcardStreak([
+      { type: 'flashcard_reviewed', timestamp: today.getTime() },
+      { type: 'flashcard_reviewed', timestamp: yesterday.getTime() },
+    ])).toBe(2);
+  });
+
+  it('ignores non-flashcard activities for streak', () => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    expect(getFlashcardStreak([
+      { type: 'flashcard_reviewed', timestamp: today.getTime() },
+      { type: 'quiz_graded', timestamp: yesterday.getTime() },
+    ])).toBe(1);
   });
 });

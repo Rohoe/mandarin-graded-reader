@@ -1,6 +1,6 @@
 const LANG_MAP = {
   zh: 'zh-CN',
-  yue: 'zh-TW',
+  yue: 'yue',
   ko: 'ko',
 };
 

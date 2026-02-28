@@ -576,8 +576,7 @@ async function callLLMStructured(llmConfig, systemPrompt, userMessage, maxTokens
       case 'gemini':
         return await callGeminiStructured(apiKey, model, systemPrompt, userMessage, maxTokens, signal);
       case 'openai_compatible':
-        // Falls back to regular call — structured output support varies
-        return await callOpenAI(apiKey, model, systemPrompt, userMessage, maxTokens, baseUrl, signal);
+        return await callOpenAIStructured(apiKey, model, systemPrompt, userMessage, maxTokens, baseUrl, signal);
       default:
         return await callAnthropicStructured(apiKey, model, systemPrompt, userMessage, maxTokens, signal);
     }

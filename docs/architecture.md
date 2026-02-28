@@ -6,7 +6,8 @@
 
 | File | Description |
 |------|-------------|
-| `AppContext.jsx` | useReducer-based global store + AppProvider. Pure reducer (no side effects); persistence extracted to `usePersistence` hook. Test-only exports: `_baseReducer`, `_reducer`, `_DATA_ACTIONS`. |
+| `AppContext.jsx` | useReducer-based global store + AppProvider. Reducer composed from 8 domain slices in `reducers/`. Persistence extracted to `usePersistence` hook. Test-only exports: `_baseReducer`, `_reducer`, `_DATA_ACTIONS`. |
+| `reducers/` | 8 domain slice reducers: `providerReducer`, `syllabusReducer`, `readerReducer`, `vocabularyReducer`, `dataReducer`, `preferencesReducer`, `uiReducer`, `cloudReducer`. Each handles its own action types; composed in AppContext. |
 | `usePersistence.js` | Persistence side-effects extracted from AppContext. useEffect hooks keyed to state slices. Uses `mountedRef` to skip initial-render saves. Generated readers use `prevReadersRef` diffing. |
 | `useApp.js` | useApp hook (separate file for ESLint fast-refresh rule) |
 | `actions.js` | actions() helper factory (separate file for same reason) |
@@ -49,6 +50,8 @@
 | `useVocabPopover.js` | Vocab map, click handler, popover positioning, close logic |
 | `useReaderGeneration.js` | Generate/regenerate API calls + state updates. AbortController for abort-on-unmount. Returns `streamingText` for Anthropic streaming preview. |
 | `useFocusTrap.js` | Focus trap for popovers. Keeps keyboard focus within the active popover until dismissed. |
+| `useReadingTimer.js` | Tracks reading time per reader. Starts on mount, pauses on blur/idle, resumes on focus. Stores `readingTime` (seconds) in reader state. |
+| `usePWA.js` | PWA install prompt hook. Captures `beforeinstallprompt` event, exposes `canInstall` flag and `promptInstall()` method. |
 
 ## State shape
 
@@ -65,6 +68,9 @@
   generatedReaders: { [lessonKey]: parsedReaderData },
   learnedVocabulary: { [targetWord]: { romanization, translation, langId, dateAdded, SRS fields... } },
   exportedWords: Set<string>,
+
+  // Reading
+  readingTime: { [lessonKey]: seconds },  // accumulated reading time per reader
 
   // UI
   loading, loadingMessage, error, notification,

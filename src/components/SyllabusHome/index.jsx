@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { useApp } from '../../context/AppContext';
+import { useAppSelector } from '../../context/useAppSelector';
 import { getLang, getLessonTitle } from '../../lib/languages';
 import LoadingIndicator from '../LoadingIndicator';
 import './SyllabusHome.css';
 
 export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDelete, onArchive, onExtend }) {
-  const { state } = useApp();
+  const { loading, loadingMessage } = useAppSelector(s => ({
+    loading: s.loading,
+    loadingMessage: s.loadingMessage,
+  }));
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [extendOpen, setExtendOpen] = useState(false);
   const [additionalCount, setAdditionalCount] = useState(3);
@@ -34,9 +37,9 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
   return (
     <article className="syllabus-home">
       {/* ── Loading overlay ─────────────────────── */}
-      {state.loading && (
+      {loading && (
         <div className="syllabus-home__loading">
-          <LoadingIndicator message={state.loadingMessage || '正在生成…'} />
+          <LoadingIndicator message={loadingMessage || '正在生成…'} />
         </div>
       )}
 
@@ -139,23 +142,23 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
                   value={additionalCount}
                   onChange={e => setAdditionalCount(Number(e.target.value))}
                   className="syllabus-home__extend-slider"
-                  disabled={state.loading}
+                  disabled={loading}
                 />
               </div>
               <div className="syllabus-home__extend-actions">
                 <button
                   className="btn btn-ghost btn-sm"
                   onClick={() => setExtendOpen(false)}
-                  disabled={state.loading}
+                  disabled={loading}
                 >
                   Cancel
                 </button>
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={() => { onExtend(additionalCount); setExtendOpen(false); }}
-                  disabled={state.loading}
+                  disabled={loading}
                 >
-                  {state.loading ? state.loadingMessage || 'Generating…' : 'Generate'}
+                  {loading ? loadingMessage || 'Generating…' : 'Generate'}
                 </button>
               </div>
             </div>

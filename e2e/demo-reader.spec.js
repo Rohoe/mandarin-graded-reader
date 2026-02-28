@@ -21,7 +21,7 @@ test.describe('Demo Reader', () => {
   test('vocab words are clickable in story', async ({ page }) => {
     await page.goto('/');
     // Wait for the app to load
-    await page.waitForTimeout(3000);
+    await page.waitForSelector('.app-sidebar');
 
     // Find a vocab button in the story
     const vocabBtn = page.locator('.vocab-word, button[class*="vocab"]').first();

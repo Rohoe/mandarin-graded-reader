@@ -8,7 +8,7 @@ test.describe('Mobile Layout', () => {
     test.skip(!isMobile, 'Only run on mobile viewport');
 
     await page.goto('/');
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('.app-sidebar');
 
     // Sidebar should not be visible initially
     const sidebar = page.locator('.app-sidebar, .syllabus-panel, [class*="sidebar"]').first();
@@ -30,13 +30,13 @@ test.describe('Mobile Layout', () => {
     test.skip(!isMobile, 'Only run on mobile viewport');
 
     await page.goto('/');
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('.app-sidebar');
 
     // Find hamburger menu button
     const hamburger = page.locator('button[class*="hamburger"], button[aria-label*="menu"], .mobile-header button').first();
     if (await hamburger.isVisible()) {
       await hamburger.click();
-      await page.waitForTimeout(500);
+      await page.waitForSelector('.app-sidebar--open');
 
       // After clicking, sidebar should be visible
       const sidebar = page.locator('.app-sidebar--open, .syllabus-panel').first();
@@ -48,7 +48,7 @@ test.describe('Mobile Layout', () => {
     test.skip(!isMobile, 'Only run on mobile viewport');
 
     await page.goto('/');
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('.app-sidebar');
 
     // Page should render without horizontal scroll
     const body = page.locator('body');

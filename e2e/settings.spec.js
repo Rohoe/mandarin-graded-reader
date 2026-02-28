@@ -6,13 +6,13 @@ test.describe('Settings', () => {
     if (isMobile) {
       const hamburger = page.locator('button[class*="hamburger"], button[aria-label*="menu"], .mobile-header button').first();
       if (await hamburger.isVisible()) await hamburger.click();
-      await page.waitForTimeout(500);
+      await page.waitForSelector('.app-sidebar--open');
     }
 
     const settingsBtn = page.locator('button:has-text("Settings"), button[aria-label*="settings"], button[aria-label*="Settings"]').first();
     if (await settingsBtn.isVisible()) {
       await settingsBtn.click();
-      await page.waitForTimeout(500);
+      await page.waitForSelector('.settings-overlay');
       return true;
     }
     return false;
@@ -20,7 +20,7 @@ test.describe('Settings', () => {
 
   test('opens settings modal', async ({ page, isMobile }) => {
     await page.goto('/');
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('.app-sidebar');
 
     const opened = await openSettingsModal(page, isMobile);
     if (opened) {
@@ -30,7 +30,7 @@ test.describe('Settings', () => {
 
   test('toggles dark mode', async ({ page, isMobile }) => {
     await page.goto('/');
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('.app-sidebar');
 
     const opened = await openSettingsModal(page, isMobile);
     if (!opened) return;
@@ -46,7 +46,7 @@ test.describe('Settings', () => {
 
   test('shows AI Provider tab', async ({ page, isMobile }) => {
     await page.goto('/');
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('.app-sidebar');
 
     const opened = await openSettingsModal(page, isMobile);
     if (!opened) return;
@@ -55,7 +55,6 @@ test.describe('Settings', () => {
     const providerTab = page.locator('button:has-text("AI Provider"), [role="tab"]:has-text("AI Provider")').first();
     if (await providerTab.isVisible()) {
       await providerTab.click();
-      await page.waitForTimeout(500);
       // Should show provider options — verify heading and provider buttons exist in the settings modal
       const settingsModal = page.locator('[class*="settings"], [class*="modal"]').first();
       await expect(settingsModal).toContainText('AI Provider', { timeout: 3000 });

@@ -62,8 +62,9 @@ export function actions(dispatch) {
     // Background generation tracking
     startPendingReader:    key    => dispatch({ type: 'START_PENDING_READER', payload: key }),
     clearPendingReader:    key    => dispatch({ type: 'CLEAR_PENDING_READER', payload: key }),
-    // Backup / restore
+    // Backup / restore (prefer context.performRestore for side-effect-safe restore)
     restoreFromBackup:     data   => dispatch({ type: 'RESTORE_FROM_BACKUP', payload: data }),
+    revertMerge:           snapshot => dispatch({ type: 'REVERT_MERGE', payload: snapshot }),
     // Cloud sync
     setCloudUser:          user   => dispatch({ type: 'SET_CLOUD_USER', payload: user }),
     setCloudSyncing:       val    => dispatch({ type: 'SET_CLOUD_SYNCING', payload: val }),
@@ -74,5 +75,7 @@ export function actions(dispatch) {
     setFetchedModels:      (provider, models) => dispatch({ type: 'SET_FETCHED_MODELS', payload: { provider, models } }),
     // Learning activity
     logActivity:           (type, extra) => dispatch({ type: 'LOG_ACTIVITY', payload: { type, ...extra } }),
+    // Reading time
+    updateReadingTime:     (lessonKey, seconds) => dispatch({ type: 'UPDATE_READING_TIME', payload: { lessonKey, seconds } }),
   };
 }

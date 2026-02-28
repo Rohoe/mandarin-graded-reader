@@ -12,13 +12,13 @@ test.describe('Flashcard Review', () => {
     });
 
     await page.goto('/');
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('.app-sidebar');
 
     // On mobile, open sidebar first
     if (isMobile) {
       const hamburger = page.locator('button[class*="hamburger"], button[aria-label*="menu"], .mobile-header button').first();
       if (await hamburger.isVisible()) await hamburger.click();
-      await page.waitForTimeout(500);
+      await page.waitForSelector('.app-sidebar--open');
     }
 
     // Click Cards button in sidebar
@@ -39,20 +39,20 @@ test.describe('Flashcard Review', () => {
     });
 
     await page.goto('/');
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('.app-sidebar');
 
     // On mobile, open sidebar first
     if (isMobile) {
       const hamburger = page.locator('button[class*="hamburger"], button[aria-label*="menu"], .mobile-header button').first();
       if (await hamburger.isVisible()) await hamburger.click();
-      await page.waitForTimeout(500);
+      await page.waitForSelector('.app-sidebar--open');
     }
 
     const cardsBtn = page.locator('button:has-text("Cards")').first();
     if (!await cardsBtn.isVisible()) return;
 
     await cardsBtn.click();
-    await page.waitForTimeout(500);
+    await page.waitForSelector('[class*="flashcard"], [class*="modal"]');
 
     // Should show a word in large script
     await expect(page.locator('body')).toContainText('猫', { timeout: 3000 });

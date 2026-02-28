@@ -7,13 +7,12 @@ test.describe('Syllabus Flow', () => {
     await mockLLMApis(page);
 
     await page.goto('/');
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('.app-sidebar');
 
     // Switch to syllabus mode if needed
     const syllabusTab = page.locator('button:has-text("Syllabus"), [role="tab"]:has-text("Syllabus")').first();
     if (await syllabusTab.isVisible()) {
       await syllabusTab.click();
-      await page.waitForTimeout(300);
     }
 
     // Fill in topic

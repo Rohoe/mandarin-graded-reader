@@ -6,6 +6,7 @@ import { generateReader, extendSyllabus } from './lib/api';
 import { buildLLMConfig } from './lib/llmConfig';
 import { loadLastSession, saveLastSession } from './lib/storage';
 import { parseReaderResponse, normalizeStructuredReader } from './lib/parser';
+import { mapReaderVocabulary } from './lib/vocabMapper';
 import { DEMO_READER_KEY } from './lib/demoReader';
 import SyllabusPanel from './components/SyllabusPanel';
 import SyllabusHome from './components/SyllabusHome';
@@ -18,6 +19,7 @@ import SignInModal from './components/SignInModal';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingIndicator from './components/LoadingIndicator';
+import PWABanner from './components/PWABanner';
 import './App.css';
 
 // ── Notification toast ─────────────────────────────────────────
@@ -146,21 +148,8 @@ function AppShell() {
     // Learn vocabulary from this reader on completion
     const reader = state.generatedReaders[activeLessonKey];
     const readerLangId = currentSyllabus?.langId || reader?.langId || 'zh';
-    if (reader?.vocabulary?.length > 0) {
-      act.addVocabulary(reader.vocabulary.map(v => ({
-        target: v.target, romanization: v.romanization, translation: v.translation,
-        chinese: v.chinese, korean: v.korean, pinyin: v.pinyin, english: v.english,
-        langId: readerLangId,
-        exampleSentence: v.exampleStory || '',
-      })));
-    } else if (reader?.ankiJson?.length > 0) {
-      act.addVocabulary(reader.ankiJson.map(c => ({
-        chinese: c.chinese, korean: c.korean, target: c.target,
-        pinyin: c.pinyin, romanization: c.romanization, english: c.english,
-        langId: readerLangId,
-        exampleSentence: c.exampleStory || '',
-      })));
-    }
+    const vocab = mapReaderVocabulary(reader, readerLangId);
+    if (vocab) act.addVocabulary(vocab);
     if (standaloneKey) {
       act.updateStandaloneReaderMeta({ key: standaloneKey, completedAt: Date.now() });
     } else {
@@ -289,7 +278,7 @@ function AppShell() {
 
       {/* ─ Sidebar overlay (mobile) ──────────────────────── */}
       {sidebarOpen && (
-        <div className="app-sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+        <div className="app-sidebar-overlay" role="button" aria-label="Close sidebar" tabIndex={0} onClick={() => setSidebarOpen(false)} onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && setSidebarOpen(false)} />
       )}
 
       {/* ─ Left sidebar ──────────────────────────────────── */}
@@ -381,10 +370,10 @@ function AppShell() {
 
       {/* ─ New reader modal ──────────────────────────────── */}
       {showNewForm && (
-        <div className="settings-overlay" onClick={e => e.target === e.currentTarget && setShowNewForm(false)}>
+        <div className="settings-overlay" role="dialog" aria-modal="true" aria-labelledby="new-reader-title" onClick={e => e.target === e.currentTarget && setShowNewForm(false)}>
           <div className="settings-panel card card-padded fade-in">
             <div className="settings-panel__header">
-              <h2 className="font-display" style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>New Reader</h2>
+              <h2 id="new-reader-title" className="font-display" style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>New Reader</h2>
               <button className="btn btn-ghost settings-panel__close" onClick={() => setShowNewForm(false)} aria-label="Close">✕</button>
             </div>
             <TopicForm
@@ -400,6 +389,7 @@ function AppShell() {
 
       {/* ─ Toast notification ────────────────────────────── */}
       <Notification />
+      <PWABanner />
     </div>
   );
 }

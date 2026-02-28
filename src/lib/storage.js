@@ -62,6 +62,7 @@ const KEYS = {
   EVICTED_READER_KEYS: 'gradedReader_evictedReaderKeys',
   NEW_CARDS_PER_DAY:   'gradedReader_newCardsPerDay',
   FLASHCARD_SESSION:   'gradedReader_flashcardSession',
+  READING_TIME:        'gradedReader_readingTime',
 };
 
 const READER_KEY_PREFIX = 'gradedReader_reader_';
@@ -776,6 +777,16 @@ export function loadFlashcardSession(langId) {
 export function saveFlashcardSession(session, langId) {
   if (langId) save(`${KEYS.FLASHCARD_SESSION}_${langId}`, session);
   else save(KEYS.FLASHCARD_SESSION, session);
+}
+
+// ── Reading time tracking ─────────────────────────────────────
+
+export function loadReadingTime() {
+  return load(KEYS.READING_TIME, {});
+}
+
+export function saveReadingTime(data) {
+  save(KEYS.READING_TIME, data);
 }
 
 // ── Reader eviction (LRU) ─────────────────────────────────────

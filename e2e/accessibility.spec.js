@@ -62,7 +62,7 @@ test.describe('Accessibility — keyboard navigation & ARIA', () => {
 
   test('settings tab arrow key navigation', async ({ page }) => {
     await page.goto('/');
-    await page.waitForTimeout(1000);
+    await page.waitForSelector('.app-sidebar');
 
     // Open settings — button text includes icon
     const settingsBtn = page.locator('button:has-text("Settings")').first();
@@ -90,12 +90,12 @@ test.describe('Accessibility — keyboard navigation & ARIA', () => {
   test('TopicForm level pills arrow key navigation', async ({ page }) => {
     await seedLocalStorage(page);
     await page.goto('/');
-    await page.waitForTimeout(1000);
+    await page.waitForSelector('.app-sidebar');
 
     // Show the new reader form
     const newBtn = page.locator('button:has-text("New")').first();
     await newBtn.click();
-    await page.waitForTimeout(500);
+    await page.waitForSelector('.settings-overlay');
 
     // Find the proficiency level radiogroup (has "Level" in aria-label)
     const levelGroup = page.locator('[role="radiogroup"][aria-label*="Level"]');
@@ -126,12 +126,12 @@ test.describe('Accessibility — keyboard navigation & ARIA', () => {
       });
     });
     await page.goto('/');
-    await page.waitForTimeout(1000);
+    await page.waitForSelector('.app-sidebar');
 
     // Show form
     const newBtn = page.locator('button:has-text("New")').first();
     await newBtn.click();
-    await page.waitForTimeout(500);
+    await page.waitForSelector('.settings-overlay');
 
     // Switch to Single Reader mode
     const singleReaderBtn = page.locator('button:has-text("Single Reader")');

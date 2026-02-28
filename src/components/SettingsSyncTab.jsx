@@ -18,6 +18,7 @@ export default function SettingsSyncTab({
   fsSupported,
   pickSaveFolder,
   removeSaveFolder,
+  performRevertMerge,
 }) {
   return (
     <>
@@ -158,7 +159,7 @@ export default function SettingsSyncTab({
                     className="btn btn-secondary btn-sm"
                     style={{ color: 'var(--color-error)' }}
                     onClick={() => {
-                      dispatch({ type: 'REVERT_MERGE' });
+                      performRevertMerge();
                       setConfirmRevert(false);
                       act.notify('success', 'Reverted to pre-merge state.');
                     }}
