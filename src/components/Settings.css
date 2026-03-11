@@ -1,14 +1,4 @@
-.settings-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(26, 24, 20, 0.4);
-  backdrop-filter: blur(3px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-  padding: var(--space-4);
-}
+/* .settings-overlay uses shared .modal-overlay from index.css */
 
 .settings-panel {
   width: 100%;

@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
+import { usePopoverDismissal } from './usePopoverDismissal';
 
 export function useVocabPopover(reader, langConfig) {
   const [activeVocab, setActiveVocab] = useState(null);
@@ -51,24 +52,9 @@ export function useVocabPopover(reader, langConfig) {
   }
 
   // Close popover on Escape, outside click, or scroll
-  useEffect(() => {
-    if (!activeVocab) return;
-    function onKey(e) { if (e.key === 'Escape') setActiveVocab(null); }
-    function onMouseDown(e) {
-      if (popoverRef.current && popoverRef.current.contains(e.target)) return;
-      if (e.target.closest('.reader-view__vocab-btn')) return;
-      setActiveVocab(null);
-    }
-    function onScroll() { setActiveVocab(null); }
-    document.addEventListener('keydown', onKey);
-    document.addEventListener('pointerdown', onMouseDown);
-    window.addEventListener('scroll', onScroll, true);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('pointerdown', onMouseDown);
-      window.removeEventListener('scroll', onScroll, true);
-    };
-  }, [activeVocab]);
+  usePopoverDismissal(!!activeVocab, popoverRef, () => setActiveVocab(null), {
+    ignoreSelectors: ['.reader-view__vocab-btn'],
+  });
 
   return { activeVocab, setActiveVocab, popoverRef, vocabMap, handleVocabClick, lookupVocab, getPopoverPosition };
 }

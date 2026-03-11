@@ -1,17 +1,22 @@
 import { normalizeSyllabi, normalizeStandaloneReaders } from '../../lib/vocabNormalizer';
+import {
+  SET_CLOUD_USER, SET_CLOUD_SYNCING, SET_CLOUD_LAST_SYNCED,
+  HYDRATE_FROM_CLOUD, MERGE_WITH_CLOUD,
+  SET_HAS_MERGE_SNAPSHOT, CLEAR_MERGE_SNAPSHOT, REVERT_MERGE,
+} from '../actionTypes';
 
 export function cloudReducer(state, action) {
   switch (action.type) {
-    case 'SET_CLOUD_USER':
+    case SET_CLOUD_USER:
       return { ...state, cloudUser: action.payload };
 
-    case 'SET_CLOUD_SYNCING':
+    case SET_CLOUD_SYNCING:
       return { ...state, cloudSyncing: action.payload };
 
-    case 'SET_CLOUD_LAST_SYNCED':
+    case SET_CLOUD_LAST_SYNCED:
       return { ...state, cloudLastSynced: action.payload };
 
-    case 'HYDRATE_FROM_CLOUD': {
+    case HYDRATE_FROM_CLOUD: {
       const d = action.payload;
       const normalizedSyllabi = normalizeSyllabi(d.syllabi);
       const normalizedStandalone = normalizeStandaloneReaders(d.standalone_readers);
@@ -28,7 +33,7 @@ export function cloudReducer(state, action) {
       };
     }
 
-    case 'MERGE_WITH_CLOUD': {
+    case MERGE_WITH_CLOUD: {
       const d = action.payload;
       const normalizedSyllabi = normalizeSyllabi(d.syllabi);
       const normalizedStandalone = normalizeStandaloneReaders(d.standalone_readers);
@@ -44,13 +49,13 @@ export function cloudReducer(state, action) {
       };
     }
 
-    case 'SET_HAS_MERGE_SNAPSHOT':
+    case SET_HAS_MERGE_SNAPSHOT:
       return { ...state, hasMergeSnapshot: true };
 
-    case 'CLEAR_MERGE_SNAPSHOT':
+    case CLEAR_MERGE_SNAPSHOT:
       return { ...state, hasMergeSnapshot: false };
 
-    case 'REVERT_MERGE': {
+    case REVERT_MERGE: {
       // Payload contains the parsed snapshot (side effects extracted to performRevertMerge)
       const snapshot = action.payload;
       if (!snapshot) return { ...state, hasMergeSnapshot: false };

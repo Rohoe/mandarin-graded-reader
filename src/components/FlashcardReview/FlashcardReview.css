@@ -1,15 +1,5 @@
 /* ── Flashcard Review Modal ──────────────────────────────────── */
-.flashcard-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(26, 24, 20, 0.4);
-  backdrop-filter: blur(3px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-  padding: var(--space-4);
-}
+/* .flashcard-overlay uses shared .modal-overlay from index.css */
 
 .flashcard-modal {
   width: 100%;
@@ -43,38 +33,14 @@
   flex-shrink: 0;
 }
 
-/* Language filter pills — dedicated styles (not reusing topic-form pills) */
+/* Language filter pills — uses shared .pill-selector / .pill-option from index.css */
 .flashcard-lang-pills {
-  display: flex;
-  gap: var(--space-2);
   flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .flashcard-lang-pill {
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  border: 1px solid var(--color-border, #d4d0c8);
-  background: transparent;
-  color: var(--color-text);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.flashcard-lang-pill:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-}
-
-.flashcard-lang-pill--active {
-  background: var(--color-accent);
-  color: #fff;
-  border-color: var(--color-accent);
-}
-
-.flashcard-lang-pill--active:hover {
-  color: #fff;
+  flex: 0 1 auto;
 }
 
 /* Session stats header */
@@ -530,21 +496,7 @@
 }
 
 /* ── Dark mode overrides ────────────────────────────────────── */
-[data-theme="dark"] .flashcard-lang-pill {
-  border-color: rgba(255, 255, 255, 0.22);
-  color: var(--color-text);
-}
-
-[data-theme="dark"] .flashcard-lang-pill:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-}
-
-[data-theme="dark"] .flashcard-lang-pill--active {
-  background: var(--color-accent);
-  color: #fff;
-  border-color: var(--color-accent);
-}
+/* flashcard-lang-pill dark mode now handled by shared .pill-option in index.css */
 
 [data-theme="dark"] .flashcard-stat-badge--new {
   background: color-mix(in srgb, #818cf8 20%, transparent);

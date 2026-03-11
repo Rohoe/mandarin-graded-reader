@@ -129,7 +129,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
         <div className="form-group">
           <label className="form-label">Language</label>
           <div
-            className="topic-form__lang-pills"
+            className="pill-selector topic-form__lang-pills"
             role="radiogroup"
             aria-label="Language"
             onKeyDown={(e) => {
@@ -152,7 +152,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
                 role="radio"
                 aria-checked={langId === lang.id}
                 tabIndex={langId === lang.id ? 0 : -1}
-                className={`topic-form__lang-pill ${langId === lang.id ? 'active' : ''}`}
+                className={`pill-option topic-form__lang-pill ${langId === lang.id ? 'active' : ''}`}
                 onClick={() => { setLangId(lang.id); setLevel(lang.id === 'ko' ? (defaultTopikLevel ?? 2) : lang.id === 'yue' ? (defaultYueLevel ?? 2) : (defaultLevel ?? 3)); }}
                 disabled={loading}
               >
@@ -181,7 +181,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
       <div className="form-group">
         <label className="form-label">{langConfig.proficiency.name} Level</label>
         <div
-          className="topic-form__hsk-pills"
+          className="pill-selector topic-form__hsk-pills"
           role="radiogroup"
           aria-label={`${langConfig.proficiency.name} Level`}
           onKeyDown={(e) => {
@@ -203,7 +203,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
               role="radio"
               aria-checked={level === l.value}
               tabIndex={level === l.value ? 0 : -1}
-              className={`topic-form__hsk-pill ${level === l.value ? 'active' : ''}`}
+              className={`pill-option topic-form__hsk-pill ${level === l.value ? 'active' : ''}`}
               onClick={() => setLevel(l.value)}
               disabled={loading}
               title={`${l.label} — ${l.desc}`}

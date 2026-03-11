@@ -1,12 +1,9 @@
 import { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { splitParagraphIntoSentences } from '../lib/sentenceSplitter';
+import { stripMarkdown } from '../lib/renderInline';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import SentencePopover from './SentencePopover';
-
-function stripMarkdown(text) {
-  return text.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1');
-}
 
 export default function StorySection({
   storyParagraphs,
@@ -87,7 +84,7 @@ export default function StorySection({
   }
 
   return (
-    <div className="reader-view__story-section">
+    <section className="reader-view__story-section" role="article" aria-label="Story content">
       <div className={`reader-view__story text-target ${pinyinOn ? 'reader-view__story--pinyin' : ''}`}>
         {storyParagraphs.map((para, pi) => {
           const paraKey = `para-${pi}`;
@@ -226,6 +223,6 @@ export default function StorySection({
         speakText={speakText}
         speakingKey={speakingKey}
       />
-    </div>
+    </section>
   );
 }

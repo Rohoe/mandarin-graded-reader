@@ -51,12 +51,12 @@ export default function SettingsAITab({
         <h3 className="settings-section__title form-label">AI Provider</h3>
 
         {/* Provider pills */}
-        <div className="topic-form__lang-pills" style={{ marginBottom: 'var(--space-3)' }}>
+        <div className="pill-selector topic-form__lang-pills" style={{ marginBottom: 'var(--space-3)' }}>
           {Object.values(PROVIDERS).map(p => (
             <button
               key={p.id}
               type="button"
-              className={`topic-form__lang-pill ${state.activeProvider === p.id ? 'active' : ''}`}
+              className={`pill-option topic-form__lang-pill ${state.activeProvider === p.id ? 'active' : ''}`}
               onClick={() => act.setActiveProvider(p.id)}
               style={{ position: 'relative' }}
             >
@@ -89,12 +89,12 @@ export default function SettingsAITab({
                 <p className="settings-section__desc text-muted" style={{ marginBottom: 'var(--space-2)' }}>
                   Preset
                 </p>
-                <div className="topic-form__lang-pills" style={{ marginBottom: 'var(--space-3)' }}>
+                <div className="pill-selector topic-form__lang-pills" style={{ marginBottom: 'var(--space-3)' }}>
                   {presets.map(preset => (
                     <button
                       key={preset.id}
                       type="button"
-                      className={`topic-form__lang-pill ${state.compatPreset === preset.id ? 'active' : ''}`}
+                      className={`pill-option topic-form__lang-pill ${state.compatPreset === preset.id ? 'active' : ''}`}
                       onClick={() => {
                         act.setCompatPreset(preset.id);
                         if (preset.baseUrl) act.setCustomBaseUrl(preset.baseUrl);

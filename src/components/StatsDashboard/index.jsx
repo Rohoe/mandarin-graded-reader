@@ -42,7 +42,7 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
   const maxBarCount = Math.max(...stats.wordsByPeriod.map(b => b.count), 1);
 
   return (
-    <div className="stats-overlay" onClick={onClose}>
+    <div className="modal-overlay stats-overlay" onClick={onClose}>
       <div className="stats-dashboard card" onClick={e => e.stopPropagation()}>
         <div className="stats-dashboard__header">
           <h2 className="stats-dashboard__title font-display">Learning Stats</h2>

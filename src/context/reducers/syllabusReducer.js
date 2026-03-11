@@ -1,8 +1,13 @@
 import { DEMO_READER_KEY } from '../../lib/demoReader';
+import {
+  ADD_SYLLABUS, EXTEND_SYLLABUS_LESSONS, REMOVE_SYLLABUS, UNDO_REMOVE_SYLLABUS,
+  SET_LESSON_INDEX, MARK_LESSON_COMPLETE, UNMARK_LESSON_COMPLETE,
+  ARCHIVE_SYLLABUS, UNARCHIVE_SYLLABUS,
+} from '../actionTypes';
 
 export function syllabusReducer(state, action) {
   switch (action.type) {
-    case 'ADD_SYLLABUS': {
+    case ADD_SYLLABUS: {
       const newSyllabi = [action.payload, ...state.syllabi];
       const newProgress = {
         ...state.syllabusProgress,
@@ -14,7 +19,7 @@ export function syllabusReducer(state, action) {
       return { ...state, syllabi: newSyllabi, syllabusProgress: newProgress, standaloneReaders: filteredStandalone, generatedReaders: filteredReaders };
     }
 
-    case 'EXTEND_SYLLABUS_LESSONS': {
+    case EXTEND_SYLLABUS_LESSONS: {
       const { id, newLessons } = action.payload;
       const syllabusIdx = state.syllabi.findIndex(s => s.id === id);
       if (syllabusIdx === -1) return state;
@@ -26,7 +31,7 @@ export function syllabusReducer(state, action) {
       return { ...state, syllabi: newSyllabi };
     }
 
-    case 'REMOVE_SYLLABUS': {
+    case REMOVE_SYLLABUS: {
       const id = action.payload;
       const removedSyllabus = state.syllabi.find(s => s.id === id);
       const removedProgress = state.syllabusProgress[id];
@@ -50,7 +55,7 @@ export function syllabusReducer(state, action) {
       };
     }
 
-    case 'UNDO_REMOVE_SYLLABUS': {
+    case UNDO_REMOVE_SYLLABUS: {
       const d = state._recentlyDeleted;
       if (!d || d.kind !== 'syllabus' || !d.syllabus) return state;
       return {
@@ -62,7 +67,7 @@ export function syllabusReducer(state, action) {
       };
     }
 
-    case 'SET_LESSON_INDEX': {
+    case SET_LESSON_INDEX: {
       const { syllabusId, lessonIndex } = action.payload;
       const newProgress = {
         ...state.syllabusProgress,
@@ -71,7 +76,7 @@ export function syllabusReducer(state, action) {
       return { ...state, syllabusProgress: newProgress };
     }
 
-    case 'MARK_LESSON_COMPLETE': {
+    case MARK_LESSON_COMPLETE: {
       const { syllabusId, lessonIndex } = action.payload;
       const entry = state.syllabusProgress[syllabusId] || { lessonIndex: 0, completedLessons: [] };
       if (entry.completedLessons.includes(lessonIndex)) return state;
@@ -82,7 +87,7 @@ export function syllabusReducer(state, action) {
       return { ...state, syllabusProgress: newProgress, learningActivity: newActivity };
     }
 
-    case 'UNMARK_LESSON_COMPLETE': {
+    case UNMARK_LESSON_COMPLETE: {
       const { syllabusId, lessonIndex } = action.payload;
       const entry = state.syllabusProgress[syllabusId] || { lessonIndex: 0, completedLessons: [] };
       const newEntry = { ...entry, completedLessons: entry.completedLessons.filter(i => i !== lessonIndex) };
@@ -90,10 +95,10 @@ export function syllabusReducer(state, action) {
       return { ...state, syllabusProgress: newProgress };
     }
 
-    case 'ARCHIVE_SYLLABUS':
+    case ARCHIVE_SYLLABUS:
       return { ...state, syllabi: state.syllabi.map(s => s.id === action.payload ? { ...s, archived: true } : s) };
 
-    case 'UNARCHIVE_SYLLABUS':
+    case UNARCHIVE_SYLLABUS:
       return { ...state, syllabi: state.syllabi.map(s => s.id === action.payload ? { ...s, archived: false } : s) };
 
     default:

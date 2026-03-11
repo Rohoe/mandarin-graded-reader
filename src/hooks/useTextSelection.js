@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { usePopoverDismissal } from './usePopoverDismissal';
 
 export function useTextSelection(containerRef) {
   const [selection, setSelection] = useState(null); // { text, rect }
@@ -49,42 +50,10 @@ export function useTextSelection(containerRef) {
   }, [containerRef]);
 
   // Close on Escape, click outside, or scroll
-  useEffect(() => {
-    if (!selection) return;
-
-    function onKey(e) {
-      if (e.key === 'Escape') {
-        window.getSelection()?.removeAllRanges();
-        setSelection(null);
-      }
-    }
-
-    function onPointerDown(e) {
-      if (popoverRef.current && popoverRef.current.contains(e.target)) return;
-      // Don't close immediately on the same interaction that created the selection
-      setSelection(null);
-    }
-
-    function onScroll() {
-      setSelection(null);
-    }
-
-    // Delay attaching pointerdown so the same mouseup that created the selection
-    // doesn't immediately trigger a close
-    const timer = setTimeout(() => {
-      document.addEventListener('pointerdown', onPointerDown);
-    }, 50);
-
-    document.addEventListener('keydown', onKey);
-    window.addEventListener('scroll', onScroll, true);
-
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('pointerdown', onPointerDown);
-      window.removeEventListener('scroll', onScroll, true);
-    };
-  }, [selection]);
+  usePopoverDismissal(!!selection, popoverRef, clearSelection, {
+    pointerDelay: 50,
+    onEscape: () => window.getSelection()?.removeAllRanges(),
+  });
 
   return { selection, popoverRef, clearSelection };
 }

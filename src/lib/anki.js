@@ -6,6 +6,48 @@
 import { getLang, DEFAULT_LANG_ID } from './languages';
 import { generateApkgBlob } from './ankiApkg';
 
+// ── Shared example block builder ──────────────────────────────
+
+/**
+ * Build example parts for a vocabulary card. Used by both .txt and .apkg exports.
+ * @param {object} card - Anki card data
+ * @param {object} options
+ * @param {number} options.cardIndex - Index in the card list
+ * @param {boolean} options.exportSentenceRom - Include romanization
+ * @param {boolean} options.exportSentenceTrans - Include translation
+ * @param {function|null} options.romanizer - Romanizer instance
+ * @param {RegExp|null} options.scriptRegex - Script regex for the language
+ * @param {object} options.vocabTranslations - Translation cache
+ * @returns {{ storyParts: string[], extraParts: string[] }}
+ */
+export function buildExampleParts(card, { cardIndex, exportSentenceRom, exportSentenceTrans, romanizer, scriptRegex, vocabTranslations }) {
+  const storyParts = [];
+  if (card.example_story) {
+    storyParts.push(card.example_story);
+    if (exportSentenceRom && romanizer && scriptRegex) {
+      const rom = romanizeForExport(card.example_story, romanizer, scriptRegex);
+      if (rom) storyParts.push(`<i>${rom}</i>`);
+    }
+    const storyTrans = vocabTranslations[`story-${cardIndex}`] || card.example_story_translation;
+    if (exportSentenceTrans && storyTrans) storyParts.push(`<i>${storyTrans}</i>`);
+    if (card.usage_note_story) storyParts.push(`<i>${card.usage_note_story}</i>`);
+  }
+
+  const extraParts = [];
+  if (card.example_extra) {
+    extraParts.push(card.example_extra);
+    if (exportSentenceRom && romanizer && scriptRegex) {
+      const rom = romanizeForExport(card.example_extra, romanizer, scriptRegex);
+      if (rom) extraParts.push(`<i>${rom}</i>`);
+    }
+    const extraTrans = vocabTranslations[`extra-${cardIndex}`] || card.example_extra_translation;
+    if (exportSentenceTrans && extraTrans) extraParts.push(`<i>${extraTrans}</i>`);
+    if (card.usage_note_extra) extraParts.push(`<i>${card.usage_note_extra}</i>`);
+  }
+
+  return { storyParts, extraParts };
+}
+
 // ── Character-count hint for reverse cards ───────────────────
 
 /**
@@ -109,29 +151,13 @@ function formatRow(card, level, topicTag, date, langConfig, exportSentenceRom = 
   const transField = langConfig.fields.translation;
   const profName = langConfig.proficiency.name;
 
-  const exampleParts = [];
-  if (card.example_story) {
-    exampleParts.push(card.example_story);
-    if (exportSentenceRom && romanizer && scriptRegex) {
-      const rom = romanizeForExport(card.example_story, romanizer, scriptRegex);
-      if (rom) exampleParts.push(`<i>${rom}</i>`);
-    }
-    const storyTrans = vocabTranslations[`story-${cardIndex}`] || card.example_story_translation;
-    if (exportSentenceTrans && storyTrans) exampleParts.push(`<i>${storyTrans}</i>`);
-    if (card.usage_note_story) exampleParts.push(`<i>${card.usage_note_story}</i>`);
+  const { storyParts, extraParts } = buildExampleParts(card, { cardIndex, exportSentenceRom, exportSentenceTrans, romanizer, scriptRegex, vocabTranslations });
+  const allParts = [...storyParts];
+  if (extraParts.length > 0) {
+    if (allParts.length > 0) allParts.push('');
+    allParts.push(...extraParts);
   }
-  if (card.example_extra) {
-    if (exampleParts.length > 0) exampleParts.push('');
-    exampleParts.push(card.example_extra);
-    if (exportSentenceRom && romanizer && scriptRegex) {
-      const rom = romanizeForExport(card.example_extra, romanizer, scriptRegex);
-      if (rom) exampleParts.push(`<i>${rom}</i>`);
-    }
-    const extraTrans = vocabTranslations[`extra-${cardIndex}`] || card.example_extra_translation;
-    if (exportSentenceTrans && extraTrans) exampleParts.push(`<i>${extraTrans}</i>`);
-    if (card.usage_note_extra) exampleParts.push(`<i>${card.usage_note_extra}</i>`);
-  }
-  const examples = exampleParts.join('<br>');
+  const examples = allParts.join('<br>');
 
   const tags = card._isGrammar
     ? `${profName}${level} ${topicTag} ${date} Grammar`
@@ -168,30 +194,10 @@ function buildApkgCards(toExport, level, topicTag, date, langConfig, exportSente
   const scriptRegex = langConfig.scriptRegex;
 
   return toExport.map((card, idx) => {
-    // Build examples HTML with structured divs for .apkg readability
+    const { storyParts, extraParts } = buildExampleParts(card, { cardIndex: idx, exportSentenceRom, exportSentenceTrans, romanizer, scriptRegex, vocabTranslations });
     const exampleBlocks = [];
-    if (card.example_story) {
-      const parts = [card.example_story];
-      if (exportSentenceRom && romanizer && scriptRegex) {
-        const rom = romanizeForExport(card.example_story, romanizer, scriptRegex);
-        if (rom) parts.push(`<i>${rom}</i>`);
-      }
-      const storyTrans = vocabTranslations[`story-${idx}`] || card.example_story_translation;
-      if (exportSentenceTrans && storyTrans) parts.push(`<i>${storyTrans}</i>`);
-      if (card.usage_note_story) parts.push(`<i>${card.usage_note_story}</i>`);
-      exampleBlocks.push(`<div class="ex-group">${parts.join('<br>')}</div>`);
-    }
-    if (card.example_extra) {
-      const parts = [card.example_extra];
-      if (exportSentenceRom && romanizer && scriptRegex) {
-        const rom = romanizeForExport(card.example_extra, romanizer, scriptRegex);
-        if (rom) parts.push(`<i>${rom}</i>`);
-      }
-      const extraTrans = vocabTranslations[`extra-${idx}`] || card.example_extra_translation;
-      if (exportSentenceTrans && extraTrans) parts.push(`<i>${extraTrans}</i>`);
-      if (card.usage_note_extra) parts.push(`<i>${card.usage_note_extra}</i>`);
-      exampleBlocks.push(`<div class="ex-group">${parts.join('<br>')}</div>`);
-    }
+    if (storyParts.length > 0) exampleBlocks.push(`<div class="ex-group">${storyParts.join('<br>')}</div>`);
+    if (extraParts.length > 0) exampleBlocks.push(`<div class="ex-group">${extraParts.join('<br>')}</div>`);
 
     const tags = card._isGrammar
       ? `${profName}${level} ${topicTag} ${date} Grammar`

@@ -4,6 +4,7 @@ import { actions } from '../context/actions';
 import { getStorageUsage, loadAllReaders, exportAllData } from '../lib/storage';
 import { parseReaderResponse } from '../lib/parser';
 import { pushToCloud, pullFromCloud, mergeData, pushMergedToCloud } from '../lib/cloudSync';
+import { MERGE_WITH_CLOUD } from '../context/actionTypes';
 import { getProvider } from '../lib/providers';
 import SettingsReadingTab from './SettingsReadingTab';
 import SettingsAITab from './SettingsAITab';
@@ -136,7 +137,7 @@ export default function Settings({ onClose }) {
       }
       // Merge cloud data with local (additive, no data loss)
       const merged = mergeData(state, cloudData);
-      dispatch({ type: 'MERGE_WITH_CLOUD', payload: merged });
+      dispatch({ type: MERGE_WITH_CLOUD, payload: merged });
       await pushMergedToCloud(merged);
       act.setCloudLastSynced(Date.now());
       // Clear merge snapshot — pull commits the merge
@@ -170,7 +171,7 @@ export default function Settings({ onClose }) {
   }, [onClose]);
 
   return (
-    <div className="settings-overlay" onClick={e => e.target === e.currentTarget && onClose?.()}>
+    <div className="modal-overlay settings-overlay" onClick={e => e.target === e.currentTarget && onClose?.()}>
       <div className="settings-panel card card-padded fade-in">
         <div className="settings-panel__header">
           <h2 className="font-display settings-panel__title">Settings</h2>

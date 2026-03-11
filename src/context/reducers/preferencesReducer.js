@@ -1,48 +1,55 @@
+import {
+  SET_MAX_TOKENS, SET_DEFAULT_LEVEL, SET_DEFAULT_TOPIK_LEVEL, SET_DEFAULT_YUE_LEVEL,
+  SET_DARK_MODE, SET_TTS_VOICE, SET_TTS_KO_VOICE, SET_TTS_YUE_VOICE,
+  SET_EXPORT_SENTENCE_ROM, SET_EXPORT_SENTENCE_TRANS, SET_TTS_SPEECH_RATE,
+  SET_ROMANIZATION_ON, SET_TRANSLATE_BUTTONS, SET_STRUCTURED_OUTPUT, SET_NEW_CARDS_PER_DAY,
+} from '../actionTypes';
+
 export function preferencesReducer(state, action) {
   switch (action.type) {
-    case 'SET_MAX_TOKENS':
+    case SET_MAX_TOKENS:
       return { ...state, maxTokens: action.payload };
 
-    case 'SET_DEFAULT_LEVEL':
+    case SET_DEFAULT_LEVEL:
       return { ...state, defaultLevel: action.payload };
 
-    case 'SET_DEFAULT_TOPIK_LEVEL':
+    case SET_DEFAULT_TOPIK_LEVEL:
       return { ...state, defaultTopikLevel: action.payload };
 
-    case 'SET_DEFAULT_YUE_LEVEL':
+    case SET_DEFAULT_YUE_LEVEL:
       return { ...state, defaultYueLevel: action.payload };
 
-    case 'SET_DARK_MODE':
+    case SET_DARK_MODE:
       return { ...state, darkMode: action.payload };
 
-    case 'SET_TTS_VOICE':
+    case SET_TTS_VOICE:
       return { ...state, ttsVoiceURI: action.payload };
 
-    case 'SET_TTS_KO_VOICE':
+    case SET_TTS_KO_VOICE:
       return { ...state, ttsKoVoiceURI: action.payload };
 
-    case 'SET_TTS_YUE_VOICE':
+    case SET_TTS_YUE_VOICE:
       return { ...state, ttsYueVoiceURI: action.payload };
 
-    case 'SET_EXPORT_SENTENCE_ROM':
+    case SET_EXPORT_SENTENCE_ROM:
       return { ...state, exportSentenceRom: { ...state.exportSentenceRom, [action.payload.langId]: action.payload.value } };
 
-    case 'SET_EXPORT_SENTENCE_TRANS':
+    case SET_EXPORT_SENTENCE_TRANS:
       return { ...state, exportSentenceTrans: { ...state.exportSentenceTrans, [action.payload.langId]: action.payload.value } };
 
-    case 'SET_TTS_SPEECH_RATE':
+    case SET_TTS_SPEECH_RATE:
       return { ...state, ttsSpeechRate: action.payload };
 
-    case 'SET_ROMANIZATION_ON':
+    case SET_ROMANIZATION_ON:
       return { ...state, romanizationOn: action.payload };
 
-    case 'SET_TRANSLATE_BUTTONS':
+    case SET_TRANSLATE_BUTTONS:
       return { ...state, translateButtons: action.payload };
 
-    case 'SET_STRUCTURED_OUTPUT':
+    case SET_STRUCTURED_OUTPUT:
       return { ...state, useStructuredOutput: action.payload };
 
-    case 'SET_NEW_CARDS_PER_DAY':
+    case SET_NEW_CARDS_PER_DAY:
       return { ...state, newCardsPerDay: action.payload };
 
     default:

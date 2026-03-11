@@ -1,6 +1,6 @@
 /**
- * Extracts all persistence side-effects from AppProvider into a single custom hook.
- * Mechanical move — no logic changes. Each useEffect persists one state slice to localStorage.
+ * Declarative persistence layer — maps state slices to storage functions.
+ * Replaces 30+ individual useEffects with a single registry-driven effect.
  */
 import { useEffect, useRef } from 'react';
 import {
@@ -40,50 +40,72 @@ import {
   saveLastModified,
 } from '../lib/storage';
 import { pushReaderToCloud } from '../lib/cloudSync';
+import { SET_QUOTA_WARNING } from './actionTypes';
+
+// ── Persistence registry ──────────────────────────────────────
+// Each entry maps a state key to the storage function that persists it.
+// The single persistence effect iterates this registry, compares prev vs
+// current, and saves only changed slices — replacing 30+ individual useEffects.
+
+const PERSISTENCE_MAP = [
+  // Data slices
+  { key: 'syllabi', save: saveSyllabi },
+  { key: 'syllabusProgress', save: saveSyllabusProgress },
+  { key: 'standaloneReaders', save: saveStandaloneReaders },
+  { key: 'learnedVocabulary', save: saveLearnedVocabulary },
+  { key: 'exportedWords', save: saveExportedWordsFull },
+  { key: 'learningActivity', save: saveLearningActivity },
+  { key: 'evictedReaderKeys', save: saveEvictedReaderKeys },
+  { key: 'readingTime', save: saveReadingTime },
+  // Provider/API settings
+  { key: 'providerKeys', save: saveProviderKeys },
+  { key: 'activeProvider', save: saveActiveProvider },
+  { key: 'activeModels', save: saveActiveModels },
+  { key: 'gradingModels', save: saveGradingModels },
+  { key: 'customBaseUrl', save: saveCustomBaseUrl },
+  { key: 'customModelName', save: saveCustomModelName },
+  { key: 'compatPreset', save: saveCompatPreset },
+  // User preferences
+  { key: 'maxTokens', save: saveMaxTokens },
+  { key: 'defaultLevel', save: saveDefaultLevel },
+  { key: 'defaultTopikLevel', save: saveDefaultTopikLevel },
+  { key: 'defaultYueLevel', save: saveDefaultYueLevel },
+  { key: 'darkMode', save: saveDarkMode },
+  { key: 'ttsVoiceURI', save: saveTtsVoiceURI },
+  { key: 'ttsKoVoiceURI', save: saveTtsKoVoiceURI },
+  { key: 'ttsYueVoiceURI', save: saveTtsYueVoiceURI },
+  { key: 'exportSentenceRom', save: saveExportSentenceRom },
+  { key: 'exportSentenceTrans', save: saveExportSentenceTrans },
+  { key: 'ttsSpeechRate', save: saveTtsSpeechRate },
+  { key: 'romanizationOn', save: saveRomanizationOn },
+  { key: 'translateButtons', save: saveTranslateButtons },
+  { key: 'useStructuredOutput', save: saveStructuredOutput },
+  { key: 'newCardsPerDay', save: saveNewCardsPerDay },
+  { key: 'cloudLastSynced', save: saveCloudLastSynced },
+  { key: 'lastModified', save: saveLastModified },
+];
 
 export function usePersistence(state, dispatch, stateRef) {
   // Skip persistence on first render (state came from localStorage already)
   const mountedRef = useRef(false);
+  const prevStateRef = useRef(state);
+
   useEffect(() => { mountedRef.current = true; }, []);
 
-  // Data slices
-  useEffect(() => { if (mountedRef.current) saveSyllabi(state.syllabi); }, [state.syllabi]);
-  useEffect(() => { if (mountedRef.current) saveSyllabusProgress(state.syllabusProgress); }, [state.syllabusProgress]);
-  useEffect(() => { if (mountedRef.current) saveStandaloneReaders(state.standaloneReaders); }, [state.standaloneReaders]);
-  useEffect(() => { if (mountedRef.current) saveLearnedVocabulary(state.learnedVocabulary); }, [state.learnedVocabulary]);
-  useEffect(() => { if (mountedRef.current) saveExportedWordsFull(state.exportedWords); }, [state.exportedWords]);
-  useEffect(() => { if (mountedRef.current) saveLearningActivity(state.learningActivity); }, [state.learningActivity]);
-  useEffect(() => { if (mountedRef.current) saveEvictedReaderKeys(state.evictedReaderKeys); }, [state.evictedReaderKeys]);
-  useEffect(() => { if (mountedRef.current) saveReadingTime(state.readingTime); }, [state.readingTime]);
+  // ── Registry-driven persistence (replaces 30+ individual useEffects) ──
+  useEffect(() => {
+    if (!mountedRef.current) return;
+    const prev = prevStateRef.current;
+    prevStateRef.current = state;
 
-  // Provider/API settings
-  useEffect(() => { if (mountedRef.current) saveProviderKeys(state.providerKeys); }, [state.providerKeys]);
-  useEffect(() => { if (mountedRef.current) saveActiveProvider(state.activeProvider); }, [state.activeProvider]);
-  useEffect(() => { if (mountedRef.current) saveActiveModels(state.activeModels); }, [state.activeModels]);
-  useEffect(() => { if (mountedRef.current) saveGradingModels(state.gradingModels); }, [state.gradingModels]);
-  useEffect(() => { if (mountedRef.current) saveCustomBaseUrl(state.customBaseUrl); }, [state.customBaseUrl]);
-  useEffect(() => { if (mountedRef.current) saveCustomModelName(state.customModelName); }, [state.customModelName]);
-  useEffect(() => { if (mountedRef.current) saveCompatPreset(state.compatPreset); }, [state.compatPreset]);
+    for (const { key, save } of PERSISTENCE_MAP) {
+      if (state[key] !== prev[key]) {
+        save(state[key]);
+      }
+    }
+  }); // runs every render, but only saves changed slices
 
-  // User preferences
-  useEffect(() => { if (mountedRef.current) saveMaxTokens(state.maxTokens); }, [state.maxTokens]);
-  useEffect(() => { if (mountedRef.current) saveDefaultLevel(state.defaultLevel); }, [state.defaultLevel]);
-  useEffect(() => { if (mountedRef.current) saveDefaultTopikLevel(state.defaultTopikLevel); }, [state.defaultTopikLevel]);
-  useEffect(() => { if (mountedRef.current) saveDefaultYueLevel(state.defaultYueLevel); }, [state.defaultYueLevel]);
-  useEffect(() => { if (mountedRef.current) saveDarkMode(state.darkMode); }, [state.darkMode]);
-  useEffect(() => { if (mountedRef.current) saveTtsVoiceURI(state.ttsVoiceURI); }, [state.ttsVoiceURI]);
-  useEffect(() => { if (mountedRef.current) saveTtsKoVoiceURI(state.ttsKoVoiceURI); }, [state.ttsKoVoiceURI]);
-  useEffect(() => { if (mountedRef.current) saveTtsYueVoiceURI(state.ttsYueVoiceURI); }, [state.ttsYueVoiceURI]);
-  useEffect(() => { if (mountedRef.current) saveExportSentenceRom(state.exportSentenceRom); }, [state.exportSentenceRom]);
-  useEffect(() => { if (mountedRef.current) saveExportSentenceTrans(state.exportSentenceTrans); }, [state.exportSentenceTrans]);
-  useEffect(() => { if (mountedRef.current) saveTtsSpeechRate(state.ttsSpeechRate); }, [state.ttsSpeechRate]);
-  useEffect(() => { if (mountedRef.current) saveRomanizationOn(state.romanizationOn); }, [state.romanizationOn]);
-  useEffect(() => { if (mountedRef.current) saveTranslateButtons(state.translateButtons); }, [state.translateButtons]);
-  useEffect(() => { if (mountedRef.current) saveStructuredOutput(state.useStructuredOutput); }, [state.useStructuredOutput]);
-  useEffect(() => { if (mountedRef.current) saveNewCardsPerDay(state.newCardsPerDay); }, [state.newCardsPerDay]);
-  useEffect(() => { if (mountedRef.current) saveCloudLastSynced(state.cloudLastSynced); }, [state.cloudLastSynced]);
-
-  // Generated readers — diff-based persistence
+  // ── Generated readers — diff-based persistence (specialized) ──
   const prevReadersRef = useRef(state.generatedReaders);
   useEffect(() => {
     if (!mountedRef.current) return;
@@ -95,7 +117,7 @@ export function usePersistence(state, dispatch, stateRef) {
     for (const key of Object.keys(curr)) {
       if (curr[key] !== prev[key]) {
         const { quotaExceeded } = saveReaderSafe(key, curr[key]);
-        if (quotaExceeded) dispatch({ type: 'SET_QUOTA_WARNING', payload: true });
+        if (quotaExceeded) dispatch({ type: SET_QUOTA_WARNING, payload: true });
         // Push updated reader to cloud (handles grading results, user answers, etc.)
         if (stateRef.current.cloudUser) {
           pushReaderToCloud(key, curr[key])
@@ -109,7 +131,7 @@ export function usePersistence(state, dispatch, stateRef) {
     }
   }, [state.generatedReaders]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Apply / remove dark theme attribute on <html>
+  // ── Apply / remove dark theme attribute on <html> ──
   useEffect(() => {
     if (state.darkMode) {
       document.documentElement.setAttribute('data-theme', 'dark');
@@ -117,9 +139,4 @@ export function usePersistence(state, dispatch, stateRef) {
       document.documentElement.removeAttribute('data-theme');
     }
   }, [state.darkMode]);
-
-  // Persist lastModified to localStorage whenever it changes
-  useEffect(() => {
-    saveLastModified(state.lastModified);
-  }, [state.lastModified]);
 }

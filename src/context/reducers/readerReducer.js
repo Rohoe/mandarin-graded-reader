@@ -1,16 +1,24 @@
 import { loadReader } from '../../lib/storage';
 import { DEMO_READER_KEY } from '../../lib/demoReader';
+import {
+  ADD_STANDALONE_READER, UPDATE_STANDALONE_READER_META,
+  REMOVE_STANDALONE_READER, UNDO_REMOVE_STANDALONE_READER,
+  SET_READER, CLEAR_READER, LOAD_CACHED_READER, TOUCH_READER,
+  SET_QUOTA_WARNING, ARCHIVE_STANDALONE_READER, UNARCHIVE_STANDALONE_READER,
+  START_PENDING_READER, CLEAR_PENDING_READER,
+  SET_EVICTED_READER_KEYS, RESTORE_EVICTED_READER,
+} from '../actionTypes';
 
 export function readerReducer(state, action) {
   switch (action.type) {
-    case 'ADD_STANDALONE_READER': {
+    case ADD_STANDALONE_READER: {
       const withoutDemo = state.standaloneReaders.filter(r => !r.isDemo);
       const filteredReaders = { ...state.generatedReaders };
       if (withoutDemo.length !== state.standaloneReaders.length) delete filteredReaders[DEMO_READER_KEY];
       return { ...state, standaloneReaders: [action.payload, ...withoutDemo], generatedReaders: filteredReaders };
     }
 
-    case 'UPDATE_STANDALONE_READER_META': {
+    case UPDATE_STANDALONE_READER_META: {
       const { key, ...meta } = action.payload;
       return {
         ...state,
@@ -20,7 +28,7 @@ export function readerReducer(state, action) {
       };
     }
 
-    case 'REMOVE_STANDALONE_READER': {
+    case REMOVE_STANDALONE_READER: {
       const key = action.payload;
       const removedMeta = state.standaloneReaders.find(r => r.key === key);
       const removedReader = state.generatedReaders[key];
@@ -35,7 +43,7 @@ export function readerReducer(state, action) {
       };
     }
 
-    case 'UNDO_REMOVE_STANDALONE_READER': {
+    case UNDO_REMOVE_STANDALONE_READER: {
       const d = state._recentlyDeleted;
       if (!d || d.kind !== 'standalone' || !d.meta) return state;
       return {
@@ -46,7 +54,7 @@ export function readerReducer(state, action) {
       };
     }
 
-    case 'SET_READER': {
+    case SET_READER: {
       const { lessonKey, data } = action.payload;
       let newActivity = state.learningActivity;
       const prev = state.generatedReaders[lessonKey];
@@ -68,14 +76,14 @@ export function readerReducer(state, action) {
       };
     }
 
-    case 'CLEAR_READER': {
+    case CLEAR_READER: {
       const key = action.payload;
       const newReaders = { ...state.generatedReaders };
       delete newReaders[key];
       return { ...state, generatedReaders: newReaders };
     }
 
-    case 'LOAD_CACHED_READER': {
+    case LOAD_CACHED_READER: {
       const { lessonKey } = action.payload;
       const cached = loadReader(lessonKey);
       if (!cached) return state;
@@ -85,7 +93,7 @@ export function readerReducer(state, action) {
       };
     }
 
-    case 'TOUCH_READER': {
+    case TOUCH_READER: {
       const { lessonKey } = action.payload;
       const existing = state.generatedReaders[lessonKey];
       if (!existing) return state;
@@ -98,28 +106,28 @@ export function readerReducer(state, action) {
       };
     }
 
-    case 'SET_QUOTA_WARNING':
+    case SET_QUOTA_WARNING:
       return { ...state, quotaWarning: action.payload };
 
-    case 'ARCHIVE_STANDALONE_READER':
+    case ARCHIVE_STANDALONE_READER:
       return { ...state, standaloneReaders: state.standaloneReaders.map(r => r.key === action.payload ? { ...r, archived: true } : r) };
 
-    case 'UNARCHIVE_STANDALONE_READER':
+    case UNARCHIVE_STANDALONE_READER:
       return { ...state, standaloneReaders: state.standaloneReaders.map(r => r.key === action.payload ? { ...r, archived: false } : r) };
 
-    case 'START_PENDING_READER':
+    case START_PENDING_READER:
       return { ...state, pendingReaders: { ...state.pendingReaders, [action.payload]: true } };
 
-    case 'CLEAR_PENDING_READER': {
+    case CLEAR_PENDING_READER: {
       const next = { ...state.pendingReaders };
       delete next[action.payload];
       return { ...state, pendingReaders: next };
     }
 
-    case 'SET_EVICTED_READER_KEYS':
+    case SET_EVICTED_READER_KEYS:
       return { ...state, evictedReaderKeys: action.payload };
 
-    case 'RESTORE_EVICTED_READER': {
+    case RESTORE_EVICTED_READER: {
       const { lessonKey, data } = action.payload;
       const newEvicted = new Set(state.evictedReaderKeys);
       newEvicted.delete(lessonKey);

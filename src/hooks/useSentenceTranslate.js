@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { translateText } from '../lib/translate';
+import { usePopoverDismissal } from './usePopoverDismissal';
 
 /**
  * Manages sentence-click-to-translate popover state.
@@ -80,39 +81,10 @@ export function useSentenceTranslate(langId) {
   }, [langId]);
 
   // Close on Escape, outside click, or scroll
-  useEffect(() => {
-    if (!sentencePopover) return;
-
-    function onKey(e) {
-      if (e.key === 'Escape') setSentencePopover(null);
-    }
-
-    function onPointerDown(e) {
-      if (popoverRef.current && popoverRef.current.contains(e.target)) return;
-      // Don't close if clicking a sentence span (handleSentenceClick will toggle)
-      if (e.target.closest('.reader-view__sentence')) return;
-      setSentencePopover(null);
-    }
-
-    function onScroll() {
-      setSentencePopover(null);
-    }
-
-    // Delay attaching pointerdown so the same click doesn't close immediately
-    const timer = setTimeout(() => {
-      document.addEventListener('pointerdown', onPointerDown);
-    }, 50);
-
-    document.addEventListener('keydown', onKey);
-    window.addEventListener('scroll', onScroll, true);
-
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('pointerdown', onPointerDown);
-      window.removeEventListener('scroll', onScroll, true);
-    };
-  }, [sentencePopover]);
+  usePopoverDismissal(!!sentencePopover, popoverRef, closeSentencePopover, {
+    ignoreSelectors: ['.reader-view__sentence'],
+    pointerDelay: 50,
+  });
 
   return {
     sentencePopover,

@@ -18,7 +18,7 @@ export default function SignInModal({ onClose }) {
   }
 
   return (
-    <div className="settings-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="card card-padded fade-in" style={{ maxWidth: 360, width: '90%', textAlign: 'center' }}>
         <button
           className="btn btn-ghost"

@@ -389,6 +389,65 @@ a:hover { text-decoration: underline; }
 
 .fade-in { animation: fadeIn 0.4s ease forwards; }
 
+/* ── Modal Overlay ─────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 24, 20, 0.4);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: var(--space-4);
+}
+
+[data-theme="dark"] .modal-overlay {
+  background: rgba(10, 10, 8, 0.55);
+}
+
+/* ── Pill Selector ─────────────────────────────────────────── */
+.pill-selector {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.pill-option {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  background: #fff;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+.pill-option.active,
+.pill-option--active {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+}
+
+.pill-option:hover:not(.active):not(.pill-option--active):not(:disabled) {
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+  border-color: var(--color-accent-dim);
+}
+
+.pill-option:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+[data-theme="dark"] .pill-option:not(.active):not(.pill-option--active) {
+  background: var(--color-bg-elevated);
+}
+
 /* ── Scrollbar ──────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

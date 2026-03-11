@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-export function useTTS(langConfig, langId, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, setTtsVoice, ttsSpeechRate) {
+export function useTTS({ langConfig, langId, voiceURIs, setTtsVoice, speechRate }) {
+  const ttsVoiceURI = voiceURIs?.zh;
+  const ttsKoVoiceURI = voiceURIs?.ko;
+  const ttsYueVoiceURI = voiceURIs?.yue;
+  const ttsSpeechRate = speechRate;
   const ttsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
   const [speakingKey, setSpeakingKey] = useState(null);
   const utteranceRef = useRef(null);

@@ -82,6 +82,12 @@ vi.mock('../lib/storage', () => ({
   loadEvictedReaderKeys: () => new Set(),
   saveEvictedReaderKeys: vi.fn(),
   unmarkEvicted: vi.fn(),
+  loadNewCardsPerDay: () => 10,
+  saveNewCardsPerDay: vi.fn(),
+  loadReadingTime: () => ({}),
+  saveReadingTime: vi.fn(),
+  loadGradingModels: () => ({ anthropic: null, openai: null, gemini: null, openai_compatible: null }),
+  saveGradingModels: vi.fn(),
 }));
 
 vi.mock('../lib/fileStorage', () => ({

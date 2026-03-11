@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { useAppSelector } from './context/useAppSelector';
 import { actions } from './context/actions';
+import { CLEAR_NOTIFICATION } from './context/actionTypes';
 import { generateReader, extendSyllabus } from './lib/api';
 import { buildLLMConfig } from './lib/llmConfig';
 import { loadLastSession, saveLastSession } from './lib/storage';
@@ -37,7 +38,7 @@ function Notification() {
           className="app-notification__action"
           onClick={() => {
             dispatch({ type: notification.action.type });
-            dispatch({ type: 'CLEAR_NOTIFICATION' });
+            dispatch({ type: CLEAR_NOTIFICATION });
           }}
         >
           {notification.action.label}
@@ -370,7 +371,7 @@ function AppShell() {
 
       {/* ─ New reader modal ──────────────────────────────── */}
       {showNewForm && (
-        <div className="settings-overlay" role="dialog" aria-modal="true" aria-labelledby="new-reader-title" onClick={e => e.target === e.currentTarget && setShowNewForm(false)}>
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="new-reader-title" onClick={e => e.target === e.currentTarget && setShowNewForm(false)}>
           <div className="settings-panel card card-padded fade-in">
             <div className="settings-panel__header">
               <h2 id="new-reader-title" className="font-display" style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>New Reader</h2>

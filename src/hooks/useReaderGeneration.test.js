@@ -80,10 +80,10 @@ beforeEach(() => {
 describe('useReaderGeneration', () => {
   it('calls generateReader with correct params on handleGenerate', async () => {
     const { result } = renderHook(
-      () => useReaderGeneration(
-        'standalone_123', null, baseReader, 'zh', false,
-        baseLlmConfig, {}, 2000, 300, false
-      ),
+      () => useReaderGeneration({
+        lessonKey: 'standalone_123', lessonMeta: null, reader: baseReader, langId: 'zh', isPending: false,
+        llmConfig: baseLlmConfig, learnedVocabulary: {}, maxTokens: 2000, readerLength: 300, useStructuredOutput: false,
+      }),
       { wrapper }
     );
 
@@ -99,10 +99,10 @@ describe('useReaderGeneration', () => {
 
   it('parses response and pushes generated reader on success', async () => {
     const { result } = renderHook(
-      () => useReaderGeneration(
-        'standalone_123', null, baseReader, 'zh', false,
-        baseLlmConfig, {}, 2000, 300, false
-      ),
+      () => useReaderGeneration({
+        lessonKey: 'standalone_123', lessonMeta: null, reader: baseReader, langId: 'zh', isPending: false,
+        llmConfig: baseLlmConfig, learnedVocabulary: {}, maxTokens: 2000, readerLength: 300, useStructuredOutput: false,
+      }),
       { wrapper }
     );
 
@@ -119,10 +119,10 @@ describe('useReaderGeneration', () => {
 
   it('does nothing when isPending is true', async () => {
     const { result } = renderHook(
-      () => useReaderGeneration(
-        'standalone_123', null, baseReader, 'zh', true,
-        baseLlmConfig, {}, 2000, 300, false
-      ),
+      () => useReaderGeneration({
+        lessonKey: 'standalone_123', lessonMeta: null, reader: baseReader, langId: 'zh', isPending: true,
+        llmConfig: baseLlmConfig, learnedVocabulary: {}, maxTokens: 2000, readerLength: 300, useStructuredOutput: false,
+      }),
       { wrapper }
     );
 
@@ -133,10 +133,10 @@ describe('useReaderGeneration', () => {
 
   it('does nothing when neither lessonMeta nor reader is provided', async () => {
     const { result } = renderHook(
-      () => useReaderGeneration(
-        'standalone_123', null, null, 'zh', false,
-        baseLlmConfig, {}, 2000, 300, false
-      ),
+      () => useReaderGeneration({
+        lessonKey: 'standalone_123', lessonMeta: null, reader: null, langId: 'zh', isPending: false,
+        llmConfig: baseLlmConfig, learnedVocabulary: {}, maxTokens: 2000, readerLength: 300, useStructuredOutput: false,
+      }),
       { wrapper }
     );
 
@@ -148,10 +148,10 @@ describe('useReaderGeneration', () => {
   it('uses normalizeStructuredReader when useStructuredOutput is true', async () => {
     mockNormalizeStructuredReader.mockReturnValue(parsedResult);
     const { result } = renderHook(
-      () => useReaderGeneration(
-        'standalone_123', null, baseReader, 'zh', false,
-        baseLlmConfig, {}, 2000, 300, true
-      ),
+      () => useReaderGeneration({
+        lessonKey: 'standalone_123', lessonMeta: null, reader: baseReader, langId: 'zh', isPending: false,
+        llmConfig: baseLlmConfig, learnedVocabulary: {}, maxTokens: 2000, readerLength: 300, useStructuredOutput: true,
+      }),
       { wrapper }
     );
 
@@ -164,10 +164,10 @@ describe('useReaderGeneration', () => {
   it('handles API error gracefully', async () => {
     mockGenerateReader.mockRejectedValue(new Error('API rate limit exceeded'));
     const { result } = renderHook(
-      () => useReaderGeneration(
-        'standalone_123', null, baseReader, 'zh', false,
-        baseLlmConfig, {}, 2000, 300, false
-      ),
+      () => useReaderGeneration({
+        lessonKey: 'standalone_123', lessonMeta: null, reader: baseReader, langId: 'zh', isPending: false,
+        llmConfig: baseLlmConfig, learnedVocabulary: {}, maxTokens: 2000, readerLength: 300, useStructuredOutput: false,
+      }),
       { wrapper }
     );
 
@@ -182,10 +182,10 @@ describe('useReaderGeneration', () => {
     abortErr.name = 'AbortError';
     mockGenerateReader.mockRejectedValue(abortErr);
     const { result } = renderHook(
-      () => useReaderGeneration(
-        'standalone_123', null, baseReader, 'zh', false,
-        baseLlmConfig, {}, 2000, 300, false
-      ),
+      () => useReaderGeneration({
+        lessonKey: 'standalone_123', lessonMeta: null, reader: baseReader, langId: 'zh', isPending: false,
+        llmConfig: baseLlmConfig, learnedVocabulary: {}, maxTokens: 2000, readerLength: 300, useStructuredOutput: false,
+      }),
       { wrapper }
     );
 
@@ -201,10 +201,10 @@ describe('useReaderGeneration', () => {
       description: 'About cats', level: 4, langId: 'zh',
     };
     const { result } = renderHook(
-      () => useReaderGeneration(
-        'lesson_s1_0', lessonMeta, baseReader, 'zh', false,
-        baseLlmConfig, {}, 2000, 300, false
-      ),
+      () => useReaderGeneration({
+        lessonKey: 'lesson_s1_0', lessonMeta, reader: baseReader, langId: 'zh', isPending: false,
+        llmConfig: baseLlmConfig, learnedVocabulary: {}, maxTokens: 2000, readerLength: 300, useStructuredOutput: false,
+      }),
       { wrapper }
     );
 
@@ -220,10 +220,10 @@ describe('useReaderGeneration', () => {
     mockGenerateReader.mockReturnValue(new Promise((_, reject) => { rejectFn = reject; }));
 
     const { result, unmount } = renderHook(
-      () => useReaderGeneration(
-        'standalone_123', null, baseReader, 'zh', false,
-        baseLlmConfig, {}, 2000, 300, false
-      ),
+      () => useReaderGeneration({
+        lessonKey: 'standalone_123', lessonMeta: null, reader: baseReader, langId: 'zh', isPending: false,
+        llmConfig: baseLlmConfig, learnedVocabulary: {}, maxTokens: 2000, readerLength: 300, useStructuredOutput: false,
+      }),
       { wrapper }
     );
 
@@ -247,10 +247,10 @@ describe('useReaderGeneration', () => {
     mockGenerateReaderStream.mockReturnValue(fakeStream());
 
     const { result } = renderHook(
-      () => useReaderGeneration(
-        'standalone_123', null, baseReader, 'zh', false,
-        anthropicLlmConfig, {}, 2000, 300, false
-      ),
+      () => useReaderGeneration({
+        lessonKey: 'standalone_123', lessonMeta: null, reader: baseReader, langId: 'zh', isPending: false,
+        llmConfig: anthropicLlmConfig, learnedVocabulary: {}, maxTokens: 2000, readerLength: 300, useStructuredOutput: false,
+      }),
       { wrapper }
     );
 
@@ -264,10 +264,10 @@ describe('useReaderGeneration', () => {
   it('clears pending reader even on error', async () => {
     mockGenerateReader.mockRejectedValue(new Error('fail'));
     const { result } = renderHook(
-      () => useReaderGeneration(
-        'standalone_123', null, baseReader, 'zh', false,
-        baseLlmConfig, {}, 2000, 300, false
-      ),
+      () => useReaderGeneration({
+        lessonKey: 'standalone_123', lessonMeta: null, reader: baseReader, langId: 'zh', isPending: false,
+        llmConfig: baseLlmConfig, learnedVocabulary: {}, maxTokens: 2000, readerLength: 300, useStructuredOutput: false,
+      }),
       { wrapper }
     );
 

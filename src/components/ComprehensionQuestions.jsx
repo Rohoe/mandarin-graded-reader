@@ -4,21 +4,8 @@ import { actions } from '../context/actions';
 import { gradeAnswers } from '../lib/api';
 import { buildGradingLLMConfig, hasAnyUserKey } from '../lib/llmConfig';
 import { translateText } from '../lib/translate';
+import { renderInline, stripMarkdown } from '../lib/renderInline';
 import './ComprehensionQuestions.css';
-
-function renderInline(text) {
-  if (!text) return null;
-  const pattern = /(\*\*([^*]+)\*\*|\*([^*]+)\*|[^*]+)/g;
-  const parts = [];
-  let m;
-  let i = 0;
-  while ((m = pattern.exec(text)) !== null) {
-    if (m[2] !== undefined)      parts.push(<strong key={i++}>{m[2]}</strong>);
-    else if (m[3] !== undefined) parts.push(<em key={i++}>{m[3]}</em>);
-    else                         parts.push(<span key={i++}>{m[0]}</span>);
-  }
-  return parts;
-}
 
 function scoreBadgeClass(scoreStr) {
   const num = parseInt(scoreStr, 10);
@@ -35,10 +22,6 @@ function scoreIndicator(scoreStr) {
 }
 
 const AUTO_SAVE_DELAY = 1500;
-
-function stripMarkdown(text) {
-  return text.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1');
-}
 
 export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars, showParagraphTools, speakText, speakingKey, ttsSupported, onOpenSettings }) {
   const { apiKey, providerKeys, activeProvider, activeModels, gradingModels, customBaseUrl } = useAppSelector(s => ({

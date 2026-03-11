@@ -1,27 +1,33 @@
 import { useEffect, useRef, useState, useContext } from 'react';
-import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
-import { AppContext } from '../context/AppContext';
-import { actions } from '../context/actions';
-import { getLang, getLessonTitle, DEFAULT_LANG_ID } from '../lib/languages';
-import { buildLLMConfig } from '../lib/llmConfig';
-import { getProvider } from '../lib/providers';
-import { translateText } from '../lib/translate';
-import { useTTS } from '../hooks/useTTS';
-import { useRomanization } from '../hooks/useRomanization';
-import { useVocabPopover } from '../hooks/useVocabPopover';
-import { useReaderGeneration } from '../hooks/useReaderGeneration';
-import { useTextSelection } from '../hooks/useTextSelection';
-import { useSentenceTranslate } from '../hooks/useSentenceTranslate';
-import { useReadingTimer } from '../hooks/useReadingTimer';
-import { DEMO_READER_KEY } from '../lib/demoReader';
-import StorySection from './StorySection';
-import VocabularyList from './VocabularyList';
-import ComprehensionQuestions from './ComprehensionQuestions';
-import AnkiExportButton from './AnkiExportButton';
-import GenerationProgress from './GenerationProgress';
-import GrammarNotes from './GrammarNotes';
-import ReaderHeader from './ReaderHeader';
-import ReaderActions from './ReaderActions';
+import { useAppSelector, useAppDispatch } from '../../context/useAppSelector';
+import { AppContext } from '../../context/AppContext';
+import { actions } from '../../context/actions';
+import { LOAD_CACHED_READER, SET_QUOTA_WARNING } from '../../context/actionTypes';
+import { getLang, getLessonTitle, DEFAULT_LANG_ID } from '../../lib/languages';
+import { buildLLMConfig } from '../../lib/llmConfig';
+import { getProvider } from '../../lib/providers';
+import { translateText } from '../../lib/translate';
+import { useTTS } from '../../hooks/useTTS';
+import { useRomanization } from '../../hooks/useRomanization';
+import { useVocabPopover } from '../../hooks/useVocabPopover';
+import { useReaderGeneration } from '../../hooks/useReaderGeneration';
+import { useTextSelection } from '../../hooks/useTextSelection';
+import { useSentenceTranslate } from '../../hooks/useSentenceTranslate';
+import { useReadingTimer } from '../../hooks/useReadingTimer';
+import { DEMO_READER_KEY } from '../../lib/demoReader';
+import StorySection from '../StorySection';
+import VocabularyList from '../VocabularyList';
+import ComprehensionQuestions from '../ComprehensionQuestions';
+import AnkiExportButton from '../AnkiExportButton';
+import GrammarNotes from '../GrammarNotes';
+import ReaderHeader from '../ReaderHeader';
+import ReaderActions from '../ReaderActions';
+import ReaderEmptyState from './ReaderEmptyState';
+import ReaderErrorState from './ReaderErrorState';
+import ReaderStreamingPreview from './ReaderStreamingPreview';
+import ReaderGeneratingState from './ReaderGeneratingState';
+import ReaderEvictedState from './ReaderEvictedState';
+import ReaderPregenerate from './ReaderPregenerate';
 import './ReaderView.css';
 
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar, onOpenSettings }) {
@@ -85,9 +91,11 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     else act.setTtsVoice(uri);
   };
 
-  const { ttsSupported, speakingKey, speakText, stopSpeaking } = useTTS(
-    langConfig, langId, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, setTtsVoice, ttsSpeechRate
-  );
+  const { ttsSupported, speakingKey, speakText, stopSpeaking } = useTTS({
+    langConfig, langId,
+    voiceURIs: { zh: ttsVoiceURI, ko: ttsKoVoiceURI, yue: ttsYueVoiceURI },
+    setTtsVoice, speechRate: ttsSpeechRate,
+  });
 
   const { pinyinOn, romanizer, renderChars } = useRomanization(langId, langConfig, romanizationOn);
 
@@ -157,9 +165,9 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   }, [selectionPopover, closeSentencePopover]);
 
   const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModels, customBaseUrl });
-  const { handleGenerate, streamingText } = useReaderGeneration(
-    lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength, useStructuredOutput
-  );
+  const { handleGenerate, streamingText } = useReaderGeneration({
+    lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength, useStructuredOutput,
+  });
 
   // Cancel speech & close popovers when lesson changes
   useEffect(() => {
@@ -173,7 +181,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   useEffect(() => {
     if (lessonKey && !generatedReaders[lessonKey] && !loadedKeysRef.current.has(lessonKey)) {
       loadedKeysRef.current.add(lessonKey);
-      dispatch({ type: 'LOAD_CACHED_READER', payload: { lessonKey } });
+      dispatch({ type: LOAD_CACHED_READER, payload: { lessonKey } });
     }
   }, [lessonKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -225,165 +233,61 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     act.setReader(lessonKey, { ...reader, vocabTranslations: { ...existing, ...translations } });
   }
 
+  async function handleRestore() {
+    setRestoring(true);
+    try {
+      const ok = await restoreEvictedReader(lessonKey);
+      if (!ok) {
+        act.notify('error', 'Could not restore — you can regenerate it.');
+      }
+    } catch {
+      act.notify('error', 'Restore failed — you can regenerate it.');
+    } finally {
+      setRestoring(false);
+    }
+  }
+
   // Proficiency badge text
   const profBadge = `${langConfig.proficiency.name} ${reader?.level ?? lessonMeta?.level ?? ''}`;
 
   // ── Empty state ─────────────────────────────────────────────
   if (!lessonKey) {
-    return (
-      <div className="reader-view reader-view--empty">
-        <div className="reader-view__empty-state">
-          <span className="reader-view__empty-hanzi">{decorativeChars[charIndex]}</span>
-          <p className="font-display reader-view__empty-text">
-            Choose a topic and generate a reader to get started.
-          </p>
-          <button className="btn btn-primary reader-view__empty-open-menu" onClick={onOpenSidebar}>
-            ☰ Open menu
-          </button>
-        </div>
-      </div>
-    );
+    return <ReaderEmptyState decorativeChars={decorativeChars} charIndex={charIndex} onOpenSidebar={onOpenSidebar} />;
   }
 
   // ── Error ───────────────────────────────────────────────────
   if (error) {
-    return (
-      <div className="reader-view reader-view--error">
-        <div className="reader-view__error card card-padded">
-          <p className="reader-view__error-title font-display">Something went wrong</p>
-          <p className="reader-view__error-msg text-muted">{error}</p>
-          <div className="reader-view__error-actions">
-            <button className="btn btn-primary" onClick={handleGenerate}>Retry</button>
-            <button className="btn btn-ghost" onClick={() => act.clearError()}>Dismiss</button>
-          </div>
-        </div>
-      </div>
-    );
+    return <ReaderErrorState error={error} onRetry={handleGenerate} onDismiss={() => act.clearError()} />;
   }
 
   // ── Streaming preview (Anthropic) ────────────────────────────
   if (!reader && isPending && streamingText !== null) {
-    return (
-      <div className="reader-view reader-view--generating">
-        <div className="reader-view__pregenerate card card-padded">
-          {lessonMeta && (
-            <>
-              <p className="reader-view__lesson-num text-subtle font-display">Lesson {lessonMeta.lesson_number}</p>
-              <h2 className="text-target-title reader-view__lesson-title">{getLessonTitle(lessonMeta, langId)}</h2>
-              <p className="reader-view__lesson-en font-display text-muted">{lessonMeta.title_en}</p>
-            </>
-          )}
-          <div className="reader-view__streaming-text text-target">
-            {streamingText}<span className="reader-view__streaming-cursor" />
-          </div>
-        </div>
-      </div>
-    );
+    return <ReaderStreamingPreview lessonMeta={lessonMeta} langId={langId} streamingText={streamingText} />;
   }
 
   // ── Generating (non-streaming) ─────────────────────────────
   if (!reader && isPending) {
-    return (
-      <div className="reader-view reader-view--generating">
-        <div className="reader-view__pregenerate card card-padded">
-          {lessonMeta && (
-            <>
-              <p className="reader-view__lesson-num text-subtle font-display">Lesson {lessonMeta.lesson_number}</p>
-              <h2 className="text-target-title reader-view__lesson-title">{getLessonTitle(lessonMeta, langId)}</h2>
-              <p className="reader-view__lesson-en font-display text-muted">{lessonMeta.title_en}</p>
-            </>
-          )}
-          <GenerationProgress type="reader" />
-        </div>
-      </div>
-    );
+    return <ReaderGeneratingState lessonMeta={lessonMeta} langId={langId} />;
   }
 
   // ── Evicted (archived) reader ───────────────────────────────
   if (!reader && !isPending && lessonKey && evictedReaderKeys.has(lessonKey)) {
-    async function handleRestore() {
-      setRestoring(true);
-      try {
-        const ok = await restoreEvictedReader(lessonKey);
-        if (!ok) {
-          act.notify('error', 'Could not restore — you can regenerate it.');
-        }
-      } catch {
-        act.notify('error', 'Restore failed — you can regenerate it.');
-      } finally {
-        setRestoring(false);
-      }
-    }
-
-    return (
-      <div className="reader-view reader-view--pregenerate">
-        <div className="reader-view__pregenerate card card-padded">
-          {lessonMeta && (
-            <>
-              <p className="reader-view__lesson-num text-subtle font-display">Lesson {lessonMeta.lesson_number}</p>
-              <h2 className="text-target-title reader-view__lesson-title">{getLessonTitle(lessonMeta, langId)}</h2>
-              <p className="reader-view__lesson-en font-display text-muted">{lessonMeta.title_en}</p>
-            </>
-          )}
-          <p className="text-muted" style={{ textAlign: 'center', margin: 'var(--space-4) 0' }}>
-            This reader was archived to free up browser storage.
-          </p>
-          <button
-            className="btn btn-primary btn-lg reader-view__generate-btn"
-            onClick={handleRestore}
-            disabled={restoring}
-          >
-            {restoring ? 'Restoring…' : 'Restore from backup'}
-          </button>
-        </div>
-      </div>
-    );
+    return <ReaderEvictedState lessonMeta={lessonMeta} langId={langId} restoring={restoring} onRestore={handleRestore} />;
   }
 
   // ── Not yet generated ───────────────────────────────────────
   if (!reader) {
     return (
-      <div className="reader-view reader-view--pregenerate">
-        <div className="reader-view__pregenerate card card-padded">
-          {lessonMeta && (
-            <>
-              <p className="reader-view__lesson-num text-subtle font-display">Lesson {lessonMeta.lesson_number}</p>
-              <h2 className="text-target-title reader-view__lesson-title">{getLessonTitle(lessonMeta, langId)}</h2>
-              <p className="reader-view__lesson-en font-display text-muted">{lessonMeta.title_en}</p>
-              {lessonMeta.description && <p className="reader-view__lesson-desc">{lessonMeta.description}</p>}
-              {lessonMeta.vocabulary_focus && (
-                <p className="reader-view__vocab-focus text-subtle">
-                  Focus: {Array.isArray(lessonMeta.vocabulary_focus)
-                    ? lessonMeta.vocabulary_focus.join(' · ')
-                    : lessonMeta.vocabulary_focus}
-                </p>
-              )}
-            </>
-          )}
-          <div className="reader-view__length-row">
-            <label className="reader-view__length-label" htmlFor="rv-reader-length">Reader Length</label>
-            <span className="reader-view__length-value">~{readerLength} chars</span>
-            <input
-              id="rv-reader-length" type="range" className="reader-view__length-slider"
-              min={100} max={2000} step={50} value={readerLength}
-              onChange={e => setReaderLength(Number(e.target.value))}
-            />
-            <div className="reader-view__length-ticks"><span>Short</span><span>Long</span></div>
-          </div>
-          <button className="btn btn-primary btn-lg reader-view__generate-btn" onClick={handleGenerate} disabled={isPending}>
-            Generate Reader
-          </button>
-          {llmConfig.apiKey && (
-            <p className="text-muted" style={{ fontSize: 'var(--text-xs)', textAlign: 'center', marginTop: 'var(--space-2)', opacity: 0.5 }}>
-              Using {(() => {
-                const prov = getProvider(activeProvider);
-                const modelLabel = prov.models.find(m => m.id === llmConfig.model)?.label || llmConfig.model;
-                return modelLabel;
-              })()}
-            </p>
-          )}
-        </div>
-      </div>
+      <ReaderPregenerate
+        lessonMeta={lessonMeta}
+        langId={langId}
+        readerLength={readerLength}
+        setReaderLength={setReaderLength}
+        onGenerate={handleGenerate}
+        isPending={isPending}
+        llmConfig={llmConfig}
+        activeProvider={activeProvider}
+      />
     );
   }
 
@@ -411,7 +315,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       {quotaWarning && (
         <div className="reader-view__quota-warning">
           <span>Browser storage is full. New readers will not be saved between sessions. Free up space in Settings → Browser Storage.</span>
-          <button className="reader-view__quota-dismiss" onClick={() => dispatch({ type: 'SET_QUOTA_WARNING', payload: false })} aria-label="Dismiss">✕</button>
+          <button className="reader-view__quota-dismiss" onClick={() => dispatch({ type: SET_QUOTA_WARNING, payload: false })} aria-label="Dismiss">✕</button>
         </div>
       )}
 

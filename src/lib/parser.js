@@ -5,162 +5,205 @@
 
 import { getLang, DEFAULT_LANG_ID } from './languages';
 
+// ── Default result shape ──────────────────────────────────────
+
+const EMPTY_RESULT = Object.freeze({
+  raw:            '',
+  titleZh:        '',
+  titleEn:        '',
+  story:          '',
+  vocabulary:     [],
+  questions:      [],
+  ankiJson:       [],
+  grammarNotes:   [],
+  parseWarnings:  [],
+  parseError:     null,
+  langId:         DEFAULT_LANG_ID,
+});
+
+// ── Extraction pipeline functions ─────────────────────────────
+
+function extractTitle(rawText) {
+  const warnings = [];
+
+  const titleSectionMatch = rawText.match(/#{2,4}\s*(?:1\.\s*)?(?:Title|标题|제목)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:2\.|Story|故事|이야기))/i);
+  if (titleSectionMatch) {
+    const titleBlock = titleSectionMatch[1].trim();
+    const lines = titleBlock.split('\n').map(l => l.trim()).filter(Boolean);
+    const titleZh = (lines[0] || '').replace(/\*\*/g, '').replace(/^\*|\*$/g, '');
+    const titleEn = (lines[1] || '').replace(/\*\*/g, '').replace(/^\*|\*$/g, '');
+    return { titleZh, titleEn, warnings };
+  }
+
+  // Fallback: first # heading
+  const h1 = rawText.match(/^#{1,3}\s+(.+)$/m);
+  if (h1) {
+    warnings.push('Title extracted via fallback (no "## 1. Title" heading found)');
+    return { titleZh: h1[1].trim(), titleEn: '', warnings };
+  }
+
+  return { titleZh: '', titleEn: '', warnings };
+}
+
+function extractStory(rawText, scriptRegex) {
+  const warnings = [];
+
+  const storySectionMatch = rawText.match(/#{2,4}\s*(?:2\.\s*)?(?:Story|故事|이야기)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:3\.|Vocabulary|词汇|어휘))/i);
+  if (storySectionMatch) {
+    const story = storySectionMatch[1].trim().replace(/^(#{1,4}[^\n]*\n\n?)+/, '').trim();
+    return { story, warnings };
+  }
+
+  // Fallback: strip heading lines from top, take text up to the next ## section
+  const withoutTopHeadings = rawText.replace(/^(#{1,4}[^\n]*\n)+\s*/, '');
+  const bodyMatch = withoutTopHeadings.match(/^([\s\S]*?)(?=\n#{1,4}\s)/);
+  if (bodyMatch) {
+    warnings.push('Story extracted via fallback (no "## 2. Story" heading found)');
+    const story = bodyMatch[1].trim().replace(/^(#{1,4}[^\n]*\n\n?)+/, '').trim();
+    return { story, warnings };
+  }
+
+  // Build a regex for detecting 200+ target script chars
+  const scriptCharClass = scriptRegex.source;
+  const blockRegex = new RegExp(`([${scriptCharClass.slice(1, -1)}\\s*_.,，。！？、；：""''（）【】]{200,})`);
+  const scriptBlock = rawText.match(blockRegex);
+  if (scriptBlock) {
+    warnings.push('Story extracted via block regex fallback');
+    const story = scriptBlock[1].trim().replace(/^(#{1,4}[^\n]*\n\n?)+/, '').trim();
+    return { story, warnings };
+  }
+
+  return { story: '', warnings };
+}
+
+function extractVocabularySection(rawText, scriptRegex) {
+  const vocabSectionMatch = rawText.match(
+    /#{2,4}\s*(?:3\.[^\n]*|(?:Vocabulary|词汇|어휘)[^\n]*)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:4\.|Questions|理解|Comprehension|이해|```anki-json)|```anki-json|$)/i
+  );
+  if (vocabSectionMatch) {
+    return parseVocabularySection(vocabSectionMatch[1], scriptRegex);
+  }
+  return [];
+}
+
+function extractComprehensionQuestions(rawText) {
+  const questionsSectionMatch = rawText.match(
+    /#{2,4}\s*(?:4\.[^\n]*|(?:Questions|Comprehension|理解|이해)[^\n]*)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:5\.|Anki|anki)|```anki-json|$)/i
+  );
+  if (questionsSectionMatch) {
+    return parseQuestions(questionsSectionMatch[1]);
+  }
+  return [];
+}
+
+function extractAnkiJson(rawText) {
+  const ankiMatch = rawText.match(/```anki-json\s*\n([\s\S]*?)\n```/);
+  if (ankiMatch) {
+    try {
+      return JSON.parse(ankiMatch[1]);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function extractGrammarNotes(rawText) {
+  const grammarSectionMatch = rawText.match(
+    /#{2,4}\s*(?:6\.[^\n]*|(?:Grammar|语法|문법)[^\n]*)\s*\n+([\s\S]*?)(?=#{2,4}\s*7\.|$)/i
+  );
+  if (grammarSectionMatch) {
+    return parseGrammarNotes(grammarSectionMatch[1]);
+  }
+  return [];
+}
+
+function enrichVocabularyWithAnki(vocabulary, ankiJson, langConfig) {
+  if (vocabulary.length === 0 && ankiJson.length === 0) return vocabulary;
+
+  const targetField = langConfig.fields.target;
+  const romField = langConfig.fields.romanization;
+  const transField = langConfig.fields.translation;
+
+  function makeVocabFromCard(card) {
+    const t = card[targetField] || card.chinese || card.korean || '';
+    const r = card[romField] || card.pinyin || card.romanization || '';
+    const tr = card[transField] || card.english || '';
+    return {
+      target: t, romanization: r, translation: tr,
+      chinese: t, pinyin: r, english: tr,
+      exampleStory:             stripExamplePrefix(card.example_story || ''),
+      exampleStoryTranslation:  card.example_story_translation || '',
+      exampleExtra:             stripExamplePrefix(card.example_extra || ''),
+      exampleExtraTranslation:  card.example_extra_translation || '',
+      usageNoteStory:           card.usage_note_story || '',
+      usageNoteExtra:           card.usage_note_extra || '',
+    };
+  }
+
+  if (vocabulary.length === 0 && ankiJson.length > 0) {
+    return ankiJson.map(makeVocabFromCard);
+  }
+
+  if (vocabulary.length > 0 && ankiJson.length > 0) {
+    // Enrich vocabulary items with usage notes + fill missing pinyin from the Anki JSON block
+    const ankiByWord = new Map(ankiJson.map(c => [c[targetField] || c.chinese || c.korean, c]));
+    const enriched = vocabulary.map(word => {
+      const card = ankiByWord.get(word.target || word.chinese);
+      if (!card) return word;
+      const rom = word.romanization || word.pinyin || card[romField] || card.pinyin || card.romanization || '';
+      return {
+        ...word,
+        target: word.target || word.chinese,
+        romanization: rom,
+        translation: word.translation || word.english,
+        pinyin: rom,
+        exampleStoryTranslation: card.example_story_translation || word.exampleStoryTranslation || '',
+        exampleExtraTranslation: card.example_extra_translation || word.exampleExtraTranslation || '',
+        usageNoteStory:          card.usage_note_story || word.usageNoteStory,
+        usageNoteExtra:          card.usage_note_extra || word.usageNoteExtra,
+      };
+    });
+    // Append any words present in ankiJson but absent from the vocabulary section
+    const vocabTargets = new Set(enriched.map(v => v.target || v.chinese));
+    const missing = ankiJson
+      .filter(card => !vocabTargets.has(card[targetField] || card.chinese || card.korean))
+      .map(makeVocabFromCard);
+    return missing.length > 0 ? [...enriched, ...missing] : enriched;
+  }
+
+  return vocabulary;
+}
+
 // ── Main reader parser ────────────────────────────────────────
 
 export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
   const langConfig = getLang(langId);
   const scriptRegex = langConfig.scriptRegex;
 
-  const result = {
-    raw:          rawText,
-    titleZh:      '',
-    titleEn:      '',
-    story:        '',
-    vocabulary:   [],
-    questions:    [],
-    ankiJson:     [],
-    grammarNotes: [],
-    parseWarnings: [],
-    parseError:   null,
-    langId,
-  };
-
-  if (!rawText) {
-    result.parseError = 'Empty response from API.';
-    return result;
-  }
+  if (!rawText) return { ...EMPTY_RESULT, raw: rawText, langId, parseError: 'Empty response from API.' };
 
   try {
-    // ── 1. Title ──────────────────────────────────────────────
-    const titleSectionMatch = rawText.match(/#{2,4}\s*(?:1\.\s*)?(?:Title|标题|제목)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:2\.|Story|故事|이야기))/i);
-    if (titleSectionMatch) {
-      const titleBlock = titleSectionMatch[1].trim();
-      const lines = titleBlock.split('\n').map(l => l.trim()).filter(Boolean);
-      result.titleZh = (lines[0] || '').replace(/\*\*/g, '').replace(/^\*|\*$/g, '');
-      result.titleEn = (lines[1] || '').replace(/\*\*/g, '').replace(/^\*|\*$/g, '');
-    } else {
-      // Fallback: first # heading
-      const h1 = rawText.match(/^#{1,3}\s+(.+)$/m);
-      if (h1) {
-        result.titleZh = h1[1].trim();
-        result.parseWarnings.push('Title extracted via fallback (no "## 1. Title" heading found)');
-      }
-    }
+    const { titleZh, titleEn, warnings: titleWarnings } = extractTitle(rawText);
+    const { story, warnings: storyWarnings } = extractStory(rawText, scriptRegex);
+    const vocabulary = extractVocabularySection(rawText, scriptRegex);
+    const questions = extractComprehensionQuestions(rawText);
+    const ankiJson = extractAnkiJson(rawText);
+    const grammarNotes = extractGrammarNotes(rawText);
+    const enrichedVocabulary = enrichVocabularyWithAnki(vocabulary, ankiJson, langConfig);
 
-    // ── 2. Story ──────────────────────────────────────────────
-    const storySectionMatch = rawText.match(/#{2,4}\s*(?:2\.\s*)?(?:Story|故事|이야기)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:3\.|Vocabulary|词汇|어휘))/i);
-    if (storySectionMatch) {
-      result.story = storySectionMatch[1].trim();
-    } else {
-      // Fallback: strip heading lines from top, take text up to the next ## section
-      const withoutTopHeadings = rawText.replace(/^(#{1,4}[^\n]*\n)+\s*/, '');
-      const bodyMatch = withoutTopHeadings.match(/^([\s\S]*?)(?=\n#{1,4}\s)/);
-      if (bodyMatch) {
-        result.story = bodyMatch[1].trim();
-        result.parseWarnings.push('Story extracted via fallback (no "## 2. Story" heading found)');
-      } else {
-        // Build a regex for detecting 200+ target script chars
-        const scriptCharClass = scriptRegex.source;
-        const blockRegex = new RegExp(`([${scriptCharClass.slice(1, -1)}\\s*_.,，。！？、；：""''（）【】]{200,})`);
-        const scriptBlock = rawText.match(blockRegex);
-        if (scriptBlock) {
-          result.story = scriptBlock[1].trim();
-          result.parseWarnings.push('Story extracted via block regex fallback');
-        }
-      }
-    }
-
-    // Strip any stray leading heading lines from the story
-    result.story = result.story.replace(/^(#{1,4}[^\n]*\n\n?)+/, '').trim();
-
-    // ── 3. Vocabulary ─────────────────────────────────────────
-    const vocabSectionMatch = rawText.match(
-      /#{2,4}\s*(?:3\.[^\n]*|(?:Vocabulary|词汇|어휘)[^\n]*)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:4\.|Questions|理解|Comprehension|이해|```anki-json)|```anki-json|$)/i
-    );
-    if (vocabSectionMatch) {
-      result.vocabulary = parseVocabularySection(vocabSectionMatch[1], scriptRegex);
-    }
-
-    // ── 4. Comprehension Questions ────────────────────────────
-    const questionsSectionMatch = rawText.match(
-      /#{2,4}\s*(?:4\.[^\n]*|(?:Questions|Comprehension|理解|이해)[^\n]*)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:5\.|Anki|anki)|```anki-json|$)/i
-    );
-    if (questionsSectionMatch) {
-      result.questions = parseQuestions(questionsSectionMatch[1]);
-    }
-
-    // ── 5. Anki JSON ──────────────────────────────────────────
-    const ankiMatch = rawText.match(/```anki-json\s*\n([\s\S]*?)\n```/);
-    if (ankiMatch) {
-      try {
-        result.ankiJson = JSON.parse(ankiMatch[1]);
-      } catch {
-        result.ankiJson = [];
-      }
-    }
-
-    // ── 6. Grammar Notes ──────────────────────────────────────
-    const grammarSectionMatch = rawText.match(
-      /#{2,4}\s*(?:6\.[^\n]*|(?:Grammar|语法|문법)[^\n]*)\s*\n+([\s\S]*?)(?=#{2,4}\s*7\.|$)/i
-    );
-    if (grammarSectionMatch) {
-      result.grammarNotes = parseGrammarNotes(grammarSectionMatch[1]);
-    }
-
-    // If vocab list is empty but we have anki data, synthesise from anki
-    const targetField = langConfig.fields.target;
-    const romField = langConfig.fields.romanization;
-    const transField = langConfig.fields.translation;
-
-    function makeVocabFromCard(card) {
-      const t = card[targetField] || card.chinese || card.korean || '';
-      const r = card[romField] || card.pinyin || card.romanization || '';
-      const tr = card[transField] || card.english || '';
-      return {
-        target: t, romanization: r, translation: tr,
-        chinese: t, pinyin: r, english: tr,
-        exampleStory:             stripExamplePrefix(card.example_story || ''),
-        exampleStoryTranslation:  card.example_story_translation || '',
-        exampleExtra:             stripExamplePrefix(card.example_extra || ''),
-        exampleExtraTranslation:  card.example_extra_translation || '',
-        usageNoteStory:           card.usage_note_story || '',
-        usageNoteExtra:           card.usage_note_extra || '',
-      };
-    }
-
-    if (result.vocabulary.length === 0 && result.ankiJson.length > 0) {
-      result.vocabulary = result.ankiJson.map(makeVocabFromCard);
-    } else if (result.vocabulary.length > 0 && result.ankiJson.length > 0) {
-      // Enrich vocabulary items with usage notes + fill missing pinyin from the Anki JSON block
-      const ankiByWord = new Map(result.ankiJson.map(c => [c[targetField] || c.chinese || c.korean, c]));
-      const enriched = result.vocabulary.map(word => {
-        const card = ankiByWord.get(word.target || word.chinese);
-        if (!card) return word;
-        const rom = word.romanization || word.pinyin || card[romField] || card.pinyin || card.romanization || '';
-        return {
-          ...word,
-          target: word.target || word.chinese,
-          romanization: rom,
-          translation: word.translation || word.english,
-          pinyin: rom,
-          exampleStoryTranslation: card.example_story_translation || word.exampleStoryTranslation || '',
-          exampleExtraTranslation: card.example_extra_translation || word.exampleExtraTranslation || '',
-          usageNoteStory:          card.usage_note_story || word.usageNoteStory,
-          usageNoteExtra:          card.usage_note_extra || word.usageNoteExtra,
-        };
-      });
-      // Append any words present in ankiJson but absent from the vocabulary section
-      const vocabTargets = new Set(enriched.map(v => v.target || v.chinese));
-      const missing = result.ankiJson
-        .filter(card => !vocabTargets.has(card[targetField] || card.chinese || card.korean))
-        .map(makeVocabFromCard);
-      result.vocabulary = missing.length > 0 ? [...enriched, ...missing] : enriched;
-    }
+    return {
+      raw: rawText,
+      titleZh, titleEn, story,
+      vocabulary: enrichedVocabulary,
+      questions, ankiJson, grammarNotes,
+      parseWarnings: [...titleWarnings, ...storyWarnings],
+      parseError: null,
+      langId,
+    };
   } catch (err) {
-    result.parseError = err.message;
+    return { ...EMPTY_RESULT, raw: rawText, langId, parseError: err.message };
   }
-
-  return result;
 }
 
 // ── Vocabulary section parser ─────────────────────────────────

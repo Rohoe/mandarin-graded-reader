@@ -6,7 +6,7 @@ import { generateReader, generateReaderStream } from '../lib/api';
 import { parseReaderResponse, normalizeStructuredReader } from '../lib/parser';
 import { getLang } from '../lib/languages';
 
-export function useReaderGeneration(lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength, useStructuredOutput = false) {
+export function useReaderGeneration({ lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength, useStructuredOutput = false }) {
   const dispatch = useAppDispatch();
   const { pushGeneratedReader } = useContext(AppContext);
   const act = actions(dispatch);

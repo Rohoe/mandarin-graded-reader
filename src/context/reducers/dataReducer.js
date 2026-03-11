@@ -1,8 +1,12 @@
 import { normalizeSyllabi, normalizeStandaloneReaders } from '../../lib/vocabNormalizer';
+import {
+  RESTORE_FROM_BACKUP, CLEAR_ALL_DATA, FS_INITIALIZED, SET_SAVE_FOLDER,
+  HYDRATE_FROM_FILES, SET_LEARNING_ACTIVITY, LOG_ACTIVITY, UPDATE_READING_TIME,
+} from '../actionTypes';
 
 export function dataReducer(state, action, buildInitialState) {
   switch (action.type) {
-    case 'RESTORE_FROM_BACKUP': {
+    case RESTORE_FROM_BACKUP: {
       // Pure state update only — side effects (clearReaders/saveReader) handled by performRestore
       const d = action.payload;
       const restoredSyllabi = normalizeSyllabi(d.syllabi || []);
@@ -21,7 +25,7 @@ export function dataReducer(state, action, buildInitialState) {
       };
     }
 
-    case 'CLEAR_ALL_DATA':
+    case CLEAR_ALL_DATA:
       // Side effects (clearAllAppData, localStorage.removeItem) handled by clearAllData in AppContext
       return {
         ...buildInitialState(),
@@ -46,13 +50,13 @@ export function dataReducer(state, action, buildInitialState) {
         evictedReaderKeys: new Set(),
       };
 
-    case 'FS_INITIALIZED':
+    case FS_INITIALIZED:
       return { ...state, fsInitialized: true };
 
-    case 'SET_SAVE_FOLDER':
+    case SET_SAVE_FOLDER:
       return { ...state, saveFolder: action.payload };
 
-    case 'HYDRATE_FROM_FILES': {
+    case HYDRATE_FROM_FILES: {
       const d = action.payload;
       return {
         ...state,
@@ -65,15 +69,15 @@ export function dataReducer(state, action, buildInitialState) {
       };
     }
 
-    case 'SET_LEARNING_ACTIVITY':
+    case SET_LEARNING_ACTIVITY:
       return { ...state, learningActivity: action.payload };
 
-    case 'LOG_ACTIVITY': {
+    case LOG_ACTIVITY: {
       const entry = { ...action.payload, timestamp: Date.now() };
       return { ...state, learningActivity: [...state.learningActivity, entry] };
     }
 
-    case 'UPDATE_READING_TIME': {
+    case UPDATE_READING_TIME: {
       const { lessonKey, seconds } = action.payload;
       return {
         ...state,
