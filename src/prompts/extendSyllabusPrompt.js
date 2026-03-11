@@ -1,4 +1,4 @@
-export function buildExtendSyllabusPrompt(langConfig, topic, level, existingLessons, additionalCount) {
+export function buildExtendSyllabusPrompt(langConfig, topic, level, existingLessons, additionalCount, nativeLangName = 'English') {
   const p = langConfig.prompts;
   const profName = langConfig.proficiency.name;
 
@@ -26,9 +26,9 @@ Return ONLY a JSON array of the new lesson objects (no wrapper object, no explan
   {
     "lesson_number": ${startNumber},
     "${p.titleFieldKey}": "${p.titleInstruction}",
-    "title_en": "English lesson title",
-    "description": "One English sentence describing what the reader covers",
-    "vocabulary_focus": ["3-5 English keywords describing the vocabulary theme"]
+    "title_en": "${nativeLangName} lesson title",
+    "description": "One ${nativeLangName} sentence describing what the reader covers",
+    "vocabulary_focus": ["3-5 ${nativeLangName} keywords describing the vocabulary theme"]
   }
 ]`;
 }

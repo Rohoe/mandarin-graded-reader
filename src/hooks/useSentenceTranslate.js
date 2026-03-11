@@ -6,7 +6,7 @@ import { usePopoverDismissal } from './usePopoverDismissal';
  * Manages sentence-click-to-translate popover state.
  * Returns state and handlers for the SentencePopover component.
  */
-export function useSentenceTranslate(langId) {
+export function useSentenceTranslate(langId, nativeLang = 'en') {
   // { sentenceText, rect, translation, subTranslation }
   const [sentencePopover, setSentencePopover] = useState(null);
   const popoverRef = useRef(null);
@@ -33,7 +33,7 @@ export function useSentenceTranslate(langId) {
     });
 
     // Fetch translation
-    translateText(sentenceText, langId)
+    translateText(sentenceText, langId, { to: nativeLang })
       .then(translation => {
         setSentencePopover(prev =>
           prev && prev.sentenceText === sentenceText
@@ -48,7 +48,7 @@ export function useSentenceTranslate(langId) {
             : prev
         );
       });
-  }, [langId]);
+  }, [langId, nativeLang]);
 
   /**
    * Called when user drag-selects text within the sentence popover.
@@ -63,7 +63,7 @@ export function useSentenceTranslate(langId) {
     const text = selectedText.trim();
     setSentencePopover(prev => prev ? { ...prev, subText: text, subTranslation: null } : null);
 
-    translateText(text, langId)
+    translateText(text, langId, { to: nativeLang })
       .then(translation => {
         setSentencePopover(prev =>
           prev && prev.subText === text
@@ -78,7 +78,7 @@ export function useSentenceTranslate(langId) {
             : prev
         );
       });
-  }, [langId]);
+  }, [langId, nativeLang]);
 
   // Close on Escape, outside click, or scroll
   usePopoverDismissal(!!sentencePopover, popoverRef, closeSentencePopover, {

@@ -9,6 +9,7 @@ const zhConfig = {
   name: 'Mandarin Chinese',
   nameNative: '中文',
   deckLabel: 'Chinese',
+  scriptType: 'cjk',
 
   // Proficiency system
   proficiency: {
@@ -103,6 +104,7 @@ const koConfig = {
   name: 'Korean',
   nameNative: '한국어',
   deckLabel: 'Korean',
+  scriptType: 'syllabic',
 
   proficiency: {
     name: 'TOPIK',
@@ -202,6 +204,7 @@ const yueConfig = {
   name: 'Cantonese',
   nameNative: '粵語',
   deckLabel: 'Cantonese',
+  scriptType: 'cjk',
 
   proficiency: {
     name: 'YUE',
@@ -296,9 +299,261 @@ const yueConfig = {
   },
 };
 
+const frConfig = {
+  id: 'fr',
+  name: 'French',
+  nameNative: 'Français',
+  deckLabel: 'French',
+  scriptType: 'latin',
+
+  proficiency: {
+    name: 'CEFR',
+    levels: [
+      { value: 0, label: 'A0', desc: 'Total beginner (~30 words)' },
+      { value: 1, label: 'A1', desc: 'Beginner (~500 words)' },
+      { value: 2, label: 'A2', desc: 'Elementary (~1,000 words)' },
+      { value: 3, label: 'B1', desc: 'Intermediate (~2,000 words)' },
+      { value: 4, label: 'B2', desc: 'Upper-intermediate (~4,000 words)' },
+      { value: 5, label: 'C1', desc: 'Advanced (~8,000 words)' },
+      { value: 6, label: 'C2', desc: 'Mastery (~16,000 words)' },
+    ],
+  },
+
+  fields: { target: 'french', romanization: null, translation: 'english' },
+
+  scriptRegex: null,
+  punctuation: '.,!?;:\u00ab\u00bb\u2018\u2019\u201c\u201d()',
+  charUnit: 'words',
+  charUnitShort: 'mots',
+  sentenceEndRegex: /([.!?])/,
+
+  fonts: {
+    target: "'Cormorant Garamond', 'Palatino Linotype', Palatino, Georgia, serif",
+    googleImport: null,
+  },
+  lineHeight: 1.7,
+
+  tts: {
+    langFilter: /fr/i,
+    defaultLang: 'fr-FR',
+    defaultRate: 0.9,
+    priorityVoices: [
+      v => v.name === 'Google fran\u00e7ais',
+      v => /^Thomas$/i.test(v.name),
+      v => /^Amelie$/i.test(v.name),
+      v => v.lang === 'fr-FR',
+      v => v.lang.startsWith('fr'),
+    ],
+  },
+
+  getRomanizer: null,
+
+  placeholders: {
+    syllabus: 'e.g. French cuisine, Parisian daily life\u2026',
+    standalone: 'e.g. A morning at a boulangerie\u2026',
+  },
+  decorativeChars: ['L', 'i', 'r', 'e', '\u00e9', 'F'],
+  romanizationLabel: null,
+  romanizationName: null,
+
+  prompts: {
+    curriculumDesigner: 'French language curriculum designer',
+    targetLanguage: 'French',
+    titleInstruction: 'French lesson title (3-8 words)',
+    titleFieldKey: 'title_fr',
+    getStoryRequirements: (level) => {
+      const suffix = `- Dialogue should use appropriate register (tu/vous) for the context
+- Avoid vocabulary or structures above the target CEFR level unless explicitly introduced as new words`;
+      const bands = {
+        0: `- A0: Absolute total beginner \u2014 ultra-short sentences (3-6 words each), only the ~30 most common words (je, tu, il, est, a, un, le, la, et, pas, oui, non, bonjour, merci, s'il vous pla\u00eet), no grammar beyond subject+verb, every word introduced in vocabulary`,
+        1: `- A1: Simple present-tense sentences (5-8 words), basic \u00eatre/avoir structures, articles (le/la/un/une), common verbs, concrete nouns, simple negation (ne...pas)`,
+        2: `- A2: Simple compound sentences, pass\u00e9 compos\u00e9 with avoir/\u00eatre, reflexive verbs, basic prepositions, common adjective agreement, near future (aller + infinitive)`,
+        3: `- B1: Complex sentences with subordinate clauses, imparfait vs pass\u00e9 compos\u00e9, conditional, subjunctive after common triggers, relative pronouns (qui, que, o\u00f9), idiomatic expressions`,
+        4: `- B2: Nuanced expression, plus-que-parfait, passive voice, advanced subjunctive, concessive clauses (bien que), formal vs informal register shifts, literary vocabulary`,
+        5: `- C1-C2: Sophisticated syntax, literary tenses (pass\u00e9 simple, subjonctif imparfait where stylistically apt), abstract vocabulary, cultural references, nuanced argumentation`,
+        6: `- C1-C2: Sophisticated syntax, literary tenses (pass\u00e9 simple, subjonctif imparfait where stylistically apt), abstract vocabulary, cultural references, nuanced argumentation`,
+      };
+      return `- Calibrate language complexity to CEFR ${['A0','A1','A2','B1','B2','C1','C2'][level] || 'B1'}:\n${bands[level] || bands[3]}\n${suffix}`;
+    },
+    vocabFormat: `- **Word** \u2014 English definition\n- Story example sentence using the word\n- *Brief usage note about the story example*\n- New example sentence (different context)\n- *Brief usage note about the new example*`,
+    ankiFields: `{ "french": "mot", "english": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
+    grammarContext: 'French grammar patterns',
+    gradingContext: 'French language teacher',
+    gradingLanguage: 'French',
+  },
+};
+
+const esConfig = {
+  id: 'es',
+  name: 'Spanish',
+  nameNative: 'Espa\u00f1ol',
+  deckLabel: 'Spanish',
+  scriptType: 'latin',
+
+  proficiency: {
+    name: 'CEFR',
+    levels: [
+      { value: 0, label: 'A0', desc: 'Total beginner (~30 words)' },
+      { value: 1, label: 'A1', desc: 'Beginner (~500 words)' },
+      { value: 2, label: 'A2', desc: 'Elementary (~1,000 words)' },
+      { value: 3, label: 'B1', desc: 'Intermediate (~2,000 words)' },
+      { value: 4, label: 'B2', desc: 'Upper-intermediate (~4,000 words)' },
+      { value: 5, label: 'C1', desc: 'Advanced (~8,000 words)' },
+      { value: 6, label: 'C2', desc: 'Mastery (~16,000 words)' },
+    ],
+  },
+
+  fields: { target: 'spanish', romanization: null, translation: 'english' },
+
+  scriptRegex: null,
+  punctuation: '.,!?\u00a1\u00bf;:\u00ab\u00bb\u2018\u2019\u201c\u201d()',
+  charUnit: 'words',
+  charUnitShort: 'palabras',
+  sentenceEndRegex: /([.!?])/,
+
+  fonts: {
+    target: "'Cormorant Garamond', 'Palatino Linotype', Palatino, Georgia, serif",
+    googleImport: null,
+  },
+  lineHeight: 1.7,
+
+  tts: {
+    langFilter: /es/i,
+    defaultLang: 'es-ES',
+    defaultRate: 0.9,
+    priorityVoices: [
+      v => v.name === 'Google espa\u00f1ol',
+      v => /^Monica$/i.test(v.name),
+      v => /^Paulina$/i.test(v.name),
+      v => v.lang === 'es-ES',
+      v => v.lang.startsWith('es'),
+    ],
+  },
+
+  getRomanizer: null,
+
+  placeholders: {
+    syllabus: 'e.g. Latin American culture, Spanish festivals\u2026',
+    standalone: 'e.g. A day at a mercado in Mexico City\u2026',
+  },
+  decorativeChars: ['L', 'e', 'e', 'r', '\u00f1', 'E'],
+  romanizationLabel: null,
+  romanizationName: null,
+
+  prompts: {
+    curriculumDesigner: 'Spanish language curriculum designer',
+    targetLanguage: 'Spanish',
+    titleInstruction: 'Spanish lesson title (3-8 words)',
+    titleFieldKey: 'title_es',
+    getStoryRequirements: (level) => {
+      const suffix = `- Dialogue should use appropriate register (t\u00fa/usted) for the context
+- Avoid vocabulary or structures above the target CEFR level unless explicitly introduced as new words`;
+      const bands = {
+        0: `- A0: Absolute total beginner \u2014 ultra-short sentences (3-6 words each), only the ~30 most common words (yo, t\u00fa, \u00e9l, es, hay, un, el, la, y, no, s\u00ed, hola, gracias, por favor), no grammar beyond subject+verb, every word introduced in vocabulary`,
+        1: `- A1: Simple present-tense sentences (5-8 words), basic ser/estar/tener structures, articles (el/la/un/una), common verbs, concrete nouns, simple negation`,
+        2: `- A2: Simple compound sentences, pret\u00e9rito perfecto/indefinido, reflexive verbs, basic prepositions, adjective agreement, ir a + infinitive`,
+        3: `- B1: Complex sentences with subordinate clauses, imperfecto vs indefinido, conditional, subjunctive after common triggers, relative pronouns, idiomatic expressions`,
+        4: `- B2: Nuanced expression, pluscuamperfecto, passive voice (ser + past participle), advanced subjunctive, concessive clauses, formal vs informal register shifts`,
+        5: `- C1-C2: Sophisticated syntax, literary tenses, abstract vocabulary, cultural references from the Hispanic world, nuanced argumentation, regional variation awareness`,
+        6: `- C1-C2: Sophisticated syntax, literary tenses, abstract vocabulary, cultural references from the Hispanic world, nuanced argumentation, regional variation awareness`,
+      };
+      return `- Calibrate language complexity to CEFR ${['A0','A1','A2','B1','B2','C1','C2'][level] || 'B1'}:\n${bands[level] || bands[3]}\n${suffix}`;
+    },
+    vocabFormat: `- **Word** \u2014 English definition\n- Story example sentence using the word\n- *Brief usage note about the story example*\n- New example sentence (different context)\n- *Brief usage note about the new example*`,
+    ankiFields: `{ "spanish": "palabra", "english": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
+    grammarContext: 'Spanish grammar patterns',
+    gradingContext: 'Spanish language teacher',
+    gradingLanguage: 'Spanish',
+  },
+};
+
 // ── Registry ─────────────────────────────────────────────────
 
-const LANGUAGES = { zh: zhConfig, ko: koConfig, yue: yueConfig };
+const enConfig = {
+  id: 'en',
+  name: 'English',
+  nameNative: 'English',
+  deckLabel: 'English',
+  scriptType: 'latin',
+
+  proficiency: {
+    name: 'CEFR',
+    levels: [
+      { value: 0, label: 'A0', desc: 'Total beginner (~30 words)' },
+      { value: 1, label: 'A1', desc: 'Beginner (~500 words)' },
+      { value: 2, label: 'A2', desc: 'Elementary (~1,000 words)' },
+      { value: 3, label: 'B1', desc: 'Intermediate (~2,000 words)' },
+      { value: 4, label: 'B2', desc: 'Upper-intermediate (~4,000 words)' },
+      { value: 5, label: 'C1', desc: 'Advanced (~8,000 words)' },
+      { value: 6, label: 'C2', desc: 'Mastery (~16,000 words)' },
+    ],
+  },
+
+  fields: { target: 'english_word', romanization: null, translation: 'translation' },
+
+  scriptRegex: null,
+  punctuation: '.,!?;:\u2018\u2019\u201c\u201d()',
+  charUnit: 'words',
+  charUnitShort: 'words',
+  sentenceEndRegex: /([.!?])/,
+
+  fonts: {
+    target: "'Cormorant Garamond', 'Palatino Linotype', Palatino, Georgia, serif",
+    googleImport: null,
+  },
+  lineHeight: 1.7,
+
+  tts: {
+    langFilter: /en/i,
+    defaultLang: 'en-US',
+    defaultRate: 0.9,
+    priorityVoices: [
+      v => v.name === 'Google US English',
+      v => /^Samantha$/i.test(v.name),
+      v => /^Alex$/i.test(v.name),
+      v => v.lang === 'en-US',
+      v => v.lang.startsWith('en'),
+    ],
+  },
+
+  getRomanizer: null,
+
+  placeholders: {
+    syllabus: 'e.g. American culture, Business English\u2026',
+    standalone: 'e.g. A visit to a farmers market\u2026',
+  },
+  decorativeChars: ['R', 'e', 'a', 'd', 'E', 'n'],
+  romanizationLabel: null,
+  romanizationName: null,
+
+  prompts: {
+    curriculumDesigner: 'English as a Second Language curriculum designer',
+    targetLanguage: 'English',
+    titleInstruction: 'English lesson title (3-8 words)',
+    titleFieldKey: 'title_en_target',
+    getStoryRequirements: (level) => {
+      const suffix = `- Dialogue should reflect natural spoken English appropriate to the context
+- Avoid vocabulary or structures above the target CEFR level unless explicitly introduced as new words`;
+      const bands = {
+        0: `- A0: Absolute total beginner \u2014 ultra-short sentences (3-5 words each), only the ~30 most common words (I, you, he, she, is, have, go, come, eat, drink, good, big, small, yes, no), no grammar beyond subject+verb+object, every word introduced in vocabulary`,
+        1: `- A1: Simple present-tense sentences (5-8 words), basic be/have/do structures, common verbs, concrete nouns, articles (a/an/the), simple negation, present continuous for actions in progress`,
+        2: `- A2: Simple compound sentences, past simple regular/irregular, going to for future, can/could for ability, comparatives/superlatives, prepositions of time and place, basic phrasal verbs`,
+        3: `- B1: Complex sentences with relative clauses, present perfect vs past simple, first/second conditionals, modals (must, should, might), passive voice basics, reported speech (simple)`,
+        4: `- B2: Nuanced expression, past perfect, third conditional, advanced passive, wish/if only constructions, formal vs informal register, idiomatic expressions, phrasal verbs in context`,
+        5: `- C1-C2: Sophisticated syntax, mixed conditionals, inversion for emphasis, cleft sentences, advanced modality, academic/literary vocabulary, nuanced argumentation, register shifting`,
+        6: `- C1-C2: Sophisticated syntax, mixed conditionals, inversion for emphasis, cleft sentences, advanced modality, academic/literary vocabulary, nuanced argumentation, register shifting`,
+      };
+      return `- Calibrate language complexity to CEFR ${['A0','A1','A2','B1','B2','C1','C2'][level] || 'B1'}:\n${bands[level] || bands[3]}\n${suffix}`;
+    },
+    vocabFormat: `- **Word** \u2014 definition in the learner's native language\n- Story example sentence using the word\n- *Brief usage note about the story example*\n- New example sentence (different context)\n- *Brief usage note about the new example*`,
+    ankiFields: `{ "english_word": "word", "translation": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
+    grammarContext: 'English grammar patterns',
+    gradingContext: 'ESL teacher',
+    gradingLanguage: 'English',
+  },
+};
+
+const LANGUAGES = { zh: zhConfig, ko: koConfig, yue: yueConfig, fr: frConfig, es: esConfig, en: enConfig };
 
 export function getLang(id) {
   return LANGUAGES[id] || LANGUAGES.zh;
@@ -318,5 +573,5 @@ export const DEFAULT_LANG_ID = 'zh';
 export function getLessonTitle(lesson, langId) {
   if (!lesson) return '';
   const key = getLang(langId).prompts.titleFieldKey;
-  return lesson[key] || lesson.title_zh || lesson.title_yue || lesson.title_ko || lesson.title_target || '';
+  return lesson[key] || lesson.title_zh || lesson.title_yue || lesson.title_ko || lesson.title_fr || lesson.title_es || lesson.title_en_target || lesson.title_en || lesson.title_target || '';
 }

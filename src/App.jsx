@@ -212,7 +212,7 @@ function AppShell() {
     setSidebarOpen(false);
     try {
       const llmConfig = buildLLMConfig(state);
-      const raw    = await generateReader(llmConfig, continuationTopic, level, state.learnedVocabulary, 1200, state.maxTokens, story, langId, { structured: state.useStructuredOutput });
+      const raw    = await generateReader(llmConfig, continuationTopic, level, state.learnedVocabulary, 1200, state.maxTokens, story, langId, { structured: state.useStructuredOutput, nativeLang: state.nativeLang });
       const parsed = state.useStructuredOutput
         ? normalizeStructuredReader(raw, langId)
         : parseReaderResponse(raw, langId);
@@ -242,6 +242,7 @@ function AppShell() {
         currentSyllabus.lessons,
         additionalCount,
         currentSyllabus.langId,
+        state.nativeLang,
       );
       act.extendSyllabusLessons(activeSyllabusId, newLessons);
       act.notify('success', `Added ${newLessons.length} new lesson${newLessons.length !== 1 ? 's' : ''}`);

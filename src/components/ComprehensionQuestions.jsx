@@ -24,8 +24,8 @@ function scoreIndicator(scoreStr) {
 const AUTO_SAVE_DELAY = 1500;
 
 export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars, showParagraphTools, speakText, speakingKey, ttsSupported, onOpenSettings }) {
-  const { apiKey, providerKeys, activeProvider, activeModels, gradingModels, customBaseUrl } = useAppSelector(s => ({
-    apiKey: s.apiKey, providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, gradingModels: s.gradingModels, customBaseUrl: s.customBaseUrl,
+  const { apiKey, providerKeys, activeProvider, activeModels, gradingModels, customBaseUrl, nativeLang } = useAppSelector(s => ({
+    apiKey: s.apiKey, providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, gradingModels: s.gradingModels, customBaseUrl: s.customBaseUrl, nativeLang: s.nativeLang || 'en',
   }));
 
   const defaultKeyAvailable = !hasAnyUserKey(providerKeys) && !!import.meta.env.VITE_DEFAULT_GEMINI_KEY;
@@ -120,7 +120,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
     try {
       const answersArray = questions.map((_, i) => answers[i] || '');
       const llmConfig = buildGradingLLMConfig({ providerKeys, activeProvider, activeModels, gradingModels, customBaseUrl });
-      const result = await gradeAnswers(llmConfig, questions, answersArray, story, level, 2048, langId);
+      const result = await gradeAnswers(llmConfig, questions, answersArray, story, level, 2048, langId, nativeLang);
       setResults(result);
       if (lessonKey) {
         act.setReader(lessonKey, {

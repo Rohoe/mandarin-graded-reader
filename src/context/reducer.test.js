@@ -88,6 +88,10 @@ vi.mock('../lib/storage', () => ({
   saveReadingTime: vi.fn(),
   loadGradingModels: () => ({ anthropic: null, openai: null, gemini: null, openai_compatible: null }),
   saveGradingModels: vi.fn(),
+  loadDefaultLevels: () => ({ zh: 3, ko: 2, yue: 2, fr: 2, es: 2, en: 2 }),
+  saveDefaultLevels: vi.fn(),
+  loadNativeLang: () => 'en',
+  saveNativeLang: vi.fn(),
 }));
 
 vi.mock('../lib/fileStorage', () => ({

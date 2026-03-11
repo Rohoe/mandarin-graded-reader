@@ -1,4 +1,4 @@
-export function buildReaderSystem(langConfig, level, topic, charRange, targetChars = 1200) {
+export function buildReaderSystem(langConfig, level, topic, charRange, targetChars = 1200, nativeLangName = 'English') {
   const p = langConfig.prompts;
   const profName = langConfig.proficiency.name;
 
@@ -34,8 +34,8 @@ ${p.getStoryRequirements(level)}
 IMPORTANT: Use EXACTLY these English section headings (do not translate them):
 
 ### 1. Title
-${p.targetLanguage} text only (no bold markers, no English, no ${profName} level suffix)
-English subtitle on the next line
+${p.targetLanguage} text only (no bold markers, no ${nativeLangName}, no ${profName} level suffix)
+${nativeLangName} subtitle on the next line
 
 ### 2. Story
 With bolded vocabulary and italicized proper nouns
@@ -44,9 +44,9 @@ With bolded vocabulary and italicized proper nouns
 For each word, use EXACTLY this format (4 lines per word, no labels or prefixes):
 ${p.vocabFormat}
 - A sentence from the story that uses this word (copy it exactly, keep bold markers)
-- *One-sentence English note: explain the grammar pattern, collocation, or nuance in that sentence*
+- *One-sentence ${nativeLangName} note: explain the grammar pattern, collocation, or nuance in that sentence*
 - A new example sentence (not from the story, showing different usage)
-- *One-sentence English note: explain what this second example demonstrates*
+- *One-sentence ${nativeLangName} note: explain what this second example demonstrates*
 
 IMPORTANT: Do NOT prefix example sentences with labels like "Example sentence:" or "From story:". Just write the sentence directly.
 
@@ -62,6 +62,6 @@ Return a JSON block tagged \`\`\`anki-json containing an array of card objects:
 
 ### 6. Grammar Notes
 Identify ${grammarRange} key ${p.grammarContext} used in the story. For each pattern:
-- **Pattern** (English name) — one-sentence explanation of the structure and when to use it
+- **Pattern** (${nativeLangName} name) — one-sentence explanation of the structure and when to use it
 - Example sentence taken directly from the story`;
 }

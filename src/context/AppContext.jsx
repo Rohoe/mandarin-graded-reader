@@ -56,6 +56,8 @@ import {
   unmarkEvicted,
   loadNewCardsPerDay,
   loadReadingTime,
+  loadDefaultLevels,
+  loadNativeLang,
   setDirectoryHandle,
 } from '../lib/storage';
 import {
@@ -115,6 +117,8 @@ function buildInitialState() {
     defaultLevel:      loadDefaultLevel(),
     defaultTopikLevel: loadDefaultTopikLevel(),
     defaultYueLevel:   loadDefaultYueLevel(),
+    defaultLevels:     loadDefaultLevels(),
+    nativeLang:        loadNativeLang(),
     darkMode:          loadDarkMode(),
     ttsVoiceURI:       loadTtsVoiceURI(),
     ttsKoVoiceURI:     loadTtsKoVoiceURI(),

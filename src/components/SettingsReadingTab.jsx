@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { getAllLanguages } from '../lib/languages';
+import { getAllNativeLanguages } from '../lib/nativeLanguages';
 
 export default function SettingsReadingTab({ state, act }) {
   const [chineseVoices, setChineseVoices] = useState([]);
@@ -32,6 +34,26 @@ export default function SettingsReadingTab({ state, act }) {
 
   return (
     <>
+      {/* My Native Language */}
+      <section className="settings-section">
+        <h3 className="settings-section__title form-label">My Native Language</h3>
+        <p className="settings-section__desc text-muted">
+          Definitions, explanations, and translations will be in this language.
+        </p>
+        <select
+          className="form-select"
+          value={state.nativeLang || 'en'}
+          onChange={e => act.setNativeLang(e.target.value)}
+          style={{ maxWidth: '18rem' }}
+        >
+          {getAllNativeLanguages().map(lang => (
+            <option key={lang.id} value={lang.id}>{lang.name}</option>
+          ))}
+        </select>
+      </section>
+
+      <hr className="divider" />
+
       {/* Dark mode */}
       <section className="settings-section">
         <div className="settings-toggle-row">
@@ -139,75 +161,26 @@ export default function SettingsReadingTab({ state, act }) {
 
       <hr className="divider" />
 
-      {/* Default HSK level */}
-      <section className="settings-section">
-        <h3 className="settings-section__title form-label">Default HSK Level</h3>
-        <p className="settings-section__desc text-muted">
-          Pre-selected level when creating Chinese content.
-        </p>
-        <select
-          className="form-select"
-          value={state.defaultLevel}
-          onChange={e => act.setDefaultLevel(e.target.value)}
-          style={{ maxWidth: '18rem' }}
-        >
-          <option value={0}>HSK 0 — Total beginner (~30 words, pinyin focus)</option>
-          <option value={1}>HSK 1 — Absolute beginner (~150 words)</option>
-          <option value={2}>HSK 2 — Elementary (~300 words)</option>
-          <option value={3}>HSK 3 — Pre-intermediate (~600 words)</option>
-          <option value={4}>HSK 4 — Intermediate (~1,200 words)</option>
-          <option value={5}>HSK 5 — Upper-intermediate (~2,500 words)</option>
-          <option value={6}>HSK 6 — Advanced (~5,000 words)</option>
-        </select>
-      </section>
-
-      <hr className="divider" />
-
-      {/* Default TOPIK level */}
-      <section className="settings-section">
-        <h3 className="settings-section__title form-label">Default TOPIK Level</h3>
-        <p className="settings-section__desc text-muted">
-          Pre-selected level when creating Korean content.
-        </p>
-        <select
-          className="form-select"
-          value={state.defaultTopikLevel}
-          onChange={e => act.setDefaultTopikLevel(e.target.value)}
-          style={{ maxWidth: '18rem' }}
-        >
-          <option value={0}>TOPIK 0 — Total beginner (~30 words, hangul focus)</option>
-          <option value={1}>TOPIK 1 — Absolute beginner (~800 words)</option>
-          <option value={2}>TOPIK 2 — Elementary (~1,500 words)</option>
-          <option value={3}>TOPIK 3 — Pre-intermediate (~3,000 words)</option>
-          <option value={4}>TOPIK 4 — Intermediate (~5,000 words)</option>
-          <option value={5}>TOPIK 5 — Upper-intermediate (~8,000 words)</option>
-          <option value={6}>TOPIK 6 — Advanced (~12,000 words)</option>
-        </select>
-      </section>
-
-      <hr className="divider" />
-
-      {/* Default YUE level */}
-      <section className="settings-section">
-        <h3 className="settings-section__title form-label">Default YUE Level</h3>
-        <p className="settings-section__desc text-muted">
-          Pre-selected level when creating Cantonese content.
-        </p>
-        <select
-          className="form-select"
-          value={state.defaultYueLevel}
-          onChange={e => act.setDefaultYueLevel(e.target.value)}
-          style={{ maxWidth: '18rem' }}
-        >
-          <option value={0}>YUE 0 — Total beginner (~30 words, jyutping focus)</option>
-          <option value={1}>YUE 1 — Absolute beginner (~150 words)</option>
-          <option value={2}>YUE 2 — Elementary (~300 words)</option>
-          <option value={3}>YUE 3 — Pre-intermediate (~600 words)</option>
-          <option value={4}>YUE 4 — Intermediate (~1,200 words)</option>
-          <option value={5}>YUE 5 — Upper-intermediate (~2,500 words)</option>
-          <option value={6}>YUE 6 — Advanced (~5,000 words)</option>
-        </select>
-      </section>
+      {/* Default proficiency levels (data-driven for all languages) */}
+      {getAllLanguages().map(lang => (
+        <section className="settings-section" key={lang.id}>
+          <h3 className="settings-section__title form-label">Default {lang.proficiency.name} Level</h3>
+          <p className="settings-section__desc text-muted">
+            Pre-selected level when creating {lang.name} content.
+          </p>
+          <select
+            className="form-select"
+            value={state.defaultLevels?.[lang.id] ?? 2}
+            onChange={e => act.setDefaultLevelForLang(lang.id, e.target.value)}
+            style={{ maxWidth: '18rem' }}
+          >
+            {lang.proficiency.levels.map(l => (
+              <option key={l.value} value={l.value}>{l.label} — {l.desc}</option>
+            ))}
+          </select>
+          <hr className="divider" />
+        </section>
+      ))}
 
       {/* TTS voice preferences */}
       {'speechSynthesis' in window && (

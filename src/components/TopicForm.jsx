@@ -12,8 +12,8 @@ import GenerationProgress from './GenerationProgress';
 import './TopicForm.css';
 
 export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStandaloneGenerating, onCancel, onOpenSettings }) {
-  const { apiKey, defaultLevel, defaultTopikLevel, defaultYueLevel, learnedVocabulary, maxTokens, loading, providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
-    apiKey: s.apiKey, defaultLevel: s.defaultLevel, defaultTopikLevel: s.defaultTopikLevel, defaultYueLevel: s.defaultYueLevel,
+  const { apiKey, defaultLevels, learnedVocabulary, maxTokens, loading, providerKeys, activeProvider, activeModels, customBaseUrl, nativeLang } = useAppSelector(s => ({
+    apiKey: s.apiKey, defaultLevels: s.defaultLevels || {}, nativeLang: s.nativeLang || 'en',
     learnedVocabulary: s.learnedVocabulary, maxTokens: s.maxTokens, loading: s.loading,
     providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
   }));
@@ -26,14 +26,14 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
 
   const [topic, setTopic]         = useState('');
   const [langId, setLangId]       = useState(DEFAULT_LANG_ID);
-  const defaultLevelForLang = langId === 'ko' ? (defaultTopikLevel ?? 2) : langId === 'yue' ? (defaultYueLevel ?? 2) : (defaultLevel ?? 3);
+  const defaultLevelForLang = defaultLevels[langId] ?? 2;
   const [level, setLevel]         = useState(defaultLevelForLang);
   const [mode, setMode]           = useState('syllabus'); // 'syllabus' | 'standalone'
   const [lessonCount, setLessonCount] = useState(6);
   const [readerLength, setReaderLength] = useState(1200);
 
   const langConfig = getLang(langId);
-  const languages = getAllLanguages();
+  const languages = getAllLanguages().filter(l => l.id !== nativeLang);
   const profLevels = langConfig.proficiency.levels;
 
   async function handleGenerateSyllabus(e) {
@@ -44,7 +44,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
     act.clearError();
     try {
       const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModels, customBaseUrl });
-      const { summary, lessons } = await generateSyllabus(llmConfig, topic.trim(), level, lessonCount, langId);
+      const { summary, lessons } = await generateSyllabus(llmConfig, topic.trim(), level, lessonCount, langId, nativeLang);
       const newSyllabus = {
         id:        `syllabus_${Date.now().toString(36)}`,
         topic:     topic.trim(),
@@ -81,7 +81,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
     // Generate in background — form can close, user can navigate away
     try {
       const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModels, customBaseUrl });
-      const raw    = await generateReader(llmConfig, topicStr, level, learnedVocabulary, readerLength, maxTokens, null, langId);
+      const raw    = await generateReader(llmConfig, topicStr, level, learnedVocabulary, readerLength, maxTokens, null, langId, { nativeLang });
       const parsed = parseReaderResponse(raw, langId);
       pushGeneratedReader(lessonKey, { ...parsed, topic: topicStr, level, langId: langId, lessonKey, isStandalone: true });
       // Update sidebar metadata with generated titles so they persist across reloads
@@ -139,7 +139,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
                 ? languages[(idx + 1) % languages.length]
                 : languages[(idx - 1 + languages.length) % languages.length];
               setLangId(next.id);
-              setLevel(next.id === 'ko' ? (defaultTopikLevel ?? 2) : next.id === 'yue' ? (defaultYueLevel ?? 2) : (defaultLevel ?? 3));
+              setLevel(defaultLevels[next.id] ?? 2);
               requestAnimationFrame(() => {
                 e.currentTarget.querySelector('[aria-checked="true"]')?.focus?.();
               });
@@ -153,7 +153,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
                 aria-checked={langId === lang.id}
                 tabIndex={langId === lang.id ? 0 : -1}
                 className={`pill-option topic-form__lang-pill ${langId === lang.id ? 'active' : ''}`}
-                onClick={() => { setLangId(lang.id); setLevel(lang.id === 'ko' ? (defaultTopikLevel ?? 2) : lang.id === 'yue' ? (defaultYueLevel ?? 2) : (defaultLevel ?? 3)); }}
+                onClick={() => { setLangId(lang.id); setLevel(defaultLevels[lang.id] ?? 2); }}
                 disabled={loading}
               >
                 {lang.nameNative}

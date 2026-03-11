@@ -6,7 +6,7 @@ import { generateReader, generateReaderStream } from '../lib/api';
 import { parseReaderResponse, normalizeStructuredReader } from '../lib/parser';
 import { getLang } from '../lib/languages';
 
-export function useReaderGeneration({ lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength, useStructuredOutput = false }) {
+export function useReaderGeneration({ lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength, useStructuredOutput = false, nativeLang = 'en' }) {
   const dispatch = useAppDispatch();
   const { pushGeneratedReader } = useContext(AppContext);
   const act = actions(dispatch);
@@ -54,7 +54,7 @@ export function useReaderGeneration({ lessonKey, lessonMeta, reader, langId, isP
       if (useStreaming) {
         let accumulated = '';
         setStreamingText('');
-        const stream = generateReaderStream(llmConfig, topic, level, learnedVocabulary, readerLength, maxTokens, null, readerLangId, { signal: controller.signal });
+        const stream = generateReaderStream(llmConfig, topic, level, learnedVocabulary, readerLength, maxTokens, null, readerLangId, { signal: controller.signal, nativeLang });
         for await (const chunk of stream) {
           accumulated += chunk;
           setStreamingText(accumulated);
@@ -62,7 +62,7 @@ export function useReaderGeneration({ lessonKey, lessonMeta, reader, langId, isP
         raw = accumulated;
         setStreamingText(null);
       } else {
-        raw = await generateReader(llmConfig, topic, level, learnedVocabulary, readerLength, maxTokens, null, readerLangId, { signal: controller.signal, structured: useStructuredOutput });
+        raw = await generateReader(llmConfig, topic, level, learnedVocabulary, readerLength, maxTokens, null, readerLangId, { signal: controller.signal, structured: useStructuredOutput, nativeLang });
       }
 
       const parsed = useStructuredOutput
@@ -88,7 +88,7 @@ export function useReaderGeneration({ lessonKey, lessonMeta, reader, langId, isP
       act.clearPendingReader(lessonKey);
       if (abortRef.current === controller) abortRef.current = null;
     }
-  }, [isPending, lessonKey, lessonMeta, reader, langId, llmConfig, learnedVocabulary, readerLength, maxTokens, useStructuredOutput, act, pushGeneratedReader]);
+  }, [isPending, lessonKey, lessonMeta, reader, langId, llmConfig, learnedVocabulary, readerLength, maxTokens, useStructuredOutput, nativeLang, act, pushGeneratedReader]);
 
   return { handleGenerate, act, streamingText };
 }

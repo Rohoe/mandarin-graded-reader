@@ -31,20 +31,23 @@ describe('getLang', () => {
 // ── getAllLanguages / getLanguageIds ──────────────────────────
 
 describe('getAllLanguages', () => {
-  it('returns all 3 language configs', () => {
+  it('returns all 6 language configs', () => {
     const langs = getAllLanguages();
-    expect(langs).toHaveLength(3);
+    expect(langs).toHaveLength(6);
     const ids = langs.map(l => l.id);
     expect(ids).toContain('zh');
     expect(ids).toContain('ko');
     expect(ids).toContain('yue');
+    expect(ids).toContain('fr');
+    expect(ids).toContain('es');
+    expect(ids).toContain('en');
   });
 });
 
 describe('getLanguageIds', () => {
   it('returns correct IDs', () => {
     const ids = getLanguageIds();
-    expect(ids).toEqual(['zh', 'ko', 'yue']);
+    expect(ids).toEqual(['zh', 'ko', 'yue', 'fr', 'es', 'en']);
   });
 });
 
@@ -97,7 +100,7 @@ describe('getLessonTitle', () => {
 // ── Config structure validation ──────────────────────────────
 
 describe('language config structure', () => {
-  const langIds = ['zh', 'ko', 'yue'];
+  const langIds = ['zh', 'ko', 'yue', 'fr', 'es', 'en'];
 
   it.each(langIds)('%s has all required fields', (id) => {
     const lang = getLang(id);
@@ -109,13 +112,26 @@ describe('language config structure', () => {
     expect(lang.proficiency.levels.length).toBeGreaterThanOrEqual(7);
     expect(lang.fields).toBeDefined();
     expect(lang.fields.target).toBeTruthy();
-    expect(lang.fields.romanization).toBeTruthy();
-    expect(lang.fields.translation).toBe('english');
-    expect(lang.scriptRegex).toBeInstanceOf(RegExp);
+    // romanization can be null for Latin-script languages
+    if (lang.scriptType !== 'latin') {
+      expect(lang.fields.romanization).toBeTruthy();
+    }
+    expect(lang.fields.translation).toBeTruthy();
+    // scriptRegex can be null for Latin-script languages
+    if (lang.scriptType !== 'latin') {
+      expect(lang.scriptRegex).toBeInstanceOf(RegExp);
+    } else {
+      expect(lang.scriptRegex).toBeNull();
+    }
     expect(lang.fonts).toBeDefined();
     expect(lang.tts).toBeDefined();
     expect(lang.prompts).toBeDefined();
-    expect(typeof lang.getRomanizer).toBe('function');
+    // getRomanizer can be null for Latin-script languages
+    if (lang.scriptType !== 'latin') {
+      expect(typeof lang.getRomanizer).toBe('function');
+    } else {
+      expect(lang.getRomanizer).toBeNull();
+    }
   });
 
   it('zh scriptRegex matches Chinese characters', () => {
@@ -131,6 +147,30 @@ describe('language config structure', () => {
   it('yue scriptRegex matches Chinese characters', () => {
     expect(getLang('yue').scriptRegex.test('廣')).toBe(true);
     expect(getLang('yue').scriptRegex.test('a')).toBe(false);
+  });
+
+  it('fr has null scriptRegex', () => {
+    expect(getLang('fr').scriptRegex).toBeNull();
+  });
+
+  it('es has null scriptRegex', () => {
+    expect(getLang('es').scriptRegex).toBeNull();
+  });
+
+  it('en has null scriptRegex', () => {
+    expect(getLang('en').scriptRegex).toBeNull();
+  });
+
+  it.each(['fr', 'es', 'en'])('%s has scriptType latin', (id) => {
+    expect(getLang(id).scriptType).toBe('latin');
+  });
+
+  it.each(['zh', 'yue'])('%s has scriptType cjk', (id) => {
+    expect(getLang(id).scriptType).toBe('cjk');
+  });
+
+  it('ko has scriptType syllabic', () => {
+    expect(getLang('ko').scriptType).toBe('syllabic');
   });
 });
 
@@ -153,5 +193,21 @@ describe('getStoryRequirements', () => {
     const result = getLang('yue').prompts.getStoryRequirements(3);
     expect(result).toContain('WRITTEN CANTONESE');
     expect(result).toContain('YUE 3');
+  });
+
+  it('returns CEFR content for French', () => {
+    const result = getLang('fr').prompts.getStoryRequirements(3);
+    expect(result).toContain('CEFR B1');
+  });
+
+  it('returns CEFR content for Spanish', () => {
+    const result = getLang('es').prompts.getStoryRequirements(0);
+    expect(result).toContain('A0');
+    expect(result).toContain('total beginner');
+  });
+
+  it('returns CEFR content for English (ESL)', () => {
+    const result = getLang('en').prompts.getStoryRequirements(4);
+    expect(result).toContain('CEFR B2');
   });
 });

@@ -42,9 +42,9 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     ttsVoiceURI: s.ttsVoiceURI, ttsKoVoiceURI: s.ttsKoVoiceURI, ttsYueVoiceURI: s.ttsYueVoiceURI, ttsSpeechRate: s.ttsSpeechRate,
     romanizationOn: s.romanizationOn, translateButtons: s.translateButtons,
   }));
-  const { providerKeys, activeProvider, activeModels, customBaseUrl, maxTokens, useStructuredOutput } = useAppSelector(s => ({
+  const { providerKeys, activeProvider, activeModels, customBaseUrl, maxTokens, useStructuredOutput, nativeLang } = useAppSelector(s => ({
     providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
-    maxTokens: s.maxTokens, useStructuredOutput: s.useStructuredOutput,
+    maxTokens: s.maxTokens, useStructuredOutput: s.useStructuredOutput, nativeLang: s.nativeLang || 'en',
   }));
   const dispatch = useAppDispatch();
   const { restoreEvictedReader } = useContext(AppContext);
@@ -68,8 +68,8 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   // Set data-lang on <html> and update page title when reader changes
   useEffect(() => {
     document.documentElement.setAttribute('data-lang', langId);
-    const titles = { zh: '漫读 — Mandarin Reader', yue: '漫读 — Cantonese Reader', ko: '漫读 — Korean Reader' };
-    document.title = titles[langId] || titles.zh;
+    const titles = { zh: '漫读 — Mandarin Reader', yue: '漫读 — Cantonese Reader', ko: '漫读 — Korean Reader', fr: '漫读 — French Reader', es: '漫读 — Spanish Reader', en: '漫读 — English Reader' };
+    document.title = titles[langId] || '漫读 — Graded Reader';
     return () => {
       document.documentElement.removeAttribute('data-lang');
       document.title = '漫读 — Graded Reader';
@@ -104,7 +104,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   const { selection, popoverRef: selectionPopoverRef, clearSelection } = useTextSelection(scrollRef);
   const [selectionPopover, setSelectionPopover] = useState(null);
 
-  const { sentencePopover, sentencePopoverRef, handleSentenceClick, handleSubSelection, closeSentencePopover } = useSentenceTranslate(langId);
+  const { sentencePopover, sentencePopoverRef, handleSentenceClick, handleSubSelection, closeSentencePopover } = useSentenceTranslate(langId, nativeLang);
 
   // Track reading time for this lesson
   useReadingTimer(reader ? lessonKey : null);
@@ -139,7 +139,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
 
     // Fetch translation async
     let cancelled = false;
-    translateText(text, langId).then(translation => {
+    translateText(text, langId, { to: nativeLang === 'en' ? 'en' : nativeLang }).then(translation => {
       if (!cancelled) {
         setSelectionPopover(prev => prev ? { ...prev, translation } : null);
       }
@@ -166,7 +166,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
 
   const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModels, customBaseUrl });
   const { handleGenerate, streamingText } = useReaderGeneration({
-    lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength, useStructuredOutput,
+    lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength, useStructuredOutput, nativeLang,
   });
 
   // Cancel speech & close popovers when lesson changes
@@ -204,7 +204,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   async function handleTranslate(index, text) {
     setTranslatingIndex(index);
     try {
-      const translation = await translateText(text, langId);
+      const translation = await translateText(text, langId, { to: nativeLang });
       const existing = reader.paragraphTranslations || {};
       act.setReader(lessonKey, { ...reader, paragraphTranslations: { ...existing, [index]: translation } });
     } catch (err) {
@@ -218,7 +218,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     const key = `${type}-${index}`;
     setTranslatingVocabKey(key);
     try {
-      const translation = await translateText(text, langId);
+      const translation = await translateText(text, langId, { to: nativeLang });
       const existing = reader.vocabTranslations || {};
       act.setReader(lessonKey, { ...reader, vocabTranslations: { ...existing, [key]: translation } });
     } catch (err) {

@@ -63,6 +63,7 @@ const KEYS = {
   NEW_CARDS_PER_DAY:   'gradedReader_newCardsPerDay',
   FLASHCARD_SESSION:   'gradedReader_flashcardSession',
   READING_TIME:        'gradedReader_readingTime',
+  NATIVE_LANG:         'gradedReader_nativeLang',
 };
 
 const READER_KEY_PREFIX = 'gradedReader_reader_';
@@ -559,6 +560,38 @@ export function saveDefaultYueLevel(n) {
   save(KEYS.DEFAULT_YUE_LEVEL, n);
 }
 
+// ── Default levels map (per-language) ─────────────────────────
+
+const DEFAULT_LEVELS_KEY = 'gradedReader_defaultLevels';
+const DEFAULT_LEVELS_DEFAULTS = { zh: 3, ko: 2, yue: 2, fr: 2, es: 2, en: 2 };
+
+export function loadDefaultLevels() {
+  // Migrate from old per-language keys if map doesn't exist yet
+  let map = load(DEFAULT_LEVELS_KEY, null);
+  if (!map) {
+    map = {
+      zh: load(KEYS.DEFAULT_LEVEL, 3),
+      ko: load(KEYS.DEFAULT_TOPIK_LEVEL, 2),
+      yue: load(KEYS.DEFAULT_YUE_LEVEL, 2),
+      fr: 2,
+      es: 2,
+      en: 2,
+    };
+    save(DEFAULT_LEVELS_KEY, map);
+  }
+  // Ensure new languages have defaults
+  let updated = false;
+  for (const [k, v] of Object.entries(DEFAULT_LEVELS_DEFAULTS)) {
+    if (map[k] === undefined) { map[k] = v; updated = true; }
+  }
+  if (updated) save(DEFAULT_LEVELS_KEY, map);
+  return map;
+}
+
+export function saveDefaultLevels(map) {
+  save(DEFAULT_LEVELS_KEY, map);
+}
+
 // ── Dark mode preference ──────────────────────────────────────
 
 export function loadDarkMode() {
@@ -631,7 +664,7 @@ export function saveTranslateButtons(val) {
 
 // ── Export sentence options (per-language) ────────────────────
 
-const DEFAULT_EXPORT_FLAGS = { zh: false, ko: false, yue: false };
+const DEFAULT_EXPORT_FLAGS = { zh: false, ko: false, yue: false, fr: false, es: false, en: false };
 
 function migrateVerboseVocab() {
   const old = load(KEYS.VERBOSE_VOCAB, null);
@@ -654,7 +687,9 @@ export function loadExportSentenceRom() {
   migrateVerboseVocab();
   const stored = load(KEYS.EXPORT_SENTENCE_ROM, null);
   if (stored && typeof stored === 'object') {
-    return { zh: Boolean(stored.zh), ko: Boolean(stored.ko), yue: Boolean(stored.yue) };
+    const result = { ...DEFAULT_EXPORT_FLAGS };
+    for (const k of Object.keys(result)) result[k] = Boolean(stored[k]);
+    return result;
   }
   return { ...DEFAULT_EXPORT_FLAGS };
 }
@@ -667,7 +702,9 @@ export function loadExportSentenceTrans() {
   migrateVerboseVocab();
   const stored = load(KEYS.EXPORT_SENTENCE_TRANS, null);
   if (stored && typeof stored === 'object') {
-    return { zh: Boolean(stored.zh), ko: Boolean(stored.ko), yue: Boolean(stored.yue) };
+    const result = { ...DEFAULT_EXPORT_FLAGS };
+    for (const k of Object.keys(result)) result[k] = Boolean(stored[k]);
+    return result;
   }
   return { ...DEFAULT_EXPORT_FLAGS };
 }
@@ -787,6 +824,16 @@ export function loadReadingTime() {
 
 export function saveReadingTime(data) {
   save(KEYS.READING_TIME, data);
+}
+
+// ── Native language preference ─────────────────────────────────
+
+export function loadNativeLang() {
+  return load(KEYS.NATIVE_LANG, 'en');
+}
+
+export function saveNativeLang(langId) {
+  save(KEYS.NATIVE_LANG, langId);
 }
 
 // ── Reader eviction (LRU) ─────────────────────────────────────

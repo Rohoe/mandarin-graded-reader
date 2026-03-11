@@ -332,6 +332,13 @@ a:hover { text-decoration: underline; }
   --leading-target: 1.9;
 }
 
+[data-lang="fr"],
+[data-lang="es"],
+[data-lang="en"] {
+  --font-target:   'Cormorant Garamond', 'Palatino Linotype', Palatino, Georgia, serif;
+  --leading-target: 1.7;
+}
+
 /* ── Target Language Text ──────────────────────────────────── */
 .text-chinese,
 .text-target {

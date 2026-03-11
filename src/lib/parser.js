@@ -63,14 +63,16 @@ function extractStory(rawText, scriptRegex) {
     return { story, warnings };
   }
 
-  // Build a regex for detecting 200+ target script chars
-  const scriptCharClass = scriptRegex.source;
-  const blockRegex = new RegExp(`([${scriptCharClass.slice(1, -1)}\\s*_.,，。！？、；：""''（）【】]{200,})`);
-  const scriptBlock = rawText.match(blockRegex);
-  if (scriptBlock) {
-    warnings.push('Story extracted via block regex fallback');
-    const story = scriptBlock[1].trim().replace(/^(#{1,4}[^\n]*\n\n?)+/, '').trim();
-    return { story, warnings };
+  // Build a regex for detecting 200+ target script chars (only for non-null scriptRegex)
+  if (scriptRegex) {
+    const scriptCharClass = scriptRegex.source;
+    const blockRegex = new RegExp(`([${scriptCharClass.slice(1, -1)}\\s*_.,，。！？、；：""''（）【】]{200,})`);
+    const scriptBlock = rawText.match(blockRegex);
+    if (scriptBlock) {
+      warnings.push('Story extracted via block regex fallback');
+      const story = scriptBlock[1].trim().replace(/^(#{1,4}[^\n]*\n\n?)+/, '').trim();
+      return { story, warnings };
+    }
   }
 
   return { story: '', warnings };
@@ -303,13 +305,16 @@ function extractExamples(text, scriptRegex) {
       continue;
     }
     // Only collect lines that contain target script characters — skip English-only lines
-    if (!scriptRegex.test(trimmed)) continue;
+    // For Latin-script languages (scriptRegex is null), accept all non-empty lines as examples
+    if (scriptRegex && !scriptRegex.test(trimmed)) continue;
     const cleaned = stripExamplePrefix(trimmed);
     // Reject lines that look like usage notes / meta-commentary with only a few target chars
     // (e.g. "Shows how 深远 describes lasting impact" — mostly English with one target word)
-    const targetCharCount = (cleaned.match(new RegExp(scriptRegex.source, 'g')) || []).length;
-    const totalLength = cleaned.replace(/\s/g, '').length;
-    if (totalLength > 0 && targetCharCount / totalLength < 0.3) continue;
+    if (scriptRegex) {
+      const targetCharCount = (cleaned.match(new RegExp(scriptRegex.source, 'g')) || []).length;
+      const totalLength = cleaned.replace(/\s/g, '').length;
+      if (totalLength > 0 && targetCharCount / totalLength < 0.3) continue;
+    }
     if (examples.length < 2) examples.push(cleaned);
     else break;
   }

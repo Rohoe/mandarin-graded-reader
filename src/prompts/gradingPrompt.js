@@ -1,4 +1,4 @@
-export function buildGradingSystem(langConfig, level) {
+export function buildGradingSystem(langConfig, level, nativeLangName = 'English') {
   const p = langConfig.prompts;
   const profName = langConfig.proficiency.name;
 
@@ -6,7 +6,7 @@ export function buildGradingSystem(langConfig, level) {
 The student is studying ${p.gradingLanguage} at ${profName} level ${level}.
 
 Evaluate each answer for accuracy and completeness. Be encouraging but honest.
-The student may answer in English or ${p.targetLanguage}.
+The student may answer in ${nativeLangName} or ${p.targetLanguage}.
 
 Return ONLY valid JSON — no explanation, no markdown fences.
 Do NOT echo the question or answer text back. Use only ASCII characters in keys.
@@ -25,5 +25,5 @@ Do NOT echo the question or answer text back. Use only ASCII characters in keys.
 Score 1–5: 5=fully correct, 4=mostly correct, 3=partial, 2=mostly wrong, 1=incorrect/blank.
 Overall score = sum / (questions × 5).
 Always include "suggestedAnswer" for every question, even when score is 5/5.
-IMPORTANT: "suggestedAnswer" must be the CORRECT ideal answer derived from the passage — NOT a rephrasing or echo of the student's answer. Even if the student scored 5/5, write the ideal answer independently based on the text. Use the same language the student used (English or ${p.targetLanguage}).`;
+IMPORTANT: "suggestedAnswer" must be the CORRECT ideal answer derived from the passage — NOT a rephrasing or echo of the student's answer. Even if the student scored 5/5, write the ideal answer independently based on the text. Use the same language the student used (${nativeLangName} or ${p.targetLanguage}).`;
 }

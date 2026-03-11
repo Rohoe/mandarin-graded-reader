@@ -2,6 +2,8 @@
  * Derives learning statistics from app state + activity log.
  */
 
+import { getLang } from './languages';
+
 export function computeStats(state) {
   const { learnedVocabulary, syllabi, syllabusProgress, standaloneReaders, learningActivity, readingTime, generatedReaders } = state;
 
@@ -278,11 +280,12 @@ export function getWordsByPeriod(vocab, period = 'week') {
  */
 export function countReadableUnits(text, langId) {
   if (!text) return 0;
-  if (langId === 'zh' || langId === 'yue') {
+  const lang = getLang(langId);
+  if (lang.scriptType === 'cjk') {
     // Count CJK characters
     return (text.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g) || []).length;
   }
-  // Word count for Korean and other languages
+  // Word count for Korean, Latin-script, and other languages
   return text.split(/\s+/).filter(w => w.length > 0).length;
 }
 

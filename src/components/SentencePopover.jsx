@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { getLang } from '../lib/languages';
 
-const LANG_LOCALE = { zh: 'zh', yue: 'zh', ko: 'ko' };
+const LANG_LOCALE = { zh: 'zh', yue: 'zh', ko: 'ko', fr: 'fr', es: 'es', en: 'en' };
 
 function segmentWords(text, langId) {
   if (typeof Intl.Segmenter !== 'function') return null;

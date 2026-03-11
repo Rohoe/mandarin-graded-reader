@@ -3,6 +3,8 @@ import {
   SET_DARK_MODE, SET_TTS_VOICE, SET_TTS_KO_VOICE, SET_TTS_YUE_VOICE,
   SET_EXPORT_SENTENCE_ROM, SET_EXPORT_SENTENCE_TRANS, SET_TTS_SPEECH_RATE,
   SET_ROMANIZATION_ON, SET_TRANSLATE_BUTTONS, SET_STRUCTURED_OUTPUT, SET_NEW_CARDS_PER_DAY,
+  SET_DEFAULT_LEVEL_FOR_LANG,
+  SET_NATIVE_LANG,
 } from '../actionTypes';
 
 export function preferencesReducer(state, action) {
@@ -51,6 +53,19 @@ export function preferencesReducer(state, action) {
 
     case SET_NEW_CARDS_PER_DAY:
       return { ...state, newCardsPerDay: action.payload };
+
+    case SET_NATIVE_LANG:
+      return { ...state, nativeLang: action.payload };
+
+    case SET_DEFAULT_LEVEL_FOR_LANG:
+      return {
+        ...state,
+        defaultLevels: { ...state.defaultLevels, [action.payload.langId]: action.payload.level },
+        // Keep legacy keys in sync for backward compatibility
+        ...(action.payload.langId === 'zh' ? { defaultLevel: action.payload.level } : {}),
+        ...(action.payload.langId === 'ko' ? { defaultTopikLevel: action.payload.level } : {}),
+        ...(action.payload.langId === 'yue' ? { defaultYueLevel: action.payload.level } : {}),
+      };
 
     default:
       return undefined;
