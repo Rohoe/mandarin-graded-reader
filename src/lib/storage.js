@@ -957,6 +957,8 @@ export function clearAllAppData() {
   localStorage.removeItem(KEYS.READERS); // legacy monolithic key
   // Clear evicted reader keys
   localStorage.removeItem(KEYS.EVICTED_READER_KEYS);
+  // Clear dismissible tips
+  localStorage.removeItem('gradedReader_nativeLangTipDismissed');
   // Files are left on disk intentionally — user can delete the folder manually
 }
 

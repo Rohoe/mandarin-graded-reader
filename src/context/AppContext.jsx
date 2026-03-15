@@ -68,7 +68,7 @@ import {
   isSupported,
 } from '../lib/fileStorage';
 import { signOut, pushReaderToCloud, pullReaderFromCloud } from '../lib/cloudSync';
-import { DEMO_READER_KEY, DEMO_READER_DATA } from '../lib/demoReader';
+import { DEMO_READER_KEY, DEMO_READERS } from '../lib/demoReader';
 
 // ── Initial state ─────────────────────────────────────────────
 
@@ -78,13 +78,13 @@ function buildInitialState() {
   const syllabi = normalizeSyllabi(loadSyllabi());
   const standaloneReaders = normalizeStandaloneReaders(loadStandaloneReaders());
 
-  // Inject demo reader for new users (no syllabi, no standalone readers)
+  // Inject demo readers for new users (no syllabi, no standalone readers)
   const isEmpty = syllabi.length === 0 && standaloneReaders.length === 0;
   const demoStandalone = isEmpty
-    ? [{ key: DEMO_READER_KEY, topic: DEMO_READER_DATA.topic, level: 2, langId: 'zh', createdAt: Date.now(), isDemo: true }]
+    ? DEMO_READERS.map(d => ({ key: d.key, topic: d.data.topic, level: d.data.level, langId: d.data.langId, createdAt: Date.now(), isDemo: true }))
     : standaloneReaders;
   const demoReaders = isEmpty
-    ? { [DEMO_READER_KEY]: DEMO_READER_DATA }
+    ? Object.fromEntries(DEMO_READERS.map(d => [d.key, d.data]))
     : {};
 
   return {

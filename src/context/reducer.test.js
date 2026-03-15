@@ -128,7 +128,14 @@ vi.mock('../lib/cloudSync', () => ({
 
 vi.mock('../lib/demoReader', () => ({
   DEMO_READER_KEY: 'standalone_demo',
-  DEMO_READER_DATA: { topic: 'Demo', story: 'Demo story', titleZh: '示范', titleEn: 'Demo' },
+  DEMO_READER_EN_KEY: 'standalone_demo_en',
+  DEMO_READER_DATA: { topic: 'Demo', story: 'Demo story', titleZh: '示范', titleEn: 'Demo', langId: 'zh', level: 2 },
+  DEMO_READER_EN_DATA: { topic: 'English Demo', story: 'English demo story', titleZh: 'A New School', titleEn: '新学校', langId: 'en', level: 2 },
+  DEMO_READERS: [
+    { key: 'standalone_demo', data: { topic: 'Demo', story: 'Demo story', titleZh: '示范', titleEn: 'Demo', langId: 'zh', level: 2 } },
+    { key: 'standalone_demo_en', data: { topic: 'English Demo', story: 'English demo story', titleZh: 'A New School', titleEn: '新学校', langId: 'en', level: 2 } },
+  ],
+  DEMO_READER_KEYS: new Set(['standalone_demo', 'standalone_demo_en']),
 }));
 
 // Now import the test-only exports
@@ -163,6 +170,24 @@ describe('baseReducer', () => {
       const next = baseReducer(state, { type: 'ADD_SYLLABUS', payload: syllabus });
       expect(next.standaloneReaders.find(r => r.isDemo)).toBeUndefined();
       expect(next.generatedReaders.standalone_demo).toBeUndefined();
+    });
+
+    it('removes both demo readers on first real generation', () => {
+      const state = createMinimalState({
+        standaloneReaders: [
+          { key: 'standalone_demo', isDemo: true },
+          { key: 'standalone_demo_en', isDemo: true },
+        ],
+        generatedReaders: {
+          standalone_demo: { story: 'demo zh' },
+          standalone_demo_en: { story: 'demo en' },
+        },
+      });
+      const syllabus = createSyllabus({ id: 'real_s1' });
+      const next = baseReducer(state, { type: 'ADD_SYLLABUS', payload: syllabus });
+      expect(next.standaloneReaders.find(r => r.isDemo)).toBeUndefined();
+      expect(next.generatedReaders.standalone_demo).toBeUndefined();
+      expect(next.generatedReaders.standalone_demo_en).toBeUndefined();
     });
   });
 
@@ -345,6 +370,24 @@ describe('baseReducer', () => {
       const reader = createStandaloneReader({ key: 'real_sr' });
       const next = baseReducer(state, { type: 'ADD_STANDALONE_READER', payload: reader });
       expect(next.standaloneReaders.find(r => r.isDemo)).toBeUndefined();
+    });
+
+    it('removes both demo readers when user creates first standalone reader', () => {
+      const state = createMinimalState({
+        standaloneReaders: [
+          { key: 'standalone_demo', isDemo: true },
+          { key: 'standalone_demo_en', isDemo: true },
+        ],
+        generatedReaders: {
+          standalone_demo: { story: 'demo zh' },
+          standalone_demo_en: { story: 'demo en' },
+        },
+      });
+      const reader = createStandaloneReader({ key: 'real_sr' });
+      const next = baseReducer(state, { type: 'ADD_STANDALONE_READER', payload: reader });
+      expect(next.standaloneReaders.find(r => r.isDemo)).toBeUndefined();
+      expect(next.generatedReaders.standalone_demo).toBeUndefined();
+      expect(next.generatedReaders.standalone_demo_en).toBeUndefined();
     });
   });
 

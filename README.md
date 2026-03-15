@@ -1,11 +1,12 @@
 # 漫读 — Multi-Language Graded Reader
 
-A single-page web app for generating graded readers in **Mandarin Chinese**, **Cantonese**, and **Korean** using AI. Supports multiple LLM providers: **Anthropic Claude**, **OpenAI (GPT-4o)**, **Google Gemini**, and **OpenAI-compatible** endpoints (DeepSeek, Groq, custom). Designed for HSK, TOPIK, and Cantonese learners who want personalised reading practice with vocabulary tracking and Anki export.
+A single-page web app for generating graded readers in **Mandarin Chinese**, **Cantonese**, **Korean**, **French**, **Spanish**, and **English** using AI. Supports multiple LLM providers: **Anthropic Claude**, **OpenAI (GPT-4o)**, **Google Gemini**, and **OpenAI-compatible** endpoints (DeepSeek, Groq, custom). Designed for HSK, TOPIK, Cantonese, CEFR, and ESL learners who want personalised reading practice with vocabulary tracking and Anki export.
 
 ## Features
 
 - **Multi-provider AI** — Choose from Anthropic Claude, OpenAI GPT-4o, Google Gemini, or any OpenAI-compatible endpoint (DeepSeek, Groq, custom). Each provider stores its own API key; switch freely without losing keys. Model picker with curated defaults per provider; collapsed by default, expandable to type any model ID (handles new/deprecated models gracefully)
-- **Multi-language support** — Generate readers in Mandarin Chinese (HSK 1–6), Cantonese (YUE 1–6, written Cantonese with jyutping), or Korean (TOPIK 1–6). Select a language via the pill toggle in the sidebar form; content in all languages coexists side-by-side
+- **Multi-language support** — Generate readers in Mandarin Chinese (HSK 1–6), Cantonese (YUE 1–6, written Cantonese with jyutping), Korean (TOPIK 1–6), French (CEFR A0–C2), Spanish (CEFR A0–C2), or English (CEFR A0–C2). Select a language via the pill toggle in the sidebar form; content in all languages coexists side-by-side
+- **Native language selection** — Choose your explanation language (English, Chinese, Korean, French, Spanish, Japanese) so vocabulary definitions, translations, and grammar notes appear in your native language instead of always in English
 - **Syllabus Mode** — Generate a course for any topic with proficiency-level selection, an AI-written summary and a dedicated home page showing all lessons and completion status
 - **Graded Reader Generation** — Stories with bolded vocabulary, level-calibrated grammar
 - **Vocabulary Memory** — Tracks learned words across sessions; new readers avoid repeating them
@@ -23,7 +24,7 @@ A single-page web app for generating graded readers in **Mandarin Chinese**, **C
 - **Collapsible sidebar sections** — Syllabus lesson list and standalone readers list can be collapsed/expanded via caret buttons in their section headers
 - **Text-to-speech** — 🔊 icon button reads the full story aloud; click any paragraph to hear just that sentence. Inline TTS buttons also appear on vocabulary example sentences and comprehension questions when Paragraph Tools is enabled. Separate voice preferences for Chinese, Korean, and Cantonese, configurable in Settings. Adjustable reading speed (0.5×–2.0×) via slider in Settings. Auto-selects the best available voice for each language (Chinese: Google neural, macOS Tingting/Meijia; Korean: Google, Yuna)
 - **Click-to-define** — Vocabulary words from the word list are highlighted and underlined in the story; click them to see a popover with romanization and English definition. Toggle off by clicking again, pressing Escape, or clicking elsewhere
-- **Romanization toggle** — Persistent setting in Settings to show romanization above every character using `<ruby>` tags in the story, comprehension questions, vocabulary list (word headers and example sentences), and grammar notes (patterns and examples). Powered by `pinyin-pro` for Chinese, `to-jyutping` for Cantonese, `hangul-romanization` for Korean
+- **Romanization toggle** — Persistent setting in Settings to show romanization above every character using `<ruby>` tags in the story, comprehension questions, vocabulary list (word headers and example sentences), and grammar notes (patterns and examples). Powered by `pinyin-pro` for Chinese, `to-jyutping` for Cantonese, `hangul-romanization` for Korean. Not applicable for Latin-script languages (French, Spanish, English)
 - **Verbose Vocabulary** — Toggle in Settings to include English translations of example sentences in Anki flashcard exports; translations are fetched on-demand via Google Translate at export time and cached for reuse
 - **Disk persistence** — Optionally save all data as JSON files to a folder on your computer (Chrome/Edge only)
 - **Cloud Sync** — Sign in with Google or Apple to push/pull all your data to/from Supabase. Manual sync via explicit Push/Pull buttons in Settings; API key stays local. The sidebar footer shows sync status: signed-in state, "Synced"/"Unsynced" indicator based on whether local data has changed since the last push
@@ -158,9 +159,9 @@ npm run test:e2e:ui   # Playwright UI mode
 - React 18 + Vite 5
 - No backend required
 - Testing: Vitest + Playwright
-- Fonts: Noto Serif SC (Chinese), Noto Serif TC (Cantonese), Noto Serif KR (Korean), Cormorant Garamond (English)
+- Fonts: Noto Serif SC (Chinese), Noto Serif TC (Cantonese), Noto Serif KR (Korean), Cormorant Garamond (Latin-script languages)
 - Zero UI framework dependencies — pure CSS with custom design tokens
-- Language-specific libraries loaded lazily (`pinyin-pro` for Chinese, `to-jyutping` for Cantonese, `hangul-romanization` for Korean)
+- Language-specific libraries loaded lazily (`pinyin-pro` for Chinese, `to-jyutping` for Cantonese, `hangul-romanization` for Korean; Latin-script languages need no romanization library)
 
 ## Building for production
 

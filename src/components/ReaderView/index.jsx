@@ -14,7 +14,7 @@ import { useReaderGeneration } from '../../hooks/useReaderGeneration';
 import { useTextSelection } from '../../hooks/useTextSelection';
 import { useSentenceTranslate } from '../../hooks/useSentenceTranslate';
 import { useReadingTimer } from '../../hooks/useReadingTimer';
-import { DEMO_READER_KEY } from '../../lib/demoReader';
+import { DEMO_READER_KEYS } from '../../lib/demoReader';
 import StorySection from '../StorySection';
 import VocabularyList from '../VocabularyList';
 import ComprehensionQuestions from '../ComprehensionQuestions';
@@ -52,10 +52,13 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   const isPending = !!(lessonKey && pendingReaders[lessonKey]);
 
   const reader = generatedReaders[lessonKey];
-  const isDemo = lessonKey === DEMO_READER_KEY;
+  const isDemo = DEMO_READER_KEYS.has(lessonKey);
   const scrollRef = useRef(null);
   const [confirmRegen, setConfirmRegen] = useState(false);
   const [demoBannerDismissed, setDemoBannerDismissed] = useState(false);
+  const [nativeLangTipDismissed, setNativeLangTipDismissed] = useState(
+    () => localStorage.getItem('gradedReader_nativeLangTipDismissed') === '1'
+  );
   const [readerLength, setReaderLength] = useState(1200);
   const [translatingIndex, setTranslatingIndex] = useState(null);
   const [restoring, setRestoring] = useState(false);
@@ -327,6 +330,14 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         </div>
       )}
 
+      {/* Native language tip banner */}
+      {!isDemo && !nativeLangTipDismissed && (
+        <div className="reader-view__tip-banner">
+          <span>Tip: You can change your native language in Settings → Reading to see definitions in your language.</span>
+          <button className="reader-view__quota-dismiss" onClick={() => { localStorage.setItem('gradedReader_nativeLangTipDismissed', '1'); setNativeLangTipDismissed(true); }} aria-label="Dismiss">✕</button>
+        </div>
+      )}
+
       {/* Title + TTS */}
       <ReaderHeader
         reader={reader}
@@ -362,6 +373,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
         selectionPopover={selectionPopover}
         selectionPopoverRef={selectionPopoverRef}
         langId={langId}
+        nativeLang={nativeLang}
         sentencePopover={sentencePopover}
         sentencePopoverRef={sentencePopoverRef}
         onSentenceClick={handleSentenceClick}

@@ -1,6 +1,6 @@
 # CLAUDE.md — Multi-Language Graded Reader App
 
-Single-page React + Vite app that generates graded readers in **Mandarin Chinese**, **Cantonese**, and **Korean** using LLM APIs (Anthropic, OpenAI, Gemini, OpenAI-compatible). Users pick a language and proficiency level; the app generates stories with vocabulary, comprehension questions, and Anki exports.
+Single-page React + Vite app that generates graded readers in **Mandarin Chinese**, **Cantonese**, **Korean**, **French**, **Spanish**, and **English** using LLM APIs (Anthropic, OpenAI, Gemini, OpenAI-compatible). Users pick a target language, native language, and proficiency level; the app generates stories with vocabulary, comprehension questions, and Anki exports.
 
 ## Running the app
 
@@ -20,7 +20,7 @@ No `.env` needed for basic use. Users add their own API key in Settings. Cloud s
 src/
   App.jsx              Root layout, UI-only state (sidebar, modals, activeSyllabusId, standaloneKey, syllabusView)
   context/             useReducer global store (AppContext.jsx), useApp hook, actions factory, reducers/ (8 domain slices)
-  lib/                 Core logic: api.js, parser.js, storage.js, languages.js, providers.js, cloudSync.js, anki.js, stats.js
+  lib/                 Core logic: api.js, parser.js, storage.js, languages.js, nativeLanguages.js, providers.js, cloudSync.js, anki.js, stats.js
   prompts/             LLM prompt builders (syllabus, reader, grading, extend)
   hooks/               useTTS, useRomanization, useVocabPopover, useReaderGeneration, useFocusTrap, useReadingTimer, usePWA
   components/          UI components (see docs/components.md for details)
@@ -29,7 +29,8 @@ e2e/                   Playwright E2E specs + fixtures
 
 ## Architecture highlights
 
-- **Multi-language:** Config registry in `src/lib/languages.js` — each lang defines proficiency levels, script regex, fonts, TTS, romanization, prompt fragments. All API/parser/export functions accept `langId`.
+- **Multi-language:** Config registry in `src/lib/languages.js` — each lang defines proficiency levels, script regex, fonts, TTS, romanization, prompt fragments. All API/parser/export functions accept `langId`. CJK langs (zh, yue) use character-based splitting; syllabic (ko) and Latin-script langs (fr, es, en) use word-based splitting.
+- **Native language:** `src/lib/nativeLanguages.js` — configurable explanation language (English, Chinese, Korean, French, Spanish, Japanese). Prompts, vocab definitions, and translations use the learner's native language instead of always English.
 - **Multi-provider LLM:** Registry in `src/lib/providers.js`. `callLLM()` dispatches to provider-specific functions. `buildLLMConfig(state)` from `llmConfig.js` builds config from state.
 - **State:** useReducer in AppContext.jsx. Reducer split into 8 domain slices in `src/context/reducers/`. Persistence extracted to `usePersistence.js`. Test-only exports: `_baseReducer`, `_reducer`, `_DATA_ACTIONS`.
 - **Storage:** localStorage (primary) + opt-in File System Access API (Chrome) + Supabase cloud sync with auto-merge and undo.

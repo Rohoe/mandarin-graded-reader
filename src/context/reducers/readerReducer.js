@@ -1,5 +1,5 @@
 import { loadReader } from '../../lib/storage';
-import { DEMO_READER_KEY } from '../../lib/demoReader';
+import { DEMO_READER_KEYS } from '../../lib/demoReader';
 import {
   ADD_STANDALONE_READER, UPDATE_STANDALONE_READER_META,
   REMOVE_STANDALONE_READER, UNDO_REMOVE_STANDALONE_READER,
@@ -14,7 +14,9 @@ export function readerReducer(state, action) {
     case ADD_STANDALONE_READER: {
       const withoutDemo = state.standaloneReaders.filter(r => !r.isDemo);
       const filteredReaders = { ...state.generatedReaders };
-      if (withoutDemo.length !== state.standaloneReaders.length) delete filteredReaders[DEMO_READER_KEY];
+      if (withoutDemo.length !== state.standaloneReaders.length) {
+        for (const k of DEMO_READER_KEYS) delete filteredReaders[k];
+      }
       return { ...state, standaloneReaders: [action.payload, ...withoutDemo], generatedReaders: filteredReaders };
     }
 

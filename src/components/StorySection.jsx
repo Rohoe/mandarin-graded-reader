@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { splitParagraphIntoSentences } from '../lib/sentenceSplitter';
 import { stripMarkdown } from '../lib/renderInline';
+import { getNativeLang } from '../lib/nativeLanguages';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import SentencePopover from './SentencePopover';
 
@@ -24,6 +25,7 @@ export default function StorySection({
   selectionPopover,
   selectionPopoverRef,
   langId,
+  nativeLang,
   sentencePopover,
   sentencePopoverRef,
   onSentenceClick,
@@ -33,6 +35,7 @@ export default function StorySection({
   onCloseSelection,
   onCloseSentence,
 }) {
+  const nativeLangConfig = getNativeLang(nativeLang);
   const [visibleTranslations, setVisibleTranslations] = useState(new Set());
 
   // Focus traps for popovers
@@ -151,10 +154,10 @@ export default function StorySection({
                     className={`reader-view__translate-btn ${isTranslating ? 'reader-view__translate-btn--loading' : ''} ${showTranslation ? 'reader-view__translate-btn--active' : ''}`}
                     onClick={(e) => handleTranslateClick(e, pi, para)}
                     disabled={isTranslating}
-                    title={showTranslation ? 'Hide translation' : 'Translate to English'}
-                    aria-label={showTranslation ? 'Hide translation' : 'Translate to English'}
+                    title={showTranslation ? 'Hide translation' : `Translate to ${nativeLangConfig.name}`}
+                    aria-label={showTranslation ? 'Hide translation' : `Translate to ${nativeLangConfig.name}`}
                   >
-                    EN
+                    {nativeLangConfig.shortLabel}
                   </button>
                 )}
               </p>

@@ -44,6 +44,24 @@
   background: color-mix(in srgb, var(--color-accent) 20%, #1a1814);
 }
 
+.reader-view__tip-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: #e3f2fd;
+  border: 1px solid #64b5f6;
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  color: #1a3a4a;
+}
+.reader-view__tip-banner span { flex: 1; }
+[data-theme="dark"] .reader-view__tip-banner {
+  background: #0d2137;
+  border-color: #64b5f6;
+  color: #90caf9;
+}
+
 .reader-view__quota-warning span {
   flex: 1;
 }

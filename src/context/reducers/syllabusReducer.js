@@ -1,4 +1,4 @@
-import { DEMO_READER_KEY } from '../../lib/demoReader';
+import { DEMO_READER_KEYS } from '../../lib/demoReader';
 import {
   ADD_SYLLABUS, EXTEND_SYLLABUS_LESSONS, REMOVE_SYLLABUS, UNDO_REMOVE_SYLLABUS,
   SET_LESSON_INDEX, MARK_LESSON_COMPLETE, UNMARK_LESSON_COMPLETE,
@@ -15,7 +15,9 @@ export function syllabusReducer(state, action) {
       };
       const filteredStandalone = state.standaloneReaders.filter(r => !r.isDemo);
       const filteredReaders = { ...state.generatedReaders };
-      if (filteredStandalone.length !== state.standaloneReaders.length) delete filteredReaders[DEMO_READER_KEY];
+      if (filteredStandalone.length !== state.standaloneReaders.length) {
+        for (const k of DEMO_READER_KEYS) delete filteredReaders[k];
+      }
       return { ...state, syllabi: newSyllabi, syllabusProgress: newProgress, standaloneReaders: filteredStandalone, generatedReaders: filteredReaders };
     }
 
