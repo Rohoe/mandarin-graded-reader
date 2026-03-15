@@ -31,6 +31,7 @@ export function createMinimalState(overrides = {}) {
     ttsVoiceURI: null,
     ttsKoVoiceURI: null,
     ttsYueVoiceURI: null,
+    ttsVoiceURIs: { zh: null, ko: null, yue: null, fr: null, es: null, en: null },
     ttsSpeechRate: 1,
     romanizationOn: false,
     translateButtons: true,

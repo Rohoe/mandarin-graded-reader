@@ -126,6 +126,12 @@ describe('two-arg compound payload actions', () => {
     expect(dispatch).toHaveBeenCalledWith({ type: 'SET_FETCHED_MODELS', payload: { provider: 'openai', models } });
   });
 
+  it('setTtsVoiceForLang dispatches { langId, uri }', () => {
+    const { dispatch, a } = createActions();
+    a.setTtsVoiceForLang('fr', 'google-fr');
+    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_TTS_VOICE_FOR_LANG', payload: { langId: 'fr', uri: 'google-fr' } });
+  });
+
   it('logActivity dispatches { type, ...extra }', () => {
     const { dispatch, a } = createActions();
     a.logActivity('reader_generated', { langId: 'zh', level: 3 });

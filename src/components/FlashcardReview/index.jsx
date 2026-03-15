@@ -50,14 +50,14 @@ export default function FlashcardReview({ onClose }) {
   const { renderChars: renderRomanization, romanizer } = useRomanization(langFilter, langConfig, romanizationOn);
 
   // TTS for listening mode
-  const { ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate } = useAppSelector(s => ({
-    ttsVoiceURI: s.ttsVoiceURI, ttsKoVoiceURI: s.ttsKoVoiceURI,
-    ttsYueVoiceURI: s.ttsYueVoiceURI, ttsSpeechRate: s.ttsSpeechRate,
+  const { ttsVoiceURIs, ttsSpeechRate } = useAppSelector(s => ({
+    ttsVoiceURIs: s.ttsVoiceURIs, ttsSpeechRate: s.ttsSpeechRate,
   }));
   const { speakText } = useTTS({
     langConfig, langId: langFilter,
-    voiceURIs: { zh: ttsVoiceURI, ko: ttsKoVoiceURI, yue: ttsYueVoiceURI },
-    setTtsVoice: () => {}, speechRate: ttsSpeechRate,
+    voiceURIs: ttsVoiceURIs,
+    setTtsVoice: (lid, uri) => act.setTtsVoiceForLang(lid, uri),
+    speechRate: ttsSpeechRate,
   });
 
   // Build card list from learnedVocabulary

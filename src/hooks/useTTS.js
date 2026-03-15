@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 export function useTTS({ langConfig, langId, voiceURIs, setTtsVoice, speechRate }) {
-  const ttsVoiceURI = voiceURIs?.zh;
-  const ttsKoVoiceURI = voiceURIs?.ko;
-  const ttsYueVoiceURI = voiceURIs?.yue;
+  const activeVoiceURI = voiceURIs?.[langId] || null;
   const ttsSpeechRate = speechRate;
   const ttsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
   const [speakingKey, setSpeakingKey] = useState(null);
@@ -24,7 +22,6 @@ export function useTTS({ langConfig, langId, voiceURIs, setTtsVoice, speechRate 
     function loadVoices() {
       const filtered = window.speechSynthesis.getVoices().filter(v => langConfig.tts.langFilter.test(v.lang));
       setVoices(filtered);
-      const activeVoiceURI = langId === 'yue' ? ttsYueVoiceURI : langId === 'ko' ? ttsKoVoiceURI : ttsVoiceURI;
       if (!activeVoiceURI && filtered.length > 0) {
         const best = pickBestVoice(filtered);
         if (best) setTtsVoice(langId, best.voiceURI);
@@ -45,7 +42,6 @@ export function useTTS({ langConfig, langId, voiceURIs, setTtsVoice, speechRate 
     }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    const activeVoiceURI = langId === 'yue' ? ttsYueVoiceURI : langId === 'ko' ? ttsKoVoiceURI : ttsVoiceURI;
     const voice = voices.find(v => v.voiceURI === activeVoiceURI);
     if (voice) {
       utterance.voice = voice;
@@ -59,7 +55,7 @@ export function useTTS({ langConfig, langId, voiceURIs, setTtsVoice, speechRate 
     utteranceRef.current = utterance;
     setSpeakingKey(key);
     window.speechSynthesis.speak(utterance);
-  }, [ttsSupported, speakingKey, voices, ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, langId, langConfig.tts, ttsSpeechRate]);
+  }, [ttsSupported, speakingKey, voices, activeVoiceURI, langConfig.tts, ttsSpeechRate]);
 
   const stopSpeaking = useCallback(() => {
     window.speechSynthesis?.cancel();

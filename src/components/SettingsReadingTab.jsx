@@ -3,33 +3,26 @@ import { getAllLanguages } from '../lib/languages';
 import { getAllNativeLanguages } from '../lib/nativeLanguages';
 
 export default function SettingsReadingTab({ state, act }) {
-  const [chineseVoices, setChineseVoices] = useState([]);
-  const [koreanVoices, setKoreanVoices]   = useState([]);
-  const [cantoneseVoices, setCantoneseVoices] = useState([]);
+  // Build voices map keyed by langId
+  const [voicesMap, setVoicesMap] = useState({});
 
   useEffect(() => {
     if (!('speechSynthesis' in window)) return;
     function loadVoices() {
       const all = window.speechSynthesis.getVoices();
-      setChineseVoices(all.filter(v => /zh/i.test(v.lang)));
-      setKoreanVoices(all.filter(v => /ko/i.test(v.lang)));
-      setCantoneseVoices(all.filter(v => /zh-HK|yue/i.test(v.lang)));
+      const map = {};
+      for (const lang of getAllLanguages()) {
+        map[lang.id] = all.filter(v => lang.tts.langFilter.test(v.lang));
+      }
+      setVoicesMap(map);
     }
     loadVoices();
     window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
     return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
   }, []);
 
-  function isRecommendedZhVoice(v) {
-    return /^Google\s+/i.test(v.name) || /^(Tingting|Meijia|Sinji)$/i.test(v.name);
-  }
-
-  function isRecommendedKoVoice(v) {
-    return /^Google\s+/i.test(v.name) || /^Yuna$/i.test(v.name);
-  }
-
-  function isRecommendedYueVoice(v) {
-    return /^Google\s+/i.test(v.name) || /^Sin-?ji$/i.test(v.name);
+  function isRecommendedVoice(lang, v) {
+    return lang.tts.priorityVoices.some(test => test(v));
   }
 
   return (
@@ -192,59 +185,29 @@ export default function SettingsReadingTab({ state, act }) {
               Choose preferred text-to-speech voices for each language. Recommended voices are listed first.
             </p>
 
-            {/* Chinese voice */}
-            <label className="form-label" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>Chinese voice</label>
-            <select
-              className="form-select"
-              value={state.ttsZhVoiceURI || ''}
-              onChange={e => act.setTtsZhVoiceURI(e.target.value || null)}
-              style={{ maxWidth: '18rem' }}
-            >
-              <option value="">Auto (best available)</option>
-              {chineseVoices
-                .sort((a, b) => isRecommendedZhVoice(b) - isRecommendedZhVoice(a))
-                .map(v => (
-                  <option key={v.voiceURI} value={v.voiceURI}>
-                    {v.name} ({v.lang}){isRecommendedZhVoice(v) ? ' \u2605' : ''}
-                  </option>
-                ))}
-            </select>
-
-            {/* Cantonese voice */}
-            <label className="form-label" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>Cantonese voice</label>
-            <select
-              className="form-select"
-              value={state.ttsYueVoiceURI || ''}
-              onChange={e => act.setTtsYueVoiceURI(e.target.value || null)}
-              style={{ maxWidth: '18rem' }}
-            >
-              <option value="">Auto (best available)</option>
-              {cantoneseVoices
-                .sort((a, b) => isRecommendedYueVoice(b) - isRecommendedYueVoice(a))
-                .map(v => (
-                  <option key={v.voiceURI} value={v.voiceURI}>
-                    {v.name} ({v.lang}){isRecommendedYueVoice(v) ? ' \u2605' : ''}
-                  </option>
-                ))}
-            </select>
-
-            {/* Korean voice */}
-            <label className="form-label" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>Korean voice</label>
-            <select
-              className="form-select"
-              value={state.ttsKoVoiceURI || ''}
-              onChange={e => act.setTtsKoVoiceURI(e.target.value || null)}
-              style={{ maxWidth: '18rem' }}
-            >
-              <option value="">Auto (best available)</option>
-              {koreanVoices
-                .sort((a, b) => isRecommendedKoVoice(b) - isRecommendedKoVoice(a))
-                .map(v => (
-                  <option key={v.voiceURI} value={v.voiceURI}>
-                    {v.name} ({v.lang}){isRecommendedKoVoice(v) ? ' \u2605' : ''}
-                  </option>
-                ))}
-            </select>
+            {getAllLanguages().map(lang => {
+              const langVoices = voicesMap[lang.id] || [];
+              return (
+                <div key={lang.id}>
+                  <label className="form-label" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>{lang.name} voice</label>
+                  <select
+                    className="form-select"
+                    value={state.ttsVoiceURIs?.[lang.id] || ''}
+                    onChange={e => act.setTtsVoiceForLang(lang.id, e.target.value || null)}
+                    style={{ maxWidth: '18rem' }}
+                  >
+                    <option value="">Auto (best available)</option>
+                    {langVoices
+                      .sort((a, b) => isRecommendedVoice(lang, b) - isRecommendedVoice(lang, a))
+                      .map(v => (
+                        <option key={v.voiceURI} value={v.voiceURI}>
+                          {v.name} ({v.lang}){isRecommendedVoice(lang, v) ? ' \u2605' : ''}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              );
+            })}
           </section>
         </>
       )}

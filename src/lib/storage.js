@@ -43,6 +43,7 @@ const KEYS = {
   TTS_VOICE_URI:      'gradedReader_ttsVoiceURI',
   TTS_KO_VOICE_URI:   'gradedReader_ttsKoVoiceURI',
   TTS_YUE_VOICE_URI:  'gradedReader_ttsYueVoiceURI',
+  TTS_VOICE_URIS:     'gradedReader_ttsVoiceURIs',
   CLOUD_LAST_SYNCED:  'gradedReader_cloudLastSynced',
   VERBOSE_VOCAB:      'gradedReader_verboseVocab',  // legacy, migrated to new keys
   EXPORT_SENTENCE_ROM:   'gradedReader_exportSentenceRom',
@@ -630,6 +631,39 @@ export function loadTtsYueVoiceURI() {
 
 export function saveTtsYueVoiceURI(uri) {
   save(KEYS.TTS_YUE_VOICE_URI, uri);
+}
+
+// ── TTS voice URIs map (per-language) ─────────────────────────
+
+const TTS_VOICE_URIS_DEFAULTS = { zh: null, ko: null, yue: null, fr: null, es: null, en: null };
+
+export function loadTtsVoiceURIs() {
+  let map = load(KEYS.TTS_VOICE_URIS, null);
+  if (!map) {
+    // Migrate from legacy per-language keys
+    map = {
+      zh:  load(KEYS.TTS_VOICE_URI, null),
+      ko:  load(KEYS.TTS_KO_VOICE_URI, null),
+      yue: load(KEYS.TTS_YUE_VOICE_URI, null),
+      fr: null, es: null, en: null,
+    };
+    save(KEYS.TTS_VOICE_URIS, map);
+  }
+  // Ensure new languages have defaults
+  let updated = false;
+  for (const [k, v] of Object.entries(TTS_VOICE_URIS_DEFAULTS)) {
+    if (map[k] === undefined) { map[k] = v; updated = true; }
+  }
+  if (updated) save(KEYS.TTS_VOICE_URIS, map);
+  return map;
+}
+
+export function saveTtsVoiceURIs(map) {
+  save(KEYS.TTS_VOICE_URIS, map);
+  // Write-through to legacy keys for backward compat
+  if (map.zh !== undefined) save(KEYS.TTS_VOICE_URI, map.zh);
+  if (map.ko !== undefined) save(KEYS.TTS_KO_VOICE_URI, map.ko);
+  if (map.yue !== undefined) save(KEYS.TTS_YUE_VOICE_URI, map.yue);
 }
 
 // ── TTS speech rate preference ────────────────────────────────

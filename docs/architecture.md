@@ -78,8 +78,12 @@
 
   // Preferences (persisted, not cleared by CLEAR_ALL_DATA)
   maxTokens, defaultLevel, defaultTopikLevel, defaultYueLevel,
-  ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate,
+  defaultLevels: { zh, ko, yue, fr, es, en },          // per-language proficiency defaults
+  ttsVoiceURIs: { zh, ko, yue, fr, es, en },           // per-language TTS voice URI map
+  ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI,          // legacy TTS fields (kept in sync)
+  ttsSpeechRate,
   romanizationOn, exportSentenceRom, exportSentenceTrans, useStructuredOutput, newCardsPerDay,
+  nativeLang,
 
   // Storage & sync
   evictedReaderKeys: Set<string>,

@@ -54,6 +54,7 @@ export function actions(dispatch) {
     setTtsVoice:           uri    => dispatch({ type: T.SET_TTS_VOICE, payload: uri }),
     setTtsKoVoice:         uri    => dispatch({ type: T.SET_TTS_KO_VOICE, payload: uri }),
     setTtsYueVoice:        uri    => dispatch({ type: T.SET_TTS_YUE_VOICE, payload: uri }),
+    setTtsVoiceForLang:    (langId, uri) => dispatch({ type: T.SET_TTS_VOICE_FOR_LANG, payload: { langId, uri } }),
     setExportSentenceRom:  (langId, val) => dispatch({ type: T.SET_EXPORT_SENTENCE_ROM, payload: { langId, value: Boolean(val) } }),
     setExportSentenceTrans:(langId, val) => dispatch({ type: T.SET_EXPORT_SENTENCE_TRANS, payload: { langId, value: Boolean(val) } }),
     setTtsSpeechRate:      rate   => dispatch({ type: T.SET_TTS_SPEECH_RATE, payload: Number(rate) }),

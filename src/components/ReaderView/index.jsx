@@ -38,8 +38,8 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, error: s.error,
     pendingReaders: s.pendingReaders, evictedReaderKeys: s.evictedReaderKeys, quotaWarning: s.quotaWarning,
   }));
-  const { ttsVoiceURI, ttsKoVoiceURI, ttsYueVoiceURI, ttsSpeechRate, romanizationOn, translateButtons } = useAppSelector(s => ({
-    ttsVoiceURI: s.ttsVoiceURI, ttsKoVoiceURI: s.ttsKoVoiceURI, ttsYueVoiceURI: s.ttsYueVoiceURI, ttsSpeechRate: s.ttsSpeechRate,
+  const { ttsVoiceURIs, ttsSpeechRate, romanizationOn, translateButtons } = useAppSelector(s => ({
+    ttsVoiceURIs: s.ttsVoiceURIs, ttsSpeechRate: s.ttsSpeechRate,
     romanizationOn: s.romanizationOn, translateButtons: s.translateButtons,
   }));
   const { providerKeys, activeProvider, activeModels, customBaseUrl, maxTokens, useStructuredOutput, nativeLang } = useAppSelector(s => ({
@@ -88,16 +88,11 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
   }, [decorativeChars.length]);
 
   // ── Custom hooks ─────────────────────────────────────────────
-  const setTtsVoice = (lid, uri) => {
-    if (lid === 'yue') act.setTtsYueVoice(uri);
-    else if (lid === 'ko') act.setTtsKoVoice(uri);
-    else act.setTtsVoice(uri);
-  };
-
   const { ttsSupported, speakingKey, speakText, stopSpeaking } = useTTS({
     langConfig, langId,
-    voiceURIs: { zh: ttsVoiceURI, ko: ttsKoVoiceURI, yue: ttsYueVoiceURI },
-    setTtsVoice, speechRate: ttsSpeechRate,
+    voiceURIs: ttsVoiceURIs,
+    setTtsVoice: (lid, uri) => act.setTtsVoiceForLang(lid, uri),
+    speechRate: ttsSpeechRate,
   });
 
   const { pinyinOn, romanizer, renderChars } = useRomanization(langId, langConfig, romanizationOn);

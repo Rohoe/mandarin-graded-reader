@@ -1,6 +1,6 @@
 import {
   SET_MAX_TOKENS, SET_DEFAULT_LEVEL, SET_DEFAULT_TOPIK_LEVEL, SET_DEFAULT_YUE_LEVEL,
-  SET_DARK_MODE, SET_TTS_VOICE, SET_TTS_KO_VOICE, SET_TTS_YUE_VOICE,
+  SET_DARK_MODE, SET_TTS_VOICE, SET_TTS_KO_VOICE, SET_TTS_YUE_VOICE, SET_TTS_VOICE_FOR_LANG,
   SET_EXPORT_SENTENCE_ROM, SET_EXPORT_SENTENCE_TRANS, SET_TTS_SPEECH_RATE,
   SET_ROMANIZATION_ON, SET_TRANSLATE_BUTTONS, SET_STRUCTURED_OUTPUT, SET_NEW_CARDS_PER_DAY,
   SET_DEFAULT_LEVEL_FOR_LANG,
@@ -25,13 +25,25 @@ export function preferencesReducer(state, action) {
       return { ...state, darkMode: action.payload };
 
     case SET_TTS_VOICE:
-      return { ...state, ttsVoiceURI: action.payload };
+      return { ...state, ttsVoiceURI: action.payload, ttsVoiceURIs: { ...state.ttsVoiceURIs, zh: action.payload } };
 
     case SET_TTS_KO_VOICE:
-      return { ...state, ttsKoVoiceURI: action.payload };
+      return { ...state, ttsKoVoiceURI: action.payload, ttsVoiceURIs: { ...state.ttsVoiceURIs, ko: action.payload } };
 
     case SET_TTS_YUE_VOICE:
-      return { ...state, ttsYueVoiceURI: action.payload };
+      return { ...state, ttsYueVoiceURI: action.payload, ttsVoiceURIs: { ...state.ttsVoiceURIs, yue: action.payload } };
+
+    case SET_TTS_VOICE_FOR_LANG: {
+      const { langId, uri } = action.payload;
+      return {
+        ...state,
+        ttsVoiceURIs: { ...state.ttsVoiceURIs, [langId]: uri },
+        // Write-through to legacy fields for backward compat
+        ...(langId === 'zh' ? { ttsVoiceURI: uri } : {}),
+        ...(langId === 'ko' ? { ttsKoVoiceURI: uri } : {}),
+        ...(langId === 'yue' ? { ttsYueVoiceURI: uri } : {}),
+      };
+    }
 
     case SET_EXPORT_SENTENCE_ROM:
       return { ...state, exportSentenceRom: { ...state.exportSentenceRom, [action.payload.langId]: action.payload.value } };

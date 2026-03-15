@@ -59,6 +59,8 @@ vi.mock('../lib/storage', () => ({
   saveTtsKoVoiceURI: vi.fn(),
   loadTtsYueVoiceURI: () => null,
   saveTtsYueVoiceURI: vi.fn(),
+  loadTtsVoiceURIs: () => ({ zh: null, ko: null, yue: null, fr: null, es: null, en: null }),
+  saveTtsVoiceURIs: vi.fn(),
   loadCloudLastSynced: () => null,
   saveCloudLastSynced: vi.fn(),
   loadTtsSpeechRate: () => 1,

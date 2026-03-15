@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { UNDO_REMOVE_SYLLABUS, UNDO_REMOVE_STANDALONE_READER } from '../context/actionTypes';
-import { getLang } from '../lib/languages';
+import { getLang, getAllLanguages } from '../lib/languages';
 import SyllabusToolbar from './SyllabusPanel/SyllabusToolbar';
 import SyllabusCourseItem from './SyllabusPanel/SyllabusCourseItem';
 import StandaloneReaderItem from './SyllabusPanel/StandaloneReaderItem';
@@ -160,14 +160,11 @@ export default function SyllabusPanel({
   const hasFilteredContent = filteredSyllabi.length > 0 || filteredStandalone.length > 0;
   const isFiltering = searchQuery || langFilter !== 'all' || viewMode !== 'all';
 
-  const allLangOptions = [
-    { id: 'zh', label: '中文' },
-    { id: 'yue', label: '粵語' },
-    { id: 'ko', label: '한국어' },
-  ];
   const langOptions = [
     { id: 'all', label: 'All' },
-    ...allLangOptions.filter(l => contentLanguages.has(l.id)),
+    ...getAllLanguages()
+      .filter(l => contentLanguages.has(l.id))
+      .map(l => ({ id: l.id, label: l.nameNative })),
   ];
 
   return (
