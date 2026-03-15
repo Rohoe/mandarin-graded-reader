@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { getAllLanguages } from '../lib/languages';
 import { getAllNativeLanguages } from '../lib/nativeLanguages';
+import { useT } from '../i18n';
 
 export default function SettingsReadingTab({ state, act }) {
+  const t = useT();
+
   // Build voices map keyed by langId
   const [voicesMap, setVoicesMap] = useState({});
 
@@ -29,9 +32,9 @@ export default function SettingsReadingTab({ state, act }) {
     <>
       {/* My Native Language */}
       <section className="settings-section">
-        <h3 className="settings-section__title form-label">My Native Language</h3>
+        <h3 className="settings-section__title form-label">{t('settings.reading.nativeLang')}</h3>
         <p className="settings-section__desc text-muted">
-          Definitions, explanations, and translations will be in this language.
+          {t('settings.reading.nativeLangDesc')}
         </p>
         <select
           className="form-select"
@@ -51,8 +54,8 @@ export default function SettingsReadingTab({ state, act }) {
       <section className="settings-section">
         <div className="settings-toggle-row">
           <div>
-            <h3 className="settings-section__title form-label">Dark Mode</h3>
-            <p className="settings-section__desc text-muted">Switch to a dark colour scheme.</p>
+            <h3 className="settings-section__title form-label">{t('settings.reading.darkMode')}</h3>
+            <p className="settings-section__desc text-muted">{t('settings.reading.darkModeDesc')}</p>
           </div>
           <button
             role="switch"
@@ -71,8 +74,8 @@ export default function SettingsReadingTab({ state, act }) {
       <section className="settings-section">
         <div className="settings-toggle-row">
           <div>
-            <h3 className="settings-section__title form-label">Show Romanization</h3>
-            <p className="settings-section__desc text-muted">Display pinyin, jyutping, or romanized Korean above characters in stories and vocabulary.</p>
+            <h3 className="settings-section__title form-label">{t('settings.reading.romanization')}</h3>
+            <p className="settings-section__desc text-muted">{t('settings.reading.romanizationDesc')}</p>
           </div>
           <button
             role="switch"
@@ -91,8 +94,8 @@ export default function SettingsReadingTab({ state, act }) {
       <section className="settings-section">
         <div className="settings-toggle-row">
           <div>
-            <h3 className="settings-section__title form-label">Paragraph Tools</h3>
-            <p className="settings-section__desc text-muted">Show inline TTS and translate buttons at the end of each paragraph.</p>
+            <h3 className="settings-section__title form-label">{t('settings.reading.paragraphTools')}</h3>
+            <p className="settings-section__desc text-muted">{t('settings.reading.paragraphToolsDesc')}</p>
           </div>
           <button
             role="switch"
@@ -111,9 +114,9 @@ export default function SettingsReadingTab({ state, act }) {
       {'speechSynthesis' in window && (
         <>
           <section className="settings-section">
-            <h3 className="settings-section__title form-label">Reading Speed</h3>
+            <h3 className="settings-section__title form-label">{t('settings.reading.readingSpeed')}</h3>
             <p className="settings-section__desc text-muted">
-              Adjust the text-to-speech playback speed.
+              {t('settings.reading.readingSpeedDesc')}
             </p>
             <div className="settings-slider-row">
               <span className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>0.5x</span>
@@ -134,9 +137,9 @@ export default function SettingsReadingTab({ state, act }) {
 
       {/* New flashcards per day */}
       <section className="settings-section">
-        <h3 className="settings-section__title form-label">New Flashcards Per Day</h3>
+        <h3 className="settings-section__title form-label">{t('settings.reading.flashcardsPerDay')}</h3>
         <p className="settings-section__desc text-muted">
-          Maximum number of new cards introduced in each daily session.
+          {t('settings.reading.flashcardsPerDayDesc')}
         </p>
         <div className="settings-slider-row">
           <span className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>5</span>
@@ -157,9 +160,9 @@ export default function SettingsReadingTab({ state, act }) {
       {/* Default proficiency levels (data-driven for all languages) */}
       {getAllLanguages().map(lang => (
         <section className="settings-section" key={lang.id}>
-          <h3 className="settings-section__title form-label">Default {lang.proficiency.name} Level</h3>
+          <h3 className="settings-section__title form-label">{t('settings.reading.defaultLevel', { profName: lang.proficiency.name })}</h3>
           <p className="settings-section__desc text-muted">
-            Pre-selected level when creating {lang.name} content.
+            {t('settings.reading.defaultLevelDesc', { langName: lang.name })}
           </p>
           <select
             className="form-select"
@@ -180,23 +183,23 @@ export default function SettingsReadingTab({ state, act }) {
         <>
           <hr className="divider" />
           <section className="settings-section">
-            <h3 className="settings-section__title form-label">TTS Voices</h3>
+            <h3 className="settings-section__title form-label">{t('settings.reading.ttsVoices')}</h3>
             <p className="settings-section__desc text-muted">
-              Choose preferred text-to-speech voices for each language. Recommended voices are listed first.
+              {t('settings.reading.ttsVoicesDesc')}
             </p>
 
             {getAllLanguages().map(lang => {
               const langVoices = voicesMap[lang.id] || [];
               return (
                 <div key={lang.id}>
-                  <label className="form-label" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>{lang.name} voice</label>
+                  <label className="form-label" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>{t('settings.reading.voice', { langName: lang.name })}</label>
                   <select
                     className="form-select"
                     value={state.ttsVoiceURIs?.[lang.id] || ''}
                     onChange={e => act.setTtsVoiceForLang(lang.id, e.target.value || null)}
                     style={{ maxWidth: '18rem' }}
                   >
-                    <option value="">Auto (best available)</option>
+                    <option value="">{t('settings.reading.autoVoice')}</option>
                     {langVoices
                       .sort((a, b) => isRecommendedVoice(lang, b) - isRecommendedVoice(lang, a))
                       .map(v => (

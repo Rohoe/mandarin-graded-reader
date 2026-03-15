@@ -5,6 +5,7 @@ import { gradeAnswers } from '../lib/api';
 import { buildGradingLLMConfig, hasAnyUserKey } from '../lib/llmConfig';
 import { translateText } from '../lib/translate';
 import { renderInline, stripMarkdown } from '../lib/renderInline';
+import { useT } from '../i18n';
 import './ComprehensionQuestions.css';
 
 function scoreBadgeClass(scoreStr) {
@@ -24,6 +25,7 @@ function scoreIndicator(scoreStr) {
 const AUTO_SAVE_DELAY = 1500;
 
 export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars, showParagraphTools, speakText, speakingKey, ttsSupported, onOpenSettings }) {
+  const t = useT();
   const { apiKey, providerKeys, activeProvider, activeModels, gradingModels, customBaseUrl, nativeLang } = useAppSelector(s => ({
     apiKey: s.apiKey, providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, gradingModels: s.gradingModels, customBaseUrl: s.customBaseUrl, nativeLang: s.nativeLang || 'en',
   }));
@@ -87,8 +89,8 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
     return (
       <section className="comprehension">
         <p className="text-muted" style={{ padding: 'var(--space-4)', fontSize: 'var(--text-sm)' }}>
-          No comprehension questions found in this reader.{' '}
-          <span style={{ opacity: 0.6 }}>(Check browser console for parse details.)</span>
+          {t('comprehension.noQuestions')}{' '}
+          <span style={{ opacity: 0.6 }}>{t('comprehension.checkConsole')}</span>
         </p>
       </section>
     );
@@ -110,7 +112,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
   }
 
   async function handleGrade() {
-    if (!story) { setGradingError('Story text unavailable.'); return; }
+    if (!story) { setGradingError(t('comprehension.storyUnavailable')); return; }
     // Flush any pending debounce and save immediately
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = null;
@@ -174,7 +176,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
         aria-controls="comprehension-content"
       >
         <h2 className="comprehension__title font-display">
-          Comprehension Questions
+          {t('comprehension.title')}
         </h2>
         <span className="comprehension__icon">{collapsed ? '▼' : '▲'}</span>
       </button>
@@ -198,8 +200,8 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                         <button
                           className={`reader-view__para-tts-btn ${speakingKey === `question-${i}` ? 'reader-view__para-tts-btn--active' : ''}`}
                           onClick={(e) => { e.stopPropagation(); speakText(stripMarkdown(qText), `question-${i}`); }}
-                          title="Listen"
-                          aria-label="Listen to question"
+                          title={t('story.listen')}
+                          aria-label={t('comprehension.listenToQuestion')}
                         >
                           {speakingKey === `question-${i}` ? '⏹' : '🔊'}
                         </button>
@@ -208,8 +210,8 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                         className={`reader-view__translate-btn ${translatingQIndex === i ? 'reader-view__translate-btn--loading' : ''} ${visibleQTranslations.has(i) ? 'reader-view__translate-btn--active' : ''}`}
                         onClick={() => handleQTranslateClick(i, qText, qTranslation)}
                         disabled={translatingQIndex === i}
-                        title={visibleQTranslations.has(i) ? 'Hide translation' : 'Translate to English'}
-                        aria-label={visibleQTranslations.has(i) ? 'Hide translation' : 'Translate to English'}
+                        title={visibleQTranslations.has(i) ? t('story.hideTranslation') : t('vocab.translateToEnglish')}
+                        aria-label={visibleQTranslations.has(i) ? t('story.hideTranslation') : t('vocab.translateToEnglish')}
                       >
                         EN
                       </button>
@@ -223,7 +225,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                   {results === null ? (
                     <textarea
                       className="comprehension__answer"
-                      placeholder="Type your answer here…"
+                      placeholder={t('comprehension.typeAnswer')}
                       value={answers[i] || ''}
                       onChange={e => handleAnswerChange(i, e.target.value)}
                       disabled={grading}
@@ -231,7 +233,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                   ) : (
                     <div className="comprehension__result">
                       {answers[i] && (
-                        <p className="comprehension__user-answer">Your answer: {answers[i]}</p>
+                        <p className="comprehension__user-answer">{t('comprehension.yourAnswer', { answer: answers[i] })}</p>
                       )}
                       {results.feedback?.[i] && (
                         <div className="comprehension__result-row">
@@ -245,14 +247,14 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                             {results.feedback[i].suggestedAnswer && (
                               showSuggested[i] ? (
                                 <p className="comprehension__suggested-answer">
-                                  <strong>Suggested answer:</strong> {results.feedback[i].suggestedAnswer}
+                                  <strong>{t('comprehension.suggestedAnswer')}</strong> {results.feedback[i].suggestedAnswer}
                                 </p>
                               ) : (
                                 <button
                                   className="btn btn-ghost btn-xs comprehension__show-suggested"
                                   onClick={() => setShowSuggested(prev => ({ ...prev, [i]: true }))}
                                 >
-                                  Show suggested answer
+                                  {t('comprehension.showSuggested')}
                                 </button>
                               )
                             )}
@@ -274,7 +276,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                 <p className="comprehension__score-feedback">{results.overallFeedback}</p>
               )}
               <button className="btn btn-ghost btn-sm" onClick={handleRevise}>
-                Revise and Regrade
+                {t('comprehension.reviseAndRegrade')}
               </button>
             </div>
           ) : (
@@ -288,22 +290,22 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                   onClick={handleGrade}
                   disabled={!hasAnyAnswer || grading || !canGrade}
                 >
-                  {grading ? 'Grading…' : 'Grade My Answers'}
+                  {grading ? t('comprehension.grading') : t('comprehension.gradeMyAnswers')}
                 </button>
                 {!grading && canGrade && !hasAnyAnswer && (
                   <p className="comprehension__hint text-muted" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>
-                    Answer at least one question to grade
+                    {t('comprehension.answerAtLeastOne')}
                   </p>
                 )}
                 {!grading && defaultKeyAvailable && (
                   <p className="comprehension__hint text-muted" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)', fontStyle: 'italic' }}>
-                    Demo mode — <a href="#" onClick={e => { e.preventDefault(); onOpenSettings?.(); }} style={{ color: 'var(--color-accent)' }}>Add your own key</a> for faster grading.
+                    {t('comprehension.demoMode')} <a href="#" onClick={e => { e.preventDefault(); onOpenSettings?.(); }} style={{ color: 'var(--color-accent)' }}>{t('comprehension.addYourKey')}</a> {t('comprehension.fasterGrading')}
                   </p>
                 )}
               </div>
               {!canGrade && (
                 <p className="comprehension__hint" style={{ marginTop: '0.75rem', fontSize: '0.9rem', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
-                  API key required for grading. Open Settings to add your key.
+                  {t('comprehension.apiKeyRequired')}
                 </p>
               )}
             </>

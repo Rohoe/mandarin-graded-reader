@@ -53,6 +53,19 @@
 | `useReadingTimer.js` | Tracks reading time per reader. Starts on mount, pauses on blur/idle, resumes on focus. Stores `readingTime` (seconds) in reader state. |
 | `usePWA.js` | PWA install prompt hook. Captures `beforeinstallprompt` event, exposes `canInstall` flag and `promptInstall()` method. |
 
+### `src/i18n/`
+
+| File | Description |
+|------|-------------|
+| `index.js` | `useT()` hook: reads `state.nativeLang` via `useAppSelector`, returns `t(key, params)`. Fallback chain: current lang → English → raw key. `{param}` interpolation via `replaceAll`. Also exports `getT(nativeLang)` for non-component contexts. |
+| `en.js` | English strings — source of truth for all ~400 keys. Flat dot-notation keys grouped by component area (e.g. `'settings.reading.darkMode'`). |
+| `zh.js` | Simplified Chinese translations (complete) |
+| `yue.js` | Cantonese translations in Traditional Chinese (complete) |
+| `ko.js` | Korean translations (complete) |
+| `fr.js` | French translations (complete) |
+| `es.js` | Spanish translations (complete) |
+| `i18n.test.js` | Tests: key coverage across all languages, placeholder preservation, interpolation logic, fallback chain |
+
 ## State shape
 
 ```js

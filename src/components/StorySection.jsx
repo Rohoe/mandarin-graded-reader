@@ -4,6 +4,7 @@ import { splitParagraphIntoSentences } from '../lib/sentenceSplitter';
 import { stripMarkdown } from '../lib/renderInline';
 import { getNativeLang } from '../lib/nativeLanguages';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import { useT } from '../i18n';
 import SentencePopover from './SentencePopover';
 
 export default function StorySection({
@@ -35,6 +36,7 @@ export default function StorySection({
   onCloseSelection,
   onCloseSentence,
 }) {
+  const t = useT();
   const nativeLangConfig = getNativeLang(nativeLang);
   const [visibleTranslations, setVisibleTranslations] = useState(new Set());
 
@@ -103,7 +105,7 @@ export default function StorySection({
                   <span
                     key={si}
                     className="reader-view__sentence"
-                    title="Click to translate"
+                    title={t('story.clickToTranslate')}
                     tabIndex={0}
                     role="button"
                     onClick={(e) => onSentenceClick && onSentenceClick(e, sentence, pi)}
@@ -143,8 +145,8 @@ export default function StorySection({
                   <button
                     className={`reader-view__para-tts-btn ${isSpeaking ? 'reader-view__para-tts-btn--active' : ''}`}
                     onClick={(e) => handleTtsClick(e, para, paraKey)}
-                    title={isSpeaking ? 'Stop' : 'Listen'}
-                    aria-label={isSpeaking ? 'Stop speaking' : 'Listen to paragraph'}
+                    title={isSpeaking ? t('story.stop') : t('story.listen')}
+                    aria-label={isSpeaking ? t('story.stopSpeaking') : t('story.listenToParagraph')}
                   >
                     {isSpeaking ? '■' : 'TTS'}
                   </button>
@@ -154,8 +156,8 @@ export default function StorySection({
                     className={`reader-view__translate-btn ${isTranslating ? 'reader-view__translate-btn--loading' : ''} ${showTranslation ? 'reader-view__translate-btn--active' : ''}`}
                     onClick={(e) => handleTranslateClick(e, pi, para)}
                     disabled={isTranslating}
-                    title={showTranslation ? 'Hide translation' : `Translate to ${nativeLangConfig.name}`}
-                    aria-label={showTranslation ? 'Hide translation' : `Translate to ${nativeLangConfig.name}`}
+                    title={showTranslation ? t('story.hideTranslation') : t('story.translateTo', { lang: nativeLangConfig.name })}
+                    aria-label={showTranslation ? t('story.hideTranslation') : t('story.translateTo', { lang: nativeLangConfig.name })}
                   >
                     {nativeLangConfig.shortLabel}
                   </button>
@@ -178,8 +180,8 @@ export default function StorySection({
               <button
                 className={`popover-tts-btn${speakingKey === `vocab-${activeVocab.word.target || activeVocab.word.chinese}` ? ' popover-tts-btn--active' : ''}`}
                 onClick={(e) => { e.stopPropagation(); speakText(activeVocab.word.target || activeVocab.word.chinese, `vocab-${activeVocab.word.target || activeVocab.word.chinese}`); }}
-                title={speakingKey === `vocab-${activeVocab.word.target || activeVocab.word.chinese}` ? 'Stop' : 'Listen'}
-                aria-label={speakingKey === `vocab-${activeVocab.word.target || activeVocab.word.chinese}` ? 'Stop speaking' : 'Listen to word'}
+                title={speakingKey === `vocab-${activeVocab.word.target || activeVocab.word.chinese}` ? t('story.stop') : t('story.listen')}
+                aria-label={speakingKey === `vocab-${activeVocab.word.target || activeVocab.word.chinese}` ? t('story.stopSpeaking') : t('story.listenToWord')}
               >
                 {speakingKey === `vocab-${activeVocab.word.target || activeVocab.word.chinese}` ? '■' : 'TTS'}
               </button>
@@ -198,8 +200,8 @@ export default function StorySection({
               <button
                 className={`popover-tts-btn${speakingKey === `sel-${selectionPopover.text}` ? ' popover-tts-btn--active' : ''}`}
                 onClick={(e) => { e.stopPropagation(); speakText(selectionPopover.text, `sel-${selectionPopover.text}`); }}
-                title={speakingKey === `sel-${selectionPopover.text}` ? 'Stop' : 'Listen'}
-                aria-label={speakingKey === `sel-${selectionPopover.text}` ? 'Stop speaking' : 'Listen to selection'}
+                title={speakingKey === `sel-${selectionPopover.text}` ? t('story.stop') : t('story.listen')}
+                aria-label={speakingKey === `sel-${selectionPopover.text}` ? t('story.stopSpeaking') : t('story.listenToSelection')}
               >
                 {speakingKey === `sel-${selectionPopover.text}` ? '■' : 'TTS'}
               </button>

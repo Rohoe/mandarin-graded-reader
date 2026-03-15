@@ -1,12 +1,16 @@
+import { useT } from '../../i18n';
+
 export default function SyllabusToolbar({ viewMode, setViewMode, searchQuery, setSearchQuery, multiLang, langFilter, setLangFilter, langOptions, sortBy, setSortBy }) {
+  const t = useT();
+
   return (
     <div className="syllabus-panel__toolbar">
       {/* View toggle */}
       <div className="syllabus-panel__view-toggle" role="group" aria-label="View mode">
         {[
-          { id: 'all', label: 'All' },
-          { id: 'courses', label: 'Courses' },
-          { id: 'readers', label: 'Readers' },
+          { id: 'all', label: t('toolbar.all') },
+          { id: 'courses', label: t('toolbar.courses') },
+          { id: 'readers', label: t('toolbar.readers') },
         ].map(v => (
           <button
             key={v.id}
@@ -23,7 +27,7 @@ export default function SyllabusToolbar({ viewMode, setViewMode, searchQuery, se
         <input
           type="text"
           className="syllabus-panel__search-input"
-          placeholder="Search topics…"
+          placeholder={t('toolbar.searchTopics')}
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
         />
@@ -31,7 +35,7 @@ export default function SyllabusToolbar({ viewMode, setViewMode, searchQuery, se
           <button
             className="syllabus-panel__search-clear"
             onClick={() => setSearchQuery('')}
-            aria-label="Clear search"
+            aria-label={t('toolbar.clearSearch')}
           >×</button>
         )}
       </div>
@@ -56,8 +60,8 @@ export default function SyllabusToolbar({ viewMode, setViewMode, searchQuery, se
             onChange={e => setSortBy(e.target.value)}
             aria-label="Sort order"
           >
-            <option value="recent">Recent</option>
-            <option value="alpha">A–Z</option>
+            <option value="recent">{t('toolbar.recent')}</option>
+            <option value="alpha">{t('toolbar.alpha')}</option>
           </select>
         </div>
       )}
@@ -72,8 +76,8 @@ export default function SyllabusToolbar({ viewMode, setViewMode, searchQuery, se
             onChange={e => setSortBy(e.target.value)}
             aria-label="Sort order"
           >
-            <option value="recent">Recent</option>
-            <option value="alpha">A–Z</option>
+            <option value="recent">{t('toolbar.recent')}</option>
+            <option value="alpha">{t('toolbar.alpha')}</option>
           </select>
         </div>
       )}

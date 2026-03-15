@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { useAppSelector } from './context/useAppSelector';
 import { actions } from './context/actions';
+import { useT } from './i18n';
 import { CLEAR_NOTIFICATION } from './context/actionTypes';
 import { generateReader, extendSyllabus } from './lib/api';
 import { buildLLMConfig } from './lib/llmConfig';
@@ -53,6 +54,7 @@ function Notification() {
 function AppShell() {
   const { state, dispatch, pushGeneratedReader } = useApp();
   const act = actions(dispatch);
+  const t = useT();
   const { syllabi, syllabusProgress } = state;
 
   const [showSettings,   setShowSettings]     = useState(false);
@@ -221,10 +223,10 @@ function AppShell() {
       if (parsed.titleZh || parsed.titleEn) {
         act.updateStandaloneReaderMeta({ key: newKey, titleZh: parsed.titleZh, titleEn: parsed.titleEn });
       }
-      act.notify('success', 'Continuation reader ready!');
+      act.notify('success', t('notify.continuationReady'));
     } catch (err) {
       act.removeStandaloneReader(newKey);
-      act.notify('error', `Continuation failed: ${err.message.slice(0, 80)}`);
+      act.notify('error', t('notify.continuationFailed', { error: err.message.slice(0, 80) }));
     } finally {
       act.clearPendingReader(newKey);
     }
@@ -232,7 +234,7 @@ function AppShell() {
 
   async function handleExtendSyllabus(additionalCount) {
     if (!activeSyllabusId || !currentSyllabus) return;
-    act.setLoading(true, '正在扩展课程大纲…');
+    act.setLoading(true, t('notify.expanding'));
     try {
       const llmConfig = buildLLMConfig(state);
       const { lessons: newLessons } = await extendSyllabus(
@@ -245,9 +247,9 @@ function AppShell() {
         state.nativeLang,
       );
       act.extendSyllabusLessons(activeSyllabusId, newLessons);
-      act.notify('success', `Added ${newLessons.length} new lesson${newLessons.length !== 1 ? 's' : ''}`);
+      act.notify('success', t('notify.syllabusExtended', { count: newLessons.length }));
     } catch (err) {
-      act.notify('error', `Could not extend syllabus: ${err.message.slice(0, 80)}`);
+      act.notify('error', t('notify.syllabusExtendFailed', { error: err.message.slice(0, 80) }));
     } finally {
       act.setLoading(false, '');
     }
@@ -256,7 +258,7 @@ function AppShell() {
   if (!state.fsInitialized) {
     return (
       <div className="app-fs-init">
-        <LoadingIndicator message="Loading…" />
+        <LoadingIndicator message={t('app.loading')} />
       </div>
     );
   }
@@ -268,19 +270,19 @@ function AppShell() {
         <button
           className="btn btn-ghost btn-sm"
           onClick={() => setSidebarOpen(o => !o)}
-          aria-label="Open menu"
+          aria-label={t('app.openMenu')}
         >
           ☰
         </button>
         <span className="app-mobile-title font-display">漫读</span>
-        <button className="btn btn-ghost btn-sm" onClick={() => setShowSettings(true)} aria-label="Settings">
+        <button className="btn btn-ghost btn-sm" onClick={() => setShowSettings(true)} aria-label={t('common.settings')}>
           ⚙
         </button>
       </header>
 
       {/* ─ Sidebar overlay (mobile) ──────────────────────── */}
       {sidebarOpen && (
-        <div className="app-sidebar-overlay" role="button" aria-label="Close sidebar" tabIndex={0} onClick={() => setSidebarOpen(false)} onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && setSidebarOpen(false)} />
+        <div className="app-sidebar-overlay" role="button" aria-label={t('app.closeSidebar')} tabIndex={0} onClick={() => setSidebarOpen(false)} onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && setSidebarOpen(false)} />
       )}
 
       {/* ─ Left sidebar ──────────────────────────────────── */}
@@ -375,8 +377,8 @@ function AppShell() {
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="new-reader-title" onClick={e => e.target === e.currentTarget && setShowNewForm(false)}>
           <div className="settings-panel card card-padded fade-in">
             <div className="settings-panel__header">
-              <h2 id="new-reader-title" className="font-display" style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>New Reader</h2>
-              <button className="btn btn-ghost settings-panel__close" onClick={() => setShowNewForm(false)} aria-label="Close">✕</button>
+              <h2 id="new-reader-title" className="font-display" style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>{t('app.newReader')}</h2>
+              <button className="btn btn-ghost settings-panel__close" onClick={() => setShowNewForm(false)} aria-label={t('common.close')}>✕</button>
             </div>
             <TopicForm
               onNewSyllabus={(id) => { setShowNewForm(false); handleNewSyllabus(id); }}

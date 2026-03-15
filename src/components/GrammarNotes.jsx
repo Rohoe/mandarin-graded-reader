@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useT } from '../i18n';
 import './GrammarNotes.css';
 
 export default function GrammarNotes({ grammarNotes, renderChars }) {
   const [collapsed, setCollapsed] = useState(false);
+  const t = useT();
   if (!grammarNotes?.length) return null;
 
   return (
@@ -13,7 +15,7 @@ export default function GrammarNotes({ grammarNotes, renderChars }) {
         aria-expanded={!collapsed}
         aria-controls="grammar-notes-content"
       >
-        <h2 className="grammar-notes__title font-display">Grammar Notes</h2>
+        <h2 className="grammar-notes__title font-display">{t('grammar.title')}</h2>
         <span className="grammar-notes__icon">{collapsed ? '▼' : '▲'}</span>
       </button>
       {!collapsed && (

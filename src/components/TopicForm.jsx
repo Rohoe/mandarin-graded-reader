@@ -8,6 +8,7 @@ import { getProvider } from '../lib/providers';
 import { parseReaderResponse } from '../lib/parser';
 import { mapReaderVocabulary } from '../lib/vocabMapper';
 import { getLang, getAllLanguages, DEFAULT_LANG_ID } from '../lib/languages';
+import { useT } from '../i18n';
 import GenerationProgress from './GenerationProgress';
 import './TopicForm.css';
 
@@ -23,6 +24,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
   const dispatch = useAppDispatch();
   const { pushGeneratedReader } = useContext(AppContext);
   const act = actions(dispatch);
+  const t = useT();
 
   const [topic, setTopic]         = useState('');
   const [langId, setLangId]       = useState(DEFAULT_LANG_ID);
@@ -40,7 +42,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
     e.preventDefault();
     if (!topic.trim()) return;
 
-    act.setLoading(true, '正在生成课程大纲…');
+    act.setLoading(true, t('topicForm.generatingSyllabus'));
     act.clearError();
     try {
       const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModels, customBaseUrl });
@@ -55,7 +57,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
         createdAt: Date.now(),
       };
       act.addSyllabus(newSyllabus);
-      act.notify('success', `Syllabus generated: ${lessons.length} lessons on "${topic}"`);
+      act.notify('success', t('notify.syllabusGenerated', { count: lessons.length, topic }));
       onNewSyllabus?.(newSyllabus.id);
     } catch (err) {
       act.setError(err.message);
@@ -90,9 +92,9 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
       }
       const vocab = mapReaderVocabulary(parsed, langId);
       if (vocab) act.addVocabulary(vocab);
-      act.notify('success', `Reader ready: "${topicStr}"`);
+      act.notify('success', t('notify.readerReady', { topic: topicStr }));
     } catch (err) {
-      act.notify('error', `Generation failed: ${err.message.slice(0, 80)}`);
+      act.notify('error', t('notify.generationFailed', { error: err.message.slice(0, 80) }));
       act.removeStandaloneReader(lessonKey);
     } finally {
       act.clearPendingReader(lessonKey);
@@ -111,7 +113,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
           className={`topic-form__mode-btn ${mode === 'syllabus' ? 'active' : ''}`}
           onClick={() => setMode('syllabus')}
         >
-          Course Syllabus
+          {t('topicForm.courseSyllabus')}
         </button>
         <button
           type="button"
@@ -120,18 +122,18 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
           className={`topic-form__mode-btn ${mode === 'standalone' ? 'active' : ''}`}
           onClick={() => setMode('standalone')}
         >
-          Single Reader
+          {t('topicForm.singleReader')}
         </button>
       </div>
 
       {/* Language selector */}
       {languages.length > 1 && (
         <div className="form-group">
-          <label className="form-label">Language</label>
+          <label className="form-label">{t('topicForm.language')}</label>
           <div
             className="pill-selector topic-form__lang-pills"
             role="radiogroup"
-            aria-label="Language"
+            aria-label={t('topicForm.language')}
             onKeyDown={(e) => {
               if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
               const idx = languages.findIndex(l => l.id === langId);
@@ -164,7 +166,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
       )}
 
       <div className="form-group">
-        <label className="form-label" htmlFor="topic-input">Topic</label>
+        <label className="form-label" htmlFor="topic-input">{t('topicForm.topic')}</label>
         <input
           id="topic-input"
           type="text"
@@ -179,11 +181,11 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
       </div>
 
       <div className="form-group">
-        <label className="form-label">{langConfig.proficiency.name} Level</label>
+        <label className="form-label">{t('topicForm.level', { profName: langConfig.proficiency.name })}</label>
         <div
           className="pill-selector topic-form__hsk-pills"
           role="radiogroup"
-          aria-label={`${langConfig.proficiency.name} Level`}
+          aria-label={t('topicForm.level', { profName: langConfig.proficiency.name })}
           onKeyDown={(e) => {
             if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
             const idx = profLevels.findIndex(l => l.value === level);
@@ -220,7 +222,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
       {mode === 'syllabus' && (
         <div className="form-group">
           <div className="topic-form__slider-row">
-            <label className="form-label" htmlFor="lesson-count">Lessons</label>
+            <label className="form-label" htmlFor="lesson-count">{t('topicForm.lessons')}</label>
             <span className="topic-form__slider-value">{lessonCount}</span>
           </div>
           <input
@@ -241,8 +243,8 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
       {mode === 'standalone' && (
         <div className="form-group">
           <div className="topic-form__slider-row">
-            <label className="form-label" htmlFor="reader-length">Reader Length</label>
-            <span className="topic-form__slider-value">~{readerLength} chars</span>
+            <label className="form-label" htmlFor="reader-length">{t('topicForm.readerLength')}</label>
+            <span className="topic-form__slider-value">{t('topicForm.chars', { count: readerLength })}</span>
           </div>
           <input
             id="reader-length"
@@ -254,7 +256,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
             disabled={loading}
           />
           <div className="topic-form__slider-ticks">
-            <span>Short</span><span>Long</span>
+            <span>{t('topicForm.short')}</span><span>{t('topicForm.long')}</span>
           </div>
         </div>
       )}
@@ -265,36 +267,35 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
         disabled={loading || !topic.trim() || !canGenerate}
       >
         {loading
-          ? '生成中…'
+          ? t('topicForm.generating')
           : mode === 'syllabus'
-            ? 'Generate Syllabus'
-            : 'Generate Reader'}
+            ? t('topicForm.generateSyllabus')
+            : t('topicForm.generateReader')}
       </button>
 
       {!loading && defaultKeyAvailable && (
         <p className="topic-form__demo-banner">
-          <strong>Demo mode</strong> — Using a shared API key with limited usage.{' '}
-          <a href="#" onClick={e => { e.preventDefault(); onOpenSettings?.(); }}>Add your own key in Settings</a> for unlimited access.
+          {t('topicForm.demoBanner')}{' '}
+          <a href="#" onClick={e => { e.preventDefault(); onOpenSettings?.(); }}>{t('topicForm.addKeyInSettings')}</a> {t('topicForm.unlimitedAccess')}
         </p>
       )}
 
       {!loading && apiKey && !defaultKeyAvailable && (
         <p className="topic-form__hint" style={{ opacity: 0.5 }}>
-          Using {(() => {
+          {t('topicForm.using', { model: (() => {
             const prov = getProvider(activeProvider);
             const modelId = (activeModels && activeModels[activeProvider]) || prov.defaultModel;
-            const modelLabel = prov.models.find(m => m.id === modelId)?.label || modelId;
-            return modelLabel;
-          })()}
+            return prov.models.find(m => m.id === modelId)?.label || modelId;
+          })() })}
         </p>
       )}
 
       {!loading && !canGenerate && (
-        <p className="topic-form__hint">API key required. Open Settings to add your key.</p>
+        <p className="topic-form__hint">{t('topicForm.apiKeyRequired')}</p>
       )}
 
       {!loading && canGenerate && !topic.trim() && (
-        <p className="topic-form__hint">Enter a topic above to get started</p>
+        <p className="topic-form__hint">{t('topicForm.enterTopic')}</p>
       )}
 
       {loading && mode === 'syllabus' && (
@@ -308,7 +309,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
             className="btn btn-ghost btn-sm topic-form__clear"
             onClick={onCancel}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       )}

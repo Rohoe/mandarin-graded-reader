@@ -7,6 +7,7 @@ import { getLang, getLessonTitle, DEFAULT_LANG_ID } from '../../lib/languages';
 import { buildLLMConfig } from '../../lib/llmConfig';
 import { getProvider } from '../../lib/providers';
 import { translateText } from '../../lib/translate';
+import { useT } from '../../i18n';
 import { useTTS } from '../../hooks/useTTS';
 import { useRomanization } from '../../hooks/useRomanization';
 import { useVocabPopover } from '../../hooks/useVocabPopover';
@@ -31,6 +32,7 @@ import ReaderPregenerate from './ReaderPregenerate';
 import './ReaderView.css';
 
 export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar, onOpenSettings }) {
+  const t = useT();
   // Track which lesson keys we've already tried to load from cache
   const loadedKeysRef = useRef(new Set());
   // Split selectors to prevent settings changes from re-rendering reader content
@@ -143,7 +145,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       }
     }).catch(() => {
       if (!cancelled) {
-        setSelectionPopover(prev => prev ? { ...prev, translation: '(translation failed)' } : null);
+        setSelectionPopover(prev => prev ? { ...prev, translation: t('notify.translationFailed', { error: '' }) } : null);
       }
     });
     return () => { cancelled = true; };
@@ -206,7 +208,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       const existing = reader.paragraphTranslations || {};
       act.setReader(lessonKey, { ...reader, paragraphTranslations: { ...existing, [index]: translation } });
     } catch (err) {
-      act.notify('error', `Translation failed: ${err.message}`);
+      act.notify('error', t('notify.translationFailed', { error: err.message }));
     } finally {
       setTranslatingIndex(null);
     }
@@ -220,7 +222,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       const existing = reader.vocabTranslations || {};
       act.setReader(lessonKey, { ...reader, vocabTranslations: { ...existing, [key]: translation } });
     } catch (err) {
-      act.notify('error', `Translation failed: ${err.message}`);
+      act.notify('error', t('notify.translationFailed', { error: err.message }));
     } finally {
       setTranslatingVocabKey(null);
     }
@@ -236,10 +238,10 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
     try {
       const ok = await restoreEvictedReader(lessonKey);
       if (!ok) {
-        act.notify('error', 'Could not restore — you can regenerate it.');
+        act.notify('error', t('notify.couldNotRestore'));
       }
     } catch {
-      act.notify('error', 'Restore failed — you can regenerate it.');
+      act.notify('error', t('notify.restoreFailed'));
     } finally {
       setRestoring(false);
     }
@@ -295,10 +297,10 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       <div className="reader-view">
         <div className="alert alert-error">
           <span>⚠</span>
-          <div><strong>Parse error:</strong> {reader.parseError}. Showing raw output below.</div>
+          <div><strong>{t('reader.parseError')}</strong> {reader.parseError}. {t('reader.rawOutput')}</div>
         </div>
         <pre className="reader-view__raw">{reader.raw}</pre>
-        <button className="btn btn-primary" onClick={handleGenerate} style={{ marginTop: 'var(--space-4)' }}>Regenerate</button>
+        <button className="btn btn-primary" onClick={handleGenerate} style={{ marginTop: 'var(--space-4)' }}>{t('reader.regenerate')}</button>
       </div>
     );
   }
@@ -312,7 +314,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       {/* Quota warning banner */}
       {quotaWarning && (
         <div className="reader-view__quota-warning">
-          <span>Browser storage is full. New readers will not be saved between sessions. Free up space in Settings → Browser Storage.</span>
+          <span>{t('reader.quotaWarning')}</span>
           <button className="reader-view__quota-dismiss" onClick={() => dispatch({ type: SET_QUOTA_WARNING, payload: false })} aria-label="Dismiss">✕</button>
         </div>
       )}
@@ -320,7 +322,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       {/* Demo reader banner */}
       {isDemo && !demoBannerDismissed && (
         <div className="reader-view__demo-banner">
-          <span>This is a sample reader. Add your API key in Settings to generate your own.</span>
+          <span>{t('reader.demoBanner')}</span>
           <button className="reader-view__quota-dismiss" onClick={() => setDemoBannerDismissed(true)} aria-label="Dismiss">✕</button>
         </div>
       )}
@@ -328,7 +330,7 @@ export default function ReaderView({ lessonKey, lessonMeta, onMarkComplete, onUn
       {/* Native language tip banner */}
       {!isDemo && !nativeLangTipDismissed && (
         <div className="reader-view__tip-banner">
-          <span>Tip: You can change your native language in Settings → Reading to see definitions in your language.</span>
+          <span>{t('reader.nativeLangTip')}</span>
           <button className="reader-view__quota-dismiss" onClick={() => { localStorage.setItem('gradedReader_nativeLangTipDismissed', '1'); setNativeLangTipDismissed(true); }} aria-label="Dismiss">✕</button>
         </div>
       )}

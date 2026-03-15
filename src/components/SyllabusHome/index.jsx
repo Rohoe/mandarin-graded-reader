@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAppSelector } from '../../context/useAppSelector';
 import { getLang, getLessonTitle } from '../../lib/languages';
+import { useT } from '../../i18n';
 import LoadingIndicator from '../LoadingIndicator';
 import './SyllabusHome.css';
 
@@ -9,6 +10,7 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
     loading: s.loading,
     loadingMessage: s.loadingMessage,
   }));
+  const t = useT();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [extendOpen, setExtendOpen] = useState(false);
   const [additionalCount, setAdditionalCount] = useState(3);
@@ -39,7 +41,7 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
       {/* ── Loading overlay ─────────────────────── */}
       {loading && (
         <div className="syllabus-home__loading">
-          <LoadingIndicator message={loadingMessage || '正在生成…'} />
+          <LoadingIndicator message={loadingMessage || t('common.generating')} />
         </div>
       )}
 
@@ -50,14 +52,14 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
           <span className="syllabus-home__level-badge">{langConfig.proficiency.name} {level}</span>
         </div>
         {createdDate && (
-          <p className="syllabus-home__date text-muted">Created {createdDate}</p>
+          <p className="syllabus-home__date text-muted">{t('syllabusHome.created', { date: createdDate })}</p>
         )}
       </header>
 
       {/* ── Summary ────────────────────────────── */}
       {summary && (
         <section className="syllabus-home__section">
-          <h2 className="syllabus-home__section-title">Summary</h2>
+          <h2 className="syllabus-home__section-title">{t('syllabusHome.summary')}</h2>
           <p className="syllabus-home__summary">{summary}</p>
         </section>
       )}
@@ -65,9 +67,9 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
       {/* ── Lessons ────────────────────────────── */}
       <section className="syllabus-home__section">
         <div className="syllabus-home__lessons-header">
-          <h2 className="syllabus-home__section-title">Lessons</h2>
+          <h2 className="syllabus-home__section-title">{t('syllabusHome.lessons')}</h2>
           <span className="syllabus-home__progress-label text-muted">
-            {completedCount} / {lessons.length} complete
+            {t('syllabusHome.complete', { completed: completedCount, total: lessons.length })}
           </span>
         </div>
 
@@ -96,7 +98,7 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
                     <span className="syllabus-home__lesson-en text-muted">{lesson.title_en}</span>
                   </span>
                   <span className="syllabus-home__lesson-cta text-muted">
-                    {isCompleted ? 'Review' : 'Start'} →
+                    {isCompleted ? t('syllabusHome.review') : t('syllabusHome.start')} →
                   </span>
                 </button>
               </li>
@@ -112,7 +114,7 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
             className="btn btn-primary"
             onClick={() => onSelectLesson?.(syllabus.id, continueIdx)}
           >
-            {allDone ? 'Review from the beginning →' : `Continue → Lesson ${continueIdx + 1}`}
+            {allDone ? t('syllabusHome.reviewFromBeginning') : t('syllabusHome.continueLesson', { number: continueIdx + 1 })}
           </button>
         </div>
       )}
@@ -125,14 +127,14 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
               className="btn btn-ghost syllabus-home__extend-toggle"
               onClick={() => setExtendOpen(true)}
             >
-              + Add more lessons
+              {t('syllabusHome.addMoreLessons')}
             </button>
           ) : (
             <div className="syllabus-home__extend-panel">
-              <h2 className="syllabus-home__section-title">Add more lessons</h2>
+              <h2 className="syllabus-home__section-title">{t('syllabusHome.addMoreLessons').replace('+ ', '')}</h2>
               <div className="syllabus-home__extend-controls">
                 <label className="syllabus-home__extend-label">
-                  Number of new lessons: <strong>{additionalCount}</strong>
+                  {t('syllabusHome.numberOfNewLessons')} <strong>{additionalCount}</strong>
                 </label>
                 <input
                   type="range"
@@ -151,14 +153,14 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
                   onClick={() => setExtendOpen(false)}
                   disabled={loading}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={() => { onExtend(additionalCount); setExtendOpen(false); }}
                   disabled={loading}
                 >
-                  {loading ? loadingMessage || 'Generating…' : 'Generate'}
+                  {loading ? loadingMessage || t('common.generating') : t('common.generate')}
                 </button>
               </div>
             </div>
@@ -169,26 +171,26 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
       {/* ── Danger zone ────────────────────────── */}
       <section className="syllabus-home__danger-zone">
         <div className="syllabus-home__danger-divider">
-          <span className="text-subtle">danger zone</span>
+          <span className="text-subtle">{t('syllabusHome.dangerZone')}</span>
         </div>
 
         {confirmingDelete ? (
           <div className="syllabus-home__confirm">
             <p className="syllabus-home__confirm-text">
-              Permanently delete <strong>"{topic}"</strong> and all its progress?
+              {t('syllabusHome.confirmDelete', { topic })}
             </p>
             <div className="syllabus-home__confirm-actions">
               <button
                 className="btn btn-ghost btn-sm"
                 onClick={() => setConfirmingDelete(false)}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="btn btn-sm syllabus-home__delete-confirm-btn"
                 onClick={handleDelete}
               >
-                Delete
+                {t('common.delete')}
               </button>
             </div>
           </div>
@@ -199,14 +201,14 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
                 className="btn btn-ghost syllabus-home__archive-btn"
                 onClick={onArchive}
               >
-                Archive Syllabus
+                {t('syllabusHome.archiveSyllabus')}
               </button>
             )}
             <button
               className="btn syllabus-home__delete-btn"
               onClick={() => setConfirmingDelete(true)}
             >
-              Delete Syllabus
+              {t('syllabusHome.deleteSyllabus')}
             </button>
           </div>
         )}

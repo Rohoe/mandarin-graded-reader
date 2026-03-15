@@ -5,6 +5,7 @@ import { getAllLanguages, getLang } from '../../lib/languages';
 import { loadFlashcardSession, saveFlashcardSession } from '../../lib/storage';
 import { useRomanization } from '../../hooks/useRomanization';
 import { useTTS } from '../../hooks/useTTS';
+import { useT } from '../../i18n';
 import { calculateSRS, buildDailySession } from './srs';
 import { useMasteryStats } from './useMasteryStats';
 import FlashcardDoneScreen from './FlashcardDoneScreen';
@@ -22,6 +23,7 @@ function formatInterval(days) {
 }
 
 export default function FlashcardReview({ onClose }) {
+  const t = useT();
   const { learnedVocabulary, newCardsPerDay, romanizationOn } = useAppSelector(s => ({
     learnedVocabulary: s.learnedVocabulary,
     newCardsPerDay: s.newCardsPerDay,
@@ -290,11 +292,11 @@ export default function FlashcardReview({ onClose }) {
       <div className="modal-overlay flashcard-overlay" role="dialog" aria-modal="true" aria-label="Flashcard review" onClick={e => e.target === e.currentTarget && onClose?.()}>
         <div className="flashcard-modal card card-padded fade-in">
           <div className="flashcard-modal__header">
-            <h2 className="font-display flashcard-modal__title">Flashcard Review</h2>
+            <h2 className="font-display flashcard-modal__title">{t('flashcard.title')}</h2>
             <button className="btn btn-ghost btn-sm flashcard-modal__close" onClick={onClose} aria-label="Close">✕</button>
           </div>
           <p className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-6) 0' }}>
-            No vocabulary learned yet. Complete some readers to build your flashcard deck.
+            {t('flashcard.noVocab')}
           </p>
         </div>
       </div>
@@ -305,7 +307,7 @@ export default function FlashcardReview({ onClose }) {
     <div className="modal-overlay flashcard-overlay" role="dialog" aria-modal="true" aria-label="Flashcard review" onClick={e => e.target === e.currentTarget && onClose?.()}>
       <div className="flashcard-modal card card-padded fade-in">
         <div className="flashcard-modal__header">
-          <h2 className="font-display flashcard-modal__title">Flashcard Review</h2>
+          <h2 className="font-display flashcard-modal__title">{t('flashcard.title')}</h2>
           <button className="btn btn-ghost btn-sm flashcard-modal__close" onClick={onClose} aria-label="Close">✕</button>
         </div>
 
@@ -332,7 +334,7 @@ export default function FlashcardReview({ onClose }) {
               className={`flashcard-mode-tab ${quizMode === mode ? 'flashcard-mode-tab--active' : ''}`}
               onClick={() => setQuizMode(mode)}
             >
-              {{ flashcard: 'Cards', fillblank: 'Fill Blank', listening: 'Listening', matching: 'Matching' }[mode]}
+              {{ flashcard: t('flashcard.cards'), fillblank: t('flashcard.fillBlank'), listening: t('flashcard.listening'), matching: t('flashcard.matching') }[mode]}
             </button>
           ))}
         </div>
@@ -351,9 +353,9 @@ export default function FlashcardReview({ onClose }) {
         {/* Session stats (flashcard mode only) */}
         {quizMode === 'flashcard' && phase !== 'done' && (
           <div className="flashcard-session-stats">
-            <span className="flashcard-stat-badge flashcard-stat-badge--due">{dueCount} due</span>
-            <span className="flashcard-stat-badge flashcard-stat-badge--new">{newCount} new</span>
-            <span className="flashcard-stat-badge flashcard-stat-badge--total">{langCards.length} total</span>
+            <span className="flashcard-stat-badge flashcard-stat-badge--due">{t('flashcard.due', { count: dueCount })}</span>
+            <span className="flashcard-stat-badge flashcard-stat-badge--new">{t('flashcard.new', { count: newCount })}</span>
+            <span className="flashcard-stat-badge flashcard-stat-badge--total">{t('flashcard.total', { count: langCards.length })}</span>
             {availableLangs.length === 1 && <span className="flashcard-stat-badge">{availableLangs[0].nameNative}</span>}
           </div>
         )}

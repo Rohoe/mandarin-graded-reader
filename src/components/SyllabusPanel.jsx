@@ -3,6 +3,7 @@ import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { UNDO_REMOVE_SYLLABUS, UNDO_REMOVE_STANDALONE_READER } from '../context/actionTypes';
 import { getLang, getAllLanguages } from '../lib/languages';
+import { useT } from '../i18n';
 import SyllabusToolbar from './SyllabusPanel/SyllabusToolbar';
 import SyllabusCourseItem from './SyllabusPanel/SyllabusCourseItem';
 import StandaloneReaderItem from './SyllabusPanel/StandaloneReaderItem';
@@ -33,6 +34,7 @@ export default function SyllabusPanel({
   }));
   const dispatch = useAppDispatch();
   const act = actions(dispatch);
+  const t = useT();
   const pendingCount = Object.keys(pendingReaders).length;
 
   const activeSyllabi    = syllabi.filter(s => !s.archived);
@@ -182,9 +184,9 @@ export default function SyllabusPanel({
         <button
           className="btn btn-ghost btn-sm syllabus-panel__new-btn"
           onClick={() => onShowNewForm?.()}
-          title="New syllabus or standalone reader"
+          title={t('sidebar.newTooltip')}
         >
-          + New
+          {t('sidebar.new')}
         </button>
       </div>
 
@@ -200,9 +202,9 @@ export default function SyllabusPanel({
       {/* Empty state */}
       {!hasContent && (
         <div className="syllabus-panel__empty">
-          <p className="syllabus-panel__empty-text text-muted">No readers yet</p>
+          <p className="syllabus-panel__empty-text text-muted">{t('sidebar.noReaders')}</p>
           <button className="btn btn-sm syllabus-panel__empty-cta" onClick={() => onShowNewForm?.()}>
-            Create Reader
+            {t('sidebar.createReader')}
           </button>
         </div>
       )}
@@ -210,7 +212,7 @@ export default function SyllabusPanel({
       {/* No filter results */}
       {hasContent && !hasFilteredContent && isFiltering && (
         <div className="syllabus-panel__no-results">
-          <p className="text-muted">No matching readers</p>
+          <p className="text-muted">{t('sidebar.noMatching')}</p>
         </div>
       )}
 
@@ -282,11 +284,11 @@ export default function SyllabusPanel({
       {/* Unsaved progress banner */}
       {!cloudUser && !bannerDismissed && (activeSyllabi.length > 0 || activeStandalone.filter(r => !r.isDemo).length > 0) && (
         <div className="syllabus-panel__save-banner" onClick={onShowSignIn} role="button" tabIndex={0}>
-          <span className="syllabus-panel__save-banner-text">Sign in to save your progress</span>
+          <span className="syllabus-panel__save-banner-text">{t('sidebar.signInBanner')}</span>
           <button
             className="syllabus-panel__save-banner-dismiss"
             onClick={e => { e.stopPropagation(); setBannerDismissed(true); }}
-            aria-label="Dismiss"
+            aria-label={t('common.dismiss')}
           >×</button>
         </div>
       )}

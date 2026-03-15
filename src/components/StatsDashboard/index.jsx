@@ -3,9 +3,11 @@ import { useAppSelector } from '../../context/useAppSelector';
 import { computeStats } from '../../lib/stats';
 import { getAllLanguages } from '../../lib/languages';
 import { loadActivityStash } from '../../lib/storage';
+import { useT } from '../../i18n';
 import './StatsDashboard.css';
 
 export default function StatsDashboard({ onClose, onShowFlashcards }) {
+  const t = useT();
   const statsState = useAppSelector(s => ({
     syllabi: s.syllabi,
     syllabusProgress: s.syllabusProgress,
@@ -45,27 +47,27 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
     <div className="modal-overlay stats-overlay" onClick={onClose}>
       <div className="stats-dashboard card" onClick={e => e.stopPropagation()}>
         <div className="stats-dashboard__header">
-          <h2 className="stats-dashboard__title font-display">Learning Stats</h2>
-          <button className="btn btn-ghost btn-sm stats-dashboard__close" onClick={onClose} aria-label="Close">✕</button>
+          <h2 className="stats-dashboard__title font-display">{t('stats.title')}</h2>
+          <button className="btn btn-ghost btn-sm stats-dashboard__close" onClick={onClose} aria-label={t('common.close')}>✕</button>
         </div>
 
         {/* Summary cards */}
         <div className="stats-dashboard__summary">
           <div className="stats-card">
             <span className="stats-card__value">{stats.totalWords}</span>
-            <span className="stats-card__label">Words Learned</span>
+            <span className="stats-card__label">{t('stats.wordsLearned')}</span>
           </div>
           <div className="stats-card">
             <span className="stats-card__value">{stats.totalLessons === 0 ? '—' : `${stats.completedLessons}/${stats.totalLessons}`}</span>
-            <span className="stats-card__label">{stats.totalLessons === 0 ? 'No courses yet' : 'Lessons Done'}</span>
+            <span className="stats-card__label">{stats.totalLessons === 0 ? t('stats.noCoursesYet') : t('stats.lessonsDone')}</span>
           </div>
           <div className="stats-card">
             <span className="stats-card__value">{stats.streak}</span>
-            <span className="stats-card__label">Day Streak</span>
+            <span className="stats-card__label">{t('stats.dayStreak')}</span>
           </div>
           <div className="stats-card">
             <span className="stats-card__value">{stats.avgQuizScore ?? '—'}</span>
-            <span className="stats-card__label">Avg Quiz Score</span>
+            <span className="stats-card__label">{t('stats.avgQuizScore')}</span>
           </div>
         </div>
 
@@ -73,7 +75,7 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
         {stats.totalWords > 0 && onShowFlashcards && (
           <div style={{ textAlign: 'center' }}>
             <button className="btn btn-secondary btn-sm" onClick={onShowFlashcards}>
-              Review flashcards
+              {t('stats.reviewFlashcards')}
             </button>
           </div>
         )}
@@ -81,7 +83,7 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
         {/* Vocab over time chart */}
         {stats.wordsByPeriod.length > 0 && (
           <div className="stats-dashboard__section">
-            <h3 className="stats-dashboard__section-title font-display">Vocabulary Growth</h3>
+            <h3 className="stats-dashboard__section-title font-display">{t('stats.vocabGrowth')}</h3>
             <div className="stats-chart">
               {stats.wordsByPeriod.map((bucket, i) => (
                 <div key={i} className="stats-chart__col">
@@ -102,14 +104,14 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
         {/* Per-language breakdown */}
         {Object.keys(stats.wordsByLang).length > 0 && (
           <div className="stats-dashboard__section">
-            <h3 className="stats-dashboard__section-title font-display">By Language</h3>
+            <h3 className="stats-dashboard__section-title font-display">{t('stats.byLanguage')}</h3>
             <div className="stats-dashboard__lang-list">
               {Object.entries(stats.wordsByLang).map(([langId, count]) => {
                 const lang = languages.find(l => l.id === langId);
                 return (
                   <div key={langId} className="stats-lang-row">
                     <span className="stats-lang-row__name">{lang?.nameNative || langId}</span>
-                    <span className="stats-lang-row__count">{count} words</span>
+                    <span className="stats-lang-row__count">{t('stats.words', { count })}</span>
                     <div className="stats-lang-row__bar-wrap">
                       <div className="stats-lang-row__bar" style={{ width: `${(count / stats.totalWords) * 100}%` }} />
                     </div>
@@ -123,23 +125,23 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
         {/* Flashcard Review stats */}
         {stats.totalFlashcardReviews > 0 && (
           <div className="stats-dashboard__section">
-            <h3 className="stats-dashboard__section-title font-display">Flashcard Review</h3>
+            <h3 className="stats-dashboard__section-title font-display">{t('stats.flashcardReview')}</h3>
             <div className="stats-dashboard__summary" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
               <div className="stats-card">
                 <span className="stats-card__value">{stats.totalFlashcardReviews}</span>
-                <span className="stats-card__label">Total Reviews</span>
+                <span className="stats-card__label">{t('stats.totalReviews')}</span>
               </div>
               <div className="stats-card">
                 <span className="stats-card__value">{stats.reviewsToday}</span>
-                <span className="stats-card__label">Today</span>
+                <span className="stats-card__label">{t('stats.today')}</span>
               </div>
               <div className="stats-card">
                 <span className="stats-card__value">{stats.flashcardStreak}</span>
-                <span className="stats-card__label">Review Streak</span>
+                <span className="stats-card__label">{t('stats.reviewStreak')}</span>
               </div>
               <div className="stats-card">
                 <span className="stats-card__value">{stats.retentionRate != null ? `${stats.retentionRate}%` : '—'}</span>
-                <span className="stats-card__label">Retention</span>
+                <span className="stats-card__label">{t('stats.retention')}</span>
               </div>
             </div>
             {/* Mastery breakdown bar */}
@@ -150,28 +152,28 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
                     <div
                       className="stats-mastery__segment stats-mastery__segment--mastered"
                       style={{ flex: stats.flashcardMastery.mastered }}
-                      title={`${stats.flashcardMastery.mastered} mastered`}
+                      title={t('stats.mastered', { count: stats.flashcardMastery.mastered })}
                     />
                   )}
                   {stats.flashcardMastery.learning > 0 && (
                     <div
                       className="stats-mastery__segment stats-mastery__segment--learning"
                       style={{ flex: stats.flashcardMastery.learning }}
-                      title={`${stats.flashcardMastery.learning} learning`}
+                      title={t('stats.learning', { count: stats.flashcardMastery.learning })}
                     />
                   )}
                   {stats.flashcardMastery.new > 0 && (
                     <div
                       className="stats-mastery__segment stats-mastery__segment--new"
                       style={{ flex: stats.flashcardMastery.new }}
-                      title={`${stats.flashcardMastery.new} new`}
+                      title={t('stats.new', { count: stats.flashcardMastery.new })}
                     />
                   )}
                 </div>
                 <div className="stats-mastery__labels">
-                  <span className="stats-mastery__label"><span className="stats-mastery__dot stats-mastery__dot--mastered"></span>{stats.flashcardMastery.mastered} mastered</span>
-                  <span className="stats-mastery__label"><span className="stats-mastery__dot stats-mastery__dot--learning"></span>{stats.flashcardMastery.learning} learning</span>
-                  <span className="stats-mastery__label"><span className="stats-mastery__dot stats-mastery__dot--new"></span>{stats.flashcardMastery.new} new</span>
+                  <span className="stats-mastery__label"><span className="stats-mastery__dot stats-mastery__dot--mastered"></span>{t('stats.mastered', { count: stats.flashcardMastery.mastered })}</span>
+                  <span className="stats-mastery__label"><span className="stats-mastery__dot stats-mastery__dot--learning"></span>{t('stats.learning', { count: stats.flashcardMastery.learning })}</span>
+                  <span className="stats-mastery__label"><span className="stats-mastery__dot stats-mastery__dot--new"></span>{t('stats.new', { count: stats.flashcardMastery.new })}</span>
                 </div>
               </div>
             )}
@@ -181,7 +183,7 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
         {/* Review Forecast (7-day) */}
         {stats.reviewForecast && stats.totalWords > 0 && (
           <div className="stats-dashboard__section">
-            <h3 className="stats-dashboard__section-title font-display">Review Forecast</h3>
+            <h3 className="stats-dashboard__section-title font-display">{t('stats.reviewForecast')}</h3>
             <div className="stats-chart">
               {stats.reviewForecast.map((day, i) => {
                 const maxForecast = Math.max(...stats.reviewForecast.map(d => d.count), 1);
@@ -205,7 +207,7 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
         {/* Retention Curve (8-week) */}
         {stats.retentionCurve && stats.totalFlashcardReviews > 0 && (
           <div className="stats-dashboard__section">
-            <h3 className="stats-dashboard__section-title font-display">Retention Curve</h3>
+            <h3 className="stats-dashboard__section-title font-display">{t('stats.retentionCurve')}</h3>
             <div className="stats-chart">
               {stats.retentionCurve.map((week, i) => (
                 <div key={i} className="stats-chart__col">
@@ -226,7 +228,7 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
         {/* Review Heatmap */}
         {stats.reviewHeatmap && stats.totalFlashcardReviews > 0 && (
           <div className="stats-dashboard__section">
-            <h3 className="stats-dashboard__section-title font-display">Review Activity</h3>
+            <h3 className="stats-dashboard__section-title font-display">{t('stats.reviewActivity')}</h3>
             <div className="stats-heatmap">
               <div className="stats-heatmap__grid">
                 {stats.reviewHeatmap.map((day, i) => (
@@ -238,11 +240,11 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
                 ))}
               </div>
               <div className="stats-heatmap__legend">
-                <span className="text-muted" style={{ fontSize: 'var(--text-xs)' }}>Less</span>
+                <span className="text-muted" style={{ fontSize: 'var(--text-xs)' }}>{t('stats.less')}</span>
                 {[0, 1, 2, 3, 4].map(level => (
                   <div key={level} className={`stats-heatmap__cell stats-heatmap__cell--${level}`} />
                 ))}
-                <span className="text-muted" style={{ fontSize: 'var(--text-xs)' }}>More</span>
+                <span className="text-muted" style={{ fontSize: 'var(--text-xs)' }}>{t('stats.more')}</span>
               </div>
             </div>
           </div>
@@ -251,19 +253,19 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
         {/* Reading Speed */}
         {stats.readingStats && (
           <div className="stats-dashboard__section">
-            <h3 className="stats-dashboard__section-title font-display">Reading</h3>
+            <h3 className="stats-dashboard__section-title font-display">{t('stats.reading')}</h3>
             <div className="stats-dashboard__summary" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
               <div className="stats-card">
                 <span className="stats-card__value">{stats.readingStats.totalMinutes}</span>
-                <span className="stats-card__label">Minutes Read</span>
+                <span className="stats-card__label">{t('stats.minutesRead')}</span>
               </div>
               <div className="stats-card">
                 <span className="stats-card__value">{stats.readingStats.sessionsCount}</span>
-                <span className="stats-card__label">Sessions</span>
+                <span className="stats-card__label">{t('stats.sessions')}</span>
               </div>
               <div className="stats-card">
                 <span className="stats-card__value">{stats.readingStats.unitsPerMinute ?? '—'}</span>
-                <span className="stats-card__label">Chars/min</span>
+                <span className="stats-card__label">{t('stats.charsPerMin')}</span>
               </div>
             </div>
           </div>
@@ -271,24 +273,24 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
 
         {/* Activity counts */}
         <div className="stats-dashboard__section">
-          <h3 className="stats-dashboard__section-title font-display">Activity</h3>
+          <h3 className="stats-dashboard__section-title font-display">{t('stats.activity')}</h3>
           <div className="stats-dashboard__activity">
-            <span>{stats.readersGenerated} readers generated</span>
-            <span>{stats.quizCount} quizzes graded</span>
-            <span>{stats.syllabusCount} syllabi created</span>
-            <span>{stats.standaloneCount} standalone readers</span>
+            <span>{t('stats.readersGenerated', { count: stats.readersGenerated })}</span>
+            <span>{t('stats.quizzesGraded', { count: stats.quizCount })}</span>
+            <span>{t('stats.syllabiCreated', { count: stats.syllabusCount })}</span>
+            <span>{t('stats.standaloneReaders', { count: stats.standaloneCount })}</span>
           </div>
           {!fullActivity && (
             <p className="text-muted" style={{ fontSize: 'var(--text-xs)', marginTop: 'var(--space-2)' }}>
-              Showing last 90 days.{' '}
+              {t('stats.showingLast90')}{' '}
               <button className="btn btn-ghost btn-xs" onClick={handleLoadFullHistory} style={{ padding: 0, textDecoration: 'underline' }}>
-                Load full history
+                {t('stats.loadFullHistory')}
               </button>
             </p>
           )}
           {fullActivity && (
             <p className="text-muted" style={{ fontSize: 'var(--text-xs)', marginTop: 'var(--space-2)' }}>
-              Showing full history ({fullActivity.length} entries)
+              {t('stats.showingFullHistory', { count: fullActivity.length })}
             </p>
           )}
         </div>

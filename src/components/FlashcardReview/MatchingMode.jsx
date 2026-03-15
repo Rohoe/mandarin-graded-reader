@@ -1,10 +1,12 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useT } from '../../i18n';
 
 /**
  * Matching quiz mode.
  * Shows 4-6 word/translation pairs, user clicks to match them.
  */
 export default function MatchingMode({ cards, onJudge, onClose }) {
+  const t = useT();
   const BATCH_SIZE = 5;
   const [batchIndex, setBatchIndex] = useState(0);
   const [selected, setSelected] = useState(null); // { side: 'left'|'right', index: number }
@@ -94,7 +96,7 @@ export default function MatchingMode({ cards, onJudge, onClose }) {
   if (cards.length === 0) {
     return (
       <div className="quiz-matching__empty">
-        <p className="text-muted">No cards available for matching.</p>
+        <p className="text-muted">{t('flashcard.noMatchingCards')}</p>
       </div>
     );
   }
@@ -102,13 +104,13 @@ export default function MatchingMode({ cards, onJudge, onClose }) {
   if (done) {
     return (
       <div className="flashcard-done">
-        <h3 className="font-display flashcard-done__title">Matching Complete</h3>
+        <h3 className="font-display flashcard-done__title">{t('flashcard.matchingComplete')}</h3>
         <div className="flashcard-done__stats">
-          <span className="flashcard-done__stat flashcard-done__stat--got">{results.correct} correct</span>
-          <span className="flashcard-done__stat flashcard-done__stat--missed">{results.incorrect} wrong attempts</span>
+          <span className="flashcard-done__stat flashcard-done__stat--got">{t('flashcard.correct', { count: results.correct })}</span>
+          <span className="flashcard-done__stat flashcard-done__stat--missed">{t('flashcard.wrongAttempts', { count: results.incorrect })}</span>
         </div>
         <div className="flashcard-done__actions">
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>{t('common.close')}</button>
         </div>
       </div>
     );
@@ -118,7 +120,7 @@ export default function MatchingMode({ cards, onJudge, onClose }) {
     <div className="quiz-matching">
       <div className="flashcard-progress">
         <span className="flashcard-progress__count text-muted">
-          Set {batchIndex + 1} of {batches.length}
+          {t('flashcard.setOf', { current: batchIndex + 1, total: batches.length })}
         </span>
       </div>
 

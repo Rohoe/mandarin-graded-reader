@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { getLang } from '../lib/languages';
+import { useT } from '../i18n';
 
 const LANG_LOCALE = { zh: 'zh', yue: 'zh', ko: 'ko', fr: 'fr', es: 'es', en: 'en' };
 
@@ -85,6 +86,7 @@ const SentencePopoverInner = forwardRef(function SentencePopoverInner(
   { sentenceText, translation, subText, subTranslation, style, onSubSelection, langId, romanizer, pinyinOn, ttsSupported, speakText, speakingKey },
   ref
 ) {
+  const t = useT();
   const [hoveredIdx, setHoveredIdx] = useState(null);
 
   const scriptRegex = useMemo(() => {
@@ -167,8 +169,8 @@ const SentencePopoverInner = forwardRef(function SentencePopoverInner(
           <button
             className={`popover-tts-btn${speakingKey === `sent-${sentenceText}` ? ' popover-tts-btn--active' : ''}`}
             onClick={(e) => { e.stopPropagation(); speakText(sentenceText, `sent-${sentenceText}`); }}
-            title={speakingKey === `sent-${sentenceText}` ? 'Stop' : 'Listen'}
-            aria-label={speakingKey === `sent-${sentenceText}` ? 'Stop speaking' : 'Listen to sentence'}
+            title={speakingKey === `sent-${sentenceText}` ? t('story.stop') : t('story.listen')}
+            aria-label={speakingKey === `sent-${sentenceText}` ? t('story.stopSpeaking') : t('story.listenToSentence')}
           >
             {speakingKey === `sent-${sentenceText}` ? '■' : 'TTS'}
           </button>

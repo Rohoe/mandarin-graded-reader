@@ -1,23 +1,25 @@
 import { usePWA } from '../hooks/usePWA';
+import { useT } from '../i18n';
 import './PWABanner.css';
 
 export default function PWABanner() {
+  const t = useT();
   const { isOnline, needRefresh, canInstall, updateApp, installApp, dismissInstall } = usePWA();
 
   return (
     <>
       {!isOnline && (
         <div className="pwa-offline-bar" role="alert">
-          You are offline — reading and flashcards still work.
+          {t('pwa.offline')}
         </div>
       )}
 
       {needRefresh && (
         <div className="pwa-toast" role="alert">
-          <span className="pwa-toast__text">A new version is available.</span>
+          <span className="pwa-toast__text">{t('pwa.newVersion')}</span>
           <div className="pwa-toast__actions">
             <button className="btn btn-primary btn-sm" onClick={updateApp}>
-              Refresh
+              {t('pwa.refresh')}
             </button>
           </div>
         </div>
@@ -25,13 +27,13 @@ export default function PWABanner() {
 
       {canInstall && !needRefresh && (
         <div className="pwa-toast">
-          <span className="pwa-toast__text">Install this app for offline access.</span>
+          <span className="pwa-toast__text">{t('pwa.installPrompt')}</span>
           <div className="pwa-toast__actions">
             <button className="btn btn-primary btn-sm" onClick={installApp}>
-              Install
+              {t('pwa.install')}
             </button>
             <button className="btn btn-ghost btn-sm" onClick={dismissInstall}>
-              Not now
+              {t('pwa.notNow')}
             </button>
           </div>
         </div>

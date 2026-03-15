@@ -6,22 +6,24 @@ import { parseReaderResponse } from '../lib/parser';
 import { pushToCloud, pullFromCloud, mergeData, pushMergedToCloud } from '../lib/cloudSync';
 import { MERGE_WITH_CLOUD } from '../context/actionTypes';
 import { getProvider } from '../lib/providers';
+import { useT } from '../i18n';
 import SettingsReadingTab from './SettingsReadingTab';
 import SettingsAITab from './SettingsAITab';
 import SettingsSyncTab from './SettingsSyncTab';
 import SettingsAdvancedTab from './SettingsAdvancedTab';
 import './Settings.css';
 
-const TABS = [
-  { id: 'reading',  label: 'Reading' },
-  { id: 'ai',       label: 'AI Provider' },
-  { id: 'sync',     label: 'Sync' },
-  { id: 'advanced', label: 'Advanced' },
-];
-
 export default function Settings({ onClose }) {
   const { state, dispatch, pickSaveFolder, removeSaveFolder, clearAllData, performRestore, performRevertMerge } = useApp();
   const act = actions(dispatch);
+  const t = useT();
+
+  const TABS = [
+    { id: 'reading',  label: t('settings.tabs.reading') },
+    { id: 'ai',       label: t('settings.tabs.ai') },
+    { id: 'sync',     label: t('settings.tabs.sync') },
+    { id: 'advanced', label: t('settings.tabs.advanced') },
+  ];
 
   const hasAnyKey = Object.values(state.providerKeys).some(k => k);
   const [activeTab, setActiveTab] = useState(hasAnyKey ? 'reading' : 'ai');
@@ -49,7 +51,7 @@ export default function Settings({ onClose }) {
     const trimmed = newKey.trim();
     if (!trimmed) return;
     act.setProviderKey(state.activeProvider, trimmed);
-    act.notify('success', 'API key updated.');
+    act.notify('success', t('notify.apiKeyUpdated'));
     setNewKey('');
   }
 
@@ -71,7 +73,7 @@ export default function Settings({ onClose }) {
       });
       count++;
     }
-    act.notify('success', `Re-parsed ${count} reader${count !== 1 ? 's' : ''} from cached text.`);
+    act.notify('success', t('notify.reParsed', { count }));
   }
 
   function handleExportBackup() {
@@ -98,7 +100,7 @@ export default function Settings({ onClose }) {
           throw new Error('Invalid backup file: missing syllabi field.');
         }
         performRestore(data);
-        act.notify('success', 'Backup restored successfully.');
+        act.notify('success', t('notify.backupRestored'));
         setConfirmRestore(false);
       } catch (err) {
         setRestoreError(err.message);
@@ -119,9 +121,9 @@ export default function Settings({ onClose }) {
         localStorage.removeItem('gradedReader_preMergeSnapshot');
         act.clearMergeSnapshot();
       }
-      act.notify('success', 'Pushed to cloud.');
+      act.notify('success', t('notify.pushedToCloud'));
     } catch (e) {
-      act.notify('error', `Push failed: ${e.message}`);
+      act.notify('error', t('notify.pushFailed', { error: e.message }));
     } finally {
       act.setCloudSyncing(false);
     }
@@ -132,7 +134,7 @@ export default function Settings({ onClose }) {
     try {
       const cloudData = await pullFromCloud();
       if (!cloudData) {
-        act.notify('error', 'No cloud data found.');
+        act.notify('error', t('notify.noCloudData'));
         return;
       }
       // Merge cloud data with local (additive, no data loss)
@@ -145,9 +147,9 @@ export default function Settings({ onClose }) {
         localStorage.removeItem('gradedReader_preMergeSnapshot');
         act.clearMergeSnapshot();
       }
-      act.notify('success', 'Pulled and merged from cloud.');
+      act.notify('success', t('notify.pulledFromCloud'));
     } catch (e) {
-      act.notify('error', `Pull failed: ${e.message}`);
+      act.notify('error', t('notify.pullFailed', { error: e.message }));
     } finally {
       act.setCloudSyncing(false);
     }
@@ -156,7 +158,7 @@ export default function Settings({ onClose }) {
   async function handleClearAll() {
     if (!confirmClear) { setConfirmClear(true); return; }
     await clearAllData();
-    act.notify('success', 'All app data cleared.');
+    act.notify('success', t('notify.allDataCleared'));
     setConfirmClear(false);
     onClose?.();
   }
@@ -174,8 +176,8 @@ export default function Settings({ onClose }) {
     <div className="modal-overlay settings-overlay" onClick={e => e.target === e.currentTarget && onClose?.()}>
       <div className="settings-panel card card-padded fade-in">
         <div className="settings-panel__header">
-          <h2 className="font-display settings-panel__title">Settings</h2>
-          <button className="btn btn-ghost settings-panel__close" onClick={onClose} aria-label="Close settings">✕</button>
+          <h2 className="font-display settings-panel__title">{t('settings.title')}</h2>
+          <button className="btn btn-ghost settings-panel__close" onClick={onClose} aria-label={t('settings.closeSettings')}>✕</button>
         </div>
 
         {/* Tab bar */}
@@ -208,7 +210,7 @@ export default function Settings({ onClose }) {
             >
               {tab.label}
               {tab.id === 'ai' && !hasAnyKey && (
-                <span className="settings-tabs__warning-dot" title="No API key configured" />
+                <span className="settings-tabs__warning-dot" title={t('settings.noApiKeyWarning')} />
               )}
             </button>
           ))}

@@ -1,4 +1,5 @@
 import { loadAllReaders } from '../lib/storage';
+import { useT } from '../i18n';
 
 export default function SettingsAdvancedTab({
   state,
@@ -9,13 +10,15 @@ export default function SettingsAdvancedTab({
   saveFolder,
   handleReparseAll,
 }) {
+  const t = useT();
+
   return (
     <>
       {/* Max output tokens */}
       <section className="settings-section">
-        <h3 className="settings-section__title form-label">API Output Tokens</h3>
+        <h3 className="settings-section__title form-label">{t('settings.advanced.outputTokens')}</h3>
         <p className="settings-section__desc text-muted">
-          Maximum output tokens per generation. Increase this if readers are being cut off.
+          {t('settings.advanced.outputTokensDesc')}
         </p>
         <div className="settings-slider-row">
           <span className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>4 096</span>
@@ -30,8 +33,8 @@ export default function SettingsAdvancedTab({
           onChange={e => act.setMaxTokens(e.target.value)}
         />
         <p className="settings-section__desc text-muted" style={{ fontSize: 'var(--text-xs)' }}>
-          Current: <code className="settings-key-preview">{state.maxTokens.toLocaleString()} tokens</code>
-          {state.maxTokens > 8192 && ' \u2014 Note: values above 8,192 may not be supported by all API tiers.'}
+          {t('settings.advanced.currentTokens')} <code className="settings-key-preview">{state.maxTokens.toLocaleString()} tokens</code>
+          {state.maxTokens > 8192 && ` \u2014 ${t('settings.advanced.outputTokensNote')}`}
         </p>
       </section>
 
@@ -41,11 +44,9 @@ export default function SettingsAdvancedTab({
       <section className="settings-section">
         <div className="settings-toggle-row">
           <div>
-            <h3 className="settings-section__title form-label">Structured Output</h3>
+            <h3 className="settings-section__title form-label">{t('settings.advanced.structuredOutput')}</h3>
             <p className="settings-section__desc text-muted">
-              Use provider-native structured output (tool use for Anthropic, JSON schema for OpenAI, response schema for Gemini).
-              May improve parsing reliability but is not supported by all providers.
-              OpenAI-compatible endpoints fall back to the standard text parser.
+              {t('settings.advanced.structuredOutputDesc')}
             </p>
           </div>
           <button
@@ -67,12 +68,12 @@ export default function SettingsAdvancedTab({
           <>
             <hr className="divider" />
             <section className="settings-section">
-              <h3 className="settings-section__title form-label">Re-parse Cached Readers</h3>
+              <h3 className="settings-section__title form-label">{t('settings.advanced.reparseCachedReaders')}</h3>
               <p className="settings-section__desc text-muted">
-                Re-parse all cached readers from their saved raw text. Use this after a parser update to refresh vocabulary and examples without regenerating.
+                {t('settings.advanced.reparseDesc')}
               </p>
               <button className="btn btn-secondary btn-sm" onClick={handleReparseAll}>
-                Re-parse {readerCount} cached reader{readerCount !== 1 ? 's' : ''}
+                {readerCount === 1 ? t('settings.advanced.reparseCountOne') : t('settings.advanced.reparseCount', { count: readerCount })}
               </button>
             </section>
           </>
@@ -84,11 +85,11 @@ export default function SettingsAdvancedTab({
       {/* Danger zone */}
       <section className="settings-section">
         <h3 className="settings-section__title form-label" style={{ color: 'var(--color-error)' }}>
-          Danger Zone
+          {t('settings.advanced.dangerZone')}
         </h3>
         <p className="settings-section__desc text-muted">
-          Clear all syllabi, generated readers, and vocabulary history from browser storage.
-          {saveFolder && ' Files in your save folder are not deleted.'}
+          {t('settings.advanced.clearDesc')}
+          {saveFolder && t('settings.advanced.clearDescFolder')}
         </p>
         <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
           <button
@@ -100,11 +101,11 @@ export default function SettingsAdvancedTab({
               border: '1px solid var(--color-error)',
             } : { background: 'transparent', color: 'var(--color-text-muted)' }}
           >
-            {confirmClear ? 'Click again to confirm' : 'Clear browser data'}
+            {confirmClear ? t('settings.advanced.confirmClear') : t('settings.advanced.clearBrowserData')}
           </button>
           {confirmClear && (
             <button className="btn btn-ghost btn-sm" onClick={() => setConfirmClear(false)}>
-              Cancel
+              {t('common.cancel')}
             </button>
           )}
         </div>

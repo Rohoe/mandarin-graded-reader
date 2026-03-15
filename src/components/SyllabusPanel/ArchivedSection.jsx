@@ -1,6 +1,8 @@
 import { getLang } from '../../lib/languages';
+import { useT } from '../../i18n';
 
 export default function ArchivedSection({ archivedSyllabi, archivedStandalone, archivedOpen, setArchivedOpen, generatedReaders, onUnarchiveSyllabus, onUnarchiveReader, onDelete }) {
+  const t = useT();
   const archivedCount = archivedSyllabi.length + archivedStandalone.length;
   if (archivedCount === 0) return null;
 
@@ -12,7 +14,7 @@ export default function ArchivedSection({ archivedSyllabi, archivedStandalone, a
         aria-expanded={archivedOpen}
         aria-controls="archived-items-list"
       >
-        <span className="form-label text-muted">Archived ({archivedCount})</span>
+        <span className="form-label text-muted">{t('archived.title', { count: archivedCount })}</span>
         <span className="syllabus-panel__caret-btn">{archivedOpen ? '▾' : '▸'}</span>
       </button>
       {archivedOpen && (
@@ -23,20 +25,20 @@ export default function ArchivedSection({ archivedSyllabi, archivedStandalone, a
                 <span className="syllabus-panel__lesson-text">
                   <span className="syllabus-panel__lesson-zh text-chinese">{s.topic}</span>
                   <span className="syllabus-panel__lesson-en text-muted">
-                    {getLang(s.langId).proficiency.name} {s.level} · Syllabus
+                    {getLang(s.langId).proficiency.name} {s.level} · {t('archived.syllabus')}
                   </span>
                 </span>
                 <button
                   className="btn btn-ghost btn-sm syllabus-panel__archive-btn"
                   onClick={() => onUnarchiveSyllabus(s.id)}
-                  aria-label="Unarchive syllabus"
-                  title="Unarchive"
+                  aria-label={t('archived.unarchiveSyllabus')}
+                  title={t('archived.unarchive')}
                 >↩</button>
                 <button
                   className="btn btn-ghost btn-sm syllabus-panel__delete-btn"
                   onClick={() => onDelete(s.id, s.topic, 'syllabus')}
-                  aria-label="Delete syllabus"
-                  title="Delete permanently"
+                  aria-label={t('archived.deleteSyllabus')}
+                  title={t('archived.deletePermanently')}
                 >×</button>
               </div>
             </li>
@@ -55,14 +57,14 @@ export default function ArchivedSection({ archivedSyllabi, archivedStandalone, a
                 <button
                   className="btn btn-ghost btn-sm syllabus-panel__archive-btn"
                   onClick={() => onUnarchiveReader(r.key)}
-                  aria-label="Unarchive reader"
-                  title="Unarchive"
+                  aria-label={t('archived.unarchiveReader')}
+                  title={t('archived.unarchive')}
                 >↩</button>
                 <button
                   className="btn btn-ghost btn-sm syllabus-panel__delete-btn"
                   onClick={() => onDelete(r.key, r.topic, 'standalone')}
-                  aria-label="Delete reader"
-                  title="Delete permanently"
+                  aria-label={t('standalone.deleteReader')}
+                  title={t('archived.deletePermanently')}
                 >×</button>
               </div>
             </li>

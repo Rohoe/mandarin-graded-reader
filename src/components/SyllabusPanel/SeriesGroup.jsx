@@ -1,4 +1,7 @@
+import { useT } from '../../i18n';
+
 export default function SeriesGroup({ seriesId, episodes, standaloneKey, loading, generatedReaders, isExpanded, onToggle, onSelect, onArchive, onDelete }) {
+  const t = useT();
   const firstEp = episodes[0];
   const baseTopic = (firstEp.topic || '').replace(/^Continuation:\s*/i, '');
 
@@ -15,7 +18,7 @@ export default function SeriesGroup({ seriesId, episodes, standaloneKey, loading
             {firstEp.titleZh || generatedReaders[firstEp.key]?.titleZh || baseTopic}
           </span>
           <span className="syllabus-panel__item-meta text-muted">
-            {episodes.length} episode{episodes.length !== 1 ? 's' : ''}
+            {episodes.length === 1 ? t('series.episodeOne') : t('series.episodes', { count: episodes.length })}
           </span>
         </span>
         <span className="syllabus-panel__caret-btn">{isExpanded ? '▾' : '▸'}</span>
@@ -40,14 +43,14 @@ export default function SeriesGroup({ seriesId, episodes, standaloneKey, loading
                 <button
                   className="btn btn-ghost btn-sm syllabus-panel__archive-btn"
                   onClick={() => onArchive(r.key)}
-                  aria-label="Archive reader"
-                  title="Archive this reader"
+                  aria-label={t('standalone.archiveReader')}
+                  title={t('standalone.archiveTooltip')}
                 >⊟</button>
                 <button
                   className="btn btn-ghost btn-sm syllabus-panel__delete-btn"
                   onClick={() => onDelete(r.key, r.topic)}
-                  aria-label="Delete reader"
-                  title="Delete this reader"
+                  aria-label={t('standalone.deleteReader')}
+                  title={t('standalone.deleteTooltip')}
                 >×</button>
               </div>
             </li>

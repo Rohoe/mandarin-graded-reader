@@ -1,6 +1,8 @@
 import { getLang, getLessonTitle } from '../../lib/languages';
+import { useT } from '../../i18n';
 
 export default function SyllabusCourseItem({ syllabus, progress, isActive, isExpanded, standaloneKey, syllabusView, loading, onSyllabusClick, onToggleExpand, onLessonClick }) {
+  const t = useT();
   const sLang = getLang(syllabus.langId);
   const completedSet = new Set(progress.completedLessons);
   const lessons = syllabus.lessons || [];
@@ -24,7 +26,7 @@ export default function SyllabusCourseItem({ syllabus, progress, isActive, isExp
             role="button"
             tabIndex={0}
             aria-expanded={isExpanded}
-            aria-label={isExpanded ? 'Collapse lessons' : 'Expand lessons'}
+            aria-label={isExpanded ? t('course.collapseLessons') : t('course.expandLessons')}
           >
             {isExpanded ? '▾' : '▸'}
           </span>

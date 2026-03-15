@@ -1,4 +1,5 @@
 import { signInWithGoogle, signInWithApple, signOut } from '../lib/cloudSync';
+import { useT } from '../i18n';
 
 export default function SettingsSyncTab({
   state,
@@ -20,11 +21,13 @@ export default function SettingsSyncTab({
   removeSaveFolder,
   performRevertMerge,
 }) {
+  const t = useT();
+
   return (
     <>
       {/* localStorage usage */}
       <section className="settings-section">
-        <h3 className="settings-section__title form-label">Browser Storage Usage</h3>
+        <h3 className="settings-section__title form-label">{t('settings.sync.storageUsage')}</h3>
         <div className="settings-storage">
           <div className="settings-storage__bar">
             <div className="settings-storage__fill" style={{ width: `${Math.max(Math.min(usage.pct, 100), usage.pct > 0 ? 3 : 0)}%` }} />
@@ -39,17 +42,17 @@ export default function SettingsSyncTab({
 
       {/* Backup & Restore */}
       <section className="settings-section">
-        <h3 className="settings-section__title form-label">Backup &amp; Restore</h3>
+        <h3 className="settings-section__title form-label">{t('settings.sync.backupRestore')}</h3>
         <p className="settings-section__desc text-muted">
-          Export all your data (syllabi, readers, vocabulary) as a JSON file, or restore from a previous backup. Your API key is never included.
+          {t('settings.sync.backupDesc')}
         </p>
         <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', marginTop: 'var(--space-3)' }}>
           <button className="btn btn-secondary btn-sm" onClick={handleExportBackup}>
-            Export backup ↓
+            {t('settings.sync.exportBackup')}
           </button>
           {!confirmRestore ? (
             <button className="btn btn-ghost btn-sm" onClick={() => { setConfirmRestore(true); setRestoreError(null); }}>
-              Restore from backup…
+              {t('settings.sync.restoreFromBackup')}
             </button>
           ) : (
             <>
@@ -57,7 +60,7 @@ export default function SettingsSyncTab({
                 className="btn btn-sm"
                 style={{ background: 'var(--color-error-light)', color: 'var(--color-error)', border: '1px solid var(--color-error)', cursor: 'pointer' }}
               >
-                This will replace all data — choose file
+                {t('settings.sync.replaceAllData')}
                 <input
                   type="file"
                   accept=".json"
@@ -66,7 +69,7 @@ export default function SettingsSyncTab({
                 />
               </label>
               <button className="btn btn-ghost btn-sm" onClick={() => { setConfirmRestore(false); setRestoreError(null); }}>
-                Cancel
+                {t('common.cancel')}
               </button>
             </>
           )}
@@ -82,19 +85,19 @@ export default function SettingsSyncTab({
 
       {/* Cloud Sync */}
       <section className="settings-section">
-        <h3 className="settings-section__title form-label">Cloud Sync</h3>
+        <h3 className="settings-section__title form-label">{t('settings.sync.cloudSync')}</h3>
         {state.cloudUser ? (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <p className="settings-section__desc text-muted" style={{ margin: 0 }}>
-                Signed in as <strong>{state.cloudUser.email || state.cloudUser.user_metadata?.full_name || state.cloudUser.id}</strong>
+                {t('settings.sync.signedInAs')} <strong>{state.cloudUser.email || state.cloudUser.user_metadata?.full_name || state.cloudUser.id}</strong>
               </p>
               <button
                 className="btn btn-ghost btn-sm"
                 style={{ color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}
                 onClick={() => signOut()}
               >
-                Sign out
+                {t('settings.sync.signOut')}
               </button>
             </div>
             <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-3)', flexWrap: 'wrap' }}>
@@ -103,28 +106,28 @@ export default function SettingsSyncTab({
                 onClick={handlePushToCloud}
                 disabled={state.cloudSyncing}
               >
-                {state.cloudSyncing ? 'Syncing\u2026' : 'Push to cloud'}
+                {state.cloudSyncing ? t('settings.sync.syncing') : t('settings.sync.pushToCloud')}
               </button>
               <button
                 className="btn btn-secondary btn-sm"
                 onClick={handlePullFromCloud}
                 disabled={state.cloudSyncing}
               >
-                {state.cloudSyncing ? 'Syncing\u2026' : 'Pull from cloud'}
+                {state.cloudSyncing ? t('settings.sync.syncing') : t('settings.sync.pullFromCloud')}
               </button>
             </div>
           </>
         ) : (
           <>
             <p className="settings-section__desc text-muted">
-              Sign in to sync your syllabi, readers, and vocabulary across devices.
+              {t('settings.sync.signInDesc')}
             </p>
             <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', marginTop: 'var(--space-3)' }}>
               <button className="btn btn-secondary btn-sm" onClick={() => signInWithGoogle()}>
-                Sign in with Google
+                {t('settings.sync.signInGoogle')}
               </button>
               <button className="btn btn-secondary btn-sm" onClick={() => signInWithApple()}>
-                Sign in with Apple
+                {t('settings.sync.signInApple')}
               </button>
             </div>
           </>
@@ -145,13 +148,13 @@ export default function SettingsSyncTab({
           <>
             <hr className="divider" />
             <section className="settings-section">
-              <h3 className="settings-section__title form-label">Revert Last Sync</h3>
+              <h3 className="settings-section__title form-label">{t('settings.sync.revertLastSync')}</h3>
               <p className="settings-section__desc text-muted">
-                Undo the auto-merge that ran on startup{snapshotDate ? ` (${snapshotDate})` : ''}. Restores your local data to its pre-merge state.
+                {t('settings.sync.revertDesc', { date: snapshotDate ? ` (${snapshotDate})` : '' })}
               </p>
               {!confirmRevert ? (
                 <button className="btn btn-secondary btn-sm" onClick={() => setConfirmRevert(true)}>
-                  Revert last sync
+                  {t('settings.sync.revertBtn')}
                 </button>
               ) : (
                 <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
@@ -161,13 +164,13 @@ export default function SettingsSyncTab({
                     onClick={() => {
                       performRevertMerge();
                       setConfirmRevert(false);
-                      act.notify('success', 'Reverted to pre-merge state.');
+                      act.notify('success', t('notify.revertedToPreMerge'));
                     }}
                   >
-                    Confirm revert
+                    {t('settings.sync.confirmRevert')}
                   </button>
                   <button className="btn btn-ghost btn-sm" onClick={() => setConfirmRevert(false)}>
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                 </div>
               )}
@@ -180,12 +183,11 @@ export default function SettingsSyncTab({
 
       {/* Save folder */}
       <section className="settings-section">
-        <h3 className="settings-section__title form-label">Save Folder</h3>
+        <h3 className="settings-section__title form-label">{t('settings.sync.saveFolder')}</h3>
 
         {!fsSupported ? (
           <p className="settings-section__desc text-muted">
-            File System Access API is not supported in this browser.
-            Use Chrome or Edge to enable disk persistence.
+            {t('settings.sync.fsNotSupported')}
           </p>
         ) : saveFolder ? (
           <>
@@ -194,28 +196,26 @@ export default function SettingsSyncTab({
               <div>
                 <p className="settings-folder-name">{saveFolder.name}</p>
                 <p className="settings-section__desc text-muted" style={{ marginTop: 2 }}>
-                  Data is being saved to this folder on every change.
+                  {t('settings.sync.saveFolderActive')}
                 </p>
               </div>
             </div>
             <div className="settings-section__form">
               <button className="btn btn-secondary btn-sm" onClick={pickSaveFolder}>
-                Change folder
+                {t('settings.sync.changeFolder')}
               </button>
               <button className="btn btn-ghost btn-sm" onClick={removeSaveFolder}>
-                Remove folder
+                {t('settings.sync.removeFolder')}
               </button>
             </div>
           </>
         ) : (
           <>
             <p className="settings-section__desc text-muted">
-              Choose a folder on your computer where the app will save your syllabi,
-              readers, and vocabulary as JSON files. This is in addition to browser
-              storage and survives clearing browser data.
+              {t('settings.sync.saveFolderDesc')}
             </p>
             <button className="btn btn-secondary btn-sm" onClick={pickSaveFolder}>
-              📁 Choose save folder…
+              📁 {t('settings.sync.chooseSaveFolder')}
             </button>
           </>
         )}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PROVIDERS, getProvider, fetchProviderModels } from '../lib/providers';
+import { useT } from '../i18n';
 
 export default function SettingsAITab({
   state,
@@ -17,6 +18,7 @@ export default function SettingsAITab({
   setCustomUrlInput,
   handleUpdateKey,
 }) {
+  const t = useT();
   const [fetchingModels, setFetchingModels] = useState(false);
 
   async function handleRefreshModels() {
@@ -30,7 +32,7 @@ export default function SettingsAITab({
       if (models && models.length > 0) {
         act.setFetchedModels(providerId, models);
       } else {
-        act.notify('error', 'Could not fetch models. Check your API key and try again.');
+        act.notify('error', t('settings.ai.refreshFailed'));
       }
     } finally {
       setFetchingModels(false);
@@ -42,13 +44,13 @@ export default function SettingsAITab({
       {/* Demo key callout */}
       {!hasAnyKey && !!import.meta.env.VITE_DEFAULT_GEMINI_KEY && (
         <div className="settings-demo-callout">
-          You're currently using the <strong>demo API key</strong>. Add your own key below for faster responses and higher limits.
+          {t('settings.ai.demoCallout')}
         </div>
       )}
 
       {/* AI Provider */}
       <section className="settings-section">
-        <h3 className="settings-section__title form-label">AI Provider</h3>
+        <h3 className="settings-section__title form-label">{t('settings.ai.title')}</h3>
 
         {/* Provider pills */}
         <div className="pill-selector topic-form__lang-pills" style={{ marginBottom: 'var(--space-3)' }}>
@@ -87,7 +89,7 @@ export default function SettingsAITab({
             return (
               <>
                 <p className="settings-section__desc text-muted" style={{ marginBottom: 'var(--space-2)' }}>
-                  Preset
+                  {t('settings.ai.preset')}
                 </p>
                 <div className="pill-selector topic-form__lang-pills" style={{ marginBottom: 'var(--space-3)' }}>
                   {presets.map(preset => (
@@ -111,7 +113,7 @@ export default function SettingsAITab({
                   ))}
                 </div>
                 <p className="settings-section__desc text-muted" style={{ marginBottom: 'var(--space-2)' }}>
-                  Model name
+                  {t('settings.ai.modelName')}
                 </p>
                 <input
                   type="text"
@@ -128,7 +130,7 @@ export default function SettingsAITab({
                 {state.compatPreset === 'custom' && (
                   <>
                     <p className="settings-section__desc text-muted" style={{ marginBottom: 'var(--space-2)' }}>
-                      Base URL
+                      {t('settings.ai.baseUrl')}
                     </p>
                     <input
                       type="text"
@@ -151,10 +153,10 @@ export default function SettingsAITab({
           if (!showModelPicker) {
             return (
               <p className="settings-section__desc text-muted" style={{ marginBottom: 'var(--space-3)' }}>
-                Model: <strong>{modelLabel}</strong>
+                {t('settings.ai.model')}: <strong>{modelLabel}</strong>
                 {modelMissing && (
                   <span style={{ color: 'var(--color-warning, #b45309)', fontSize: 'var(--text-xs)', marginLeft: 'var(--space-1)' }}>
-                    (not in available models)
+                    {t('settings.ai.modelNotAvailable')}
                   </span>
                 )}
                 {' '}<button
@@ -163,7 +165,7 @@ export default function SettingsAITab({
                   style={{ fontSize: 'var(--text-xs)', padding: '0 var(--space-2)' }}
                   onClick={() => setShowModelPicker(true)}
                 >
-                  Change
+                  {t('settings.ai.change')}
                 </button>
               </p>
             );
@@ -172,7 +174,7 @@ export default function SettingsAITab({
           return (
             <>
               <p className="settings-section__desc text-muted" style={{ marginBottom: 'var(--space-2)' }}>
-                Model
+                {t('settings.ai.model')}
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
                 <select
@@ -185,7 +187,7 @@ export default function SettingsAITab({
                     <option key={m.id} value={m.id}>{m.label}</option>
                   ))}
                   {modelMissing && (
-                    <option value={currentModel}>{currentModel} (not found)</option>
+                    <option value={currentModel}>{currentModel} {t('settings.ai.notFound')}</option>
                   )}
                 </select>
                 {hasKey && (
@@ -196,13 +198,13 @@ export default function SettingsAITab({
                     onClick={handleRefreshModels}
                     disabled={fetchingModels}
                   >
-                    {fetchingModels ? 'Refreshing\u2026' : 'Refresh models'}
+                    {fetchingModels ? t('settings.ai.refreshing') : t('settings.ai.refreshModels')}
                   </button>
                 )}
               </div>
               {modelMissing && (
                 <p style={{ color: 'var(--color-warning, #b45309)', fontSize: 'var(--text-xs)', marginBottom: 'var(--space-2)' }}>
-                  Current model "{currentModel}" was not found in the available models list.
+                  {t('settings.ai.modelNotFound', { model: currentModel })}
                 </p>
               )}
               <p className="settings-section__desc text-muted" style={{ fontSize: 'var(--text-xs)', marginBottom: 'var(--space-3)' }}>
@@ -212,7 +214,7 @@ export default function SettingsAITab({
                   style={{ fontSize: 'var(--text-xs)', padding: '0 var(--space-2)' }}
                   onClick={() => { act.setActiveModel(state.activeProvider, null); setShowModelPicker(false); }}
                 >
-                  Reset to default
+                  {t('settings.ai.resetToDefault')}
                 </button>
               </p>
             </>
@@ -232,11 +234,11 @@ export default function SettingsAITab({
           return (
             <>
               <p className="settings-section__desc text-muted" style={{ marginBottom: gradingMissing ? 'var(--space-1)' : 'var(--space-3)' }}>
-                Grading model: <strong>{gradingLabel}</strong>
-                {isDefault && <span style={{ fontSize: 'var(--text-xs)', opacity: 0.7 }}> (default)</span>}
+                {t('settings.ai.gradingModel')} <strong>{gradingLabel}</strong>
+                {isDefault && <span style={{ fontSize: 'var(--text-xs)', opacity: 0.7 }}> {t('settings.ai.default')}</span>}
                 {gradingMissing && (
                   <span style={{ color: 'var(--color-warning, #b45309)', fontSize: 'var(--text-xs)', marginLeft: 'var(--space-1)' }}>
-                    (not in available models)
+                    {t('settings.ai.modelNotAvailable')}
                   </span>
                 )}
                 {' '}<select
@@ -249,7 +251,7 @@ export default function SettingsAITab({
                     <option key={m.id} value={m.id}>{m.label}</option>
                   ))}
                   {gradingMissing && (
-                    <option value={gradingModel}>{gradingModel} (not found)</option>
+                    <option value={gradingModel}>{gradingModel} {t('settings.ai.notFound')}</option>
                   )}
                 </select>
                 {!isDefault && (
@@ -259,13 +261,13 @@ export default function SettingsAITab({
                     style={{ fontSize: 'var(--text-xs)', padding: '0 var(--space-2)', marginLeft: 'var(--space-1)' }}
                     onClick={() => act.setGradingModel(state.activeProvider, null)}
                   >
-                    Reset
+                    {t('settings.ai.reset')}
                   </button>
                 )}
               </p>
               {gradingMissing && (
                 <p style={{ color: 'var(--color-warning, #b45309)', fontSize: 'var(--text-xs)', marginBottom: 'var(--space-3)' }}>
-                  Current grading model "{gradingModel}" was not found in the available models list.
+                  {t('settings.ai.modelNotFound', { model: gradingModel })}
                 </p>
               )}
             </>
@@ -274,9 +276,9 @@ export default function SettingsAITab({
 
         {/* API key input */}
         <p className="settings-section__desc text-muted">
-          API key for {getProvider(state.activeProvider).name}.
-          {' '}Current: <code className="settings-key-preview">
-            {state.providerKeys[state.activeProvider] ? `${state.providerKeys[state.activeProvider].slice(0, 12)}\u2026` : 'Not set'}
+          {t('settings.ai.apiKeyFor', { provider: getProvider(state.activeProvider).name })}
+          {' '}{t('settings.ai.current')} <code className="settings-key-preview">
+            {state.providerKeys[state.activeProvider] ? `${state.providerKeys[state.activeProvider].slice(0, 12)}\u2026` : t('settings.ai.notSet')}
           </code>
         </p>
         <form onSubmit={handleUpdateKey} className="settings-section__form">
@@ -294,7 +296,7 @@ export default function SettingsAITab({
             </button>
           </div>
           <button type="submit" className="btn btn-secondary btn-sm" disabled={!newKey.trim()}>
-            Update Key
+            {t('settings.ai.updateKey')}
           </button>
         </form>
       </section>

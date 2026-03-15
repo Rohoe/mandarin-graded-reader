@@ -3,9 +3,11 @@ import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { generateAnkiExport, generateAnkiApkgExport, downloadFile, downloadBlob } from '../lib/anki';
 import { translateText } from '../lib/translate';
+import { useT } from '../i18n';
 import './AnkiExportButton.css';
 
 export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes, langId, romanizer, vocabTranslations, onCacheVocabTranslations }) {
+  const t = useT();
   const exportedWords = useAppSelector(s => s.exportedWords);
   const exportSentenceRom = useAppSelector(s => s.exportSentenceRom?.[langId] ?? false);
   const exportSentenceTrans = useAppSelector(s => s.exportSentenceTrans?.[langId] ?? false);
@@ -85,7 +87,7 @@ export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes,
         }
       } catch (err) {
         console.error('APKG export failed:', err);
-        act.notify('error', 'APKG export failed. Try .txt format instead.');
+        act.notify('error', t('notify.apkgFailed'));
       } finally {
         setGenerating(false);
       }
@@ -106,23 +108,23 @@ export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes,
 
   const busy = translating || generating;
   const buttonLabel = translating
-    ? 'Translating\u2026'
+    ? t('anki.translating')
     : generating
-      ? 'Generating\u2026'
+      ? t('anki.generating')
       : allExported
-        ? 'Re-download Cards'
-        : 'Export Anki Cards';
+        ? t('anki.redownloadCards')
+        : t('anki.exportAnkiCards');
 
   return (
     <div className="anki-export">
       <div className="anki-export__info">
         <span className="anki-export__count">
-          <span className="anki-export__new">{newCount} new</span>
+          <span className="anki-export__new">{t('anki.new', { count: newCount })}</span>
           {skipCount > 0 && (
-            <span className="anki-export__skip text-muted"> · {skipCount} already exported</span>
+            <span className="anki-export__skip text-muted"> · {t('anki.alreadyExported', { count: skipCount })}</span>
           )}
         </span>
-        {exported && <span className="anki-export__done text-accent">✓ Downloaded</span>}
+        {exported && <span className="anki-export__done text-accent">{t('anki.downloaded')}</span>}
       </div>
 
       <div className="anki-export__actions">
@@ -131,7 +133,7 @@ export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes,
             type="button"
             className={`anki-export__fmt-btn ${format === 'apkg' ? 'anki-export__fmt-btn--active' : ''}`}
             onClick={() => setFormat('apkg')}
-            title="Anki package — import directly on mobile or desktop"
+            title={t('anki.apkgTitle')}
           >
             .apkg
           </button>
@@ -139,7 +141,7 @@ export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes,
             type="button"
             className={`anki-export__fmt-btn ${format === 'txt' ? 'anki-export__fmt-btn--active' : ''}`}
             onClick={() => setFormat('txt')}
-            title="Tab-separated text — for manual Anki import"
+            title={t('anki.txtTitle')}
           >
             .txt
           </button>
@@ -149,7 +151,7 @@ export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes,
           className={`btn ${newCount > 0 ? 'btn-secondary' : 'btn-ghost'} btn-sm anki-export__btn`}
           onClick={handleExport}
           disabled={busy}
-          title={allExported ? `Re-download all ${skipCount} cards` : `Export ${newCount} new Anki cards`}
+          title={allExported ? t('anki.redownloadTitle', { count: skipCount }) : t('anki.exportTitle', { count: newCount })}
         >
           {buttonLabel}
         </button>
@@ -162,7 +164,7 @@ export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes,
             checked={exportSentenceRom}
             onChange={e => act.setExportSentenceRom(langId, e.target.checked)}
           />
-          Sentence romanization
+          {t('anki.sentenceRomanization')}
         </label>
         <label className="anki-export__toggle-label">
           <input
@@ -170,7 +172,7 @@ export default function AnkiExportButton({ ankiJson, topic, level, grammarNotes,
             checked={exportSentenceTrans}
             onChange={e => act.setExportSentenceTrans(langId, e.target.checked)}
           />
-          Sentence translation
+          {t('anki.sentenceTranslation')}
         </label>
       </div>
     </div>

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { renderInline, stripMarkdown } from '../lib/renderInline';
+import { useT } from '../i18n';
 import './VocabularyList.css';
 
 function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSupported, showParagraphTools, onTranslateExample, translatingKey, vocabTranslations, visibleTranslations, toggleTranslation }) {
   const [open, setOpen] = useState(false);
+  const t = useT();
 
   function handleTts(e, text, key) {
     e.stopPropagation();
@@ -42,7 +44,7 @@ function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSuppor
         <div className="vocab-card__body fade-in">
           {word.exampleStory && (
             <div className="vocab-card__example">
-              <span className="vocab-card__example-label text-subtle">From story</span>
+              <span className="vocab-card__example-label text-subtle">{t('vocab.fromStory')}</span>
               <p className="vocab-card__example-text text-chinese">
                 {renderChars?.(word.exampleStory, `ves-${index}`) || renderInline(word.exampleStory)}
                 {showParagraphTools && (
@@ -51,8 +53,8 @@ function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSuppor
                       <button
                         className={`reader-view__para-tts-btn ${speakingKey === `vocab-story-${index}` ? 'reader-view__para-tts-btn--active' : ''}`}
                         onClick={(e) => handleTts(e, word.exampleStory, `vocab-story-${index}`)}
-                        title="Listen"
-                        aria-label="Listen to example sentence"
+                        title={t('story.listen')}
+                        aria-label={t('vocab.listenToExample')}
                       >
                         {speakingKey === `vocab-story-${index}` ? '⏹' : '🔊'}
                       </button>
@@ -61,8 +63,8 @@ function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSuppor
                       className={`reader-view__translate-btn ${translatingKey === `story-${index}` ? 'reader-view__translate-btn--loading' : ''} ${visibleTranslations.has(`story-${index}`) ? 'reader-view__translate-btn--active' : ''}`}
                       onClick={(e) => handleTranslate(e, 'story', word.exampleStory)}
                       disabled={translatingKey === `story-${index}`}
-                      title={visibleTranslations.has(`story-${index}`) ? 'Hide translation' : 'Translate to English'}
-                      aria-label={visibleTranslations.has(`story-${index}`) ? 'Hide translation' : 'Translate to English'}
+                      title={visibleTranslations.has(`story-${index}`) ? t('vocab.hideTranslation') : t('vocab.translateToEnglish')}
+                      aria-label={visibleTranslations.has(`story-${index}`) ? t('vocab.hideTranslation') : t('vocab.translateToEnglish')}
                     >
                       EN
                     </button>
@@ -79,7 +81,7 @@ function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSuppor
           )}
           {word.exampleExtra && (
             <div className="vocab-card__example">
-              <span className="vocab-card__example-label text-subtle">Additional example</span>
+              <span className="vocab-card__example-label text-subtle">{t('vocab.additionalExample')}</span>
               <p className="vocab-card__example-text text-chinese">
                 {renderChars?.(word.exampleExtra, `vee-${index}`) || renderInline(word.exampleExtra)}
                 {showParagraphTools && (
@@ -88,8 +90,8 @@ function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSuppor
                       <button
                         className={`reader-view__para-tts-btn ${speakingKey === `vocab-extra-${index}` ? 'reader-view__para-tts-btn--active' : ''}`}
                         onClick={(e) => handleTts(e, word.exampleExtra, `vocab-extra-${index}`)}
-                        title="Listen"
-                        aria-label="Listen to example sentence"
+                        title={t('story.listen')}
+                        aria-label={t('vocab.listenToExample')}
                       >
                         {speakingKey === `vocab-extra-${index}` ? '⏹' : '🔊'}
                       </button>
@@ -98,8 +100,8 @@ function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSuppor
                       className={`reader-view__translate-btn ${translatingKey === `extra-${index}` ? 'reader-view__translate-btn--loading' : ''} ${visibleTranslations.has(`extra-${index}`) ? 'reader-view__translate-btn--active' : ''}`}
                       onClick={(e) => handleTranslate(e, 'extra', word.exampleExtra)}
                       disabled={translatingKey === `extra-${index}`}
-                      title={visibleTranslations.has(`extra-${index}`) ? 'Hide translation' : 'Translate to English'}
-                      aria-label={visibleTranslations.has(`extra-${index}`) ? 'Hide translation' : 'Translate to English'}
+                      title={visibleTranslations.has(`extra-${index}`) ? t('vocab.hideTranslation') : t('vocab.translateToEnglish')}
+                      aria-label={visibleTranslations.has(`extra-${index}`) ? t('vocab.hideTranslation') : t('vocab.translateToEnglish')}
                     >
                       EN
                     </button>
@@ -123,6 +125,7 @@ function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSuppor
 export default function VocabularyList({ vocabulary, renderChars, speakText, speakingKey, ttsSupported, showParagraphTools, onTranslateExample, translatingKey, vocabTranslations }) {
   const [collapsed, setCollapsed] = useState(false);
   const [visibleTranslations, setVisibleTranslations] = useState(new Set());
+  const t = useT();
 
   function toggleTranslation(key, forceShow) {
     setVisibleTranslations(prev => {
@@ -144,7 +147,7 @@ export default function VocabularyList({ vocabulary, renderChars, speakText, spe
         aria-controls="vocabulary-list-content"
       >
         <h2 className="vocabulary-list__title font-display">
-          Vocabulary <span className="vocabulary-list__count">({vocabulary.length})</span>
+          {t('vocab.title')} <span className="vocabulary-list__count">({vocabulary.length})</span>
         </h2>
         <span className="vocabulary-list__toggle-icon">{collapsed ? '▼' : '▲'}</span>
       </button>

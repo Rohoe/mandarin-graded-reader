@@ -1,6 +1,8 @@
 import { getLessonTitle } from '../lib/languages';
+import { useT } from '../i18n';
 
 export default function ReaderHeader({ reader, lessonMeta, langId, profBadge, storyText, ttsSupported, speakingKey, speakText, stopSpeaking }) {
+  const t = useT();
   return (
     <header className="reader-view__header">
       <div className="reader-view__header-text">
@@ -18,8 +20,8 @@ export default function ReaderHeader({ reader, lessonMeta, langId, profBadge, st
           <button
             className={`btn btn-ghost btn-sm reader-view__tts-btn ${speakingKey === 'story' ? 'reader-view__tts-btn--active' : ''}`}
             onClick={() => speakingKey ? (window.speechSynthesis.cancel(), stopSpeaking()) : speakText(storyText.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1'), 'story')}
-            title={speakingKey ? 'Stop' : 'Listen to story'}
-            aria-label={speakingKey ? 'Stop' : 'Listen to story'}
+            title={speakingKey ? t('reader.header.stop') : t('reader.header.listenToStory')}
+            aria-label={speakingKey ? t('reader.header.stop') : t('reader.header.listenToStory')}
           >
             {speakingKey ? '⏹' : '🔊'}
           </button>
