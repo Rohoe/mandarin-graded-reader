@@ -277,7 +277,7 @@ export function buildExternalTutorPrompt(reader, lessonMeta, langConfig, nativeL
     prompt += `## Vocabulary\n`;
     for (const v of reader.vocabulary.slice(0, 20)) {
       const rom = v.romanization ? ` (${v.romanization})` : '';
-      prompt += `- **${v.target}**${rom} — ${v.english}\n`;
+      prompt += `- **${v.target}**${rom} — ${v.translation || v.english}\n`;
     }
     prompt += '\n';
   }

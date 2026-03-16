@@ -411,13 +411,13 @@ export function normalizeStructuredReader(rawJson, langId = DEFAULT_LANG_ID) {
   }
 
   const vocabulary = (data.vocabulary || []).map(v => ({
-    target:       v.target || v.chinese || v.korean || '',
-    chinese:      v.target || v.chinese || '',
-    korean:       v.korean || v.target || '',
+    target:       v.target || v.word || v.chinese || v.korean || '',
+    chinese:      v.target || v.word || v.chinese || '',
+    korean:       v.korean || v.target || v.word || '',
     romanization: v.romanization || v.pinyin || v.jyutping || '',
     pinyin:       v.romanization || v.pinyin || '',
-    translation:  v.english || '',
-    english:      v.english || '',
+    translation:  v.translation || v.english || v.definition || '',
+    english:      v.translation || v.english || v.definition || '',
     exampleStory:             v.example_story || '',
     exampleStoryTranslation:  v.example_story_translation || '',
     usageNoteStory:           v.usage_note_story || '',
