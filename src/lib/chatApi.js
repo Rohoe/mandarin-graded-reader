@@ -276,8 +276,10 @@ export function buildExternalTutorPrompt(reader, lessonMeta, langConfig, nativeL
   if (reader?.vocabulary?.length > 0) {
     prompt += `## Vocabulary\n`;
     for (const v of reader.vocabulary.slice(0, 20)) {
-      const rom = v.romanization ? ` (${v.romanization})` : '';
-      prompt += `- **${v.target}**${rom} — ${v.translation || v.english}\n`;
+      const word = v.target || v.chinese || v.korean || v.word || '';
+      const def = v.translation || v.english || v.definition || '';
+      const rom = (v.romanization || v.pinyin || v.jyutping) ? ` (${v.romanization || v.pinyin || v.jyutping})` : '';
+      prompt += `- **${word}**${rom} — ${def}\n`;
     }
     prompt += '\n';
   }
