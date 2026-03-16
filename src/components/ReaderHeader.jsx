@@ -1,7 +1,7 @@
 import { getLessonTitle } from '../lib/languages';
 import { useT } from '../i18n';
 
-export default function ReaderHeader({ reader, lessonMeta, langId, profBadge, storyText, ttsSupported, speakingKey, speakText, stopSpeaking }) {
+export default function ReaderHeader({ reader, lessonMeta, langId, profBadge, storyText, ttsSupported, speakingKey, speakText, stopSpeaking, onOpenChat }) {
   const t = useT();
   return (
     <header className="reader-view__header">
@@ -15,8 +15,18 @@ export default function ReaderHeader({ reader, lessonMeta, langId, profBadge, st
         </h1>
         {reader.titleEn && <p className="reader-view__title-en font-display text-muted">{reader.titleEn}</p>}
       </div>
-      {ttsSupported && (
-        <div className="reader-view__header-actions">
+      <div className="reader-view__header-actions">
+        {onOpenChat && (
+          <button
+            className="btn btn-ghost btn-sm reader-view__tts-btn"
+            onClick={onOpenChat}
+            title={t('tutor.chatWithTutor')}
+            aria-label={t('tutor.chatWithTutor')}
+          >
+            💬
+          </button>
+        )}
+        {ttsSupported && (
           <button
             className={`btn btn-ghost btn-sm reader-view__tts-btn ${speakingKey === 'story' ? 'reader-view__tts-btn--active' : ''}`}
             onClick={() => speakingKey ? (window.speechSynthesis.cancel(), stopSpeaking()) : speakText(storyText.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1'), 'story')}
@@ -25,8 +35,8 @@ export default function ReaderHeader({ reader, lessonMeta, langId, profBadge, st
           >
             {speakingKey ? '⏹' : '🔊'}
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </header>
   );
 }

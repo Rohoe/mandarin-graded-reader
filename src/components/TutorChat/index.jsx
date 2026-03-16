@@ -5,7 +5,8 @@
 
 import { useEffect, useRef } from 'react';
 import { useT } from '../../i18n';
-import { useAppSelector } from '../../context/useAppSelector';
+import { useAppSelector, useAppDispatch } from '../../context/useAppSelector';
+import { actions } from '../../context/actions';
 import { getLang } from '../../lib/languages';
 import { getNativeLang } from '../../lib/nativeLanguages';
 import { buildLLMConfig, hasAnyUserKey } from '../../lib/llmConfig';
@@ -18,6 +19,8 @@ import './TutorChat.css';
 
 export default function TutorChat({ lessonKey, reader, lessonMeta, syllabus, onClose }) {
   const t = useT();
+  const dispatch = useAppDispatch();
+  const act = actions(dispatch);
   const messagesEndRef = useRef(null);
   const drawerRef = useRef(null);
 
@@ -60,7 +63,11 @@ export default function TutorChat({ lessonKey, reader, lessonMeta, syllabus, onC
 
   function handleOpenExternal(target) {
     const prompt = buildExternalTutorPrompt(reader, lessonMeta, langConfig, nativeLangName);
-    navigator.clipboard.writeText(prompt).catch(() => {});
+    navigator.clipboard.writeText(prompt).then(() => {
+      act.notify('success', t('tutor.contextCopied'));
+    }).catch(() => {
+      act.notify('success', t('tutor.contextCopied'));
+    });
 
     const url = target === 'claude'
       ? 'https://claude.ai/new'

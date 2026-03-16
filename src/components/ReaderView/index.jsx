@@ -348,6 +348,7 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
         speakingKey={speakingKey}
         speakText={speakText}
         stopSpeaking={stopSpeaking}
+        onOpenChat={onOpenChat}
       />
 
       <hr className="divider" />
@@ -452,13 +453,6 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
         isPending={isPending}
         langId={langId}
       />
-
-      {/* Tutor chat FAB */}
-      {onOpenChat && (
-        <button className="tutor-fab" onClick={onOpenChat} aria-label={t('tutor.fab')} title={t('tutor.chatWithTutor')}>
-          💬
-        </button>
-      )}
     </article>
   );
 }
