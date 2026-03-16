@@ -302,6 +302,87 @@
   color: var(--color-text);
 }
 
+/* ── External prompt card ─────────────────────────────────── */
+.tutor-chat__external-card {
+  flex-shrink: 0;
+  margin: 0 var(--space-4) var(--space-3);
+  margin-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  background: var(--color-bg-elevated);
+  animation: msgFadeIn 0.15s ease;
+}
+
+.tutor-chat__external-card-label {
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--space-2);
+}
+
+.tutor-chat__external-preview {
+  font-family: var(--font-mono, monospace);
+  font-size: var(--text-xs);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-subtle);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  max-height: 80px;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: var(--space-2);
+}
+
+.tutor-chat__external-hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  line-height: var(--leading-relaxed);
+  margin: 0 0 var(--space-3);
+}
+
+.tutor-chat__external-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tutor-chat__external-copied {
+  text-align: center;
+  padding: var(--space-2) 0;
+}
+
+.tutor-chat__external-copied-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--color-accent);
+  margin: 0 0 var(--space-1);
+}
+
+.tutor-chat__external-copied .tutor-chat__external-hint {
+  margin-bottom: var(--space-2);
+}
+
+.tutor-chat__kbd {
+  display: inline-block;
+  font-family: var(--font-mono, monospace);
+  font-size: var(--text-xs);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 1px var(--space-2);
+  color: var(--color-text);
+  box-shadow: 0 1px 0 var(--color-border);
+  margin-bottom: var(--space-2);
+}
+
 /* ── Summary card ─────────────────────────────────────────── */
 .tutor-chat__summary-card {
   background: var(--color-bg-elevated);

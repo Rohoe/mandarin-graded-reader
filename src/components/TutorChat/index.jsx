@@ -3,10 +3,9 @@
  * Desktop: 400px slide-in. Mobile: full-screen.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useT } from '../../i18n';
-import { useAppSelector, useAppDispatch } from '../../context/useAppSelector';
-import { actions } from '../../context/actions';
+import { useAppSelector } from '../../context/useAppSelector';
 import { getLang } from '../../lib/languages';
 import { getNativeLang } from '../../lib/nativeLanguages';
 import { buildLLMConfig, hasAnyUserKey } from '../../lib/llmConfig';
@@ -19,8 +18,6 @@ import './TutorChat.css';
 
 export default function TutorChat({ lessonKey, reader, lessonMeta, syllabus, onClose }) {
   const t = useT();
-  const dispatch = useAppDispatch();
-  const act = actions(dispatch);
   const messagesEndRef = useRef(null);
   const drawerRef = useRef(null);
 
@@ -61,18 +58,33 @@ export default function TutorChat({ lessonKey, reader, lessonMeta, syllabus, onC
     return () => { document.body.style.overflow = ''; };
   }, []);
 
-  function handleOpenExternal(target) {
-    const prompt = buildExternalTutorPrompt(reader, lessonMeta, langConfig, nativeLangName);
-    navigator.clipboard.writeText(prompt).then(() => {
-      act.notify('success', t('tutor.contextCopied'));
-    }).catch(() => {
-      act.notify('success', t('tutor.contextCopied'));
-    });
+  // External flow: null | { target: 'claude' | 'chatgpt', step: 'preview' | 'copied' }
+  const [externalFlow, setExternalFlow] = useState(null);
 
-    const url = target === 'claude'
+  const isMac = useMemo(() => typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform), []);
+  const pasteShortcut = isMac ? '\u2318V' : 'Ctrl+V';
+
+  const externalPrompt = useMemo(() => {
+    if (!externalFlow) return '';
+    return buildExternalTutorPrompt(reader, lessonMeta, langConfig, nativeLangName);
+  }, [externalFlow, reader, lessonMeta, langConfig, nativeLangName]);
+
+  function handleStartExternal(target) {
+    setExternalFlow({ target, step: 'preview' });
+  }
+
+  function handleCopyAndOpen() {
+    if (!externalFlow) return;
+    const url = externalFlow.target === 'claude'
       ? 'https://claude.ai/new'
       : 'https://chatgpt.com';
+    navigator.clipboard.writeText(externalPrompt).catch(() => {});
     window.open(url, '_blank');
+    setExternalFlow(f => f && { ...f, step: 'copied' });
+  }
+
+  function handleCopyAgain() {
+    navigator.clipboard.writeText(externalPrompt).catch(() => {});
   }
 
   const showChips = messages.length === 0;
@@ -175,14 +187,58 @@ export default function TutorChat({ lessonKey, reader, lessonMeta, syllabus, onC
         )}
 
         {/* External links — always shown */}
-        <div className="tutor-chat__external">
-          <button className="tutor-chat__external-btn" onClick={() => handleOpenExternal('claude')}>
-            {t('tutor.openInClaude')}
-          </button>
-          <button className="tutor-chat__external-btn" onClick={() => handleOpenExternal('chatgpt')}>
-            {t('tutor.openInChatGPT')}
-          </button>
-        </div>
+        {externalFlow ? (
+          <div className="tutor-chat__external-card">
+            {externalFlow.step === 'preview' ? (
+              <>
+                <div className="tutor-chat__external-card-label">
+                  {externalFlow.target === 'claude' ? 'Claude' : 'ChatGPT'}
+                </div>
+                <div className="tutor-chat__external-preview">
+                  {externalPrompt.slice(0, 200)}{externalPrompt.length > 200 ? '…' : ''}
+                </div>
+                <p className="tutor-chat__external-hint">
+                  {t('tutor.externalHint', { target: externalFlow.target === 'claude' ? 'Claude' : 'ChatGPT' })}
+                </p>
+                <div className="tutor-chat__external-card-actions">
+                  <button className="btn btn-primary btn-sm" onClick={handleCopyAndOpen}>
+                    {t('tutor.copyAndOpen')}
+                  </button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setExternalFlow(null)}>
+                    {t('tutor.back')}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="tutor-chat__external-copied">
+                  <p className="tutor-chat__external-copied-title">{t('tutor.copied')}</p>
+                  <p className="tutor-chat__external-hint">
+                    {t('tutor.pasteHint', { target: externalFlow.target === 'claude' ? 'Claude' : 'ChatGPT' })}
+                  </p>
+                  <kbd className="tutor-chat__kbd">{pasteShortcut}</kbd>
+                </div>
+                <div className="tutor-chat__external-card-actions">
+                  <button className="btn btn-ghost btn-sm" onClick={handleCopyAgain}>
+                    {t('tutor.copyAgain')}
+                  </button>
+                  <button className="btn btn-primary btn-sm" onClick={() => setExternalFlow(null)}>
+                    {t('tutor.done')}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="tutor-chat__external">
+            <button className="tutor-chat__external-btn" onClick={() => handleStartExternal('claude')}>
+              {t('tutor.openInClaude')}
+            </button>
+            <button className="tutor-chat__external-btn" onClick={() => handleStartExternal('chatgpt')}>
+              {t('tutor.openInChatGPT')}
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
