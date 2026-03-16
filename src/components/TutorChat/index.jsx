@@ -21,7 +21,7 @@ export default function TutorChat({ lessonKey, reader, lessonMeta, syllabus, onC
   const messagesEndRef = useRef(null);
   const drawerRef = useRef(null);
 
-  const { nativeLang } = useAppSelector(s => ({ nativeLang: s.nativeLang || 'en' }));
+  const { nativeLang, generatedReaders } = useAppSelector(s => ({ nativeLang: s.nativeLang || 'en', generatedReaders: s.generatedReaders }));
   const { providerKeys, activeProvider, activeModels, customBaseUrl } = useAppSelector(s => ({
     providerKeys: s.providerKeys, activeProvider: s.activeProvider,
     activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
@@ -36,7 +36,7 @@ export default function TutorChat({ lessonKey, reader, lessonMeta, syllabus, onC
   const {
     messages, sendMessage, isGenerating, streamingText,
     generateSummary, summary, clearChat, stopGenerating, error,
-  } = useTutorChat({ lessonKey, reader, lessonMeta, langId, nativeLang, llmConfig });
+  } = useTutorChat({ lessonKey, reader, lessonMeta, langId, nativeLang, llmConfig, syllabus, generatedReaders });
 
   // Auto-scroll to bottom
   useEffect(() => {

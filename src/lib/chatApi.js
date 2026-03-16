@@ -69,6 +69,10 @@ const ANTHROPIC_HEADERS = {
 };
 
 function buildAnthropicChat(apiKey, model, systemPrompt, messages, maxTokens, signal) {
+  // Use cache_control on system prompt so it's cached across turns
+  const system = systemPrompt
+    ? [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }]
+    : undefined;
   return {
     url: 'https://api.anthropic.com/v1/messages',
     options: {
@@ -77,7 +81,7 @@ function buildAnthropicChat(apiKey, model, systemPrompt, messages, maxTokens, si
       body: JSON.stringify({
         model,
         max_tokens: maxTokens,
-        ...(systemPrompt ? { system: systemPrompt } : {}),
+        ...(system ? { system } : {}),
         messages: trimMessages(messages).map(m => ({ role: m.role, content: m.content })),
       }),
       signal,
@@ -195,6 +199,9 @@ export async function* callLLMChatStream(llmConfig, systemPrompt, messages, maxT
   const { signal, cleanup } = createTimeoutController(externalSignal);
 
   try {
+    const system = systemPrompt
+      ? [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }]
+      : undefined;
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { ...ANTHROPIC_HEADERS, 'x-api-key': apiKey },
@@ -202,7 +209,7 @@ export async function* callLLMChatStream(llmConfig, systemPrompt, messages, maxT
         model,
         max_tokens: maxTokens,
         stream: true,
-        ...(systemPrompt ? { system: systemPrompt } : {}),
+        ...(system ? { system } : {}),
         messages: trimMessages(messages).map(m => ({ role: m.role, content: m.content })),
       }),
       signal,

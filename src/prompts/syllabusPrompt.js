@@ -1,11 +1,14 @@
-export function buildSyllabusPrompt(langConfig, topic, level, lessonCount, nativeLangName = 'English') {
+export function buildSyllabusPrompt(langConfig, topic, level, lessonCount, nativeLangName = 'English', { learnerProfile } = {}) {
   const p = langConfig.prompts;
+  const learnerSection = learnerProfile
+    ? `\n## Learner Profile\nThe student has prior experience. Adapt the syllabus — skip mastered concepts, build on existing knowledge.\n${learnerProfile}\n`
+    : '';
   return `You are a ${p.curriculumDesigner}. Generate a graded reader syllabus for the following parameters:
 
 Topic: ${topic}
 ${langConfig.proficiency.name} Level: ${level}
 Number of lessons: ${lessonCount}
-
+${learnerSection}
 Return a JSON object with exactly two keys:
 - "summary": A 2-3 sentence overview (in ${nativeLangName}) of what the learner will cover across all lessons
 - "lessons": an array of lesson objects, each with:

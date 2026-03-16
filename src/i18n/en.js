@@ -466,6 +466,11 @@ export default {
   'syllabusHome.totalRead': 'Total {unit} read: {count}',
   'syllabusHome.showAll': 'Show all',
   'syllabusHome.showLess': 'Show less',
+  'syllabusHome.reviewLesson': 'Review Lesson',
+  'syllabusHome.reviewDesc': '{wordCount} words need reinforcement. Generate a review reader targeting your struggling vocabulary.',
+  'syllabusHome.generateReview': 'Generate Review',
+  'syllabusHome.readyToAdvance': 'Ready to advance to {level}!',
+  'syllabusHome.almostReady': 'Almost ready for {level}',
 
   // ── ApiKeySetup (legacy) ──────────────────────────────────────
   'apiKeySetup.title': 'Mandarin Graded Reader',

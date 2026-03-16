@@ -3,7 +3,7 @@
  * Injects lesson context so the tutor can reference the story, vocabulary, etc.
  */
 
-export function buildTutorSystemPrompt(reader, lessonMeta, langConfig, nativeLangName) {
+export function buildTutorSystemPrompt(reader, lessonMeta, langConfig, nativeLangName, { priorLessonSummaries } = {}) {
   const level = reader?.level ?? lessonMeta?.level ?? 3;
   const profName = langConfig.proficiency.name;
   const targetLang = langConfig.prompts.targetLanguage;
@@ -26,8 +26,10 @@ export function buildTutorSystemPrompt(reader, lessonMeta, langConfig, nativeLan
   // 3. Vocabulary
   if (reader?.vocabulary?.length > 0) {
     const vocabLines = reader.vocabulary.slice(0, 20).map(v => {
-      const rom = v.romanization ? ` (${v.romanization})` : '';
-      return `- **${v.target}**${rom} — ${v.english}`;
+      const word = v.target || v.chinese || v.korean || v.word || '';
+      const def = v.translation || v.english || v.definition || '';
+      const rom = (v.romanization || v.pinyin || v.jyutping) ? ` (${v.romanization || v.pinyin || v.jyutping})` : '';
+      return `- **${word}**${rom} — ${def}`;
     });
     parts.push(`\n## Vocabulary\n${vocabLines.join('\n')}`);
   }
@@ -61,6 +63,12 @@ export function buildTutorSystemPrompt(reader, lessonMeta, langConfig, nativeLan
     if (metaParts.length > 0) {
       parts.push(`\n## Lesson Context\n${metaParts.join('\n')}`);
     }
+  }
+
+  // 7. Prior lesson summaries (cross-lesson continuity)
+  if (priorLessonSummaries?.length > 0) {
+    const lines = priorLessonSummaries.map(s => `Lesson ${s.lessonNumber}: ${s.summary.slice(0, 200)}`);
+    parts.push(`\n## Prior Lesson Summaries (for continuity)\n${lines.join('\n')}`);
   }
 
   return parts.join('\n');

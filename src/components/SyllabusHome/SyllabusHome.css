@@ -59,6 +59,29 @@
   font-size: var(--text-sm);
 }
 
+/* ── Level-up banner ─────────────────────── */
+.syllabus-home__level-up {
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.syllabus-home__level-up p:first-child {
+  font-weight: 600;
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+}
+
+.syllabus-home__level-up--ready {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent-dim);
+}
+
+.syllabus-home__level-up--almost {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-border);
+}
+
 /* ── Sections ────────────────────────────── */
 .syllabus-home__section {
   display: flex;

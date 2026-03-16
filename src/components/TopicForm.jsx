@@ -4,6 +4,7 @@ import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { generateSyllabus, generateReader } from '../lib/api';
 import { buildLLMConfig, hasAnyUserKey } from '../lib/llmConfig';
+import { buildLearnerProfile } from '../lib/stats';
 import { getProvider } from '../lib/providers';
 import { parseReaderResponse } from '../lib/parser';
 import { mapReaderVocabulary } from '../lib/vocabMapper';
@@ -13,9 +14,10 @@ import GenerationProgress from './GenerationProgress';
 import './TopicForm.css';
 
 export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStandaloneGenerating, onCancel, onOpenSettings }) {
-  const { apiKey, defaultLevels, learnedVocabulary, maxTokens, loading, providerKeys, activeProvider, activeModels, customBaseUrl, nativeLang } = useAppSelector(s => ({
+  const { apiKey, defaultLevels, learnedVocabulary, generatedReaders, syllabi, learningActivity, maxTokens, loading, providerKeys, activeProvider, activeModels, customBaseUrl, nativeLang } = useAppSelector(s => ({
     apiKey: s.apiKey, defaultLevels: s.defaultLevels || {}, nativeLang: s.nativeLang || 'en',
-    learnedVocabulary: s.learnedVocabulary, maxTokens: s.maxTokens, loading: s.loading,
+    learnedVocabulary: s.learnedVocabulary, generatedReaders: s.generatedReaders, syllabi: s.syllabi, learningActivity: s.learningActivity,
+    maxTokens: s.maxTokens, loading: s.loading,
     providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
   }));
 
@@ -46,7 +48,8 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
     act.clearError();
     try {
       const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModels, customBaseUrl });
-      const { summary, lessons } = await generateSyllabus(llmConfig, topic.trim(), level, lessonCount, langId, nativeLang);
+      const learnerProfile = buildLearnerProfile(learnedVocabulary, generatedReaders, syllabi, learningActivity, langId);
+      const { summary, lessons } = await generateSyllabus(llmConfig, topic.trim(), level, lessonCount, langId, nativeLang, { learnerProfile });
       const newSyllabus = {
         id:        `syllabus_${Date.now().toString(36)}`,
         topic:     topic.trim(),

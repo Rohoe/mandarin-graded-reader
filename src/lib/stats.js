@@ -277,6 +277,360 @@ export function getWordsByPeriod(vocab, period = 'week') {
 }
 
 /**
+ * Builds a compact learner context string (~100-150 tokens) for adaptive reader generation.
+ * Returns null if insufficient data for meaningful adaptation.
+ */
+export function buildLearnerContext(learnedVocabulary, generatedReaders, learningActivity, langId) {
+  const vocab = learnedVocabulary || {};
+  const langWords = Object.entries(vocab).filter(
+    ([, info]) => (info.langId || 'zh') === langId && (info.reviewCount ?? 0) > 0
+  );
+
+  // Require at least 5 reviewed words in target language
+  if (langWords.length < 5) return null;
+
+  const sections = [];
+
+  // ── Section A: Vocabulary Mastery ──────────────────────────
+  const struggling = [];
+  let masteredCount = 0;
+  let learningCount = 0;
+
+  for (const [word, info] of langWords) {
+    const interval = info.interval ?? 0;
+    const lapses = info.lapses ?? 0;
+    const reviewCount = info.reviewCount ?? 0;
+
+    if (lapses >= 2 || (interval <= 1 && reviewCount >= 3)) {
+      struggling.push({ word, lapses, interval });
+    } else if (interval >= 21) {
+      masteredCount++;
+    } else {
+      learningCount++;
+    }
+  }
+
+  // Sort struggling: most lapses first, then shortest interval
+  struggling.sort((a, b) => b.lapses - a.lapses || a.interval - b.interval);
+  const strugglingWords = struggling.slice(0, 15).map(s => s.word);
+
+  let vocabSection = `Vocabulary: ${langWords.length} reviewed (${masteredCount} mastered, ${learningCount} learning, ${struggling.length} struggling)`;
+  if (strugglingWords.length > 0) {
+    vocabSection += `\nStruggling words (reinforce these): ${strugglingWords.join(', ')}`;
+  }
+  sections.push(vocabSection);
+
+  // ── Section B: Recent Quiz Performance ─────────────────────
+  const quizActivities = (learningActivity || [])
+    .filter(a => a.type === 'quiz_graded')
+    .slice(-5);
+
+  if (quizActivities.length > 0 && generatedReaders) {
+    const scores = quizActivities.map(a => a.score).filter(s => s != null);
+    const weakGrammar = [];
+
+    for (const qa of quizActivities) {
+      const reader = qa.lessonKey ? generatedReaders[qa.lessonKey] : null;
+      if (!reader || (reader.langId || 'zh') !== langId) continue;
+      if (qa.questionScores) {
+        for (let i = 0; i < qa.questionScores.length; i++) {
+          if (qa.questionScores[i] <= 2 && reader.grammarNotes) {
+            for (const note of reader.grammarNotes) {
+              if (note.pattern && !weakGrammar.includes(note.pattern)) {
+                weakGrammar.push(note.pattern);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (scores.length > 0) {
+      const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length * 10) / 10;
+      let quizSection = `Recent quiz avg: ${avg}/5`;
+      if (weakGrammar.length > 0) {
+        quizSection += `\nWeak grammar areas: ${weakGrammar.slice(0, 5).join(', ')}`;
+      }
+      sections.push(quizSection);
+    }
+  }
+
+  // ── Section C: Learning Trajectory ─────────────────────────
+  const allLangWords = Object.entries(vocab).filter(
+    ([, info]) => (info.langId || 'zh') === langId
+  );
+  if (allLangWords.length >= 10) {
+    const now = Date.now();
+    const fourteenDays = 14 * 24 * 60 * 60 * 1000;
+    let recent = 0;
+    let prior = 0;
+
+    for (const [, info] of allLangWords) {
+      if (!info.dateAdded) continue;
+      const added = new Date(info.dateAdded).getTime();
+      const age = now - added;
+      if (age <= fourteenDays) recent++;
+      else if (age <= fourteenDays * 2) prior++;
+    }
+
+    if (recent > 0 || prior > 0) {
+      if (recent > prior) {
+        sections.push('Trajectory: accelerating — appropriate to introduce slightly more challenging vocabulary');
+      } else if (prior > recent && prior > 0) {
+        sections.push('Trajectory: decelerating — prioritize consolidation and familiar contexts');
+      }
+    }
+  }
+
+  const result = sections.join('\n');
+
+  // Hard cap: truncate struggling words if over 500 chars
+  if (result.length > 500) {
+    // Rebuild with fewer struggling words
+    const trimmedWords = strugglingWords.slice(0, 8);
+    let trimmedVocab = `Vocabulary: ${langWords.length} reviewed (${masteredCount} mastered, ${learningCount} learning, ${struggling.length} struggling)`;
+    if (trimmedWords.length > 0) {
+      trimmedVocab += `\nStruggling words (reinforce these): ${trimmedWords.join(', ')}`;
+    }
+    return [trimmedVocab, ...sections.slice(1)].join('\n').slice(0, 500);
+  }
+
+  return result;
+}
+
+/**
+ * Builds a compact learner profile string for adaptive syllabus generation.
+ * Returns null if insufficient data (<5 words known).
+ */
+export function buildLearnerProfile(learnedVocabulary, generatedReaders, syllabi, learningActivity, langId) {
+  const vocab = learnedVocabulary || {};
+  const langWords = Object.entries(vocab).filter(
+    ([, info]) => (info.langId || 'zh') === langId
+  );
+
+  if (langWords.length < 5) return null;
+
+  const sections = [];
+
+  // Vocab counts
+  let mastered = 0, learning = 0, newCount = 0;
+  for (const [, info] of langWords) {
+    const rc = info.reviewCount ?? 0;
+    const interval = info.interval ?? 0;
+    if (rc === 0) newCount++;
+    else if (interval >= 21) mastered++;
+    else learning++;
+  }
+  sections.push(`Known vocabulary: ${langWords.length} words (${mastered} mastered, ${learning} learning, ${newCount} new)`);
+
+  // Grammar patterns from readers
+  const grammarSet = new Set();
+  for (const [, reader] of Object.entries(generatedReaders || {})) {
+    if ((reader.langId || 'zh') !== langId) continue;
+    if (reader.grammarNotes) {
+      for (const g of reader.grammarNotes) {
+        if (g.pattern) grammarSet.add(g.pattern);
+      }
+    }
+  }
+  if (grammarSet.size > 0) {
+    sections.push(`Grammar covered: ${[...grammarSet].slice(0, 10).join(', ')}`);
+  }
+
+  // Topics from syllabi
+  const topics = [];
+  for (const s of (syllabi || [])) {
+    if ((s.langId || 'zh') === langId && s.topic && !topics.includes(s.topic)) {
+      topics.push(s.topic);
+    }
+  }
+  if (topics.length > 0) {
+    sections.push(`Topics studied: ${topics.slice(0, 5).join(', ')}`);
+  }
+
+  // Quiz avg
+  const quizActivities = (learningActivity || [])
+    .filter(a => a.type === 'quiz_graded')
+    .slice(-10);
+  if (quizActivities.length > 0) {
+    const scores = quizActivities.map(a => a.score).filter(s => s != null);
+    if (scores.length > 0) {
+      const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length * 10) / 10;
+      sections.push(`Recent quiz avg: ${avg}/5`);
+    }
+  }
+
+  const result = sections.join('\n');
+  return result.length > 400 ? result.slice(0, 397) + '...' : result;
+}
+
+/**
+ * Builds grading context for learner-aware quiz feedback.
+ * Returns null if fewer than 3 reviewed words.
+ */
+export function buildGradingContext(learnedVocabulary, learningActivity, langId) {
+  const vocab = learnedVocabulary || {};
+  const langWords = Object.entries(vocab).filter(
+    ([, info]) => (info.langId || 'zh') === langId && (info.reviewCount ?? 0) > 0
+  );
+
+  if (langWords.length < 3) return null;
+
+  let mastered = 0;
+  for (const [, info] of langWords) {
+    if ((info.interval ?? 0) >= 21) mastered++;
+  }
+
+  // Recent quiz avg
+  const quizActivities = (learningActivity || [])
+    .filter(a => a.type === 'quiz_graded')
+    .slice(-5);
+  const scores = quizActivities.map(a => a.score).filter(s => s != null);
+  const avg = scores.length > 0
+    ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length * 10) / 10
+    : null;
+
+  // Classify tone
+  let tone;
+  if (avg === null) tone = 'developing';
+  else if (avg < 2.5) tone = 'struggling';
+  else if (avg <= 3.5) tone = 'developing';
+  else if (avg <= 4.5) tone = 'proficient';
+  else tone = 'advanced';
+
+  const toneAdvice = {
+    struggling: 'be encouraging, highlight what they got right, explain mistakes patiently.',
+    developing: 'be supportive, explain clearly, suggest specific improvements.',
+    proficient: 'acknowledge competence, offer nuanced feedback on style and accuracy.',
+    advanced: 'provide concise feedback, focus on subtleties and native-like usage.',
+  };
+
+  const avgStr = avg !== null ? `avg quiz score: ${avg}/5, ` : '';
+  const result = `Learner level: ${tone} (${avgStr}${langWords.length} words known, ${mastered} mastered)\nAdapt feedback: ${toneAdvice[tone]}`;
+  return result.length > 200 ? result.slice(0, 197) + '...' : result;
+}
+
+/**
+ * Builds review context for smart review lessons.
+ * Returns null if <3 completed lessons or no struggling words found.
+ */
+export function buildReviewContext(learnedVocabulary, generatedReaders, learningActivity, syllabusId, completedLessons, langId) {
+  if (!completedLessons || completedLessons.length < 3) return null;
+
+  const vocab = learnedVocabulary || {};
+  const readers = generatedReaders || {};
+
+  // Collect vocabulary from completed lessons
+  const lessonVocab = [];
+  const weakGrammar = [];
+  for (const idx of completedLessons) {
+    const reader = readers[`lesson_${syllabusId}_${idx}`];
+    if (!reader) continue;
+    if (reader.vocabulary) {
+      for (const v of reader.vocabulary) {
+        const word = v.target || v.chinese || v.korean || v.word || '';
+        if (word && !lessonVocab.includes(word)) lessonVocab.push(word);
+      }
+    }
+    // Collect grammar from low-scoring quizzes
+    if (reader.grammarNotes) {
+      const quizEntry = (learningActivity || []).find(
+        a => a.type === 'quiz_graded' && a.lessonKey === `lesson_${syllabusId}_${idx}`
+      );
+      if (quizEntry && quizEntry.score != null && quizEntry.score <= 3) {
+        for (const g of reader.grammarNotes) {
+          if (g.pattern && !weakGrammar.includes(g.pattern)) weakGrammar.push(g.pattern);
+        }
+      }
+    }
+  }
+
+  // Cross-ref with SRS data to find struggling words
+  const strugglingWords = [];
+  for (const word of lessonVocab) {
+    const info = vocab[word];
+    if (!info) continue;
+    const interval = info.interval ?? 0;
+    const lapses = info.lapses ?? 0;
+    const reviewCount = info.reviewCount ?? 0;
+    if (lapses >= 2 || (interval <= 1 && reviewCount >= 3) || (interval <= 3 && reviewCount >= 2)) {
+      strugglingWords.push(word);
+    }
+  }
+
+  if (strugglingWords.length === 0) return null;
+
+  const top = strugglingWords.slice(0, 10);
+  const summaryParts = [`Review focus: ${top.length} struggling words: ${top.join(', ')}`];
+  if (weakGrammar.length > 0) {
+    summaryParts.push(`Weak grammar: ${weakGrammar.slice(0, 5).join(', ')}`);
+  }
+
+  return {
+    strugglingWords: top,
+    weakGrammar: weakGrammar.slice(0, 5),
+    summary: summaryParts.join('\n'),
+  };
+}
+
+/**
+ * Determines if a learner is ready to advance to the next proficiency level.
+ * Returns null if at max level or insufficient data.
+ */
+export function getLevelUpRecommendation(learnedVocabulary, learningActivity, generatedReaders, langId, currentLevel) {
+  const langConfig = getLang(langId);
+  const levels = langConfig.proficiency.levels;
+
+  // Find current and next level
+  const currentIdx = levels.findIndex(l => l.value === currentLevel);
+  if (currentIdx === -1 || currentIdx >= levels.length - 1) return null;
+  const nextLevel = levels[currentIdx + 1];
+  const currentLevelConfig = levels[currentIdx];
+
+  if (!nextLevel.wordThreshold || !currentLevelConfig.wordThreshold) return null;
+
+  // Count words known in langId
+  const vocab = learnedVocabulary || {};
+  const langWords = Object.entries(vocab).filter(
+    ([, info]) => (info.langId || 'zh') === langId
+  );
+  const totalWords = langWords.length;
+  const masteredWords = langWords.filter(([, info]) => (info.interval ?? 0) >= 21).length;
+
+  // Quiz avg — filter by langId via generatedReaders
+  const quizActivities = (learningActivity || [])
+    .filter(a => a.type === 'quiz_graded')
+    .slice(-10);
+  const langQuizScores = [];
+  for (const qa of quizActivities) {
+    if (qa.lessonKey && generatedReaders) {
+      const reader = generatedReaders[qa.lessonKey];
+      if (reader && (reader.langId || 'zh') !== langId) continue;
+    }
+    if (qa.score != null) langQuizScores.push(qa.score);
+  }
+  const avgQuiz = langQuizScores.length > 0
+    ? langQuizScores.reduce((a, b) => a + b, 0) / langQuizScores.length
+    : 0;
+
+  const nextThreshold = nextLevel.wordThreshold;
+  const currentThreshold = currentLevelConfig.wordThreshold;
+  const reason = `You know ${totalWords} words (${masteredWords} mastered) with an avg quiz score of ${Math.round(avgQuiz * 10) / 10}/5`;
+
+  // "ready": total >= 70% of next threshold AND avg >= 3.5 AND mastered >= 50% of current threshold
+  if (totalWords >= nextThreshold * 0.7 && avgQuiz >= 3.5 && masteredWords >= currentThreshold * 0.5) {
+    return { currentLevel, nextLabel: nextLevel.label, reason, confidence: 'ready' };
+  }
+
+  // "almost": total >= 50% of next threshold AND avg >= 3.0
+  if (totalWords >= nextThreshold * 0.5 && avgQuiz >= 3.0) {
+    return { currentLevel, nextLabel: nextLevel.label, reason, confidence: 'almost' };
+  }
+
+  return null;
+}
+
+/**
  * Count readable units in a text string.
  * For CJK languages (zh, yue): count characters (excluding spaces/punctuation).
  * For alphabetic languages (ko, en): count words.

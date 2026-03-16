@@ -37,7 +37,9 @@ describe('callLLMChat', () => {
 
     expect(result).toBe('Response!');
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body.system).toBe('System prompt');
+    expect(body.system).toEqual([
+      { type: 'text', text: 'System prompt', cache_control: { type: 'ephemeral' } },
+    ]);
     expect(body.messages).toHaveLength(3);
     expect(body.messages[0].role).toBe('user');
     expect(body.messages[2].role).toBe('user');

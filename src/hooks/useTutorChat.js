@@ -3,7 +3,7 @@
  * Manages messages, streaming, persistence, and summary generation.
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { callLLMChat, callLLMChatStream } from '../lib/chatApi';
@@ -11,7 +11,7 @@ import { buildTutorSystemPrompt } from '../prompts/tutorPrompt';
 import { getLang } from '../lib/languages';
 import { getNativeLang } from '../lib/nativeLanguages';
 
-export function useTutorChat({ lessonKey, reader, lessonMeta, langId, nativeLang, llmConfig }) {
+export function useTutorChat({ lessonKey, reader, lessonMeta, langId, nativeLang, llmConfig, syllabus, generatedReaders }) {
   const dispatch = useAppDispatch();
   const act = actions(dispatch);
   const abortRef = useRef(null);
@@ -39,7 +39,24 @@ export function useTutorChat({ lessonKey, reader, lessonMeta, langId, nativeLang
 
   const langConfig = getLang(langId);
   const nativeLangName = getNativeLang(nativeLang).name;
-  const systemPrompt = buildTutorSystemPrompt(reader, lessonMeta, langConfig, nativeLangName);
+
+  // Build prior lesson summaries for cross-lesson continuity
+  const priorLessonSummaries = useMemo(() => {
+    if (!syllabus?.id || !lessonMeta || !generatedReaders) return undefined;
+    const currentIdx = (lessonMeta.lesson_number || 1) - 1;
+    if (currentIdx <= 0) return undefined;
+    const summaries = [];
+    for (let i = 0; i < currentIdx; i++) {
+      const prevReader = generatedReaders[`lesson_${syllabus.id}_${i}`];
+      if (prevReader?.chatSummary) {
+        summaries.push({ lessonNumber: i + 1, summary: prevReader.chatSummary });
+      }
+    }
+    // Cap at 5 most recent
+    return summaries.length > 0 ? summaries.slice(-5) : undefined;
+  }, [syllabus?.id, lessonMeta, generatedReaders]);
+
+  const systemPrompt = buildTutorSystemPrompt(reader, lessonMeta, langConfig, nativeLangName, { priorLessonSummaries });
 
   // Save chat to reader data
   const persistChat = useCallback((newMessages, newSummary) => {

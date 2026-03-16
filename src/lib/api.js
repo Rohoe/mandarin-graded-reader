@@ -382,7 +382,7 @@ const MAX_VOCAB_LIST = 200;
  * optional continuation context, syllabus context, vocabulary focus, and
  * grammar tracking.
  */
-function buildReaderUserMessage(topic, learnedWords, previousStory, langId, { vocabFocus, syllabusContext, taughtGrammar } = {}) {
+function buildReaderUserMessage(topic, learnedWords, previousStory, langId, { vocabFocus, syllabusContext, taughtGrammar, learnerContext } = {}) {
   const learnedList = Object.keys(learnedWords)
     .filter(w => !learnedWords[w].langId || learnedWords[w].langId === langId)
     .sort((a, b) => (learnedWords[b].dateAdded || 0) - (learnedWords[a].dateAdded || 0))
@@ -406,6 +406,11 @@ function buildReaderUserMessage(topic, learnedWords, previousStory, langId, { vo
     ? `\n\nGrammar patterns already taught (do not repeat as grammar notes; you may use them in the story):\n${taughtGrammar.join(', ')}`
     : '';
 
+  // Learner adaptation context from SRS/quiz history
+  const learnerSection = learnerContext
+    ? `\n\n## Learner Adaptation Context\n${learnerContext}`
+    : '';
+
   // Smart story truncation preserving beginning and end
   let storyExcerpt;
   if (previousStory) {
@@ -421,14 +426,14 @@ function buildReaderUserMessage(topic, learnedWords, previousStory, langId, { vo
     ? `\n\nThis is a continuation. Previous episode for narrative context:\n---\n${storyExcerpt}\n---\nContinue the story with new events, maintaining the same characters and setting.`
     : '';
 
-  return `Generate a graded reader for the topic: ${topic}${syllabusSection}${vocabFocusSection}${learnedSection}${grammarSection}${continuationSection}`;
+  return `Generate a graded reader for the topic: ${topic}${syllabusSection}${vocabFocusSection}${learnedSection}${grammarSection}${learnerSection}${continuationSection}`;
 }
 
 /**
  * Streaming variant of generateReader. Returns an async generator of text chunks.
  * Only supports Anthropic provider.
  */
-export async function* generateReaderStream(llmConfig, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192, previousStory = null, langId = DEFAULT_LANG_ID, { signal: externalSignal, nativeLang = 'en', vocabFocus, syllabusContext, taughtGrammar, difficultyHint } = {}) {
+export async function* generateReaderStream(llmConfig, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192, previousStory = null, langId = DEFAULT_LANG_ID, { signal: externalSignal, nativeLang = 'en', vocabFocus, syllabusContext, taughtGrammar, difficultyHint, learnerContext } = {}) {
   const { apiKey, model } = llmConfig;
   if (!apiKey) throw new Error('No API key provided. Please add your API key in Settings.');
 
@@ -437,7 +442,7 @@ export async function* generateReaderStream(llmConfig, topic, level, learnedWord
   const rangePadding = targetChars <= 300 ? 50 : 100;
   const charRange = `${targetChars - rangePadding}-${targetChars + rangePadding}`;
   const system = buildReaderSystem(langConfig, level, topic, charRange, targetChars, nativeLangName, { difficultyHint });
-  const userMessage = buildReaderUserMessage(topic, learnedWords, previousStory, langId, { vocabFocus, syllabusContext, taughtGrammar });
+  const userMessage = buildReaderUserMessage(topic, learnedWords, previousStory, langId, { vocabFocus, syllabusContext, taughtGrammar, learnerContext });
 
   const { signal, cleanup } = createTimeoutController(externalSignal);
 
@@ -450,10 +455,10 @@ export async function* generateReaderStream(llmConfig, topic, level, learnedWord
 
 // ── Syllabus generation ───────────────────────────────────────
 
-export async function generateSyllabus(llmConfig, topic, level, lessonCount = 6, langId = DEFAULT_LANG_ID, nativeLang = 'en') {
+export async function generateSyllabus(llmConfig, topic, level, lessonCount = 6, langId = DEFAULT_LANG_ID, nativeLang = 'en', { learnerProfile } = {}) {
   const langConfig = getLang(langId);
   const nativeLangName = getNativeLang(nativeLang).name;
-  const prompt = buildSyllabusPrompt(langConfig, topic, level, lessonCount, nativeLangName);
+  const prompt = buildSyllabusPrompt(langConfig, topic, level, lessonCount, nativeLangName, { learnerProfile });
 
   const raw = await callLLM(llmConfig, '', prompt, 2048);
   const result = parseJSONWithFallback(raw, 'LLM returned an invalid syllabus format. Please try again.');
@@ -504,10 +509,10 @@ function repairJSON(str) {
   return result;
 }
 
-export async function gradeAnswers(llmConfig, questions, userAnswers, story, level, maxTokens = 2048, langId = DEFAULT_LANG_ID, nativeLang = 'en') {
+export async function gradeAnswers(llmConfig, questions, userAnswers, story, level, maxTokens = 2048, langId = DEFAULT_LANG_ID, nativeLang = 'en', { gradingContext } = {}) {
   const langConfig = getLang(langId);
   const nativeLangName = getNativeLang(nativeLang).name;
-  const system = buildGradingSystem(langConfig, level, nativeLangName);
+  const system = buildGradingSystem(langConfig, level, nativeLangName, { gradingContext });
   const answersBlock = questions
     .map((q, i) => `Q${i + 1}: ${typeof q === 'string' ? q : q.text}\nA${i + 1}: ${userAnswers[i] || '(no answer provided)'}`)
     .join('\n\n');
@@ -580,13 +585,13 @@ export const READER_JSON_SCHEMA = {
 
 // ── Reader generation ─────────────────────────────────────────
 
-export async function generateReader(llmConfig, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192, previousStory = null, langId = DEFAULT_LANG_ID, { signal, structured = false, nativeLang = 'en', vocabFocus, syllabusContext, taughtGrammar, difficultyHint } = {}) {
+export async function generateReader(llmConfig, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192, previousStory = null, langId = DEFAULT_LANG_ID, { signal, structured = false, nativeLang = 'en', vocabFocus, syllabusContext, taughtGrammar, difficultyHint, learnerContext } = {}) {
   const langConfig = getLang(langId);
   const nativeLangName = getNativeLang(nativeLang).name;
   const rangePadding = targetChars <= 300 ? 50 : 100;
   const charRange = `${targetChars - rangePadding}-${targetChars + rangePadding}`;
   const system = buildReaderSystem(langConfig, level, topic, charRange, targetChars, nativeLangName, { difficultyHint });
-  const userMessage = buildReaderUserMessage(topic, learnedWords, previousStory, langId, { vocabFocus, syllabusContext, taughtGrammar });
+  const userMessage = buildReaderUserMessage(topic, learnedWords, previousStory, langId, { vocabFocus, syllabusContext, taughtGrammar, learnerContext });
 
   return await callLLM(llmConfig, system, userMessage, maxTokens, { signal, structured });
 }

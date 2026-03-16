@@ -174,6 +174,29 @@ describe('language config structure', () => {
   });
 });
 
+// ── wordThreshold ───────────────────────────────────────────
+
+describe('wordThreshold', () => {
+  const langIds = ['zh', 'ko', 'yue', 'fr', 'es', 'en'];
+
+  it.each(langIds)('%s has wordThreshold on every proficiency level', (id) => {
+    const lang = getLang(id);
+    for (const level of lang.proficiency.levels) {
+      expect(level.wordThreshold).toBeDefined();
+      expect(typeof level.wordThreshold).toBe('number');
+      expect(level.wordThreshold).toBeGreaterThan(0);
+    }
+  });
+
+  it.each(langIds)('%s thresholds are monotonically increasing', (id) => {
+    const lang = getLang(id);
+    const thresholds = lang.proficiency.levels.map(l => l.wordThreshold);
+    for (let i = 1; i < thresholds.length; i++) {
+      expect(thresholds[i]).toBeGreaterThan(thresholds[i - 1]);
+    }
+  });
+});
+
 // ── Prompt fragments ─────────────────────────────────────────
 
 describe('getStoryRequirements', () => {

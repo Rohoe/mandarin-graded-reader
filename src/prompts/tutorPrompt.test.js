@@ -103,4 +103,52 @@ describe('buildTutorSystemPrompt', () => {
     expect(prompt).toContain('[...]');
     expect(prompt.length).toBeLessThan(longStory.length + 500);
   });
+
+  // Feature 3: Cross-Lesson Tutor Memory
+  it('without priorLessonSummaries → output unchanged', () => {
+    const prompt = buildTutorSystemPrompt(baseReader, null, zhConfig, 'English');
+    expect(prompt).not.toContain('Prior Lesson Summaries');
+  });
+
+  it('with priorLessonSummaries → includes section', () => {
+    const summaries = [
+      { lessonNumber: 1, summary: 'We discussed food vocabulary and practiced ordering.' },
+      { lessonNumber: 2, summary: 'Reviewed grammar patterns for past tense.' },
+    ];
+    const prompt = buildTutorSystemPrompt(baseReader, null, zhConfig, 'English', { priorLessonSummaries: summaries });
+    expect(prompt).toContain('## Prior Lesson Summaries');
+    expect(prompt).toContain('Lesson 1:');
+    expect(prompt).toContain('Lesson 2:');
+    expect(prompt).toContain('food vocabulary');
+  });
+
+  it('summaries truncated at 200 chars each', () => {
+    const longSummary = 'A'.repeat(300);
+    const summaries = [{ lessonNumber: 1, summary: longSummary }];
+    const prompt = buildTutorSystemPrompt(baseReader, null, zhConfig, 'English', { priorLessonSummaries: summaries });
+    expect(prompt).toContain('## Prior Lesson Summaries');
+    // The line for lesson 1 should have at most 200 chars of the summary
+    const match = prompt.match(/Lesson 1: (A+)/);
+    expect(match[1].length).toBe(200);
+  });
+
+  it('max 5 summaries', () => {
+    const summaries = Array.from({ length: 7 }, (_, i) => ({
+      lessonNumber: i + 1,
+      summary: `Summary for lesson ${i + 1}`,
+    }));
+    // The hook caps at 5, but the prompt builder should handle any number passed in
+    const prompt = buildTutorSystemPrompt(baseReader, null, zhConfig, 'English', { priorLessonSummaries: summaries });
+    expect(prompt).toContain('Lesson 7:');
+  });
+
+  it('standalone readers (no priorLessonSummaries) → no section', () => {
+    const prompt = buildTutorSystemPrompt(baseReader, null, zhConfig, 'English', { priorLessonSummaries: undefined });
+    expect(prompt).not.toContain('Prior Lesson Summaries');
+  });
+
+  it('empty array priorLessonSummaries → no section', () => {
+    const prompt = buildTutorSystemPrompt(baseReader, null, zhConfig, 'English', { priorLessonSummaries: [] });
+    expect(prompt).not.toContain('Prior Lesson Summaries');
+  });
 });

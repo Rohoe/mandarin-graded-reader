@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { isRetryable, classifyApiError, generateSyllabus, gradeAnswers, extendSyllabus, generateReader } from './api';
+import { buildSyllabusPrompt } from '../prompts/syllabusPrompt';
+import { buildGradingSystem } from '../prompts/gradingPrompt';
 
 // Mock the prompt builders
 vi.mock('../prompts/syllabusPrompt', () => ({
@@ -152,6 +154,32 @@ describe('generateSyllabus', () => {
   });
 });
 
+// ── generateSyllabus with learnerProfile ─────────────────────
+
+describe('generateSyllabus with learnerProfile', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('without learnerProfile → buildSyllabusPrompt called with undefined learnerProfile', async () => {
+    vi.stubGlobal('fetch', mockFetchOk({
+      choices: [{ message: { content: JSON.stringify({ summary: 'S', lessons: [] }) } }],
+    }));
+    await generateSyllabus(BASE_CONFIG, 'food', 3);
+    const lastCall = buildSyllabusPrompt.mock.calls.at(-1);
+    expect(lastCall[5].learnerProfile).toBeUndefined();
+  });
+
+  it('with learnerProfile → buildSyllabusPrompt called with learnerProfile', async () => {
+    vi.stubGlobal('fetch', mockFetchOk({
+      choices: [{ message: { content: JSON.stringify({ summary: 'S', lessons: [] }) } }],
+    }));
+    await generateSyllabus(BASE_CONFIG, 'food', 3, 6, 'zh', 'en', { learnerProfile: 'Known vocabulary: 85 words' });
+    const lastCall = buildSyllabusPrompt.mock.calls.at(-1);
+    expect(lastCall[5]).toEqual({ learnerProfile: 'Known vocabulary: 85 words' });
+  });
+});
+
 // ── gradeAnswers ─────────────────────────────────────────────
 
 describe('gradeAnswers', () => {
@@ -201,6 +229,32 @@ describe('gradeAnswers', () => {
       choices: [{ message: { content: 'Totally not JSON or extractable' } }],
     }));
     await expect(gradeAnswers(BASE_CONFIG, ['Q1?'], ['A1'], 'Story', 3)).rejects.toThrow('could not be parsed');
+  });
+});
+
+// ── gradeAnswers with gradingContext ─────────────────────────
+
+describe('gradeAnswers with gradingContext', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('without gradingContext → buildGradingSystem called with undefined gradingContext', async () => {
+    vi.stubGlobal('fetch', mockFetchOk({
+      choices: [{ message: { content: JSON.stringify({ results: [{ score: 4, feedback: 'Good' }] }) } }],
+    }));
+    await gradeAnswers(BASE_CONFIG, ['Q?'], ['A'], 'Story', 3);
+    const lastCall = buildGradingSystem.mock.calls.at(-1);
+    expect(lastCall[3].gradingContext).toBeUndefined();
+  });
+
+  it('with gradingContext → buildGradingSystem called with gradingContext', async () => {
+    vi.stubGlobal('fetch', mockFetchOk({
+      choices: [{ message: { content: JSON.stringify({ results: [{ score: 4, feedback: 'Good' }] }) } }],
+    }));
+    await gradeAnswers(BASE_CONFIG, ['Q?'], ['A'], 'Story', 3, 2048, 'zh', 'en', { gradingContext: 'Learner level: developing' });
+    const lastCall = buildGradingSystem.mock.calls.at(-1);
+    expect(lastCall[3]).toEqual({ gradingContext: 'Learner level: developing' });
   });
 });
 
@@ -318,6 +372,59 @@ describe('generateReader', () => {
 
   it('throws when no API key provided', async () => {
     await expect(generateReader({ ...BASE_CONFIG, apiKey: '' }, 'food', 3)).rejects.toThrow('API key');
+  });
+
+  it('includes learnerContext section when provided', async () => {
+    let capturedBody;
+    vi.stubGlobal('fetch', vi.fn((url, opts) => {
+      capturedBody = JSON.parse(opts.body);
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          choices: [{ message: { content: 'reader text' } }],
+        }),
+      });
+    }));
+    await generateReader(BASE_CONFIG, 'food', 3, {}, 1200, 8192, null, 'zh', {
+      learnerContext: 'Vocabulary: 20 reviewed (5 mastered)\nStruggling words: 猫, 狗',
+    });
+    const userMsg = capturedBody.messages.find(m => m.role === 'user').content;
+    expect(userMsg).toContain('## Learner Adaptation Context');
+    expect(userMsg).toContain('Struggling words: 猫, 狗');
+  });
+
+  it('omits learnerContext section when null', async () => {
+    let capturedBody;
+    vi.stubGlobal('fetch', vi.fn((url, opts) => {
+      capturedBody = JSON.parse(opts.body);
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          choices: [{ message: { content: 'reader text' } }],
+        }),
+      });
+    }));
+    await generateReader(BASE_CONFIG, 'food', 3, {}, 1200, 8192, null, 'zh', {
+      learnerContext: null,
+    });
+    const userMsg = capturedBody.messages.find(m => m.role === 'user').content;
+    expect(userMsg).not.toContain('Learner Adaptation Context');
+  });
+
+  it('omits learnerContext section when undefined', async () => {
+    let capturedBody;
+    vi.stubGlobal('fetch', vi.fn((url, opts) => {
+      capturedBody = JSON.parse(opts.body);
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          choices: [{ message: { content: 'reader text' } }],
+        }),
+      });
+    }));
+    await generateReader(BASE_CONFIG, 'food', 3);
+    const userMsg = capturedBody.messages.find(m => m.role === 'user').content;
+    expect(userMsg).not.toContain('Learner Adaptation Context');
   });
 });
 

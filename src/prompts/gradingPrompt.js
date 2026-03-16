@@ -1,4 +1,4 @@
-export function buildGradingSystem(langConfig, level, nativeLangName = 'English') {
+export function buildGradingSystem(langConfig, level, nativeLangName = 'English', { gradingContext } = {}) {
   const p = langConfig.prompts;
   const profName = langConfig.proficiency.name;
 
@@ -7,6 +7,7 @@ The student is studying ${p.gradingLanguage} at ${profName} level ${level}.
 
 Evaluate each answer for accuracy and completeness. Be encouraging but honest.
 The student may answer in ${nativeLangName} or ${p.targetLanguage}.
+${gradingContext ? `\n## Learner Context\n${gradingContext}\n` : ''}
 
 Return ONLY valid JSON — no explanation, no markdown fences.
 Do NOT echo the question or answer text back. Use only ASCII characters in keys.

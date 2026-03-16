@@ -234,6 +234,41 @@ function AppShell() {
     }
   }
 
+  async function handleGenerateReview(reviewContext) {
+    if (!activeSyllabusId || !currentSyllabus) return;
+    const reviewKey = `standalone_${Date.now()}`;
+    const reviewTopic = `Review: ${currentSyllabus.topic}`;
+
+    act.addStandaloneReader({ key: reviewKey, topic: reviewTopic, level: currentSyllabus.level, langId: currentSyllabus.langId, createdAt: Date.now() });
+    act.startPendingReader(reviewKey);
+    setStandaloneKey(reviewKey);
+
+    try {
+      const llmConfig = buildLLMConfig(state);
+      const raw = await generateReader(
+        llmConfig, reviewTopic, currentSyllabus.level, state.learnedVocabulary,
+        1200, state.maxTokens, null, currentSyllabus.langId,
+        {
+          nativeLang: state.nativeLang,
+          vocabFocus: reviewContext.strugglingWords.slice(0, 5),
+          difficultyHint: 'review',
+          learnerContext: reviewContext.summary,
+        },
+      );
+      const parsed = parseReaderResponse(raw, currentSyllabus.langId);
+      pushGeneratedReader(reviewKey, { ...parsed, topic: reviewTopic, level: currentSyllabus.level, langId: currentSyllabus.langId, lessonKey: reviewKey, isStandalone: true });
+      if (parsed.titleZh || parsed.titleEn) {
+        act.updateStandaloneReaderMeta({ key: reviewKey, titleZh: parsed.titleZh, titleEn: parsed.titleEn });
+      }
+      act.notify('success', t('notify.readerReady', { topic: reviewTopic }));
+    } catch (err) {
+      act.removeStandaloneReader(reviewKey);
+      act.notify('error', t('notify.generationFailed', { error: err.message.slice(0, 80) }));
+    } finally {
+      act.clearPendingReader(reviewKey);
+    }
+  }
+
   async function handleExtendSyllabus(additionalCount) {
     if (!activeSyllabusId || !currentSyllabus) return;
     act.setLoading(true, t('notify.expanding'));
@@ -324,6 +359,7 @@ function AppShell() {
                 setSyllabusView('home');
               }}
               onExtend={handleExtendSyllabus}
+              onGenerateReview={handleGenerateReview}
             />
           )
           : (

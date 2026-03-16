@@ -1,15 +1,18 @@
 import { useState, useMemo } from 'react';
 import { useAppSelector } from '../../context/useAppSelector';
 import { getLang, getLessonTitle } from '../../lib/languages';
+import { buildReviewContext, getLevelUpRecommendation } from '../../lib/stats';
 import { useT } from '../../i18n';
 import LoadingIndicator from '../LoadingIndicator';
 import './SyllabusHome.css';
 
-export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDelete, onArchive, onExtend }) {
-  const { loading, loadingMessage, generatedReaders } = useAppSelector(s => ({
+export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDelete, onArchive, onExtend, onGenerateReview }) {
+  const { loading, loadingMessage, generatedReaders, learnedVocabulary, learningActivity } = useAppSelector(s => ({
     loading: s.loading,
     loadingMessage: s.loadingMessage,
     generatedReaders: s.generatedReaders,
+    learnedVocabulary: s.learnedVocabulary,
+    learningActivity: s.learningActivity,
   }));
   const t = useT();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -63,6 +66,18 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
     return { vocab: allVocab, grammar: allGrammar, totalLength };
   }, [syllabus?.id, completedCount, progress?.completedLessons, generatedReaders]);
 
+  // Level-up recommendation
+  const levelUpRec = useMemo(() => {
+    if (!syllabus?.id || !level) return null;
+    return getLevelUpRecommendation(learnedVocabulary, learningActivity, generatedReaders, langId, level);
+  }, [syllabus?.id, level, learnedVocabulary, learningActivity, generatedReaders, langId]);
+
+  // Review context for smart review lessons
+  const reviewContext = useMemo(() => {
+    if (!syllabus?.id) return null;
+    return buildReviewContext(learnedVocabulary, generatedReaders, learningActivity, syllabus.id, progress?.completedLessons || [], langId);
+  }, [syllabus?.id, learnedVocabulary, generatedReaders, learningActivity, progress?.completedLessons, langId]);
+
   function handleDelete() {
     setConfirmingDelete(false);
     onDelete?.();
@@ -87,6 +102,16 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
           <p className="syllabus-home__date text-muted">{t('syllabusHome.created', { date: createdDate })}</p>
         )}
       </header>
+
+      {/* ── Level-up banner ─────────────────────── */}
+      {levelUpRec && (
+        <div className={`syllabus-home__level-up syllabus-home__level-up--${levelUpRec.confidence}`}>
+          <p>{levelUpRec.confidence === 'ready'
+            ? t('syllabusHome.readyToAdvance', { level: levelUpRec.nextLabel })
+            : t('syllabusHome.almostReady', { level: levelUpRec.nextLabel })}</p>
+          <p className="text-muted">{levelUpRec.reason}</p>
+        </div>
+      )}
 
       {/* ── Summary ────────────────────────────── */}
       {summary && (
@@ -211,6 +236,21 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
             {allDone ? t('syllabusHome.reviewFromBeginning') : t('syllabusHome.continueLesson', { number: continueIdx + 1 })}
           </button>
         </div>
+      )}
+
+      {/* ── Smart review ──────────────────────── */}
+      {reviewContext && onGenerateReview && (
+        <section className="syllabus-home__section">
+          <h2 className="syllabus-home__section-title">{t('syllabusHome.reviewLesson')}</h2>
+          <p className="syllabus-home__summary">{t('syllabusHome.reviewDesc', { wordCount: reviewContext.strugglingWords.length })}</p>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={() => onGenerateReview(reviewContext)}
+            disabled={loading}
+          >
+            {t('syllabusHome.generateReview')}
+          </button>
+        </section>
       )}
 
       {/* ── Add more lessons ───────────────────── */}

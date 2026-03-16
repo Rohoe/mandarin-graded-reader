@@ -5,8 +5,9 @@ import { actions } from '../context/actions';
 import { generateReader, generateReaderStream } from '../lib/api';
 import { parseReaderResponse, normalizeStructuredReader } from '../lib/parser';
 import { getLang } from '../lib/languages';
+import { buildLearnerContext } from '../lib/stats';
 
-export function useReaderGeneration({ lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength, useStructuredOutput = false, nativeLang = 'en', syllabus, generatedReaders }) {
+export function useReaderGeneration({ lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength, useStructuredOutput = false, nativeLang = 'en', syllabus, generatedReaders, learningActivity }) {
   const dispatch = useAppDispatch();
   const { pushGeneratedReader } = useContext(AppContext);
   const act = actions(dispatch);
@@ -85,6 +86,10 @@ export function useReaderGeneration({ lessonKey, lessonMeta, reader, langId, isP
       }
     }
 
+    // Adaptive learner context from SRS/quiz history
+    const learnerCtx = buildLearnerContext(learnedVocabulary, generatedReaders, learningActivity, readerLangId);
+    if (learnerCtx) genOptions.learnerContext = learnerCtx;
+
     // Use streaming for Anthropic when not using structured output
     const useStreaming = llmConfig.provider === 'anthropic' && !useStructuredOutput;
 
@@ -127,7 +132,7 @@ export function useReaderGeneration({ lessonKey, lessonMeta, reader, langId, isP
       act.clearPendingReader(lessonKey);
       if (abortRef.current === controller) abortRef.current = null;
     }
-  }, [isPending, lessonKey, lessonMeta, reader, langId, llmConfig, learnedVocabulary, readerLength, maxTokens, useStructuredOutput, nativeLang, act, pushGeneratedReader, syllabus, generatedReaders]);
+  }, [isPending, lessonKey, lessonMeta, reader, langId, llmConfig, learnedVocabulary, readerLength, maxTokens, useStructuredOutput, nativeLang, act, pushGeneratedReader, syllabus, generatedReaders, learningActivity]);
 
   return { handleGenerate, act, streamingText };
 }

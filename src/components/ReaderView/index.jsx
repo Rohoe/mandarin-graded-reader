@@ -37,8 +37,8 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
   // Track which lesson keys we've already tried to load from cache
   const loadedKeysRef = useRef(new Set());
   // Split selectors to prevent settings changes from re-rendering reader content
-  const { generatedReaders, learnedVocabulary, error, pendingReaders, evictedReaderKeys, quotaWarning } = useAppSelector(s => ({
-    generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, error: s.error,
+  const { generatedReaders, learnedVocabulary, learningActivity, error, pendingReaders, evictedReaderKeys, quotaWarning } = useAppSelector(s => ({
+    generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, learningActivity: s.learningActivity, error: s.error,
     pendingReaders: s.pendingReaders, evictedReaderKeys: s.evictedReaderKeys, quotaWarning: s.quotaWarning,
   }));
   const { ttsVoiceURIs, ttsSpeechRate, romanizationOn, translateButtons } = useAppSelector(s => ({
@@ -168,7 +168,7 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
   const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModels, customBaseUrl });
   const { handleGenerate, streamingText } = useReaderGeneration({
     lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength, useStructuredOutput, nativeLang,
-    syllabus, generatedReaders,
+    syllabus, generatedReaders, learningActivity,
   });
 
   // Cancel speech & close popovers when lesson changes

@@ -28,7 +28,8 @@ CRITICAL: Follow the exact section format below. Never omit sections or change h
 - Length: ${charRange} ${langConfig.charUnit}
 - Topic: ${topic}
 ${p.getStoryRequirements(level)}
-- Where natural, reuse previously-learned vocabulary to reinforce retention${difficultyHint === 'review' ? '\n- Use simpler grammar and shorter sentences, reviewing fundamentals' : ''}${difficultyHint === 'stretch' ? '\n- Introduce a few patterns from the next level up as preview' : ''}
+- Where natural, reuse previously-learned vocabulary to reinforce retention
+- If a "Learner Adaptation Context" section is provided, use it to guide vocabulary selection: reinforce words the learner struggles with, and prefer grammar patterns the learner has not yet mastered${difficultyHint === 'review' ? '\n- Use simpler grammar and shorter sentences, reviewing fundamentals' : ''}${difficultyHint === 'stretch' ? '\n- Introduce a few patterns from the next level up as preview' : ''}
 
 ## OUTPUT FORMAT
 
