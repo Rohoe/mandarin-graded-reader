@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { getLang } from '../lib/languages';
 import { useT } from '../i18n';
@@ -88,6 +88,17 @@ const SentencePopoverInner = forwardRef(function SentencePopoverInner(
 ) {
   const t = useT();
   const [hoveredIdx, setHoveredIdx] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const copiedTimer = useRef(null);
+
+  const handleCopy = useCallback(() => {
+    const text = translation ? `${sentenceText}\n${translation}` : sentenceText;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      clearTimeout(copiedTimer.current);
+      copiedTimer.current = setTimeout(() => setCopied(false), 1500);
+    }).catch(() => {});
+  }, [sentenceText, translation]);
 
   const scriptRegex = useMemo(() => {
     const cfg = getLang(langId);
@@ -176,9 +187,18 @@ const SentencePopoverInner = forwardRef(function SentencePopoverInner(
           </button>
         )}
       </div>
-      <span className="sentence-popover__translation">
-        {translation || '\u2026'}
-      </span>
+      <div className="sentence-popover__bottom-row">
+        <span className="sentence-popover__translation">
+          {translation || '\u2026'}
+        </span>
+        <button
+          className="sentence-popover__copy-btn"
+          onClick={(e) => { e.stopPropagation(); handleCopy(); }}
+          aria-label={copied ? 'Copied' : 'Copy text'}
+        >
+          {copied ? '✓' : '⧉'}
+        </button>
+      </div>
       {subText && (
         <div className="sentence-popover__sub">
           <span className="sentence-popover__sub-label">

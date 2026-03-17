@@ -32,7 +32,11 @@ function Notification() {
   const { dispatch } = useApp();
   if (!notification) return null;
   return (
-    <div className={`app-notification app-notification--${notification.type} fade-in`}>
+    <div
+      className={`app-notification app-notification--${notification.type} fade-in`}
+      role={notification.type === 'error' ? 'alert' : 'status'}
+      aria-live={notification.type === 'error' ? 'assertive' : 'polite'}
+    >
       <span>{notification.type === 'success' ? '✓' : '⚠'}</span>
       <span>{notification.message}</span>
       {notification.action && (
@@ -46,6 +50,13 @@ function Notification() {
           {notification.action.label}
         </button>
       )}
+      <button
+        className="app-notification__dismiss"
+        onClick={() => dispatch({ type: CLEAR_NOTIFICATION })}
+        aria-label="Dismiss"
+      >
+        ✕
+      </button>
     </div>
   );
 }
@@ -302,6 +313,9 @@ function AppShell() {
 
   return (
     <div className="app-layout">
+      {/* ─ Skip to content (a11y) ─────────────────────────── */}
+      <a href="#main-content" className="skip-to-content">{t('app.skipToContent') || 'Skip to content'}</a>
+
       {/* ─ Mobile header ─────────────────────────────────── */}
       <header className="app-mobile-header">
         <button
@@ -343,7 +357,7 @@ function AppShell() {
       </div>
 
       {/* ─ Main content ──────────────────────────────────── */}
-      <main className="app-main">
+      <main className="app-main" id="main-content">
         <ErrorBoundary name="reader">
         {activeSyllabusId && syllabusView === 'home' && !standaloneKey
           ? (

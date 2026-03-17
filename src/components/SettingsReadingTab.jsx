@@ -6,6 +6,9 @@ import { useT } from '../i18n';
 export default function SettingsReadingTab({ state, act }) {
   const t = useT();
 
+  const [levelsOpen, setLevelsOpen] = useState(false);
+  const [voicesOpen, setVoicesOpen] = useState(false);
+
   // Build voices map keyed by langId
   const [voicesMap, setVoicesMap] = useState({});
 
@@ -157,60 +160,89 @@ export default function SettingsReadingTab({ state, act }) {
 
       <hr className="divider" />
 
-      {/* Default proficiency levels (data-driven for all languages) */}
-      {getAllLanguages().map(lang => (
-        <section className="settings-section" key={lang.id}>
-          <h3 className="settings-section__title form-label">{t('settings.reading.defaultLevel', { profName: lang.proficiency.name })}</h3>
-          <p className="settings-section__desc text-muted">
-            {t('settings.reading.defaultLevelDesc', { langName: lang.name })}
-          </p>
-          <select
-            className="form-select"
-            value={state.defaultLevels?.[lang.id] ?? 2}
-            onChange={e => act.setDefaultLevelForLang(lang.id, e.target.value)}
-            style={{ maxWidth: '18rem' }}
-          >
-            {lang.proficiency.levels.map(l => (
-              <option key={l.value} value={l.value}>{l.label} — {l.desc}</option>
+      {/* Default proficiency levels — collapsible */}
+      <section className="settings-section">
+        <button
+          className="settings-collapsible-header"
+          onClick={() => setLevelsOpen(o => !o)}
+          aria-expanded={levelsOpen}
+        >
+          <h3 className="settings-section__title form-label" style={{ margin: 0 }}>
+            {t('settings.reading.defaultLevels') || 'Default Levels'}
+          </h3>
+          <span className="settings-collapsible-icon">{levelsOpen ? '▾' : '▸'}</span>
+        </button>
+        {levelsOpen && (
+          <div className="settings-collapsible-body">
+            {getAllLanguages().map(lang => (
+              <div className="settings-section" key={lang.id}>
+                <h4 className="settings-section__title form-label">
+                  {t('settings.reading.defaultLevel', { profName: `${lang.name} ${lang.proficiency.name}` })}
+                </h4>
+                <p className="settings-section__desc text-muted">
+                  {t('settings.reading.defaultLevelDesc', { langName: lang.name })}
+                </p>
+                <select
+                  className="form-select"
+                  value={state.defaultLevels?.[lang.id] ?? 2}
+                  onChange={e => act.setDefaultLevelForLang(lang.id, e.target.value)}
+                  style={{ maxWidth: '18rem' }}
+                >
+                  {lang.proficiency.levels.map(l => (
+                    <option key={l.value} value={l.value}>{l.label} — {l.desc}</option>
+                  ))}
+                </select>
+              </div>
             ))}
-          </select>
-          <hr className="divider" />
-        </section>
-      ))}
+          </div>
+        )}
+      </section>
 
-      {/* TTS voice preferences */}
+      {/* TTS voice preferences — collapsible */}
       {'speechSynthesis' in window && (
         <>
           <hr className="divider" />
           <section className="settings-section">
-            <h3 className="settings-section__title form-label">{t('settings.reading.ttsVoices')}</h3>
+            <button
+              className="settings-collapsible-header"
+              onClick={() => setVoicesOpen(o => !o)}
+              aria-expanded={voicesOpen}
+            >
+              <h3 className="settings-section__title form-label" style={{ margin: 0 }}>
+                {t('settings.reading.ttsVoices')}
+              </h3>
+              <span className="settings-collapsible-icon">{voicesOpen ? '▾' : '▸'}</span>
+            </button>
             <p className="settings-section__desc text-muted">
               {t('settings.reading.ttsVoicesDesc')}
             </p>
-
-            {getAllLanguages().map(lang => {
-              const langVoices = voicesMap[lang.id] || [];
-              return (
-                <div key={lang.id}>
-                  <label className="form-label" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>{t('settings.reading.voice', { langName: lang.name })}</label>
-                  <select
-                    className="form-select"
-                    value={state.ttsVoiceURIs?.[lang.id] || ''}
-                    onChange={e => act.setTtsVoiceForLang(lang.id, e.target.value || null)}
-                    style={{ maxWidth: '18rem' }}
-                  >
-                    <option value="">{t('settings.reading.autoVoice')}</option>
-                    {langVoices
-                      .sort((a, b) => isRecommendedVoice(lang, b) - isRecommendedVoice(lang, a))
-                      .map(v => (
-                        <option key={v.voiceURI} value={v.voiceURI}>
-                          {v.name} ({v.lang}){isRecommendedVoice(lang, v) ? ' \u2605' : ''}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              );
-            })}
+            {voicesOpen && (
+              <div className="settings-collapsible-body">
+                {getAllLanguages().map(lang => {
+                  const langVoices = voicesMap[lang.id] || [];
+                  return (
+                    <div key={lang.id}>
+                      <label className="form-label" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>{t('settings.reading.voice', { langName: lang.name })}</label>
+                      <select
+                        className="form-select"
+                        value={state.ttsVoiceURIs?.[lang.id] || ''}
+                        onChange={e => act.setTtsVoiceForLang(lang.id, e.target.value || null)}
+                        style={{ maxWidth: '18rem' }}
+                      >
+                        <option value="">{t('settings.reading.autoVoice')}</option>
+                        {langVoices
+                          .sort((a, b) => isRecommendedVoice(lang, b) - isRecommendedVoice(lang, a))
+                          .map(v => (
+                            <option key={v.voiceURI} value={v.voiceURI}>
+                              {v.name} ({v.lang}){isRecommendedVoice(lang, v) ? ' \u2605' : ''}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </section>
         </>
       )}

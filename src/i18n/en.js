@@ -26,6 +26,7 @@ export default {
   'app.newReader': 'New Reader',
   'app.openMenu': 'Open menu',
   'app.closeSidebar': 'Close sidebar',
+  'app.skipToContent': 'Skip to content',
 
   // ── Notifications (used in event handlers) ────────────────────
   'notify.apiKeyUpdated': 'API key updated.',
@@ -73,6 +74,7 @@ export default {
   'settings.reading.readingSpeedDesc': 'Adjust the text-to-speech playback speed.',
   'settings.reading.flashcardsPerDay': 'New Flashcards Per Day',
   'settings.reading.flashcardsPerDayDesc': 'Maximum number of new cards introduced in each daily session.',
+  'settings.reading.defaultLevels': 'Default Levels',
   'settings.reading.defaultLevel': 'Default {profName} Level',
   'settings.reading.defaultLevelDesc': 'Pre-selected level when creating {langName} content.',
   'settings.reading.ttsVoices': 'TTS Voices',

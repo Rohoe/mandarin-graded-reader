@@ -596,7 +596,14 @@ export function saveDefaultLevels(map) {
 // ── Dark mode preference ──────────────────────────────────────
 
 export function loadDarkMode() {
-  return load(KEYS.DARK_MODE, false);
+  const stored = load(KEYS.DARK_MODE, null);
+  if (stored !== null) return stored;
+  // Auto-detect OS preference on first load
+  try {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  } catch {
+    return false;
+  }
 }
 
 export function saveDarkMode(val) {

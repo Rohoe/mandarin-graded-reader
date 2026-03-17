@@ -7,6 +7,26 @@
   background: var(--color-bg);
 }
 
+/* ── Skip to content link (a11y) ────────────────────────────── */
+.skip-to-content {
+  position: absolute;
+  left: -9999px;
+  top: var(--space-2);
+  z-index: 999;
+  background: var(--color-accent);
+  color: #fff;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.skip-to-content:focus {
+  left: var(--space-2);
+}
+
 /* ── Root ────────────────────────────────────────────────────── */
 #root {
   min-height: 100vh;
@@ -87,6 +107,23 @@
   white-space: nowrap;
 }
 
+.app-notification__dismiss {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: var(--text-base);
+  padding: 0 var(--space-1);
+  opacity: 0.6;
+  transition: opacity var(--transition);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.app-notification__dismiss:hover {
+  opacity: 1;
+}
+
 .app-notification--success {
   background: #EBF3EB;
   border: 1px solid #AAC4AA;
@@ -131,6 +168,7 @@
     transition: transform var(--transition-slow);
     z-index: 50;
     padding-bottom: env(safe-area-inset-bottom);
+    overflow: hidden;
   }
 
   .app-sidebar--open {
