@@ -87,7 +87,20 @@ export const SET_HAS_MERGE_SNAPSHOT = 'SET_HAS_MERGE_SNAPSHOT';
 export const CLEAR_MERGE_SNAPSHOT = 'CLEAR_MERGE_SNAPSHOT';
 export const REVERT_MERGE = 'REVERT_MERGE';
 
-// ── Data ──────────────────────────────────────────────────────
+// ── Learning Plan ────────────────────────────────────────────
+export const ADD_PLAN = 'ADD_PLAN';
+export const UPDATE_PLAN = 'UPDATE_PLAN';
+export const REMOVE_PLAN = 'REMOVE_PLAN';
+export const SET_PLAN_WEEK = 'SET_PLAN_WEEK';
+export const CONFIRM_PLAN_WEEK = 'CONFIRM_PLAN_WEEK';
+export const COMPLETE_PLAN_ACTIVITY = 'COMPLETE_PLAN_ACTIVITY';
+export const SKIP_PLAN_ACTIVITY = 'SKIP_PLAN_ACTIVITY';
+export const UPDATE_PLAN_ACTIVITY_STATUS = 'UPDATE_PLAN_ACTIVITY_STATUS';
+export const ARCHIVE_WEEK = 'ARCHIVE_WEEK';
+export const EARN_XP = 'EARN_XP';
+export const ADD_MILESTONE = 'ADD_MILESTONE';
+
+//── Data ──────────────────────────────────────────────────────
 export const RESTORE_FROM_BACKUP = 'RESTORE_FROM_BACKUP';
 export const CLEAR_ALL_DATA = 'CLEAR_ALL_DATA';
 export const FS_INITIALIZED = 'FS_INITIALIZED';
@@ -107,4 +120,8 @@ export const DATA_ACTIONS = new Set([
   SET_READER, CLEAR_READER,
   ADD_VOCABULARY, CLEAR_VOCABULARY, UPDATE_VOCAB_SRS,
   ADD_EXPORTED_WORDS, CLEAR_EXPORTED_WORDS,
+  ADD_PLAN, UPDATE_PLAN, REMOVE_PLAN,
+  SET_PLAN_WEEK, CONFIRM_PLAN_WEEK,
+  COMPLETE_PLAN_ACTIVITY, SKIP_PLAN_ACTIVITY, ARCHIVE_WEEK,
+  EARN_XP, ADD_MILESTONE,
 ]);

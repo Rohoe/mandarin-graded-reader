@@ -7,7 +7,7 @@
 | File | Description |
 |------|-------------|
 | `AppContext.jsx` | useReducer-based global store + AppProvider. Reducer composed from 8 domain slices in `reducers/`. Persistence extracted to `usePersistence` hook. Test-only exports: `_baseReducer`, `_reducer`, `_DATA_ACTIONS`. |
-| `reducers/` | 8 domain slice reducers: `providerReducer`, `syllabusReducer`, `readerReducer`, `vocabularyReducer`, `dataReducer`, `preferencesReducer`, `uiReducer`, `cloudReducer`. Each handles its own action types; composed in AppContext. |
+| `reducers/` | 9 domain slice reducers: `providerReducer`, `syllabusReducer`, `readerReducer`, `vocabularyReducer`, `dataReducer`, `preferencesReducer`, `uiReducer`, `cloudReducer`, `planReducer`. Each handles its own action types; composed in AppContext. |
 | `usePersistence.js` | Persistence side-effects extracted from AppContext. useEffect hooks keyed to state slices. Uses `mountedRef` to skip initial-render saves. Generated readers use `prevReadersRef` diffing. |
 | `useApp.js` | useApp hook (separate file for ESLint fast-refresh rule) |
 | `actions.js` | actions() helper factory (separate file for same reason) |
@@ -24,7 +24,9 @@
 | `api.js` | LLM API calls: `generateSyllabus()`, `generateReader()`, `generateReaderStream()`, `extendSyllabus()`, `gradeAnswers()`. All accept `llmConfig` first, `langId` last. `generateReaderStream()` is an async generator for Anthropic SSE streaming. `callLLM()` dispatches to provider-specific functions. `fetchWithRetry()` for backoff. `callLLMStructured()` for structured output. `buildReaderUserMessage()` accepts syllabus-aware options: `vocabFocus`, `syllabusContext`, `taughtGrammar`. Story continuation uses smart truncation (preserves beginning + end). Exports `isRetryable` for testing. |
 | `chatApi.js` | Multi-turn chat API for tutor feature. `callLLMChat()` sends full message array to any provider. `callLLMChatStream()` async generator for Anthropic streaming, falls back to non-streaming for others. Provider message format mapping (Anthropic: system param; OpenAI: system role; Gemini: system_instruction + user/model roles). Sliding window keeps last 20 messages. `buildExternalTutorPrompt()` generates self-contained prompt for pasting into Claude/ChatGPT. |
 | `difficultyValidator.js` | `assessDifficulty(vocab, learnedVocabulary, level)` computes new-word ratio and returns an assessment label/class. Used by ReaderHeader to show a difficulty badge. |
-| `stats.js` | `computeStats(state)`, `getStreak()`, `getWordsByPeriod()` |
+| `stats.js` | `computeStats(state)`, `getStreak()`, `getWordsByPeriod()`, `buildLearnerProfile()`, `buildLearnerContext()`, `buildReviewContext()`, `getLevelUpRecommendation()` |
+| `planScheduler.js` | Pure scheduling: `estimateActivityDuration()`, `distributeActivities()`, `calculateDailyBudget()`, `getCurrentMonday()`, `isNewWeek()` |
+| `planApi.js` | LLM calls for learning plans: `generateAssessment()`, `generateWeeklyPlan()`, `buildWeeklySummary()` |
 | `storage.js` | localStorage helpers with file fan-out via `setDirectoryHandle()`. Per-reader lazy storage. LRU eviction (>30 cached, >30 days). Provider keys NOT synced to file/cloud. |
 | `fileStorage.js` | File System Access API layer. Stores directory handle in IndexedDB. File layout: `graded-reader-syllabi.json`, `graded-reader-readers.json`, `graded-reader-vocabulary.json`, `graded-reader-exported.json`. |
 | `parser.js` | Parses LLM markdown → structured data. `normalizeStructuredReader()` for JSON mode. Language-aware via `langConfig.scriptRegex`. Vocab items have both canonical (target/romanization/translation) and legacy (chinese/pinyin/english) fields. |
@@ -42,6 +44,8 @@
 | `gradingPrompt.js` | `buildGradingSystem(langConfig, level)` |
 | `extendSyllabusPrompt.js` | `buildExtendSyllabusPrompt(langConfig, topic, level, existingLessons, additionalCount)` |
 | `tutorPrompt.js` | `buildTutorSystemPrompt(reader, lessonMeta, langConfig, nativeLangName)` — context-rich system prompt for AI tutor with story, vocabulary, grammar, quiz results, syllabus metadata |
+| `assessmentPrompt.js` | `buildAssessmentPrompt(langConfig, nativeLangName)` — placement assessment. `deriveAssessedLevel(ratings, langConfig)` — derives level from snippet comprehension ratings |
+| `weeklyPlanPrompt.js` | `buildWeeklyPlanPrompt(langConfig, plan, weekNumber, priorWeekSummary, learnerProfile, nativeLangName)` — weekly plan generation |
 
 ### `src/hooks/`
 
@@ -55,6 +59,7 @@
 | `useFocusTrap.js` | Focus trap for popovers. Keeps keyboard focus within the active popover until dismissed. |
 | `useReadingTimer.js` | Tracks reading time per reader. Starts on mount, pauses on blur/idle, resumes on focus. Stores `readingTime` (seconds) in reader state. |
 | `usePWA.js` | PWA install prompt hook. Captures `beforeinstallprompt` event, exposes `canInstall` flag and `promptInstall()` method. |
+| `usePlanWeek.js` | Weekly plan lifecycle: detect new week, generate via LLM, archive old week. Returns `{ generating, error, regenerate }`. |
 
 ### `src/i18n/`
 
@@ -100,6 +105,19 @@
   ttsSpeechRate,
   romanizationOn, exportSentenceRom, exportSentenceTrans, useStructuredOutput, newCardsPerDay,
   nativeLang,
+
+  // Learning Plans
+  learningPlans: {
+    [planId]: {
+      id, langId, nativeLang, assessedLevel, currentLevel,
+      goals, dailyMinutes, createdAt, adaptationNotes,
+      currentWeek: null | { weekOf, generatedAt, confirmed, theme, days[] },
+      weekHistory: [{ weekOf, completedCount, totalCount, minutesSpent, theme }],
+    }
+  },
+  planProgress: {
+    [planId]: { totalActivitiesCompleted, currentStreak, totalMinutesSpent, xp, milestones[] }
+  },
 
   // Storage & sync
   evictedReaderKeys: Set<string>,

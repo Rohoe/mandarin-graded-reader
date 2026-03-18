@@ -65,6 +65,8 @@ const KEYS = {
   FLASHCARD_SESSION:   'gradedReader_flashcardSession',
   READING_TIME:        'gradedReader_readingTime',
   NATIVE_LANG:         'gradedReader_nativeLang',
+  LEARNING_PLANS:      'gradedReader_learningPlans',
+  PLAN_PROGRESS:       'gradedReader_planProgress',
 };
 
 const READER_KEY_PREFIX = 'gradedReader_reader_';
@@ -875,6 +877,24 @@ export function loadNativeLang() {
 
 export function saveNativeLang(langId) {
   save(KEYS.NATIVE_LANG, langId);
+}
+
+// ── Learning Plans ─────────────────────────────────────────
+
+export function loadLearningPlans() {
+  return load(KEYS.LEARNING_PLANS, {});
+}
+
+export function saveLearningPlans(plans) {
+  save(KEYS.LEARNING_PLANS, plans);
+}
+
+export function loadPlanProgress() {
+  return load(KEYS.PLAN_PROGRESS, {});
+}
+
+export function savePlanProgress(progress) {
+  save(KEYS.PLAN_PROGRESS, progress);
 }
 
 // ── Reader eviction (LRU) ─────────────────────────────────────

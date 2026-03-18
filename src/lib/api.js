@@ -292,7 +292,7 @@ function getProvider(providerId) {
  * @param {number} maxTokens
  * @param {{ signal?: AbortSignal, structured?: boolean }} options
  */
-async function callLLM(llmConfig, systemPrompt, userMessage, maxTokens = 4096, { signal: externalSignal, structured = false } = {}) {
+export async function callLLM(llmConfig, systemPrompt, userMessage, maxTokens = 4096, { signal: externalSignal, structured = false } = {}) {
   const { provider, apiKey, model, baseUrl } = llmConfig;
   if (!apiKey) throw new Error('No API key provided. Please add your API key in Settings.');
 

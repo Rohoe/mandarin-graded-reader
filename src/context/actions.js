@@ -82,5 +82,17 @@ export function actions(dispatch) {
     logActivity:           (type, extra) => dispatch({ type: T.LOG_ACTIVITY, payload: { type, ...extra } }),
     // Reading time
     updateReadingTime:     (lessonKey, seconds) => dispatch({ type: T.UPDATE_READING_TIME, payload: { lessonKey, seconds } }),
+    // Learning plans
+    addPlan:               plan   => dispatch({ type: T.ADD_PLAN, payload: plan }),
+    updatePlan:            (id, updates) => dispatch({ type: T.UPDATE_PLAN, payload: { id, ...updates } }),
+    removePlan:            id     => dispatch({ type: T.REMOVE_PLAN, payload: id }),
+    setPlanWeek:           (planId, week) => dispatch({ type: T.SET_PLAN_WEEK, payload: { planId, week } }),
+    confirmPlanWeek:       planId => dispatch({ type: T.CONFIRM_PLAN_WEEK, payload: planId }),
+    completePlanActivity:  (planId, dayIndex, activityId, actualMinutes) => dispatch({ type: T.COMPLETE_PLAN_ACTIVITY, payload: { planId, dayIndex, activityId, actualMinutes } }),
+    skipPlanActivity:      (planId, dayIndex, activityId) => dispatch({ type: T.SKIP_PLAN_ACTIVITY, payload: { planId, dayIndex, activityId } }),
+    updatePlanActivityStatus: (planId, dayIndex, activityId, status) => dispatch({ type: T.UPDATE_PLAN_ACTIVITY_STATUS, payload: { planId, dayIndex, activityId, status } }),
+    archiveWeek:           planId => dispatch({ type: T.ARCHIVE_WEEK, payload: planId }),
+    earnXP:                (planId, amount) => dispatch({ type: T.EARN_XP, payload: { planId, amount } }),
+    addMilestone:          (planId, milestone) => dispatch({ type: T.ADD_MILESTONE, payload: { planId, milestone } }),
   };
 }

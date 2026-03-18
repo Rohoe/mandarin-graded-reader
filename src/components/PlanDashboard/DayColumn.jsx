@@ -1,0 +1,38 @@
+import { useT } from '../../i18n';
+import ActivityCard from './ActivityCard';
+
+export default function DayColumn({ day, dayIndex, dayName, isToday, onActivityClick, onSkip }) {
+  const t = useT();
+  const activities = day?.activities || [];
+
+  if (activities.length === 0) {
+    return (
+      <div className="plan-day-column plan-day-column--empty">
+        <p className="text-muted">{t('plan.dashboard.restDay')}</p>
+      </div>
+    );
+  }
+
+  const totalMinutes = activities.reduce((sum, a) => sum + (a.estimatedMinutes || 0), 0);
+
+  return (
+    <div className="plan-day-column fade-in">
+      <div className="plan-day-column__header">
+        <span className="plan-day-column__label">
+          {dayName} {isToday && <span className="plan-day-column__today-badge">{t('plan.dashboard.today')}</span>}
+        </span>
+        <span className="plan-day-column__time text-muted">{totalMinutes} min</span>
+      </div>
+      <div className="plan-day-column__activities">
+        {activities.map(activity => (
+          <ActivityCard
+            key={activity.id}
+            activity={activity}
+            onClick={() => onActivityClick(activity)}
+            onSkip={() => onSkip(activity.id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}

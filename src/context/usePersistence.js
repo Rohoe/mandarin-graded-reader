@@ -37,6 +37,8 @@ import {
   saveStructuredOutput,
   saveNewCardsPerDay,
   saveReadingTime,
+  saveLearningPlans,
+  savePlanProgress,
   saveCloudLastSynced,
   saveReaderSafe,
   deleteReader,
@@ -60,6 +62,8 @@ const PERSISTENCE_MAP = [
   { key: 'learningActivity', save: saveLearningActivity },
   { key: 'evictedReaderKeys', save: saveEvictedReaderKeys },
   { key: 'readingTime', save: saveReadingTime },
+  { key: 'learningPlans', save: saveLearningPlans },
+  { key: 'planProgress', save: savePlanProgress },
   // Provider/API settings
   { key: 'providerKeys', save: saveProviderKeys },
   { key: 'activeProvider', save: saveActiveProvider },

@@ -17,6 +17,7 @@ export default function SyllabusPanel({
   activeSyllabusId,
   standaloneKey,
   syllabusView,
+  activePlanId,
   onSelectLesson,
   onShowSettings,
   onShowStats,
@@ -26,11 +27,14 @@ export default function SyllabusPanel({
   onGoSyllabusHome,
   onShowNewForm,
   onShowSignIn,
+  onSelectPlan,
+  onShowPlanOnboarding,
 }) {
-  const { syllabi, syllabusProgress, standaloneReaders, generatedReaders, loading, pendingReaders, cloudUser, cloudSyncing, cloudLastSynced, lastModified } = useAppSelector(s => ({
+  const { syllabi, syllabusProgress, standaloneReaders, generatedReaders, loading, pendingReaders, cloudUser, cloudSyncing, cloudLastSynced, lastModified, learningPlans } = useAppSelector(s => ({
     syllabi: s.syllabi, syllabusProgress: s.syllabusProgress, standaloneReaders: s.standaloneReaders,
     generatedReaders: s.generatedReaders, loading: s.loading, pendingReaders: s.pendingReaders,
     cloudUser: s.cloudUser, cloudSyncing: s.cloudSyncing, cloudLastSynced: s.cloudLastSynced, lastModified: s.lastModified,
+    learningPlans: s.learningPlans,
   }));
   const dispatch = useAppDispatch();
   const act = actions(dispatch);
@@ -199,8 +203,45 @@ export default function SyllabusPanel({
         />
       )}
 
+      {/* Learning Plans section */}
+      {Object.keys(learningPlans || {}).length > 0 && (
+        <div className="syllabus-panel__plans-section">
+          <div className="syllabus-panel__section-header">
+            <span className="syllabus-panel__section-title">{t('sidebar.learningPlans')}</span>
+            <button className="btn btn-ghost btn-xs" onClick={() => onShowPlanOnboarding?.()}>{t('sidebar.newPlan')}</button>
+          </div>
+          {Object.values(learningPlans).filter(p => !p.archived).map(plan => {
+            const langConfig = getLang(plan.langId);
+            const isActive = plan.id === activePlanId && syllabusView === 'plan';
+            const week = plan.currentWeek;
+            let weekProgress = '';
+            if (week && week.confirmed) {
+              let done = 0, total = 0;
+              for (const d of week.days) for (const a of d.activities) { total++; if (a.status === 'completed') done++; }
+              weekProgress = t('sidebar.planProgress', { completed: done, total });
+            }
+            return (
+              <button
+                key={plan.id}
+                className={`syllabus-panel__plan-item ${isActive ? 'syllabus-panel__plan-item--active' : ''}`}
+                onClick={() => onSelectPlan?.(plan.id)}
+              >
+                <span className="syllabus-panel__plan-lang">{langConfig.nameNative}</span>
+                <span className="syllabus-panel__plan-level">
+                  {langConfig.proficiency.levels.find(l => l.value === plan.currentLevel)?.label}
+                </span>
+                <span className="syllabus-panel__plan-progress text-muted">
+                  {weekProgress || t('sidebar.noPlanWeek')}
+                </span>
+              </button>
+            );
+          })}
+          <div className="syllabus-panel__divider" />
+        </div>
+      )}
+
       {/* Empty state */}
-      {!hasContent && (
+      {!hasContent && Object.keys(learningPlans || {}).length === 0 && (
         <div className="syllabus-panel__empty">
           <p className="syllabus-panel__empty-text text-muted">{t('sidebar.noReaders')}</p>
           <button className="btn btn-sm syllabus-panel__empty-cta" onClick={() => onShowNewForm?.()}>

@@ -94,6 +94,10 @@ vi.mock('../lib/storage', () => ({
   saveDefaultLevels: vi.fn(),
   loadNativeLang: () => 'en',
   saveNativeLang: vi.fn(),
+  loadLearningPlans: () => ({}),
+  saveLearningPlans: vi.fn(),
+  loadPlanProgress: () => ({}),
+  savePlanProgress: vi.fn(),
 }));
 
 vi.mock('../lib/fileStorage', () => ({

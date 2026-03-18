@@ -82,5 +82,29 @@ Collapsible summary card. Used both inside the chat drawer and as a section in R
 ### FAB Button
 Floating action button (💬) in ReaderView, `position: fixed; bottom-right`. Opens the tutor chat drawer. Only rendered when a reader is loaded and `onOpenChat` prop is provided.
 
+## `PlanOnboarding/`
+Multi-step wizard for creating a learning plan. Steps: language → goals → daily budget → level assessment → confirm.
+
+### `PlanOnboarding/index.jsx`
+5-step wizard with progress dots. Language selection (grid of language buttons), free-text goals input, daily minutes slider (10–120), level assessment (auto from learning history, AI placement test, or manual selection), and confirmation summary with level override option. Creates a plan via `addPlan()` action on confirm.
+
+## `PlanDashboard/`
+Weekly plan view showing daily activity checklists. Primary content view when a learning plan is active.
+
+### `PlanDashboard/index.jsx`
+Main dashboard. Header with week theme + progress ring. Day tabs (Mon–Sun) with today highlight and done indicators. Shows `WeekConfirmation` for unconfirmed weeks. Activity clicks route to existing views (ReaderView, FlashcardReview, TutorChat). Stats bar shows total activities done, minutes spent, weeks completed.
+
+### `DayColumn.jsx`
+Single day's activity list. Shows header with day name, today badge, and total estimated minutes. Empty days show "Rest day" message.
+
+### `ActivityCard.jsx`
+Activity card with type icon, title, description, estimated time, status indicator. Click to start activity, skip button (×) on hover. Visual states: pending, in-progress (accent border), completed (muted + checkmark), skipped (muted + strikethrough).
+
+### `WeekProgress.jsx`
+SVG progress ring showing weekly completion percentage.
+
+### `WeekConfirmation.jsx`
+"Here's your plan for this week" screen. Shows theme, activity count, total time, and daily breakdown with color-coded activity chips. Accept or regenerate buttons.
+
 ## `GenerationProgress`
 Phase-based progress bar. type='reader' (6 phases, ~30s) or type='syllabus' (4 phases, ~10s). Shows dynamic provider name.

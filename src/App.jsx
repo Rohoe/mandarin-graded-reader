@@ -19,6 +19,8 @@ import StatsDashboard from './components/StatsDashboard';
 import FlashcardReview from './components/FlashcardReview';
 import SignInModal from './components/SignInModal';
 import TutorChat from './components/TutorChat';
+import PlanOnboarding from './components/PlanOnboarding';
+import PlanDashboard from './components/PlanDashboard';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingIndicator from './components/LoadingIndicator';
@@ -76,6 +78,11 @@ function AppShell() {
   const [showSignIn,     setShowSignIn]      = useState(false);
   const [sidebarOpen,    setSidebarOpen]     = useState(false);
   const [chatOpen,       setChatOpen]       = useState(false);
+  const [activePlanId,   setActivePlanId]   = useState(() => {
+    const session = loadLastSession();
+    return session?.planId || null;
+  });
+  const [showPlanOnboarding, setShowPlanOnboarding] = useState(false);
 
   // Restore last session, falling back to first non-archived syllabus
   const [activeSyllabusId, setActiveSyllabusId] = useState(() => {
@@ -98,15 +105,16 @@ function AppShell() {
 
   // Persist session whenever navigation state changes
   useEffect(() => {
-    saveLastSession({ syllabusId: activeSyllabusId, syllabusView, standaloneKey });
-  }, [activeSyllabusId, syllabusView, standaloneKey]);
+    saveLastSession({ syllabusId: activeSyllabusId, syllabusView, standaloneKey, planId: activePlanId });
+  }, [activeSyllabusId, syllabusView, standaloneKey, activePlanId]);
 
-  // Auto-show new form modal for new users with no content
+  // Auto-show plan onboarding for truly new users with no content and no plans
   const nonArchSyllabi = syllabi.filter(s => !s.archived);
   const nonArchStandalone = state.standaloneReaders.filter(r => !r.archived);
+  const hasPlans = Object.keys(state.learningPlans || {}).length > 0;
   useEffect(() => {
-    if (nonArchSyllabi.length === 0 && nonArchStandalone.length === 0) {
-      setShowNewForm(true);
+    if (nonArchSyllabi.length === 0 && nonArchStandalone.length === 0 && !hasPlans) {
+      setShowPlanOnboarding(true);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -343,6 +351,7 @@ function AppShell() {
             activeSyllabusId={activeSyllabusId}
             standaloneKey={standaloneKey}
             syllabusView={syllabusView}
+            activePlanId={activePlanId}
             onSelectLesson={handleSelectLesson}
             onShowSettings={() => setShowSettings(true)}
             onShowStats={() => setShowStats(true)}
@@ -352,6 +361,8 @@ function AppShell() {
             onGoSyllabusHome={handleGoSyllabusHome}
             onShowNewForm={() => setShowNewForm(true)}
             onShowSignIn={() => setShowSignIn(true)}
+            onSelectPlan={(id) => { setActivePlanId(id); setStandaloneKey(null); setSyllabusView('plan'); }}
+            onShowPlanOnboarding={() => setShowPlanOnboarding(true)}
           />
         </ErrorBoundary>
       </div>
@@ -359,7 +370,51 @@ function AppShell() {
       {/* ─ Main content ──────────────────────────────────── */}
       <main className="app-main" id="main-content">
         <ErrorBoundary name="reader">
-        {activeSyllabusId && syllabusView === 'home' && !standaloneKey
+        {activePlanId && syllabusView === 'plan' && !standaloneKey
+          ? (
+            <PlanDashboard
+              planId={activePlanId}
+              onActivityOpen={({ planId, dayIndex, activity }) => {
+                // Route activity to existing views
+                if (activity.type === 'reading' || activity.type === 'review') {
+                  // Generate a standalone reader for this activity
+                  const readerKey = `plan_${planId}_${activity.id}`;
+                  const existingReader = state.generatedReaders[readerKey];
+                  if (!existingReader) {
+                    // Create standalone reader metadata
+                    const config = activity.config || {};
+                    act.addStandaloneReader({
+                      key: readerKey,
+                      topic: config.topic || activity.title,
+                      level: config.level || state.learningPlans[planId]?.currentLevel,
+                      langId: state.learningPlans[planId]?.langId || 'zh',
+                      createdAt: Date.now(),
+                    });
+                  }
+                  setStandaloneKey(readerKey);
+                  setSyllabusView('lesson');
+                } else if (activity.type === 'flashcards') {
+                  setShowFlashcards(true);
+                  act.completePlanActivity(planId, dayIndex, activity.id, activity.estimatedMinutes);
+                } else if (activity.type === 'tutor') {
+                  // Open tutor with the most recent plan reader
+                  setChatOpen(true);
+                  act.completePlanActivity(planId, dayIndex, activity.id, activity.estimatedMinutes);
+                } else if (activity.type === 'quiz') {
+                  // Quiz — open the reading it references, user will take quiz there
+                  const config = activity.config || {};
+                  if (config.readingTitle) {
+                    // Find the reader key for the referenced reading
+                    const readerKey = `plan_${planId}_${activity.id}`;
+                    setStandaloneKey(readerKey);
+                    setSyllabusView('lesson');
+                  }
+                }
+              }}
+              onOpenSettings={() => setShowSettings(true)}
+            />
+          )
+          : activeSyllabusId && syllabusView === 'home' && !standaloneKey
           ? (
             <SyllabusHome
               syllabus={currentSyllabus}
@@ -434,6 +489,17 @@ function AppShell() {
               <h2 id="new-reader-title" className="font-display" style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>{t('app.newReader')}</h2>
               <button className="btn btn-ghost settings-panel__close" onClick={() => setShowNewForm(false)} aria-label={t('common.close')}>✕</button>
             </div>
+            {/* CTA to start a learning plan */}
+            <button
+              className="btn plan-cta-btn"
+              onClick={() => { setShowNewForm(false); setShowPlanOnboarding(true); }}
+              style={{ width: '100%', marginBottom: 'var(--space-4)', padding: 'var(--space-3)', background: 'var(--color-accent)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 600, cursor: 'pointer' }}
+            >
+              {t('sidebar.startLearningPlan')}
+            </button>
+            <div style={{ position: 'relative', textAlign: 'center', margin: 'calc(-1 * var(--space-2)) 0 var(--space-3)' }}>
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', background: 'var(--color-bg-elevated)', padding: '0 var(--space-2)', position: 'relative' }}>or create content manually</span>
+            </div>
             <TopicForm
               onNewSyllabus={(id) => { setShowNewForm(false); handleNewSyllabus(id); }}
               onStandaloneGenerated={(key) => { setShowNewForm(false); onStandaloneGenerated(key); }}
@@ -456,6 +522,33 @@ function AppShell() {
             onClose={() => setChatOpen(false)}
           />
         </ErrorBoundary>
+      )}
+
+      {/* ─ Plan onboarding modal ──────────────────────────── */}
+      {showPlanOnboarding && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="plan-onboarding-title" onClick={e => e.target === e.currentTarget && setShowPlanOnboarding(false)}>
+          <div className="settings-panel card card-padded fade-in" style={{ maxWidth: 520 }}>
+            <div className="settings-panel__header">
+              <h2 id="plan-onboarding-title" className="font-display" style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>{t('sidebar.startLearningPlan')}</h2>
+              <button className="btn btn-ghost settings-panel__close" onClick={() => setShowPlanOnboarding(false)} aria-label={t('common.close')}>✕</button>
+            </div>
+            <PlanOnboarding
+              onComplete={(planId) => {
+                setShowPlanOnboarding(false);
+                setActivePlanId(planId);
+                setStandaloneKey(null);
+                setSyllabusView('plan');
+              }}
+              onCancel={() => {
+                setShowPlanOnboarding(false);
+                // If user cancels and has no content, show the new form instead
+                if (nonArchSyllabi.length === 0 && nonArchStandalone.length === 0 && !hasPlans) {
+                  setShowNewForm(true);
+                }
+              }}
+            />
+          </div>
+        </div>
       )}
 
       {/* ─ Toast notification ────────────────────────────── */}
