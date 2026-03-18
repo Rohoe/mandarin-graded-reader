@@ -206,6 +206,7 @@ export default {
   'sidebar.signInBanner': '로그인하여 진행 상황을 저장하세요',
   'toolbar.all': '전체',
   'toolbar.courses': '코스',
+  'toolbar.plans': '학습 계획',
   'toolbar.readers': '리더',
   'toolbar.searchTopics': '주제 검색…',
   'toolbar.clearSearch': '검색 지우기',

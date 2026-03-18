@@ -8,6 +8,7 @@ import SyllabusToolbar from './SyllabusPanel/SyllabusToolbar';
 import SyllabusCourseItem from './SyllabusPanel/SyllabusCourseItem';
 import StandaloneReaderItem from './SyllabusPanel/StandaloneReaderItem';
 import SeriesGroup from './SyllabusPanel/SeriesGroup';
+import PlanGroupItem from './SyllabusPanel/PlanGroupItem';
 import ArchivedSection from './SyllabusPanel/ArchivedSection';
 import SyncFooter from './SyllabusPanel/SyncFooter';
 import ConfirmDialog from './SyllabusPanel/ConfirmDialog';
@@ -45,6 +46,9 @@ export default function SyllabusPanel({
   const archivedSyllabi  = syllabi.filter(s => s.archived);
   const archivedStandalone = standaloneReaders.filter(r => r.archived);
   const activeStandalone = standaloneReaders.filter(r => !r.archived);
+  const regularStandalone = activeStandalone.filter(r => !r.key.startsWith('plan_'));
+  const archivedRegularStandalone = archivedStandalone.filter(r => !r.key.startsWith('plan_'));
+  const activePlans = Object.values(learningPlans || {}).filter(p => !p.archived);
 
   // ── Toolbar state ──────────────────────────
   const [viewMode, setViewMode] = useState('all');
@@ -52,6 +56,7 @@ export default function SyllabusPanel({
   const [langFilter, setLangFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
   const [expandedSyllabi, setExpandedSyllabi] = useState(new Set());
+  const [expandedPlans, setExpandedPlans] = useState(new Set());
 
   // Auto-expand the active syllabus
   useEffect(() => {
@@ -65,39 +70,94 @@ export default function SyllabusPanel({
     }
   }, [activeSyllabusId, standaloneKey]);
 
+  // Auto-expand the active plan
+  useEffect(() => {
+    if (activePlanId) {
+      setExpandedPlans(prev => {
+        if (prev.has(activePlanId)) return prev;
+        const next = new Set(prev);
+        next.add(activePlanId);
+        return next;
+      });
+    }
+  }, [activePlanId]);
+
+  // Auto-expand plan when viewing one of its readers
+  useEffect(() => {
+    if (standaloneKey && standaloneKey.startsWith('plan_')) {
+      for (const plan of Object.values(learningPlans || {})) {
+        if (standaloneKey.startsWith(`plan_${plan.id}_`)) {
+          setExpandedPlans(prev => {
+            if (prev.has(plan.id)) return prev;
+            const next = new Set(prev);
+            next.add(plan.id);
+            return next;
+          });
+          break;
+        }
+      }
+    }
+  }, [standaloneKey, learningPlans]);
+
   // Detect if content spans multiple languages
   const contentLanguages = useMemo(() => {
     const langs = new Set();
     for (const s of activeSyllabi) langs.add(s.langId || 'zh');
-    for (const r of activeStandalone) langs.add(r.langId || 'zh');
+    for (const r of regularStandalone) langs.add(r.langId || 'zh');
+    for (const p of activePlans) langs.add(p.langId || 'zh');
     return langs;
-  }, [activeSyllabi, activeStandalone]);
+  }, [activeSyllabi, regularStandalone, activePlans]);
   const multiLang = contentLanguages.size > 1;
 
   // ── Filtering & sorting ────────────────────
-  const { filteredSyllabi, filteredStandalone } = useMemo(() => {
+  const { filteredSyllabi, filteredStandalone, filteredPlans, filteredPlanReaders } = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     let fSyllabi = activeSyllabi;
-    let fStandalone = activeStandalone;
-    if (viewMode === 'readers') fSyllabi = [];
-    if (viewMode === 'courses') fStandalone = [];
+    let fStandalone = regularStandalone;
+    let fPlans = activePlans;
+    if (viewMode === 'readers') { fSyllabi = []; fPlans = []; }
+    if (viewMode === 'courses') { fStandalone = []; fPlans = []; }
+    if (viewMode === 'plans') { fSyllabi = []; fStandalone = []; }
     if (langFilter !== 'all') {
       fSyllabi = fSyllabi.filter(s => (s.langId || 'zh') === langFilter);
       fStandalone = fStandalone.filter(r => (r.langId || 'zh') === langFilter);
+      fPlans = fPlans.filter(p => (p.langId || 'zh') === langFilter);
     }
     if (query) {
       fSyllabi = fSyllabi.filter(s => s.topic.toLowerCase().includes(query));
       fStandalone = fStandalone.filter(r => r.topic.toLowerCase().includes(query));
+      fPlans = fPlans.filter(p => {
+        const lc = getLang(p.langId);
+        return lc.name.toLowerCase().includes(query) || lc.nameNative.toLowerCase().includes(query);
+      });
     }
     if (sortBy === 'alpha') {
       fSyllabi = [...fSyllabi].sort((a, b) => a.topic.localeCompare(b.topic));
       fStandalone = [...fStandalone].sort((a, b) => a.topic.localeCompare(b.topic));
+      fPlans = [...fPlans].sort((a, b) => getLang(a.langId).name.localeCompare(getLang(b.langId).name));
     } else {
       fSyllabi = [...fSyllabi].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       fStandalone = [...fStandalone].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      fPlans = [...fPlans].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     }
-    return { filteredSyllabi: fSyllabi, filteredStandalone: fStandalone };
-  }, [activeSyllabi, activeStandalone, viewMode, langFilter, searchQuery, sortBy]);
+    // Group plan readers by planId
+    const planReadersByPlan = {};
+    const planStandalone = activeStandalone.filter(r => r.key.startsWith('plan_'));
+    const planIdSet = new Set(fPlans.map(p => p.id));
+    for (const r of planStandalone) {
+      for (const pid of planIdSet) {
+        if (r.key.startsWith(`plan_${pid}_`)) {
+          if (!planReadersByPlan[pid]) planReadersByPlan[pid] = [];
+          planReadersByPlan[pid].push(r);
+          break;
+        }
+      }
+    }
+    for (const readers of Object.values(planReadersByPlan)) {
+      readers.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    }
+    return { filteredSyllabi: fSyllabi, filteredStandalone: fStandalone, filteredPlans: fPlans, filteredPlanReaders: planReadersByPlan };
+  }, [activeSyllabi, regularStandalone, activePlans, activeStandalone, viewMode, langFilter, searchQuery, sortBy]);
 
   // Group standalone readers by seriesId
   const { ungrouped, seriesGroups } = useMemo(() => {
@@ -162,8 +222,18 @@ export default function SyllabusPanel({
     setExpandedSeries(prev => ({ ...prev, [sId]: !prev[sId] }));
   }
 
-  const hasContent = activeSyllabi.length > 0 || activeStandalone.length > 0;
-  const hasFilteredContent = filteredSyllabi.length > 0 || filteredStandalone.length > 0;
+  function togglePlanExpand(e, planId) {
+    e.stopPropagation();
+    setExpandedPlans(prev => {
+      const next = new Set(prev);
+      if (next.has(planId)) next.delete(planId);
+      else next.add(planId);
+      return next;
+    });
+  }
+
+  const hasContent = activeSyllabi.length > 0 || regularStandalone.length > 0 || activePlans.length > 0;
+  const hasFilteredContent = filteredSyllabi.length > 0 || filteredStandalone.length > 0 || filteredPlans.length > 0;
   const isFiltering = searchQuery || langFilter !== 'all' || viewMode !== 'all';
 
   const langOptions = [
@@ -203,43 +273,6 @@ export default function SyllabusPanel({
         />
       )}
 
-      {/* Learning Plans section */}
-      {Object.keys(learningPlans || {}).length > 0 && (
-        <div className="syllabus-panel__plans-section">
-          <div className="syllabus-panel__section-header">
-            <span className="syllabus-panel__section-title">{t('sidebar.learningPlans')}</span>
-            <button className="btn btn-ghost btn-xs" onClick={() => onShowPlanOnboarding?.()}>{t('sidebar.newPlan')}</button>
-          </div>
-          {Object.values(learningPlans).filter(p => !p.archived).map(plan => {
-            const langConfig = getLang(plan.langId);
-            const isActive = plan.id === activePlanId && syllabusView === 'plan';
-            const week = plan.currentWeek;
-            let weekProgress = '';
-            if (week && week.confirmed) {
-              let done = 0, total = 0;
-              for (const d of week.days) for (const a of d.activities) { total++; if (a.status === 'completed') done++; }
-              weekProgress = t('sidebar.planProgress', { completed: done, total });
-            }
-            return (
-              <button
-                key={plan.id}
-                className={`syllabus-panel__plan-item ${isActive ? 'syllabus-panel__plan-item--active' : ''}`}
-                onClick={() => onSelectPlan?.(plan.id)}
-              >
-                <span className="syllabus-panel__plan-lang">{langConfig.nameNative}</span>
-                <span className="syllabus-panel__plan-level">
-                  {langConfig.proficiency.levels.find(l => l.value === plan.currentLevel)?.label}
-                </span>
-                <span className="syllabus-panel__plan-progress text-muted">
-                  {weekProgress || t('sidebar.noPlanWeek')}
-                </span>
-              </button>
-            );
-          })}
-          <div className="syllabus-panel__divider" />
-        </div>
-      )}
-
       {/* Empty state */}
       {!hasContent && Object.keys(learningPlans || {}).length === 0 && (
         <div className="syllabus-panel__empty">
@@ -276,7 +309,23 @@ export default function SyllabusPanel({
             />
           ))}
 
-          {filteredSyllabi.length > 0 && filteredStandalone.length > 0 && (
+          {filteredPlans.map(plan => (
+            <PlanGroupItem
+              key={plan.id}
+              plan={plan}
+              planReaders={filteredPlanReaders[plan.id] || []}
+              generatedReaders={generatedReaders}
+              isActive={plan.id === activePlanId && syllabusView === 'plan' && !standaloneKey}
+              isExpanded={expandedPlans.has(plan.id)}
+              standaloneKey={standaloneKey}
+              loading={loading}
+              onPlanClick={onSelectPlan}
+              onToggleExpand={togglePlanExpand}
+              onReaderClick={onSelectStandalone}
+            />
+          ))}
+
+          {(filteredSyllabi.length > 0 || filteredPlans.length > 0) && filteredStandalone.length > 0 && (
             <div className="syllabus-panel__divider" />
           )}
 
@@ -311,7 +360,7 @@ export default function SyllabusPanel({
 
           <ArchivedSection
             archivedSyllabi={archivedSyllabi}
-            archivedStandalone={archivedStandalone}
+            archivedStandalone={archivedRegularStandalone}
             archivedOpen={archivedOpen}
             setArchivedOpen={setArchivedOpen}
             generatedReaders={generatedReaders}

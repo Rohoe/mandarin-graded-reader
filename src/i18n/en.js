@@ -232,6 +232,7 @@ export default {
   // ── SyllabusToolbar ───────────────────────────────────────────
   'toolbar.all': 'All',
   'toolbar.courses': 'Courses',
+  'toolbar.plans': 'Plans',
   'toolbar.readers': 'Readers',
   'toolbar.searchTopics': 'Search topics…',
   'toolbar.clearSearch': 'Clear search',

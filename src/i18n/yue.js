@@ -206,6 +206,7 @@ export default {
   'sidebar.signInBanner': '登入嚟儲存你嘅進度',
   'toolbar.all': '全部',
   'toolbar.courses': '課程',
+  'toolbar.plans': '計劃',
   'toolbar.readers': '閱讀',
   'toolbar.searchTopics': '搜尋主題…',
   'toolbar.clearSearch': '清除搜尋',

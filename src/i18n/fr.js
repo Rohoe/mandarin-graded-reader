@@ -206,6 +206,7 @@ export default {
   'sidebar.signInBanner': 'Connectez-vous pour sauvegarder votre progression',
   'toolbar.all': 'Tout',
   'toolbar.courses': 'Cours',
+  'toolbar.plans': 'Plans',
   'toolbar.readers': 'Lecteurs',
   'toolbar.searchTopics': 'Rechercher des sujets\u2026',
   'toolbar.clearSearch': 'Effacer la recherche',

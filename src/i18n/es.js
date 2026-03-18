@@ -206,6 +206,7 @@ export default {
   'sidebar.signInBanner': 'Inicia sesión para guardar tu progreso',
   'toolbar.all': 'Todos',
   'toolbar.courses': 'Cursos',
+  'toolbar.plans': 'Planes',
   'toolbar.readers': 'Lecturas',
   'toolbar.searchTopics': 'Buscar temas…',
   'toolbar.clearSearch': 'Borrar búsqueda',

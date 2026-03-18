@@ -206,6 +206,7 @@ export default {
   'sidebar.signInBanner': '登录以保存您的进度',
   'toolbar.all': '全部',
   'toolbar.courses': '课程',
+  'toolbar.plans': '计划',
   'toolbar.readers': '阅读',
   'toolbar.searchTopics': '搜索主题…',
   'toolbar.clearSearch': '清除搜索',
