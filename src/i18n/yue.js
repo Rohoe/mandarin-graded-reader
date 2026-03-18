@@ -494,6 +494,8 @@ export default {
   'plan.dashboard.minutesSpent': '學習分鐘數',
   'plan.dashboard.weeksCompleted': '已完成週數',
   'plan.dashboard.skip': '跳過',
+  'plan.dashboard.deletePlan': '刪除計劃',
+  'plan.dashboard.confirmDelete': '永久刪除「{name}」同所有進度？',
 
   // ── Learning Plan — Activities
   'plan.activity.reading': '閱讀',

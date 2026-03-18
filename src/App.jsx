@@ -443,6 +443,11 @@ function AppShell() {
                 }
               }}
               onOpenSettings={() => setShowSettings(true)}
+              onDeletePlan={(id) => {
+                act.removePlan(id);
+                setActivePlanId(null);
+                setSyllabusView('home');
+              }}
             />
           )
           : activeSyllabusId && syllabusView === 'home' && !standaloneKey

@@ -11,7 +11,7 @@ import './PlanDashboard.css';
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-export default function PlanDashboard({ planId, onActivityOpen, onOpenSettings }) {
+export default function PlanDashboard({ planId, onActivityOpen, onOpenSettings, onDeletePlan }) {
   const plan = useAppSelector(s => s.learningPlans[planId]);
   const progress = useAppSelector(s => s.planProgress[planId]);
   const dispatch = useAppDispatch();
@@ -20,6 +20,7 @@ export default function PlanDashboard({ planId, onActivityOpen, onOpenSettings }
 
   const { generating, error, regenerate } = usePlanWeek(planId);
   const [selectedDay, setSelectedDay] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (!plan) {
     return (
@@ -69,6 +70,9 @@ export default function PlanDashboard({ planId, onActivityOpen, onOpenSettings }
         </div>
         <button className="btn btn-primary" onClick={regenerate}>
           {t('plan.dashboard.generateFirstWeek')}
+        </button>
+        <button className="btn btn-ghost btn-sm" style={{ marginTop: 'var(--space-4)', opacity: 0.6 }} onClick={() => onDeletePlan?.(planId)}>
+          {t('plan.dashboard.deletePlan')}
         </button>
       </div>
     );
@@ -180,6 +184,32 @@ export default function PlanDashboard({ planId, onActivityOpen, onOpenSettings }
           </div>
         </div>
       )}
+
+      {/* Danger zone */}
+      <div className="plan-dashboard__danger-zone">
+        <div className="plan-dashboard__danger-divider">
+          <span className="text-subtle">{t('syllabusHome.dangerZone')}</span>
+        </div>
+        {confirmDelete ? (
+          <div className="plan-dashboard__confirm">
+            <p className="plan-dashboard__confirm-text">
+              {t('plan.dashboard.confirmDelete', { name: week?.theme || langConfig.name })}
+            </p>
+            <div className="plan-dashboard__confirm-actions">
+              <button className="btn btn-ghost btn-sm" onClick={() => setConfirmDelete(false)}>
+                {t('common.cancel')}
+              </button>
+              <button className="btn btn-sm plan-dashboard__delete-btn" onClick={() => onDeletePlan?.(planId)}>
+                {t('common.delete')}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button className="btn btn-ghost btn-sm plan-dashboard__delete-btn" onClick={() => setConfirmDelete(true)}>
+            {t('plan.dashboard.deletePlan')}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

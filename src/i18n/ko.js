@@ -494,6 +494,8 @@ export default {
   'plan.dashboard.minutesSpent': '학습 시간(분)',
   'plan.dashboard.weeksCompleted': '완료한 주',
   'plan.dashboard.skip': '건너뛰기',
+  'plan.dashboard.deletePlan': '계획 삭제',
+  'plan.dashboard.confirmDelete': '"{name}"과(와) 모든 진행 상황을 영구적으로 삭제하시겠습니까?',
 
   // ── Learning Plan — Activities
   'plan.activity.reading': '읽기',

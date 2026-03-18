@@ -495,6 +495,8 @@ export default {
   'plan.dashboard.minutesSpent': 'Minutes passées',
   'plan.dashboard.weeksCompleted': 'Semaines terminées',
   'plan.dashboard.skip': 'Passer',
+  'plan.dashboard.deletePlan': 'Supprimer le plan',
+  'plan.dashboard.confirmDelete': 'Supprimer d\u00e9finitivement \u00ab {name} \u00bb et toute sa progression ?',
 
   // ── Learning Plan — Activities
   'plan.activity.reading': 'Lecture',
