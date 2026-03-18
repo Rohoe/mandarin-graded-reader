@@ -395,11 +395,41 @@ function AppShell() {
                   setSyllabusView('lesson');
                 } else if (activity.type === 'flashcards') {
                   setShowFlashcards(true);
-                  act.completePlanActivity(planId, dayIndex, activity.id, activity.estimatedMinutes);
+                  // Don't auto-complete — user can mark done via undo/complete
                 } else if (activity.type === 'tutor') {
-                  // Open tutor with the most recent plan reader
+                  // Find a plan reader to give the tutor context
+                  const plan = state.learningPlans[planId];
+                  const week = plan?.currentWeek;
+                  let tutorReaderKey = null;
+                  if (week) {
+                    // Scan days for a reading/review activity with a generated reader
+                    for (const day of week.days) {
+                      for (const a of day.activities) {
+                        if ((a.type === 'reading' || a.type === 'review') && a.status === 'completed') {
+                          const candidateKey = `plan_${planId}_${a.id}`;
+                          if (state.generatedReaders[candidateKey]) {
+                            tutorReaderKey = candidateKey;
+                          }
+                        }
+                      }
+                    }
+                  }
+                  if (!tutorReaderKey) {
+                    // No completed reader — create a minimal standalone entry for the tutor
+                    tutorReaderKey = `plan_${planId}_${activity.id}`;
+                    if (!state.standaloneReaders.some(r => r.key === tutorReaderKey)) {
+                      act.addStandaloneReader({
+                        key: tutorReaderKey,
+                        topic: activity.title || 'Conversation practice',
+                        level: plan?.currentLevel,
+                        langId: plan?.langId || 'zh',
+                        createdAt: Date.now(),
+                      });
+                    }
+                  }
+                  setStandaloneKey(tutorReaderKey);
                   setChatOpen(true);
-                  act.completePlanActivity(planId, dayIndex, activity.id, activity.estimatedMinutes);
+                  // Don't auto-complete — user can mark done manually
                 } else if (activity.type === 'quiz') {
                   // Quiz — open the reading it references, user will take quiz there
                   const config = activity.config || {};

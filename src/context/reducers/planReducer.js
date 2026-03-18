@@ -1,7 +1,7 @@
 import {
   ADD_PLAN, UPDATE_PLAN, REMOVE_PLAN,
   SET_PLAN_WEEK, CONFIRM_PLAN_WEEK,
-  COMPLETE_PLAN_ACTIVITY, SKIP_PLAN_ACTIVITY,
+  COMPLETE_PLAN_ACTIVITY, UNCOMPLETE_PLAN_ACTIVITY, SKIP_PLAN_ACTIVITY,
   UPDATE_PLAN_ACTIVITY_STATUS,
   ARCHIVE_WEEK, EARN_XP, ADD_MILESTONE,
 } from '../actionTypes';
@@ -114,6 +114,52 @@ export function planReducer(state, action) {
             ...progress,
             totalActivitiesCompleted: progress.totalActivitiesCompleted + 1,
             totalMinutesSpent: progress.totalMinutesSpent + mins,
+          },
+        },
+      };
+    }
+
+    case UNCOMPLETE_PLAN_ACTIVITY: {
+      const { planId, dayIndex, activityId } = action.payload;
+      const plan = state.learningPlans[planId];
+      if (!plan || !plan.currentWeek) return state;
+
+      // Find the activity to get its actualMinutes before reverting
+      const targetDay = plan.currentWeek.days[dayIndex];
+      const targetActivity = targetDay?.activities.find(a => a.id === activityId);
+      if (!targetActivity || targetActivity.status !== 'completed') return state;
+
+      const revertedMinutes = targetActivity.actualMinutes || 0;
+
+      const newDays = plan.currentWeek.days.map((day, i) => {
+        if (i !== dayIndex) return day;
+        return {
+          ...day,
+          activities: day.activities.map(a =>
+            a.id === activityId
+              ? { ...a, status: 'pending', completedAt: null, actualMinutes: null }
+              : a
+          ),
+        };
+      });
+
+      const progress = state.planProgress[planId] || { totalActivitiesCompleted: 0, currentStreak: 0, totalMinutesSpent: 0, xp: 0, milestones: [] };
+
+      return {
+        ...state,
+        learningPlans: {
+          ...state.learningPlans,
+          [planId]: {
+            ...plan,
+            currentWeek: { ...plan.currentWeek, days: newDays },
+          },
+        },
+        planProgress: {
+          ...state.planProgress,
+          [planId]: {
+            ...progress,
+            totalActivitiesCompleted: Math.max(0, progress.totalActivitiesCompleted - 1),
+            totalMinutesSpent: Math.max(0, progress.totalMinutesSpent - revertedMinutes),
           },
         },
       };

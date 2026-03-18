@@ -3,7 +3,7 @@ import { planReducer } from './planReducer';
 import {
   ADD_PLAN, UPDATE_PLAN, REMOVE_PLAN,
   SET_PLAN_WEEK, CONFIRM_PLAN_WEEK,
-  COMPLETE_PLAN_ACTIVITY, SKIP_PLAN_ACTIVITY,
+  COMPLETE_PLAN_ACTIVITY, UNCOMPLETE_PLAN_ACTIVITY, SKIP_PLAN_ACTIVITY,
   UPDATE_PLAN_ACTIVITY_STATUS,
   ARCHIVE_WEEK, EARN_XP, ADD_MILESTONE,
 } from '../actionTypes';
@@ -137,6 +137,61 @@ describe('planReducer', () => {
       expect(activity.completedAt).toBeGreaterThan(0);
       expect(result.planProgress.plan_1.totalActivitiesCompleted).toBe(1);
       expect(result.planProgress.plan_1.totalMinutesSpent).toBe(25);
+    });
+  });
+
+  describe('UNCOMPLETE_PLAN_ACTIVITY', () => {
+    it('reverts a completed activity to pending and decrements progress', () => {
+      const week = makeWeek();
+      week.days[0].activities[0].status = 'completed';
+      week.days[0].activities[0].completedAt = Date.now();
+      week.days[0].activities[0].actualMinutes = 25;
+
+      const plan = makePlan({ currentWeek: week });
+      const state = {
+        learningPlans: { plan_1: plan },
+        planProgress: { plan_1: { totalActivitiesCompleted: 3, currentStreak: 0, totalMinutesSpent: 60, xp: 0, milestones: [] } },
+      };
+      const result = planReducer(state, {
+        type: UNCOMPLETE_PLAN_ACTIVITY,
+        payload: { planId: 'plan_1', dayIndex: 0, activityId: 'activity_0' },
+      });
+
+      const activity = result.learningPlans.plan_1.currentWeek.days[0].activities[0];
+      expect(activity.status).toBe('pending');
+      expect(activity.completedAt).toBeNull();
+      expect(activity.actualMinutes).toBeNull();
+      expect(result.planProgress.plan_1.totalActivitiesCompleted).toBe(2);
+      expect(result.planProgress.plan_1.totalMinutesSpent).toBe(35);
+    });
+
+    it('does not revert a non-completed activity', () => {
+      const plan = makePlan({ currentWeek: makeWeek() });
+      const state = { ...baseState(), learningPlans: { plan_1: plan } };
+      const result = planReducer(state, {
+        type: UNCOMPLETE_PLAN_ACTIVITY,
+        payload: { planId: 'plan_1', dayIndex: 0, activityId: 'activity_0' },
+      });
+      expect(result).toBe(state);
+    });
+
+    it('does not let progress go below zero', () => {
+      const week = makeWeek();
+      week.days[0].activities[0].status = 'completed';
+      week.days[0].activities[0].completedAt = Date.now();
+      week.days[0].activities[0].actualMinutes = 25;
+
+      const plan = makePlan({ currentWeek: week });
+      const state = {
+        learningPlans: { plan_1: plan },
+        planProgress: { plan_1: { totalActivitiesCompleted: 0, currentStreak: 0, totalMinutesSpent: 0, xp: 0, milestones: [] } },
+      };
+      const result = planReducer(state, {
+        type: UNCOMPLETE_PLAN_ACTIVITY,
+        payload: { planId: 'plan_1', dayIndex: 0, activityId: 'activity_0' },
+      });
+      expect(result.planProgress.plan_1.totalActivitiesCompleted).toBe(0);
+      expect(result.planProgress.plan_1.totalMinutesSpent).toBe(0);
     });
   });
 

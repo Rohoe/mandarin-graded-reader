@@ -113,6 +113,10 @@ export default function PlanDashboard({ planId, onActivityOpen, onOpenSettings }
     act.skipPlanActivity(planId, dayIndex, activityId);
   }
 
+  function handleUndo(dayIndex, activityId) {
+    act.uncompletePlanActivity(planId, dayIndex, activityId);
+  }
+
   return (
     <div className="plan-dashboard">
       {/* Header */}
@@ -156,6 +160,7 @@ export default function PlanDashboard({ planId, onActivityOpen, onOpenSettings }
         isToday={activeDayIndex === todayIndex}
         onActivityClick={(activity) => handleActivityClick(activeDayIndex, activity)}
         onSkip={(activityId) => handleSkip(activeDayIndex, activityId)}
+        onUndo={(activityId) => handleUndo(activeDayIndex, activityId)}
       />
 
       {/* Progress summary */}

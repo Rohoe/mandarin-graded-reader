@@ -16,7 +16,7 @@ const TYPE_LABELS = {
   review: 'plan.activity.review',
 };
 
-export default function ActivityCard({ activity, onClick, onSkip }) {
+export default function ActivityCard({ activity, onClick, onSkip, onUndo }) {
   const t = useT();
   const { type, title, description, estimatedMinutes, status } = activity;
   const isCompleted = status === 'completed';
@@ -47,6 +47,16 @@ export default function ActivityCard({ activity, onClick, onSkip }) {
         <span className="activity-card__title">{title}</span>
         {description && <span className="activity-card__desc">{description}</span>}
       </div>
+      {isCompleted && (
+        <button
+          className="activity-card__undo"
+          onClick={e => { e.stopPropagation(); onUndo?.(); }}
+          title={t('plan.dashboard.undo') || 'Undo'}
+          aria-label={t('plan.dashboard.undo') || 'Undo'}
+        >
+          ↩
+        </button>
+      )}
       {!isCompleted && !isSkipped && (
         <button
           className="activity-card__skip"

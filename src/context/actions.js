@@ -89,6 +89,7 @@ export function actions(dispatch) {
     setPlanWeek:           (planId, week) => dispatch({ type: T.SET_PLAN_WEEK, payload: { planId, week } }),
     confirmPlanWeek:       planId => dispatch({ type: T.CONFIRM_PLAN_WEEK, payload: planId }),
     completePlanActivity:  (planId, dayIndex, activityId, actualMinutes) => dispatch({ type: T.COMPLETE_PLAN_ACTIVITY, payload: { planId, dayIndex, activityId, actualMinutes } }),
+    uncompletePlanActivity:(planId, dayIndex, activityId) => dispatch({ type: T.UNCOMPLETE_PLAN_ACTIVITY, payload: { planId, dayIndex, activityId } }),
     skipPlanActivity:      (planId, dayIndex, activityId) => dispatch({ type: T.SKIP_PLAN_ACTIVITY, payload: { planId, dayIndex, activityId } }),
     updatePlanActivityStatus: (planId, dayIndex, activityId, status) => dispatch({ type: T.UPDATE_PLAN_ACTIVITY_STATUS, payload: { planId, dayIndex, activityId, status } }),
     archiveWeek:           planId => dispatch({ type: T.ARCHIVE_WEEK, payload: planId }),

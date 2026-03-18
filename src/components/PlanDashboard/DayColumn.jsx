@@ -1,7 +1,7 @@
 import { useT } from '../../i18n';
 import ActivityCard from './ActivityCard';
 
-export default function DayColumn({ day, dayIndex, dayName, isToday, onActivityClick, onSkip }) {
+export default function DayColumn({ day, dayIndex, dayName, isToday, onActivityClick, onSkip, onUndo }) {
   const t = useT();
   const activities = day?.activities || [];
 
@@ -30,6 +30,7 @@ export default function DayColumn({ day, dayIndex, dayName, isToday, onActivityC
             activity={activity}
             onClick={() => onActivityClick(activity)}
             onSkip={() => onSkip(activity.id)}
+            onUndo={() => onUndo?.(activity.id)}
           />
         ))}
       </div>
