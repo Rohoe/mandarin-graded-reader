@@ -509,6 +509,32 @@ function repairJSON(str) {
   return result;
 }
 
+/**
+ * Client-side grading for multiple-choice questions.
+ * Returns { feedback: [...], totalScore, mcCount }
+ * feedback[i] = null for FR questions, { score, feedback, suggestedAnswer } for MC.
+ */
+export function gradeMultipleChoice(questions, userAnswers) {
+  let totalScore = 0;
+  let mcCount = 0;
+  const feedback = questions.map((q, i) => {
+    if (q.type !== 'mc') return null;
+    mcCount++;
+    const userChoice = (userAnswers[i] || '').toUpperCase();
+    const correct = (q.correctAnswer || '').toUpperCase();
+    const isCorrect = userChoice === correct;
+    const score = isCorrect ? 5 : 1;
+    totalScore += score;
+    const correctOption = (q.options || []).find(o => o.startsWith(correct + '.')) || correct;
+    return {
+      score: `${score}/5`,
+      feedback: isCorrect ? '' : '',
+      suggestedAnswer: isCorrect ? null : correctOption,
+    };
+  });
+  return { feedback, totalScore, mcCount };
+}
+
 export async function gradeAnswers(llmConfig, questions, userAnswers, story, level, maxTokens = 2048, langId = DEFAULT_LANG_ID, nativeLang = 'en', { gradingContext } = {}) {
   const langConfig = getLang(langId);
   const nativeLangName = getNativeLang(nativeLang).name;
@@ -561,9 +587,12 @@ export const READER_JSON_SCHEMA = {
       items: {
         type: 'object',
         properties: {
-          text:        { type: 'string', description: 'Question in target language' },
+          type:           { type: 'string', description: 'Question type: "mc" or "fr"' },
+          text:           { type: 'string', description: 'Question in target language' },
+          options:        { type: 'array', items: { type: 'string' }, description: 'A-D options for mc type' },
+          correct_answer: { type: 'string', description: 'Correct letter (A/B/C/D) for mc type' },
         },
-        required: ['text'],
+        required: ['type', 'text'],
       },
     },
     grammar_notes: {

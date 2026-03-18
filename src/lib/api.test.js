@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { isRetryable, classifyApiError, generateSyllabus, gradeAnswers, extendSyllabus, generateReader } from './api';
+import { isRetryable, classifyApiError, generateSyllabus, gradeAnswers, extendSyllabus, generateReader, gradeMultipleChoice } from './api';
 import { buildSyllabusPrompt } from '../prompts/syllabusPrompt';
 import { buildGradingSystem } from '../prompts/gradingPrompt';
 
@@ -425,6 +425,49 @@ describe('generateReader', () => {
     await generateReader(BASE_CONFIG, 'food', 3);
     const userMsg = capturedBody.messages.find(m => m.role === 'user').content;
     expect(userMsg).not.toContain('Learner Adaptation Context');
+  });
+});
+
+// ── gradeMultipleChoice ──────────────────────────────────────
+
+describe('gradeMultipleChoice', () => {
+  it('correct MC answer → score 5/5', () => {
+    const questions = [{ type: 'mc', text: 'Q?', options: ['A. x', 'B. y', 'C. z', 'D. w'], correctAnswer: 'B' }];
+    const result = gradeMultipleChoice(questions, { 0: 'B' });
+    expect(result.feedback[0].score).toBe('5/5');
+    expect(result.mcCount).toBe(1);
+    expect(result.totalScore).toBe(5);
+  });
+
+  it('incorrect MC answer → score 1/5 with suggested answer', () => {
+    const questions = [{ type: 'mc', text: 'Q?', options: ['A. x', 'B. y', 'C. z', 'D. w'], correctAnswer: 'C' }];
+    const result = gradeMultipleChoice(questions, { 0: 'A' });
+    expect(result.feedback[0].score).toBe('1/5');
+    expect(result.feedback[0].suggestedAnswer).toBe('C. z');
+    expect(result.totalScore).toBe(1);
+  });
+
+  it('FR questions get null in feedback array', () => {
+    const questions = [
+      { type: 'fr', text: 'Why?' },
+      { type: 'mc', text: 'What?', options: ['A. a', 'B. b', 'C. c', 'D. d'], correctAnswer: 'A' },
+    ];
+    const result = gradeMultipleChoice(questions, { 0: 'some text', 1: 'A' });
+    expect(result.feedback[0]).toBeNull();
+    expect(result.feedback[1].score).toBe('5/5');
+    expect(result.mcCount).toBe(1);
+  });
+
+  it('mixed questions produce correct totals', () => {
+    const questions = [
+      { type: 'mc', text: 'Q1?', options: ['A. a', 'B. b', 'C. c', 'D. d'], correctAnswer: 'A' },
+      { type: 'fr', text: 'Q2?' },
+      { type: 'mc', text: 'Q3?', options: ['A. a', 'B. b', 'C. c', 'D. d'], correctAnswer: 'D' },
+    ];
+    const result = gradeMultipleChoice(questions, { 0: 'A', 1: 'answer', 2: 'B' });
+    expect(result.mcCount).toBe(2);
+    expect(result.totalScore).toBe(6); // 5 + 1
+    expect(result.feedback[1]).toBeNull();
   });
 });
 

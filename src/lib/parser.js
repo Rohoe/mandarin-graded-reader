@@ -328,20 +328,88 @@ function parseQuestions(text) {
   if (!text) return [];
 
   const questions = [];
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const lines = text.split('\n').map(l => l.trim());
 
-  for (const line of lines) {
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (!line) { i++; continue; }
+
     // Strip leading number/bullet
     const cleaned = line.replace(/^[\d]+[.、)]\s*/, '').replace(/^[-•]\s*/, '').trim();
-    if (cleaned && cleaned.length > 2) {
-      // Extract trailing English translation in parentheses: 问题？(Translation?)
-      const transMatch = cleaned.match(/^(.*?\S)\s*\(([^)]+)\)\s*$/);
-      if (transMatch) {
-        questions.push({ text: transMatch[1], translation: transMatch[2] });
-      } else {
-        questions.push({ text: cleaned, translation: '' });
+    if (!cleaned || cleaned.length <= 2) { i++; continue; }
+
+    // Check for [MC] tag
+    const mcMatch = cleaned.match(/^\[MC\]\s*(.*)/i);
+    if (mcMatch) {
+      const qText = mcMatch[1].trim();
+      // Try to consume A./B./C./D. option lines and Answer: line
+      const options = [];
+      let correctAnswer = null;
+      let j = i + 1;
+      while (j < lines.length && options.length < 4) {
+        const optLine = lines[j].trim();
+        const optMatch = optLine.match(/^([A-D])\.\s+(.*)/);
+        if (optMatch) {
+          options.push(`${optMatch[1]}. ${optMatch[2]}`);
+          j++;
+        } else {
+          break;
+        }
       }
+      // Look for Answer: line
+      if (j < lines.length) {
+        const ansLine = lines[j].trim();
+        const ansMatch = ansLine.match(/^Answer:\s*([A-D])/i);
+        if (ansMatch) {
+          correctAnswer = ansMatch[1].toUpperCase();
+          j++;
+        }
+      }
+      // Valid MC needs 4 options and a correct answer; otherwise fallback to FR
+      if (options.length === 4 && correctAnswer) {
+        const transMatch = qText.match(/^(.*?\S)\s*\(([^)]+)\)\s*$/);
+        questions.push({
+          type: 'mc',
+          text: transMatch ? transMatch[1] : qText,
+          translation: transMatch ? transMatch[2] : '',
+          options,
+          correctAnswer,
+        });
+      } else {
+        const transMatch = qText.match(/^(.*?\S)\s*\(([^)]+)\)\s*$/);
+        questions.push({
+          type: 'fr',
+          text: transMatch ? transMatch[1] : qText,
+          translation: transMatch ? transMatch[2] : '',
+        });
+      }
+      i = j;
+      continue;
     }
+
+    // Check for [FR] tag
+    const frMatch = cleaned.match(/^\[FR\]\s*(.*)/i);
+    if (frMatch) {
+      const qText = frMatch[1].trim();
+      const transMatch = qText.match(/^(.*?\S)\s*\(([^)]+)\)\s*$/);
+      if (transMatch) {
+        questions.push({ type: 'fr', text: transMatch[1], translation: transMatch[2] });
+      } else {
+        questions.push({ type: 'fr', text: qText, translation: '' });
+      }
+      i++;
+      continue;
+    }
+
+    // Legacy format (no tag) → FR
+    const transMatch = cleaned.match(/^(.*?\S)\s*\(([^)]+)\)\s*$/);
+    if (transMatch) {
+      questions.push({ type: 'fr', text: transMatch[1], translation: transMatch[2] });
+    } else {
+      questions.push({ type: 'fr', text: cleaned, translation: '' });
+    }
+    i++;
   }
 
   return questions;
@@ -443,8 +511,11 @@ export function normalizeStructuredReader(rawJson, langId = DEFAULT_LANG_ID) {
   }));
 
   const questions = (data.questions || []).map(q => ({
-    text:        q.text || '',
-    translation: q.translation || '',
+    type:          q.type || 'fr',
+    text:          q.text || '',
+    translation:   q.translation || '',
+    ...(q.options ? { options: q.options } : {}),
+    ...(q.correctAnswer || q.correct_answer ? { correctAnswer: q.correctAnswer || q.correct_answer } : {}),
   }));
 
   const grammarNotes = (data.grammar_notes || []).map(n => ({

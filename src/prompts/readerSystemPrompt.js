@@ -54,6 +54,20 @@ IMPORTANT: Do NOT prefix example sentences with labels like "Example sentence:" 
 
 ### 4. Comprehension Questions
 ${questionRange} questions in ${p.targetLanguage} at the target level.
+Mix of multiple-choice and free-response questions.
+
+For multiple-choice questions, use EXACTLY this format:
+[MC] Question text?
+A. First option
+B. Second option
+C. Third option
+D. Fourth option
+Answer: B
+
+For free-response questions, use EXACTLY this format:
+[FR] Question text?
+
+Use multiple-choice for factual recall. Use free-response for inference or expression.
 
 ### 5. Anki Cards Data (JSON)
 Return a JSON block tagged \`\`\`anki-json containing an array of card objects:

@@ -457,6 +457,169 @@ Test
   });
 });
 
+// ── parseQuestions — MC/FR support ────────────────────────────
+
+describe('parseQuestions — MC/FR support', () => {
+  it('parses [MC] block with options and answer', () => {
+    const md = `### 1. Title
+测试
+Test
+
+### 2. Story
+**猫**很可爱。
+
+### 3. Vocabulary List
+
+### 4. Comprehension Questions
+[MC] 猫喜欢什么？
+A. 跑步
+B. 睡觉
+C. 吃饭
+D. 游泳
+Answer: B
+
+### 5. Anki Cards Data (JSON)
+\`\`\`anki-json
+[]
+\`\`\`
+
+### 6. Grammar Notes
+`;
+    const result = parseReaderResponse(md, 'zh');
+    expect(result.questions.length).toBe(1);
+    expect(result.questions[0].type).toBe('mc');
+    expect(result.questions[0].text).toBe('猫喜欢什么？');
+    expect(result.questions[0].options).toEqual(['A. 跑步', 'B. 睡觉', 'C. 吃饭', 'D. 游泳']);
+    expect(result.questions[0].correctAnswer).toBe('B');
+  });
+
+  it('parses [FR] line as free-response', () => {
+    const md = `### 1. Title
+测试
+Test
+
+### 2. Story
+**猫**很可爱。
+
+### 3. Vocabulary List
+
+### 4. Comprehension Questions
+[FR] 你觉得猫为什么可爱？
+
+### 5. Anki Cards Data (JSON)
+\`\`\`anki-json
+[]
+\`\`\`
+
+### 6. Grammar Notes
+`;
+    const result = parseReaderResponse(md, 'zh');
+    expect(result.questions.length).toBe(1);
+    expect(result.questions[0].type).toBe('fr');
+    expect(result.questions[0].text).toBe('你觉得猫为什么可爱？');
+  });
+
+  it('parses mixed MC + FR in same section', () => {
+    const md = `### 1. Title
+测试
+Test
+
+### 2. Story
+**猫**很可爱。
+
+### 3. Vocabulary List
+
+### 4. Comprehension Questions
+[MC] 猫在哪里？
+A. 公园
+B. 家里
+C. 学校
+D. 商店
+Answer: A
+
+[FR] 你觉得故事想表达什么？
+
+[MC] 谁帮助了猫？
+A. 小女孩
+B. 小男孩
+C. 老师
+D. 妈妈
+Answer: A
+
+### 5. Anki Cards Data (JSON)
+\`\`\`anki-json
+[]
+\`\`\`
+
+### 6. Grammar Notes
+`;
+    const result = parseReaderResponse(md, 'zh');
+    expect(result.questions.length).toBe(3);
+    expect(result.questions[0].type).toBe('mc');
+    expect(result.questions[0].correctAnswer).toBe('A');
+    expect(result.questions[1].type).toBe('fr');
+    expect(result.questions[2].type).toBe('mc');
+    expect(result.questions[2].correctAnswer).toBe('A');
+  });
+
+  it('falls back to FR when MC block has missing options', () => {
+    const md = `### 1. Title
+测试
+Test
+
+### 2. Story
+**猫**很可爱。
+
+### 3. Vocabulary List
+
+### 4. Comprehension Questions
+[MC] 猫喜欢什么？
+A. 跑步
+B. 睡觉
+
+### 5. Anki Cards Data (JSON)
+\`\`\`anki-json
+[]
+\`\`\`
+
+### 6. Grammar Notes
+`;
+    const result = parseReaderResponse(md, 'zh');
+    expect(result.questions.length).toBe(1);
+    expect(result.questions[0].type).toBe('fr');
+    expect(result.questions[0].text).toBe('猫喜欢什么？');
+  });
+
+  it('legacy format (no tags) produces FR questions with type field', () => {
+    const md = `### 1. Title
+测试
+Test
+
+### 2. Story
+**猫**很可爱。
+
+### 3. Vocabulary List
+
+### 4. Comprehension Questions
+1. 小猫每天早上做什么？
+2. 谁帮助了小猫？(Who helped the kitten?)
+
+### 5. Anki Cards Data (JSON)
+\`\`\`anki-json
+[]
+\`\`\`
+
+### 6. Grammar Notes
+`;
+    const result = parseReaderResponse(md, 'zh');
+    expect(result.questions.length).toBe(2);
+    expect(result.questions[0].type).toBe('fr');
+    expect(result.questions[0].text).toContain('小猫每天早上做什么');
+    expect(result.questions[1].type).toBe('fr');
+    expect(result.questions[1].translation).toContain('Who helped');
+  });
+});
+
 // ── parseStorySegments ──────────────────────────────────────
 
 describe('parseStorySegments', () => {

@@ -218,3 +218,100 @@
   margin-bottom: var(--space-4);
   line-height: var(--leading-relaxed);
 }
+
+/* Multiple choice options */
+.comprehension__mc-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.comprehension__mc-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.comprehension__mc-option:hover:not(.comprehension__mc-option--disabled) {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 5%, transparent);
+}
+
+.comprehension__mc-option--selected {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 8%, white);
+}
+
+.comprehension__mc-option--correct {
+  border-color: #2e7d32;
+  background: #EBF5EB;
+}
+
+.comprehension__mc-option--incorrect {
+  border-color: #c62828;
+  background: #FFEBEE;
+}
+
+.comprehension__mc-option--disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.comprehension__mc-option input[type="radio"] {
+  accent-color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.comprehension__mc-check {
+  align-self: flex-start;
+  margin-top: var(--space-2);
+}
+
+.comprehension__mc-feedback {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  margin-top: var(--space-2);
+}
+
+.comprehension__mc-feedback--correct {
+  color: #2e7d32;
+}
+
+.comprehension__mc-feedback--incorrect {
+  color: #c62828;
+}
+
+/* Dark mode overrides for MC */
+[data-theme="dark"] .comprehension__mc-option {
+  border-color: var(--color-border);
+}
+
+[data-theme="dark"] .comprehension__mc-option--selected {
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+}
+
+[data-theme="dark"] .comprehension__mc-option--correct {
+  border-color: #4caf50;
+  background: color-mix(in srgb, #4caf50 15%, transparent);
+}
+
+[data-theme="dark"] .comprehension__mc-option--incorrect {
+  border-color: #ef5350;
+  background: color-mix(in srgb, #ef5350 15%, transparent);
+}
+
+[data-theme="dark"] .comprehension__mc-feedback--correct {
+  color: #66bb6a;
+}
+
+[data-theme="dark"] .comprehension__mc-feedback--incorrect {
+  color: #ef5350;
+}

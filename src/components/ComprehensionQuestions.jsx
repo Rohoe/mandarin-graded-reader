@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
-import { gradeAnswers } from '../lib/api';
+import { gradeAnswers, gradeMultipleChoice } from '../lib/api';
 import { buildGradingLLMConfig, hasAnyUserKey } from '../lib/llmConfig';
 import { buildGradingContext } from '../lib/stats';
 import { translateText } from '../lib/translate';
@@ -46,6 +46,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
   const [fetchedQTranslations, setFetchedQTranslations] = useState({});
   const [translatingQIndex, setTranslatingQIndex] = useState(null);
   const [showSuggested, setShowSuggested] = useState({});
+  const [mcChecked, setMcChecked] = useState({});
 
   // Refs for debounced auto-save — read current values without stale closures
   const debounceRef = useRef(null);
@@ -80,12 +81,22 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
     setResults(reader?.gradingResults ?? null);
     setGradingError(null);
     setShowSuggested({});
+    setMcChecked({});
   }, [lessonKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Flush pending save on unmount
   useEffect(() => {
     return () => flushSave();
   }, [flushSave]);
+
+  // Auto-grade when all MC questions are checked and no FR questions exist
+  const mcOnlyAllChecked = questions && questions.length > 0
+    && questions.every((q) => (q.type || 'fr') === 'mc')
+    && questions.every((q, i) => mcChecked[i])
+    && !results;
+  useEffect(() => {
+    if (mcOnlyAllChecked) handleGrade();
+  }, [mcOnlyAllChecked]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!questions || questions.length === 0) {
     return (
@@ -98,7 +109,13 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
     );
   }
 
-  const hasAnyAnswer = questions.some((_, i) => (answers[i] || '').trim().length > 0);
+  const hasAnyAnswer = questions.some((q, i) => {
+    if ((q.type || 'fr') === 'mc') return !!(answers[i] || '').trim();
+    return (answers[i] || '').trim().length > 0;
+  });
+  const hasFrQuestions = questions.some(q => (q.type || 'fr') === 'fr');
+  const allMcChecked = questions.every((q, i) => (q.type || 'fr') !== 'mc' || mcChecked[i]);
+  const hasFrAnswers = questions.some((q, i) => (q.type || 'fr') === 'fr' && (answers[i] || '').trim().length > 0);
 
   function handleAnswerChange(i, val) {
     const next = { ...answers, [i]: val };
@@ -113,19 +130,87 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
     }, AUTO_SAVE_DELAY);
   }
 
+  function handleCheckMc(i) {
+    setMcChecked(prev => ({ ...prev, [i]: true }));
+  }
+
   async function handleGrade() {
     if (!story) { setGradingError(t('comprehension.storyUnavailable')); return; }
     // Flush any pending debounce and save immediately
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = null;
     if (lessonKey) act.setReader(lessonKey, { ...reader, userAnswers: answers });
+
+    // Grade MC client-side
+    const mcResult = gradeMultipleChoice(questions, answers);
+
+    // Collect FR questions that have answers
+    const frIndices = [];
+    const frQuestions = [];
+    const frAnswers = [];
+    questions.forEach((q, idx) => {
+      if ((q.type || 'fr') === 'fr') {
+        frIndices.push(idx);
+        frQuestions.push(q);
+        frAnswers.push(answers[idx] || '');
+      }
+    });
+
+    const hasFr = frAnswers.some(a => a.trim().length > 0);
+
+    if (!hasFr) {
+      // MC only — compute results without LLM call
+      let totalMc = 0;
+      let countMc = 0;
+      mcResult.feedback.forEach(f => {
+        if (f) { totalMc += parseInt(f.score, 10); countMc++; }
+      });
+      const result = {
+        feedback: mcResult.feedback,
+        overallScore: countMc > 0 ? `${totalMc} / ${countMc * 5}` : '',
+        overallFeedback: '',
+      };
+      setResults(result);
+      if (lessonKey) {
+        act.setReader(lessonKey, {
+          ...reader,
+          userAnswers: answers,
+          gradingResults: { ...result, gradedAt: Date.now() },
+        });
+      }
+      return;
+    }
+
+    // Mixed or FR-only: send FR to LLM
     setGrading(true);
     setGradingError(null);
     try {
-      const answersArray = questions.map((_, i) => answers[i] || '');
       const llmConfig = buildGradingLLMConfig({ providerKeys, activeProvider, activeModels, gradingModels, customBaseUrl });
       const gradingCtx = buildGradingContext(learnedVocabulary, learningActivity, langId);
-      const result = await gradeAnswers(llmConfig, questions, answersArray, story, level, 2048, langId, nativeLang, { gradingContext: gradingCtx });
+      const frResult = await gradeAnswers(llmConfig, frQuestions, frAnswers, story, level, 2048, langId, nativeLang, { gradingContext: gradingCtx });
+
+      // Merge MC + FR feedback by original index
+      const mergedFeedback = questions.map((q, idx) => {
+        if ((q.type || 'fr') === 'mc') return mcResult.feedback[idx];
+        const frPos = frIndices.indexOf(idx);
+        return frResult.feedback?.[frPos] ?? null;
+      });
+
+      // Compute combined score
+      let totalScore = 0;
+      let totalCount = 0;
+      mergedFeedback.forEach(f => {
+        if (f && f.score) {
+          const num = parseInt(f.score, 10);
+          if (!isNaN(num)) { totalScore += num; totalCount++; }
+        }
+      });
+
+      const result = {
+        feedback: mergedFeedback,
+        overallScore: totalCount > 0 ? `${totalScore} / ${totalCount * 5}` : frResult.overallScore || '',
+        overallFeedback: frResult.overallFeedback || '',
+      };
       setResults(result);
       if (lessonKey) {
         act.setReader(lessonKey, {
@@ -144,6 +229,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
   function handleRevise() {
     setResults(null);
     setGradingError(null);
+    setMcChecked({});
   }
 
   async function handleQTranslateClick(i, qText, qTranslation) {
@@ -191,6 +277,8 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
               // Support both plain strings (old readers) and { text, translation } objects
               const qText = typeof q === 'string' ? q : q.text;
               const qTranslation = typeof q === 'object' ? q.translation : '';
+              const qType = (typeof q === 'object' ? q.type : null) || 'fr';
+              const isMc = qType === 'mc';
               return (
               <li key={i} className="comprehension__item">
                 <span className="comprehension__num">{i + 1}.</span>
@@ -226,17 +314,66 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                 )}
 
                   {results === null ? (
-                    <textarea
-                      className="comprehension__answer"
-                      placeholder={t('comprehension.typeAnswer')}
-                      value={answers[i] || ''}
-                      onChange={e => handleAnswerChange(i, e.target.value)}
-                      disabled={grading}
-                    />
+                    isMc ? (
+                      <div className="comprehension__mc-options">
+                        {(q.options || []).map(opt => {
+                          const letter = opt.charAt(0);
+                          const isSelected = answers[i] === letter;
+                          const isChecked = mcChecked[i];
+                          const isCorrectAnswer = letter === q.correctAnswer;
+                          let optClass = 'comprehension__mc-option';
+                          if (isSelected) optClass += ' comprehension__mc-option--selected';
+                          if (isChecked && isSelected && isCorrectAnswer) optClass += ' comprehension__mc-option--correct';
+                          if (isChecked && isSelected && !isCorrectAnswer) optClass += ' comprehension__mc-option--incorrect';
+                          if (isChecked && !isSelected && isCorrectAnswer) optClass += ' comprehension__mc-option--correct';
+                          if (isChecked) optClass += ' comprehension__mc-option--disabled';
+                          return (
+                            <label key={letter} className={optClass}>
+                              <input
+                                type="radio"
+                                name={`mc-${i}`}
+                                value={letter}
+                                checked={isSelected}
+                                onChange={() => handleAnswerChange(i, letter)}
+                                disabled={isChecked || grading}
+                              />
+                              <span>{opt}</span>
+                            </label>
+                          );
+                        })}
+                        {!mcChecked[i] && answers[i] && (
+                          <button
+                            className="btn btn-primary btn-xs comprehension__mc-check"
+                            onClick={() => handleCheckMc(i)}
+                          >
+                            {t('comprehension.checkAnswer')}
+                          </button>
+                        )}
+                        {mcChecked[i] && (
+                          <p className={`comprehension__mc-feedback ${answers[i] === q.correctAnswer ? 'comprehension__mc-feedback--correct' : 'comprehension__mc-feedback--incorrect'}`}>
+                            {answers[i] === q.correctAnswer
+                              ? t('comprehension.correct')
+                              : t('comprehension.incorrect', { answer: q.correctAnswer })}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <textarea
+                        className="comprehension__answer"
+                        placeholder={t('comprehension.typeAnswer')}
+                        value={answers[i] || ''}
+                        onChange={e => handleAnswerChange(i, e.target.value)}
+                        disabled={grading}
+                      />
+                    )
                   ) : (
                     <div className="comprehension__result">
                       {answers[i] && (
-                        <p className="comprehension__user-answer">{t('comprehension.yourAnswer', { answer: answers[i] })}</p>
+                        <p className="comprehension__user-answer">
+                          {isMc
+                            ? t('comprehension.yourChoice', { choice: answers[i] })
+                            : t('comprehension.yourAnswer', { answer: answers[i] })}
+                        </p>
                       )}
                       {results.feedback?.[i] && (
                         <div className="comprehension__result-row">
@@ -291,7 +428,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={handleGrade}
-                  disabled={!hasAnyAnswer || grading || !canGrade}
+                  disabled={!hasAnyAnswer || grading || (hasFrQuestions && !canGrade)}
                 >
                   {grading ? t('comprehension.grading') : t('comprehension.gradeMyAnswers')}
                 </button>
@@ -300,13 +437,13 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                     {t('comprehension.answerAtLeastOne')}
                   </p>
                 )}
-                {!grading && defaultKeyAvailable && (
+                {!grading && defaultKeyAvailable && hasFrQuestions && (
                   <p className="comprehension__hint text-muted" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)', fontStyle: 'italic' }}>
                     {t('comprehension.demoMode')} <a href="#" onClick={e => { e.preventDefault(); onOpenSettings?.(); }} style={{ color: 'var(--color-accent)' }}>{t('comprehension.addYourKey')}</a> {t('comprehension.fasterGrading')}
                   </p>
                 )}
               </div>
-              {!canGrade && (
+              {!canGrade && hasFrQuestions && (
                 <p className="comprehension__hint" style={{ marginTop: '0.75rem', fontSize: '0.9rem', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
                   {t('comprehension.apiKeyRequired')}
                 </p>

@@ -359,6 +359,10 @@ export default {
   'comprehension.reviseAndRegrade': 'Revise and Regrade',
   'comprehension.listenToQuestion': 'Listen to question',
   'comprehension.storyUnavailable': 'Story text unavailable.',
+  'comprehension.correct': 'Correct!',
+  'comprehension.incorrect': 'Incorrect — the answer is {answer}.',
+  'comprehension.yourChoice': 'Your choice: {choice}',
+  'comprehension.checkAnswer': 'Check',
 
   // ── Grammar notes ─────────────────────────────────────────────
   'grammar.title': 'Grammar Notes',
