@@ -704,9 +704,12 @@ export function getReadingStats(readingTime, generatedReaders) {
     if (reader && seconds > 0) {
       const langId = reader.langId || 'zh';
       // Sum story text
-      const storyText = (reader.story || []).map(s =>
-        typeof s === 'string' ? s : s.text || ''
-      ).join('');
+      const storyRaw = reader.story || '';
+      const storyText = typeof storyRaw === 'string'
+        ? storyRaw
+        : Array.isArray(storyRaw)
+          ? storyRaw.map(s => typeof s === 'string' ? s : s.text || '').join('')
+          : '';
       const units = countReadableUnits(storyText, langId);
       if (units > 0) {
         totalUnits += units;
