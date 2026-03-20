@@ -71,6 +71,9 @@ export default function FlashcardReview({ onClose, initialLangId, initialMode, v
       translation: data.translation || data.english || '',
       langId: data.langId || 'zh',
       exampleSentence: data.exampleSentence || '',
+      exampleSentenceTranslation: data.exampleSentenceTranslation || '',
+      exampleExtra: data.exampleExtra || '',
+      exampleExtraTranslation: data.exampleExtraTranslation || '',
       // Forward SRS fields
       interval: data.interval ?? 0,
       ease: data.ease ?? 2.5,

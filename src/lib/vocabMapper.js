@@ -8,6 +8,9 @@ export function mapReaderVocabulary(reader, langId) {
       chinese: v.chinese, korean: v.korean, pinyin: v.pinyin, english: v.english,
       langId,
       exampleSentence: v.exampleStory || '',
+      exampleSentenceTranslation: v.exampleStoryTranslation || '',
+      exampleExtra: v.exampleExtra || '',
+      exampleExtraTranslation: v.exampleExtraTranslation || '',
     }));
   }
   if (reader?.ankiJson?.length > 0) {
@@ -16,6 +19,9 @@ export function mapReaderVocabulary(reader, langId) {
       chinese: c.chinese, korean: c.korean, pinyin: c.pinyin, english: c.english,
       langId,
       exampleSentence: c.exampleStory || '',
+      exampleSentenceTranslation: c.exampleStoryTranslation || '',
+      exampleExtra: c.exampleExtra || '',
+      exampleExtraTranslation: c.exampleExtraTranslation || '',
     }));
   }
   return null;

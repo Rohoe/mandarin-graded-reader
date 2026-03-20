@@ -50,8 +50,25 @@ export default function FlashcardCard({
                   <span className="flashcard-card__romanization text-muted">{currentCard.romanization}</span>
                 )}
                 <span className="flashcard-card__translation">{currentCard?.translation}</span>
-                {currentCard?.exampleSentence && (
-                  <span className="flashcard-card__example text-muted">{currentCard.exampleSentence}</span>
+                {(currentCard?.exampleSentence || currentCard?.exampleExtra) && (
+                  <div className="flashcard-card__examples">
+                    {currentCard.exampleSentence && (
+                      <div className="flashcard-card__example-pair">
+                        <span className="flashcard-card__example text-muted">{currentCard.exampleSentence}</span>
+                        {currentCard.exampleSentenceTranslation && (
+                          <span className="flashcard-card__example-translation text-muted">{currentCard.exampleSentenceTranslation}</span>
+                        )}
+                      </div>
+                    )}
+                    {currentCard.exampleExtra && (
+                      <div className="flashcard-card__example-pair">
+                        <span className="flashcard-card__example text-muted">{currentCard.exampleExtra}</span>
+                        {currentCard.exampleExtraTranslation && (
+                          <span className="flashcard-card__example-translation text-muted">{currentCard.exampleExtraTranslation}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}
@@ -70,8 +87,25 @@ export default function FlashcardCard({
                 {currentCard?.romanization && (
                   <span className="flashcard-card__romanization text-muted">{currentCard.romanization}</span>
                 )}
-                {currentCard?.exampleSentence && (
-                  <span className="flashcard-card__example text-muted">{currentCard.exampleSentence}</span>
+                {(currentCard?.exampleSentence || currentCard?.exampleExtra) && (
+                  <div className="flashcard-card__examples">
+                    {currentCard.exampleSentence && (
+                      <div className="flashcard-card__example-pair">
+                        <span className="flashcard-card__example text-muted">{currentCard.exampleSentence}</span>
+                        {currentCard.exampleSentenceTranslation && (
+                          <span className="flashcard-card__example-translation text-muted">{currentCard.exampleSentenceTranslation}</span>
+                        )}
+                      </div>
+                    )}
+                    {currentCard.exampleExtra && (
+                      <div className="flashcard-card__example-pair">
+                        <span className="flashcard-card__example text-muted">{currentCard.exampleExtra}</span>
+                        {currentCard.exampleExtraTranslation && (
+                          <span className="flashcard-card__example-translation text-muted">{currentCard.exampleExtraTranslation}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}

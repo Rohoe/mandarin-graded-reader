@@ -133,6 +133,28 @@ describe('mergeVocabulary', () => {
     expect(merged['猫'].ease).toBe(2.5);
     expect(merged['猫'].nextReview).toBeNull();
   });
+
+  it('persists example sentence fields when present', () => {
+    const merged = mergeVocabulary({}, [{
+      target: '猫', pinyin: 'māo', english: 'cat',
+      exampleSentence: '我有一只猫。',
+      exampleSentenceTranslation: 'I have a cat.',
+      exampleExtra: '猫很可爱。',
+      exampleExtraTranslation: 'Cats are cute.',
+    }]);
+    expect(merged['猫'].exampleSentence).toBe('我有一只猫。');
+    expect(merged['猫'].exampleSentenceTranslation).toBe('I have a cat.');
+    expect(merged['猫'].exampleExtra).toBe('猫很可爱。');
+    expect(merged['猫'].exampleExtraTranslation).toBe('Cats are cute.');
+  });
+
+  it('omits example fields when absent', () => {
+    const merged = mergeVocabulary({}, [{ target: '猫', pinyin: 'māo', english: 'cat' }]);
+    expect(merged['猫']).not.toHaveProperty('exampleSentence');
+    expect(merged['猫']).not.toHaveProperty('exampleSentenceTranslation');
+    expect(merged['猫']).not.toHaveProperty('exampleExtra');
+    expect(merged['猫']).not.toHaveProperty('exampleExtraTranslation');
+  });
 });
 
 describe('mergeExportedWords', () => {

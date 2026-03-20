@@ -14,11 +14,16 @@ export default function FillBlankMode({ cards, onJudge, onClose }) {
   const [results, setResults] = useState({ correct: 0, incorrect: 0 });
   const inputRef = useRef(null);
 
-  // Filter to cards that have example sentences
-  const eligibleCards = useMemo(
-    () => cards.filter(c => c.exampleSentence && c.exampleSentence.includes(c.target)),
-    [cards]
-  );
+  // Filter to cards that have example sentences containing the target word
+  const eligibleCards = useMemo(() => {
+    return cards.map(c => {
+      if (c.exampleSentence?.includes(c.target))
+        return { ...c, fillSentence: c.exampleSentence };
+      if (c.exampleExtra?.includes(c.target))
+        return { ...c, fillSentence: c.exampleExtra };
+      return null;
+    }).filter(Boolean);
+  }, [cards]);
 
   const card = eligibleCards[index] || null;
   const done = index >= eligibleCards.length;
@@ -26,7 +31,7 @@ export default function FillBlankMode({ cards, onJudge, onClose }) {
   // Build blanked sentence
   const blankedSentence = useMemo(() => {
     if (!card) return '';
-    return card.exampleSentence.replace(
+    return card.fillSentence.replace(
       card.target,
       '_'.repeat(card.target.length)
     );
