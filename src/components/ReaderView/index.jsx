@@ -149,9 +149,9 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
       if (!cancelled) {
         setSelectionPopover(prev => prev ? { ...prev, translation } : null);
       }
-    }).catch(() => {
+    }).catch((err) => {
       if (!cancelled) {
-        setSelectionPopover(prev => prev ? { ...prev, translation: t('notify.translationFailed', { error: '' }) } : null);
+        setSelectionPopover(prev => prev ? { ...prev, translation: t('notify.translationFailed', { error: err?.message || '' }) } : null);
       }
     });
     return () => { cancelled = true; };

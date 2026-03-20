@@ -51,7 +51,7 @@ export default function SyllabusCourseItem({ syllabus, progress, isActive, isExp
               const lessonActive = idx === progress.lessonIndex && syllabusView === 'lesson' && !standaloneKey && isActive;
               const isCompleted = completedSet.has(idx);
               return (
-                <li key={idx}>
+                <li key={`${syllabus.id}-lesson-${idx}`}>
                   <button
                     className={`syllabus-panel__lesson-btn
                       ${lessonActive ? 'syllabus-panel__lesson-btn--active' : ''}

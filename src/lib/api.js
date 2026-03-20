@@ -12,7 +12,9 @@ import { buildSyllabusPrompt } from '../prompts/syllabusPrompt';
 import { buildReaderSystem } from '../prompts/readerSystemPrompt';
 import { buildGradingSystem } from '../prompts/gradingPrompt';
 import { buildExtendSyllabusPrompt } from '../prompts/extendSyllabusPrompt';
-import { createTimeoutController, parseJSONWithFallback } from './apiUtils';
+import { createTimeoutController, parseJSONWithFallback, fetchWithRetry, isRetryable } from './apiUtils';
+
+export { isRetryable };
 
 // ── Error classification ──────────────────────────────────────
 
@@ -31,66 +33,6 @@ export function classifyApiError(err, model) {
     return 'Invalid API key. Check your key in Settings.';
   }
   return err.message;
-}
-
-// ── Shared retry logic ─────────────────────────────────────────
-
-const MAX_RETRIES   = 2;
-const BASE_DELAY_MS = 1000;
-
-export function isRetryable(status) {
-  return status >= 500 || status === 429;
-}
-
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-/**
- * Fetch with retry: shared across all providers.
- * @param {string} url
- * @param {object} options - fetch options (may include signal)
- * @param {function} extractText - (responseData) => string
- * @param {string} providerLabel - for error messages
- */
-async function fetchWithRetry(url, options, extractText, providerLabel) {
-  let lastError;
-
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const response = await fetch(url, options);
-
-      if (!response.ok) {
-        let msg = `[${providerLabel}] API error ${response.status}`;
-        try {
-          const err = await response.json();
-          msg = err.error?.message || err.message || msg;
-        } catch { /* ignore */ }
-        const error = new Error(msg);
-        error.status = response.status;
-
-        if (!isRetryable(response.status) || attempt === MAX_RETRIES) throw error;
-        lastError = error;
-        const backoff = BASE_DELAY_MS * Math.pow(2, attempt);
-        console.warn(`[${providerLabel}] ${response.status} on attempt ${attempt + 1}, retrying in ${backoff}ms…`);
-        await delay(backoff);
-        continue;
-      }
-
-      const data = await response.json();
-      return extractText(data);
-    } catch (err) {
-      if (err.name === 'AbortError') throw new Error('Request timed out. Try again or switch to a faster provider.');
-      if (err.status !== undefined) throw err;
-      if (attempt === MAX_RETRIES) throw err;
-      lastError = err;
-      const backoff = BASE_DELAY_MS * Math.pow(2, attempt);
-      console.warn(`[${providerLabel}] Network error on attempt ${attempt + 1}, retrying in ${backoff}ms…`, err.message);
-      await delay(backoff);
-    }
-  }
-
-  throw lastError;
 }
 
 // ── Provider config registry ─────────────────────────────────

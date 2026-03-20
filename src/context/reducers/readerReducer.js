@@ -88,7 +88,10 @@ export function readerReducer(state, action) {
     case LOAD_CACHED_READER: {
       const { lessonKey } = action.payload;
       const cached = loadReader(lessonKey);
-      if (!cached) return state;
+      if (!cached) {
+        console.warn(`[readerReducer] LOAD_CACHED_READER: no cached data for '${lessonKey}'`);
+        return state;
+      }
       return {
         ...state,
         generatedReaders: { ...state.generatedReaders, [lessonKey]: cached },
@@ -98,7 +101,10 @@ export function readerReducer(state, action) {
     case TOUCH_READER: {
       const { lessonKey } = action.payload;
       const existing = state.generatedReaders[lessonKey];
-      if (!existing) return state;
+      if (!existing) {
+        console.warn(`[readerReducer] TOUCH_READER: reader '${lessonKey}' not found in generatedReaders`);
+        return state;
+      }
       return {
         ...state,
         generatedReaders: {

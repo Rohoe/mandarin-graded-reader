@@ -21,7 +21,7 @@ export default function GrammarNotes({ grammarNotes, renderChars }) {
       {!collapsed && (
         <div id="grammar-notes-content" className="grammar-notes__cards fade-in">
           {grammarNotes.map((note, i) => (
-            <GrammarCard key={i} note={note} index={i} renderChars={renderChars} />
+            <GrammarCard key={note.pattern || i} note={note} index={i} renderChars={renderChars} />
           ))}
         </div>
       )}

@@ -269,7 +269,7 @@ export function AppProvider({ children }) {
     if (stateRef.current.cloudUser) {
       pushReaderToCloud(lessonKey, readerData)
         .catch(e => {
-          console.warn('[AppContext] Reader push failed:', e.message);
+          console.warn('[AppContext] Reader push failed:', e);
           dispatch({ type: SET_NOTIFICATION, payload: { type: 'error', message: 'Reader saved locally but cloud sync failed.' } });
         });
     }
@@ -295,7 +295,7 @@ export function AppProvider({ children }) {
       localStorage.removeItem('gradedReader_preMergeSnapshot');
       dispatch({ type: REVERT_MERGE, payload: snapshot });
     } catch (e) {
-      console.warn('[AppContext] Failed to revert merge:', e.message);
+      console.warn('[AppContext] Failed to revert merge:', e);
       localStorage.removeItem('gradedReader_preMergeSnapshot');
       dispatch({ type: REVERT_MERGE, payload: null });
     }
@@ -313,7 +313,7 @@ export function AppProvider({ children }) {
           return true;
         }
       } catch (e) {
-        console.warn('[AppContext] File restore failed:', e.message);
+        console.warn('[AppContext] File restore failed:', e);
       }
     }
 
@@ -326,7 +326,7 @@ export function AppProvider({ children }) {
           return true;
         }
       } catch (e) {
-        console.warn('[AppContext] Cloud restore failed:', e.message);
+        console.warn('[AppContext] Cloud restore failed:', e);
       }
     }
 
@@ -342,7 +342,7 @@ export function AppProvider({ children }) {
   async function clearAllData() {
     syncPausedRef.current = true;
     if (stateRef.current.cloudUser) {
-      try { await signOut(); } catch (e) { console.warn('[AppContext] Sign-out during clear failed:', e.message); }
+      try { await signOut(); } catch (e) { console.warn('[AppContext] Sign-out during clear failed:', e); }
     }
     clearAllAppData();
     localStorage.removeItem('gradedReader_preMergeSnapshot');

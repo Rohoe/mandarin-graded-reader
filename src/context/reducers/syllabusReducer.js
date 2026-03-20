@@ -24,7 +24,10 @@ export function syllabusReducer(state, action) {
     case EXTEND_SYLLABUS_LESSONS: {
       const { id, newLessons } = action.payload;
       const syllabusIdx = state.syllabi.findIndex(s => s.id === id);
-      if (syllabusIdx === -1) return state;
+      if (syllabusIdx === -1) {
+        console.warn(`[syllabusReducer] EXTEND_SYLLABUS_LESSONS: syllabus '${id}' not found`);
+        return state;
+      }
       const existing = state.syllabi[syllabusIdx];
       const startNum = existing.lessons.length + 1;
       const renumbered = newLessons.map((l, i) => ({ ...l, lesson_number: startNum + i }));

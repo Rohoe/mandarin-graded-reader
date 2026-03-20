@@ -19,7 +19,7 @@ function segmentWords(text, langId) {
 function rubyAnnotate(text, romanizer, scriptRegex, keyPrefix) {
   const chars = [...text];
   let romArr;
-  try { romArr = romanizer.romanize(text); } catch { return text; }
+  try { romArr = romanizer.romanize(text); } catch (e) { console.warn('[SentencePopover] romanization failed:', e); return text; }
   const nodes = [];
   let nonTarget = '';
   let nonTargetStart = 0;
@@ -97,7 +97,11 @@ const SentencePopoverInner = forwardRef(function SentencePopoverInner(
       setCopied(true);
       clearTimeout(copiedTimer.current);
       copiedTimer.current = setTimeout(() => setCopied(false), 1500);
-    }).catch(() => {});
+    }).catch(() => {
+      setCopied(true);
+      clearTimeout(copiedTimer.current);
+      copiedTimer.current = setTimeout(() => setCopied(false), 1500);
+    });
   }, [sentenceText, translation]);
 
   const scriptRegex = useMemo(() => {
@@ -147,7 +151,7 @@ const SentencePopoverInner = forwardRef(function SentencePopoverInner(
   /** Get plain romanization string for a text (used in sub-selection). */
   const getRomanization = (text) => {
     if (!romanizer || !scriptRegex) return null;
-    try { return romanizer.romanize(text).join(''); } catch { return null; }
+    try { return romanizer.romanize(text).join(''); } catch (e) { console.warn('[SentencePopover] romanization failed:', e); return null; }
   };
 
   const renderSentenceText = () => {

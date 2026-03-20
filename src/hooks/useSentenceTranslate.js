@@ -10,9 +10,13 @@ export function useSentenceTranslate(langId, nativeLang = 'en') {
   // { sentenceText, rect, translation, subTranslation }
   const [sentencePopover, setSentencePopover] = useState(null);
   const popoverRef = useRef(null);
+  const abortRef = useRef(null);
+  const subAbortRef = useRef(null);
 
   const closeSentencePopover = useCallback(() => {
     setSentencePopover(null);
+    if (abortRef.current) { abortRef.current.abort(); abortRef.current = null; }
+    if (subAbortRef.current) { subAbortRef.current.abort(); subAbortRef.current = null; }
   }, []);
 
   const handleSentenceClick = useCallback((e, sentence, _paragraphIndex) => {
@@ -32,16 +36,23 @@ export function useSentenceTranslate(langId, nativeLang = 'en') {
       return { sentenceText, rect, translation: null, subTranslation: null };
     });
 
+    // Abort any previous translation request
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     // Fetch translation
     translateText(sentenceText, langId, { to: nativeLang })
       .then(translation => {
+        if (controller.signal.aborted) return;
         setSentencePopover(prev =>
           prev && prev.sentenceText === sentenceText
             ? { ...prev, translation }
             : prev
         );
       })
-      .catch(() => {
+      .catch((err) => {
+        if (controller.signal.aborted || err?.name === 'AbortError') return;
         setSentencePopover(prev =>
           prev && prev.sentenceText === sentenceText
             ? { ...prev, translation: '(translation failed)' }
@@ -63,15 +74,22 @@ export function useSentenceTranslate(langId, nativeLang = 'en') {
     const text = selectedText.trim();
     setSentencePopover(prev => prev ? { ...prev, subText: text, subTranslation: null } : null);
 
+    // Abort any previous sub-translation request
+    if (subAbortRef.current) subAbortRef.current.abort();
+    const controller = new AbortController();
+    subAbortRef.current = controller;
+
     translateText(text, langId, { to: nativeLang })
       .then(translation => {
+        if (controller.signal.aborted) return;
         setSentencePopover(prev =>
           prev && prev.subText === text
             ? { ...prev, subTranslation: translation }
             : prev
         );
       })
-      .catch(() => {
+      .catch((err) => {
+        if (controller.signal.aborted || err?.name === 'AbortError') return;
         setSentencePopover(prev =>
           prev && prev.subText === text
             ? { ...prev, subTranslation: '(translation failed)' }

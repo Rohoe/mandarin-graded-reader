@@ -3,53 +3,8 @@
  * Supports Anthropic, OpenAI, OpenAI-compatible, and Gemini providers.
  */
 
-import { createTimeoutController } from './apiUtils';
-import { classifyApiError, isRetryable } from './api';
-
-// ── Retry logic (shared with api.js) ────────────────────────
-
-const MAX_RETRIES = 2;
-const BASE_DELAY_MS = 1000;
-
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function fetchWithRetry(url, options, extractText, providerLabel) {
-  let lastError;
-
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const response = await fetch(url, options);
-
-      if (!response.ok) {
-        let msg = `[${providerLabel}] API error ${response.status}`;
-        try {
-          const err = await response.json();
-          msg = err.error?.message || err.message || msg;
-        } catch { /* ignore */ }
-        const error = new Error(msg);
-        error.status = response.status;
-
-        if (!isRetryable(response.status) || attempt === MAX_RETRIES) throw error;
-        lastError = error;
-        await delay(BASE_DELAY_MS * Math.pow(2, attempt));
-        continue;
-      }
-
-      const data = await response.json();
-      return extractText(data);
-    } catch (err) {
-      if (err.name === 'AbortError') throw new Error('Request timed out. Try again or switch to a faster provider.');
-      if (err.status !== undefined) throw err;
-      if (attempt === MAX_RETRIES) throw err;
-      lastError = err;
-      await delay(BASE_DELAY_MS * Math.pow(2, attempt));
-    }
-  }
-
-  throw lastError;
-}
+import { createTimeoutController, fetchWithRetry } from './apiUtils';
+import { classifyApiError } from './api';
 
 // ── Sliding window ──────────────────────────────────────────
 

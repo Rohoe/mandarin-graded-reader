@@ -1,22 +1,28 @@
+import { useState } from 'react';
 import { signInWithGoogle, signInWithApple } from '../lib/cloudSync';
 import { useT } from '../i18n';
 
 export default function SignInModal({ onClose }) {
   const t = useT();
+  const [error, setError] = useState(null);
 
   async function handleGoogle() {
+    setError(null);
     try {
       await signInWithGoogle();
     } catch (err) {
       console.error('Google sign-in failed:', err);
+      setError(t('signIn.error') || 'Sign-in failed. Please try again.');
     }
   }
 
   async function handleApple() {
+    setError(null);
     try {
       await signInWithApple();
     } catch (err) {
       console.error('Apple sign-in failed:', err);
+      setError(t('signIn.error') || 'Sign-in failed. Please try again.');
     }
   }
 
@@ -38,6 +44,12 @@ export default function SignInModal({ onClose }) {
         <p className="text-muted" style={{ fontSize: 'var(--text-sm)', marginBottom: '1.25rem' }}>
           {t('signIn.syncProgress')}
         </p>
+
+        {error && (
+          <p style={{ color: 'var(--color-error, #c0392b)', fontSize: 'var(--text-sm)', marginBottom: '0.75rem' }}>
+            {error}
+          </p>
+        )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
           <button className="btn btn-primary" onClick={handleGoogle} style={{ width: '100%' }}>

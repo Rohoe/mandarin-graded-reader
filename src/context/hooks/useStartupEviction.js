@@ -51,7 +51,7 @@ export function useStartupEviction(state, dispatch, stateRef) {
               for (const k of cloudKeys) backupKeys.add(k);
             }
           } catch (e) {
-            console.warn('[AppContext] Failed to fetch cloud reader keys for eviction:', e.message);
+            console.warn('[AppContext] Failed to fetch cloud reader keys for eviction:', e);
           }
         }
 
@@ -62,7 +62,7 @@ export function useStartupEviction(state, dispatch, stateRef) {
           dispatch({ type: SET_EVICTED_READER_KEYS, payload: loadEvictedReaderKeys() });
         }
       } catch (e) {
-        console.warn('[AppContext] Eviction failed:', e.message);
+        console.warn('[AppContext] Eviction failed:', e);
       }
     }
 

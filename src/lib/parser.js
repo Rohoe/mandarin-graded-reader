@@ -85,7 +85,8 @@ function extractVocabJson(rawText) {
     try {
       const arr = JSON.parse(match[1]);
       return Array.isArray(arr) ? arr : [];
-    } catch {
+    } catch (e) {
+      console.warn('[parser] Failed to parse vocab-json block:', e);
       return [];
     }
   }
@@ -156,7 +157,8 @@ function extractAnkiJson(rawText) {
   if (ankiMatch) {
     try {
       return JSON.parse(ankiMatch[1]);
-    } catch {
+    } catch (e) {
+      console.warn('[parser] Failed to parse anki-json block:', e);
       return [];
     }
   }
@@ -278,6 +280,7 @@ export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
       langId,
     };
   } catch (err) {
+    console.error('[parser] parseReaderResponse failed:', err);
     return { ...EMPTY_RESULT, raw: rawText, langId, parseError: err.message };
   }
 }

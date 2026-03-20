@@ -16,7 +16,10 @@ export function vocabularyReducer(state, action) {
     case UPDATE_VOCAB_SRS: {
       const { word, ...srsFields } = action.payload;
       const existing = state.learnedVocabulary[word];
-      if (!existing) return state;
+      if (!existing) {
+        console.warn(`[vocabularyReducer] UPDATE_VOCAB_SRS: word '${word}' not found in learnedVocabulary`);
+        return state;
+      }
       return {
         ...state,
         learnedVocabulary: {

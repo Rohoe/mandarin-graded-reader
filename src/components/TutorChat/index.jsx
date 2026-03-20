@@ -78,13 +78,17 @@ export default function TutorChat({ lessonKey, reader, lessonMeta, syllabus, onC
     const url = externalFlow.target === 'claude'
       ? 'https://claude.ai/new'
       : 'https://chatgpt.com';
-    navigator.clipboard.writeText(externalPrompt).catch(() => {});
+    navigator.clipboard.writeText(externalPrompt).catch(() => {
+      console.warn('[TutorChat] Clipboard write failed');
+    });
     window.open(url, '_blank');
     setExternalFlow(f => f && { ...f, step: 'copied' });
   }
 
   function handleCopyAgain() {
-    navigator.clipboard.writeText(externalPrompt).catch(() => {});
+    navigator.clipboard.writeText(externalPrompt).catch(() => {
+      console.warn('[TutorChat] Clipboard write failed');
+    });
   }
 
   const showChips = messages.length === 0;

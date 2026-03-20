@@ -48,7 +48,8 @@ export async function loadDirectoryHandle() {
       req.onsuccess = () => resolve(req.result ?? null);
       req.onerror   = () => reject(req.error);
     });
-  } catch {
+  } catch (e) {
+    console.warn('[fileStorage] loadDirectoryHandle failed:', e);
     return null;
   }
 }
@@ -122,8 +123,12 @@ export async function readJSON(dirHandle, filename) {
     const fh   = await dirHandle.getFileHandle(filename);
     const file = await fh.getFile();
     return JSON.parse(await file.text());
-  } catch {
-    return null; // file doesn't exist yet
+  } catch (e) {
+    // NotFoundError is expected for files that don't exist yet
+    if (e?.name !== 'NotFoundError') {
+      console.warn('[fileStorage] readJSON failed:', filename, e);
+    }
+    return null;
   }
 }
 

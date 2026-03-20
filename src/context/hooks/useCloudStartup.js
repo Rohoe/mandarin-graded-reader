@@ -46,7 +46,7 @@ export function useCloudStartup(state, dispatch, stateRef, startupSyncDoneRef, s
 
             const merged = mergeData(preState, data);
             dispatch({ type: MERGE_WITH_CLOUD, payload: merged });
-            pushMergedToCloud(merged).catch(e => console.warn('[AppContext] Post-merge push failed:', e.message));
+            pushMergedToCloud(merged).catch(e => console.warn('[AppContext] Post-merge push failed:', e));
             dispatch({ type: SET_CLOUD_LAST_SYNCED, payload: Date.now() });
 
             const summary = computeMergeSummary(preState, merged);
@@ -63,7 +63,7 @@ export function useCloudStartup(state, dispatch, stateRef, startupSyncDoneRef, s
           dispatch({ type: SET_CLOUD_LAST_SYNCED, payload: Date.now() });
         }
       } catch (e) {
-        console.warn('[AppContext] Startup sync failed:', e.message);
+        console.warn('[AppContext] Startup sync failed:', e);
         dispatch({ type: SET_NOTIFICATION, payload: { type: 'error', message: 'Cloud sync failed. Your data may be out of date.' } });
       } finally {
         dispatch({ type: SET_CLOUD_SYNCING, payload: false });
@@ -90,7 +90,7 @@ export function useCloudStartup(state, dispatch, stateRef, startupSyncDoneRef, s
           dispatch({ type: CLEAR_MERGE_SNAPSHOT });
         }
       } catch (e) {
-        console.warn('[AppContext] Auto-sync failed:', e.message);
+        console.warn('[AppContext] Auto-sync failed:', e);
         // Only show notification if the last one wasn't also a sync failure (avoid spam from 3s debounce)
         const current = stateRef.current.notification;
         if (!current || !current.message?.includes('cloud sync failed')) {

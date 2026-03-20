@@ -15,7 +15,10 @@ export function grammarReducer(state, action) {
     case UPDATE_GRAMMAR_SRS: {
       const { key, ...srsFields } = action.payload;
       const existing = state.learnedGrammar[key];
-      if (!existing) return state;
+      if (!existing) {
+        console.warn(`[grammarReducer] UPDATE_GRAMMAR_SRS: key '${key}' not found in learnedGrammar`);
+        return state;
+      }
       return {
         ...state,
         learnedGrammar: {

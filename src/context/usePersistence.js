@@ -47,7 +47,7 @@ import {
   saveLastModified,
 } from '../lib/storage';
 import { pushReaderToCloud } from '../lib/cloudSync';
-import { SET_QUOTA_WARNING } from './actionTypes';
+import { SET_QUOTA_WARNING, SET_NOTIFICATION } from './actionTypes';
 
 // ── Persistence registry ──────────────────────────────────────
 // Each entry maps a state key to the storage function that persists it.
@@ -135,7 +135,10 @@ export function usePersistence(state, dispatch, stateRef) {
         // Push updated reader to cloud (handles grading results, user answers, etc.)
         if (stateRef.current.cloudUser) {
           pushReaderToCloud(key, curr[key])
-            .catch(e => console.warn('[AppContext] Reader cloud sync failed:', e.message));
+            .catch(e => {
+              console.warn('[AppContext] Reader cloud sync failed:', e);
+              dispatch({ type: SET_NOTIFICATION, payload: { type: 'error', message: 'Reader cloud sync failed. Changes saved locally.' } });
+            });
         }
       }
     }
