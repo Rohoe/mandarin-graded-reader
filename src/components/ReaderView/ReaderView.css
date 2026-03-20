@@ -786,13 +786,29 @@ rt {
 
 /* ── Streaming preview ─────────────────── */
 .reader-view__streaming-text {
-  white-space: pre-wrap;
   font-family: var(--font-target);
   font-size: var(--text-lg);
   line-height: 1.8;
   max-height: 70vh;
   overflow-y: auto;
   padding: var(--space-4) 0;
+}
+
+.reader-view__streaming-text h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-2);
+}
+
+.reader-view__streaming-text h3:first-child {
+  margin-top: 0;
+}
+
+.reader-view__streaming-text p {
+  margin-bottom: var(--space-3);
 }
 
 .reader-view__streaming-cursor {

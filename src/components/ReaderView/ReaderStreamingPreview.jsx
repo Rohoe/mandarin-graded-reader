@@ -1,8 +1,11 @@
 import { getLessonTitle } from '../../lib/languages';
 import { useT } from '../../i18n';
+import { useBufferedMarkdown } from '../../hooks/useBufferedMarkdown';
 
 export default function ReaderStreamingPreview({ lessonMeta, langId, streamingText }) {
   const t = useT();
+  const rendered = useBufferedMarkdown(streamingText);
+
   return (
     <div className="reader-view reader-view--generating">
       <div className="reader-view__pregenerate card card-padded">
@@ -14,7 +17,7 @@ export default function ReaderStreamingPreview({ lessonMeta, langId, streamingTe
           </>
         )}
         <div className="reader-view__streaming-text text-target">
-          {streamingText}<span className="reader-view__streaming-cursor" />
+          {rendered}<span className="reader-view__streaming-cursor" />
         </div>
       </div>
     </div>

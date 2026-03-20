@@ -168,6 +168,7 @@
     transition: transform var(--transition-slow);
     z-index: 50;
     padding-bottom: env(safe-area-inset-bottom);
+    background: var(--color-bg-sidebar);
     overflow: hidden;
   }
 
