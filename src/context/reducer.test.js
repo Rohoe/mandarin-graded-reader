@@ -88,16 +88,16 @@ vi.mock('../lib/storage', () => ({
   saveNewCardsPerDay: vi.fn(),
   loadReadingTime: () => ({}),
   saveReadingTime: vi.fn(),
+  loadReadingTimeLog: () => [],
+  saveReadingTimeLog: vi.fn(),
+  loadWeeklyGoals: () => ({ lessons: 3, flashcards: 30, quizzes: 2, minutes: 30 }),
+  saveWeeklyGoals: vi.fn(),
   loadGradingModels: () => ({ anthropic: null, openai: null, gemini: null, openai_compatible: null }),
   saveGradingModels: vi.fn(),
   loadDefaultLevels: () => ({ zh: 3, ko: 2, yue: 2, fr: 2, es: 2, en: 2 }),
   saveDefaultLevels: vi.fn(),
   loadNativeLang: () => 'en',
   saveNativeLang: vi.fn(),
-  loadLearningPlans: () => ({}),
-  saveLearningPlans: vi.fn(),
-  loadPlanProgress: () => ({}),
-  savePlanProgress: vi.fn(),
 }));
 
 vi.mock('../lib/fileStorage', () => ({

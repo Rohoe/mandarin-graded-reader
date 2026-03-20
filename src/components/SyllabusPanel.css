@@ -56,6 +56,35 @@
   font-weight: 600;
 }
 
+/* ── Home button ──────────────────────────── */
+.syllabus-panel__home-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: calc(100% - 2 * var(--space-3));
+  margin: var(--space-2) var(--space-3) 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  font-family: var(--font-display);
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--color-text-subtle);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.syllabus-panel__home-btn:hover {
+  background: rgba(74, 124, 126, 0.08);
+  color: var(--color-text);
+}
+
+.syllabus-panel__home-btn--active {
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+}
+
 /* ── Toolbar ────────────────────────────── */
 .syllabus-panel__toolbar {
   display: flex;
@@ -243,63 +272,6 @@
 
 .syllabus-panel__empty-cta:hover {
   opacity: 0.85;
-}
-
-/* ── Learning Plans section ──────────────── */
-.syllabus-panel__plans-section {
-  padding: 0 var(--space-3);
-}
-
-.syllabus-panel__section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-2) var(--space-2);
-}
-
-.syllabus-panel__section-title {
-  font-size: var(--text-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--color-text-muted);
-}
-
-.syllabus-panel__plan-item {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  width: 100%;
-  padding: var(--space-2) var(--space-3);
-  border: none;
-  border-radius: var(--radius);
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-  transition: background var(--transition);
-}
-
-.syllabus-panel__plan-item:hover {
-  background: var(--color-bg-elevated);
-}
-
-.syllabus-panel__plan-item--active {
-  background: var(--color-bg-elevated);
-  border-left: 2px solid var(--color-accent);
-}
-
-.syllabus-panel__plan-lang {
-  font-size: var(--text-sm);
-  font-weight: 600;
-}
-
-.syllabus-panel__plan-level {
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-}
-
-.syllabus-panel__plan-progress {
-  font-size: 10px;
 }
 
 /* ── No filter results ───────────────────── */

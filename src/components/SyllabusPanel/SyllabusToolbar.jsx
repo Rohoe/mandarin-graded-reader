@@ -10,7 +10,6 @@ export default function SyllabusToolbar({ viewMode, setViewMode, searchQuery, se
         {[
           { id: 'all', label: t('toolbar.all') },
           { id: 'courses', label: t('toolbar.courses') },
-          { id: 'plans', label: t('toolbar.plans') },
           { id: 'readers', label: t('toolbar.readers') },
         ].map(v => (
           <button

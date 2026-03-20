@@ -65,8 +65,8 @@ const KEYS = {
   FLASHCARD_SESSION:   'gradedReader_flashcardSession',
   READING_TIME:        'gradedReader_readingTime',
   NATIVE_LANG:         'gradedReader_nativeLang',
-  LEARNING_PLANS:      'gradedReader_learningPlans',
-  PLAN_PROGRESS:       'gradedReader_planProgress',
+  READING_TIME_LOG:    'gradedReader_readingTimeLog',
+  WEEKLY_GOALS:        'gradedReader_weeklyGoals',
 };
 
 const READER_KEY_PREFIX = 'gradedReader_reader_';
@@ -879,22 +879,26 @@ export function saveNativeLang(langId) {
   save(KEYS.NATIVE_LANG, langId);
 }
 
-// ── Learning Plans ─────────────────────────────────────────
+// ── Reading time log (timestamped sessions) ──────────────────────
 
-export function loadLearningPlans() {
-  return load(KEYS.LEARNING_PLANS, {});
+export function loadReadingTimeLog() {
+  return load(KEYS.READING_TIME_LOG, []);
 }
 
-export function saveLearningPlans(plans) {
-  save(KEYS.LEARNING_PLANS, plans);
+export function saveReadingTimeLog(log) {
+  save(KEYS.READING_TIME_LOG, log);
 }
 
-export function loadPlanProgress() {
-  return load(KEYS.PLAN_PROGRESS, {});
+// ── Weekly goals ─────────────────────────────────────────
+
+const DEFAULT_WEEKLY_GOALS = { lessons: 3, flashcards: 30, quizzes: 2, minutes: 30 };
+
+export function loadWeeklyGoals() {
+  return load(KEYS.WEEKLY_GOALS, DEFAULT_WEEKLY_GOALS);
 }
 
-export function savePlanProgress(progress) {
-  save(KEYS.PLAN_PROGRESS, progress);
+export function saveWeeklyGoals(goals) {
+  save(KEYS.WEEKLY_GOALS, goals);
 }
 
 // ── Reader eviction (LRU) ─────────────────────────────────────

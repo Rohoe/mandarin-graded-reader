@@ -13,15 +13,12 @@ import { uiReducer } from './reducers/uiReducer';
 import { preferencesReducer } from './reducers/preferencesReducer';
 import { cloudReducer } from './reducers/cloudReducer';
 import { dataReducer } from './reducers/dataReducer';
-import { planReducer } from './reducers/planReducer';
 import {
   DATA_ACTIONS, SET_SAVE_FOLDER, SET_NOTIFICATION, SET_READER,
   RESTORE_FROM_BACKUP, REVERT_MERGE, RESTORE_EVICTED_READER,
   SET_EVICTED_READER_KEYS, CLEAR_ALL_DATA, CLEAR_NOTIFICATION,
 } from './actionTypes';
 import {
-  loadLearningPlans,
-  loadPlanProgress,
   loadProviderKeys,
   loadActiveProvider,
   loadActiveModels,
@@ -60,6 +57,8 @@ import {
   unmarkEvicted,
   loadNewCardsPerDay,
   loadReadingTime,
+  loadReadingTimeLog,
+  loadWeeklyGoals,
   loadDefaultLevels,
   loadNativeLang,
   setDirectoryHandle,
@@ -80,7 +79,8 @@ function buildInitialState() {
   const providerKeys   = loadProviderKeys();
   const activeProvider = loadActiveProvider();
   const syllabi = normalizeSyllabi(loadSyllabi());
-  const standaloneReaders = normalizeStandaloneReaders(loadStandaloneReaders());
+  const standaloneReaders = normalizeStandaloneReaders(loadStandaloneReaders())
+    .filter(r => !r.key.startsWith('plan_'));  // clean up orphaned plan readers
 
   // Inject demo readers for new users (no syllabi, no standalone readers)
   const isEmpty = syllabi.length === 0 && standaloneReaders.length === 0;
@@ -145,9 +145,10 @@ function buildInitialState() {
     readingTime:       loadReadingTime(),
     // Learning activity log (persisted)
     learningActivity:  loadLearningActivity(),
-    // Learning plans (persisted)
-    learningPlans:     loadLearningPlans(),
-    planProgress:      loadPlanProgress(),
+    // Reading time log (timestamped sessions, persisted)
+    readingTimeLog:    loadReadingTimeLog(),
+    // Weekly goals (persisted)
+    weeklyGoals:       loadWeeklyGoals(),
     // Cloud sync
     cloudUser:         null,
     cloudSyncing:      false,
@@ -169,7 +170,6 @@ const sliceReducers = [
   uiReducer,
   preferencesReducer,
   cloudReducer,
-  planReducer,
   // dataReducer handled separately (needs buildInitialState)
 ];
 

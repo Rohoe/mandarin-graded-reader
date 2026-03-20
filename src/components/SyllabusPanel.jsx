@@ -8,7 +8,6 @@ import SyllabusToolbar from './SyllabusPanel/SyllabusToolbar';
 import SyllabusCourseItem from './SyllabusPanel/SyllabusCourseItem';
 import StandaloneReaderItem from './SyllabusPanel/StandaloneReaderItem';
 import SeriesGroup from './SyllabusPanel/SeriesGroup';
-import PlanGroupItem from './SyllabusPanel/PlanGroupItem';
 import ArchivedSection from './SyllabusPanel/ArchivedSection';
 import SyncFooter from './SyllabusPanel/SyncFooter';
 import ConfirmDialog from './SyllabusPanel/ConfirmDialog';
@@ -18,7 +17,6 @@ export default function SyllabusPanel({
   activeSyllabusId,
   standaloneKey,
   syllabusView,
-  activePlanId,
   onSelectLesson,
   onShowSettings,
   onShowStats,
@@ -26,16 +24,14 @@ export default function SyllabusPanel({
   onSwitchSyllabus,
   onSelectStandalone,
   onGoSyllabusHome,
+  onGoHome,
   onShowNewForm,
   onShowSignIn,
-  onSelectPlan,
-  onShowPlanOnboarding,
 }) {
-  const { syllabi, syllabusProgress, standaloneReaders, generatedReaders, loading, pendingReaders, cloudUser, cloudSyncing, cloudLastSynced, lastModified, learningPlans } = useAppSelector(s => ({
+  const { syllabi, syllabusProgress, standaloneReaders, generatedReaders, loading, pendingReaders, cloudUser, cloudSyncing, cloudLastSynced, lastModified } = useAppSelector(s => ({
     syllabi: s.syllabi, syllabusProgress: s.syllabusProgress, standaloneReaders: s.standaloneReaders,
     generatedReaders: s.generatedReaders, loading: s.loading, pendingReaders: s.pendingReaders,
     cloudUser: s.cloudUser, cloudSyncing: s.cloudSyncing, cloudLastSynced: s.cloudLastSynced, lastModified: s.lastModified,
-    learningPlans: s.learningPlans,
   }));
   const dispatch = useAppDispatch();
   const act = actions(dispatch);
@@ -46,9 +42,8 @@ export default function SyllabusPanel({
   const archivedSyllabi  = syllabi.filter(s => s.archived);
   const archivedStandalone = standaloneReaders.filter(r => r.archived);
   const activeStandalone = standaloneReaders.filter(r => !r.archived);
-  const regularStandalone = activeStandalone.filter(r => !r.key.startsWith('plan_'));
-  const archivedRegularStandalone = archivedStandalone.filter(r => !r.key.startsWith('plan_'));
-  const activePlans = Object.values(learningPlans || {}).filter(p => !p.archived);
+  const regularStandalone = activeStandalone;
+  const archivedRegularStandalone = archivedStandalone;
 
   // ── Toolbar state ──────────────────────────
   const [viewMode, setViewMode] = useState('all');
@@ -56,8 +51,6 @@ export default function SyllabusPanel({
   const [langFilter, setLangFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
   const [expandedSyllabi, setExpandedSyllabi] = useState(new Set());
-  const [expandedPlans, setExpandedPlans] = useState(new Set());
-
   // Auto-expand the active syllabus
   useEffect(() => {
     if (activeSyllabusId && !standaloneKey) {
@@ -70,94 +63,39 @@ export default function SyllabusPanel({
     }
   }, [activeSyllabusId, standaloneKey]);
 
-  // Auto-expand the active plan
-  useEffect(() => {
-    if (activePlanId) {
-      setExpandedPlans(prev => {
-        if (prev.has(activePlanId)) return prev;
-        const next = new Set(prev);
-        next.add(activePlanId);
-        return next;
-      });
-    }
-  }, [activePlanId]);
-
-  // Auto-expand plan when viewing one of its readers
-  useEffect(() => {
-    if (standaloneKey && standaloneKey.startsWith('plan_')) {
-      for (const plan of Object.values(learningPlans || {})) {
-        if (standaloneKey.startsWith(`plan_${plan.id}_`)) {
-          setExpandedPlans(prev => {
-            if (prev.has(plan.id)) return prev;
-            const next = new Set(prev);
-            next.add(plan.id);
-            return next;
-          });
-          break;
-        }
-      }
-    }
-  }, [standaloneKey, learningPlans]);
-
   // Detect if content spans multiple languages
   const contentLanguages = useMemo(() => {
     const langs = new Set();
     for (const s of activeSyllabi) langs.add(s.langId || 'zh');
     for (const r of regularStandalone) langs.add(r.langId || 'zh');
-    for (const p of activePlans) langs.add(p.langId || 'zh');
     return langs;
-  }, [activeSyllabi, regularStandalone, activePlans]);
+  }, [activeSyllabi, regularStandalone]);
   const multiLang = contentLanguages.size > 1;
 
   // ── Filtering & sorting ────────────────────
-  const { filteredSyllabi, filteredStandalone, filteredPlans, filteredPlanReaders } = useMemo(() => {
+  const { filteredSyllabi, filteredStandalone } = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     let fSyllabi = activeSyllabi;
     let fStandalone = regularStandalone;
-    let fPlans = activePlans;
-    if (viewMode === 'readers') { fSyllabi = []; fPlans = []; }
-    if (viewMode === 'courses') { fStandalone = []; fPlans = []; }
-    if (viewMode === 'plans') { fSyllabi = []; fStandalone = []; }
+    if (viewMode === 'readers') { fSyllabi = []; }
+    if (viewMode === 'courses') { fStandalone = []; }
     if (langFilter !== 'all') {
       fSyllabi = fSyllabi.filter(s => (s.langId || 'zh') === langFilter);
       fStandalone = fStandalone.filter(r => (r.langId || 'zh') === langFilter);
-      fPlans = fPlans.filter(p => (p.langId || 'zh') === langFilter);
     }
     if (query) {
       fSyllabi = fSyllabi.filter(s => s.topic.toLowerCase().includes(query));
       fStandalone = fStandalone.filter(r => r.topic.toLowerCase().includes(query));
-      fPlans = fPlans.filter(p => {
-        const lc = getLang(p.langId);
-        return lc.name.toLowerCase().includes(query) || lc.nameNative.toLowerCase().includes(query);
-      });
     }
     if (sortBy === 'alpha') {
       fSyllabi = [...fSyllabi].sort((a, b) => a.topic.localeCompare(b.topic));
       fStandalone = [...fStandalone].sort((a, b) => a.topic.localeCompare(b.topic));
-      fPlans = [...fPlans].sort((a, b) => getLang(a.langId).name.localeCompare(getLang(b.langId).name));
     } else {
       fSyllabi = [...fSyllabi].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       fStandalone = [...fStandalone].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      fPlans = [...fPlans].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     }
-    // Group plan readers by planId
-    const planReadersByPlan = {};
-    const planStandalone = activeStandalone.filter(r => r.key.startsWith('plan_'));
-    const planIdSet = new Set(fPlans.map(p => p.id));
-    for (const r of planStandalone) {
-      for (const pid of planIdSet) {
-        if (r.key.startsWith(`plan_${pid}_`)) {
-          if (!planReadersByPlan[pid]) planReadersByPlan[pid] = [];
-          planReadersByPlan[pid].push(r);
-          break;
-        }
-      }
-    }
-    for (const readers of Object.values(planReadersByPlan)) {
-      readers.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-    }
-    return { filteredSyllabi: fSyllabi, filteredStandalone: fStandalone, filteredPlans: fPlans, filteredPlanReaders: planReadersByPlan };
-  }, [activeSyllabi, regularStandalone, activePlans, activeStandalone, viewMode, langFilter, searchQuery, sortBy]);
+    return { filteredSyllabi: fSyllabi, filteredStandalone: fStandalone };
+  }, [activeSyllabi, regularStandalone, viewMode, langFilter, searchQuery, sortBy]);
 
   // Group standalone readers by seriesId
   const { ungrouped, seriesGroups } = useMemo(() => {
@@ -222,18 +160,8 @@ export default function SyllabusPanel({
     setExpandedSeries(prev => ({ ...prev, [sId]: !prev[sId] }));
   }
 
-  function togglePlanExpand(e, planId) {
-    e.stopPropagation();
-    setExpandedPlans(prev => {
-      const next = new Set(prev);
-      if (next.has(planId)) next.delete(planId);
-      else next.add(planId);
-      return next;
-    });
-  }
-
-  const hasContent = activeSyllabi.length > 0 || regularStandalone.length > 0 || activePlans.length > 0;
-  const hasFilteredContent = filteredSyllabi.length > 0 || filteredStandalone.length > 0 || filteredPlans.length > 0;
+  const hasContent = activeSyllabi.length > 0 || regularStandalone.length > 0;
+  const hasFilteredContent = filteredSyllabi.length > 0 || filteredStandalone.length > 0;
   const isFiltering = searchQuery || langFilter !== 'all' || viewMode !== 'all';
 
   const langOptions = [
@@ -264,6 +192,14 @@ export default function SyllabusPanel({
         </button>
       </div>
 
+      {/* Home button */}
+      <button
+        className={`syllabus-panel__home-btn ${syllabusView === 'dashboard' && !standaloneKey ? 'syllabus-panel__home-btn--active' : ''}`}
+        onClick={() => onGoHome?.()}
+      >
+        {t('sidebar.home')}
+      </button>
+
       {hasContent && (
         <SyllabusToolbar
           viewMode={viewMode} setViewMode={setViewMode}
@@ -274,7 +210,7 @@ export default function SyllabusPanel({
       )}
 
       {/* Empty state */}
-      {!hasContent && Object.keys(learningPlans || {}).length === 0 && (
+      {!hasContent && (
         <div className="syllabus-panel__empty">
           <p className="syllabus-panel__empty-text text-muted">{t('sidebar.noReaders')}</p>
           <button className="btn btn-sm syllabus-panel__empty-cta" onClick={() => onShowNewForm?.()}>
@@ -309,23 +245,7 @@ export default function SyllabusPanel({
             />
           ))}
 
-          {filteredPlans.map(plan => (
-            <PlanGroupItem
-              key={plan.id}
-              plan={plan}
-              planReaders={filteredPlanReaders[plan.id] || []}
-              generatedReaders={generatedReaders}
-              isActive={plan.id === activePlanId && syllabusView === 'plan' && !standaloneKey}
-              isExpanded={expandedPlans.has(plan.id)}
-              standaloneKey={standaloneKey}
-              loading={loading}
-              onPlanClick={onSelectPlan}
-              onToggleExpand={togglePlanExpand}
-              onReaderClick={onSelectStandalone}
-            />
-          ))}
-
-          {(filteredSyllabi.length > 0 || filteredPlans.length > 0) && filteredStandalone.length > 0 && (
+          {filteredSyllabi.length > 0 && filteredStandalone.length > 0 && (
             <div className="syllabus-panel__divider" />
           )}
 
