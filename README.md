@@ -117,6 +117,7 @@ CREATE TABLE user_data (
   standalone_readers JSONB DEFAULT '[]',
   generated_readers JSONB DEFAULT '{}',
   learned_vocabulary JSONB DEFAULT '{}',
+  learned_grammar JSONB DEFAULT '{}',
   exported_words JSONB DEFAULT '[]',
   updated_at TIMESTAMPTZ DEFAULT now()
 );

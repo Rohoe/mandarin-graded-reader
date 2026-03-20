@@ -83,6 +83,7 @@
   standaloneReaders: [{ key, topic, level, langId, createdAt, seriesId?, episodeNumber?, isDemo? }],
   generatedReaders: { [lessonKey]: parsedReaderData },
   learnedVocabulary: { [targetWord]: { romanization, translation, langId, dateAdded, SRS fields... } },
+  learnedGrammar: { ['langId::pattern']: { pattern, label, explanation, example, langId, dateAdded, SRS fields... } },
   exportedWords: Set<string>,
 
   // Reading

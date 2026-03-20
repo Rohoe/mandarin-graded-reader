@@ -37,7 +37,10 @@ Question list with textarea input + "Grade My Answers" button. Results: per-ques
 Shows new/skip counts. Merges grammar cards into export (tagged Grammar). Inline checkboxes for per-language sentence romanization and sentence translation. When sentence translation is ON, batch-translates examples via Google Translate before export. Reads `exportSentenceRom` and `exportSentenceTrans` from state directly.
 
 ## `FlashcardReview/`
-Modal with daily SRS session. `buildDailySession()` collects due + new cards. Forward and reverse directions with independent SRS tracking. Interval previews below judgment buttons. Missed/almost re-queued. Undo via Ctrl+Z. Per-language sessions (resumable same day, reset at midnight). Language filter pills. Mode tabs switch between standard flashcards and three additional quiz modes:
+Modal with daily SRS session. `buildDailySession()` collects due + new cards. Forward and reverse directions with independent SRS tracking. Interval previews below judgment buttons. Missed/almost re-queued. Undo via Ctrl+Z. Per-language sessions (resumable same day, reset at midnight). Language filter pills. Opens to a **ModePicker** screen with SRS Review, Quiz Mix, Grammar Review, and a collapsible practice exercise grid.
+
+### `GrammarReviewMode`
+Self-contained grammar SRS review. Harvests grammar patterns from readers on completion into `learnedGrammar` (keyed by `langId::pattern`). Front shows the pattern with "What does this pattern mean?" prompt; back shows label, explanation, and example. Reuses `calculateSRS`/`buildDailySession` from `srs.js`. Per-language session persistence. Keyboard: Space/Enter to reveal, 1/2/3 for judgments, Cmd+Z for undo.
 
 ### `FillBlankMode`
 Cloze-deletion quiz. Shows example sentence with target word blanked out. User types the missing word; graded on match.
