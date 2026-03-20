@@ -5,7 +5,8 @@ import { gradeAnswers, gradeMultipleChoice } from '../lib/api';
 import { buildGradingLLMConfig, hasAnyUserKey } from '../lib/llmConfig';
 import VocabMatchingQuestion from './VocabMatchingQuestion';
 import { buildGradingContext } from '../lib/stats';
-import { translateText } from '../lib/translate';
+import { translateText, batchTranslate } from '../lib/translate';
+import { getNativeLang } from '../lib/nativeLanguages';
 import { renderInline, stripMarkdown } from '../lib/renderInline';
 import { useT } from '../i18n';
 import './ComprehensionQuestions.css';
@@ -26,11 +27,11 @@ function scoreIndicator(scoreStr) {
 
 const AUTO_SAVE_DELAY = 1500;
 
-export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars, showParagraphTools, speakText, speakingKey, ttsSupported, onOpenSettings }) {
+export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars, showParagraphTools, speakText, speakingKey, ttsSupported, onOpenSettings, questionTranslations, onCacheQuestionTranslations }) {
   const t = useT();
-  const { apiKey, providerKeys, activeProvider, activeModels, gradingModels, customBaseUrl, nativeLang, learnedVocabulary, learningActivity } = useAppSelector(s => ({
+  const { apiKey, providerKeys, activeProvider, activeModels, gradingModels, customBaseUrl, nativeLang, translateQuestions, learnedVocabulary, learningActivity } = useAppSelector(s => ({
     apiKey: s.apiKey, providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, gradingModels: s.gradingModels, customBaseUrl: s.customBaseUrl, nativeLang: s.nativeLang || 'en',
-    learnedVocabulary: s.learnedVocabulary, learningActivity: s.learningActivity,
+    translateQuestions: s.translateQuestions, learnedVocabulary: s.learnedVocabulary, learningActivity: s.learningActivity,
   }));
 
   const defaultKeyAvailable = !hasAnyUserKey(providerKeys) && !!import.meta.env.VITE_DEFAULT_GEMINI_KEY;
@@ -48,6 +49,63 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
   const [translatingQIndex, setTranslatingQIndex] = useState(null);
   const [showSuggested, setShowSuggested] = useState({});
   const [mcChecked, setMcChecked] = useState({});
+  const [translatingAll, setTranslatingAll] = useState(false);
+
+  // ── Batch translate all question content when translateQuestions is on ──
+  const LANG_MAP = { zh: 'zh-CN', yue: 'yue', ko: 'ko', fr: 'fr', es: 'es', en: 'en', ja: 'ja' };
+  useEffect(() => {
+    if (!translateQuestions || !questions || questions.length === 0) return;
+    const cached = questionTranslations || {};
+
+    // Collect untranslated texts with their cache keys
+    const toTranslate = [];
+    questions.forEach((q, i) => {
+      const qText = typeof q === 'string' ? q : q.text;
+      const qType = (typeof q === 'object' ? q.type : null) || 'fr';
+      if (qText && !cached[`q-${i}`]) toTranslate.push({ key: `q-${i}`, text: qText });
+      if (qType === 'mc' && q.options) {
+        q.options.forEach(opt => {
+          const letter = opt.charAt(0);
+          if (!cached[`opt-${i}-${letter}`]) toTranslate.push({ key: `opt-${i}-${letter}`, text: opt });
+        });
+      }
+      if (qType === 'fb' && q.bank) {
+        q.bank.forEach(word => {
+          if (!cached[`bank-${i}-${word}`]) toTranslate.push({ key: `bank-${i}-${word}`, text: word });
+        });
+      }
+      if (qType === 'vm' && q.pairs) {
+        q.pairs.forEach(p => {
+          if (!cached[`vm-${i}-${p.word}`]) toTranslate.push({ key: `vm-${i}-${p.word}`, text: p.definition });
+        });
+      }
+    });
+
+    if (toTranslate.length === 0) return;
+
+    let cancelled = false;
+    setTranslatingAll(true);
+    const fromLang = LANG_MAP[langId] || langId;
+    const toLang = nativeLang === langId ? 'en' : (nativeLang || 'en');
+
+    batchTranslate(toTranslate.map(t => t.text), { from: fromLang, to: toLang })
+      .then(results => {
+        if (cancelled) return;
+        const newTranslations = {};
+        toTranslate.forEach((item, idx) => {
+          newTranslations[item.key] = results[idx] || '';
+        });
+        onCacheQuestionTranslations?.(newTranslations);
+      })
+      .catch(err => {
+        if (!cancelled) console.warn('[ComprehensionQuestions] Batch translate failed:', err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setTranslatingAll(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [translateQuestions, lessonKey, questions?.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Refs for debounced auto-save — read current values without stale closures
   const debounceRef = useRef(null);
@@ -251,7 +309,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
     setVisibleQTranslations(prev => new Set(prev).add(i));
     setTranslatingQIndex(i);
     try {
-      const translation = await translateText(qText, langId);
+      const translation = await translateText(qText, langId, { to: nativeLang });
       setFetchedQTranslations(prev => ({ ...prev, [i]: translation }));
     } catch (err) {
       act.notify('error', `Translation failed: ${err.message}`);
@@ -305,20 +363,30 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                           {speakingKey === `question-${i}` ? '⏹' : '🔊'}
                         </button>
                       )}
-                      <button
-                        className={`reader-view__translate-btn ${translatingQIndex === i ? 'reader-view__translate-btn--loading' : ''} ${visibleQTranslations.has(i) ? 'reader-view__translate-btn--active' : ''}`}
-                        onClick={() => handleQTranslateClick(i, qText, qTranslation)}
-                        disabled={translatingQIndex === i}
-                        title={visibleQTranslations.has(i) ? t('story.hideTranslation') : t('vocab.translateToEnglish')}
-                        aria-label={visibleQTranslations.has(i) ? t('story.hideTranslation') : t('vocab.translateToEnglish')}
-                      >
-                        EN
-                      </button>
+                      {!translateQuestions && (
+                        <button
+                          className={`reader-view__translate-btn ${translatingQIndex === i ? 'reader-view__translate-btn--loading' : ''} ${visibleQTranslations.has(i) ? 'reader-view__translate-btn--active' : ''}`}
+                          onClick={() => handleQTranslateClick(i, qText, qTranslation)}
+                          disabled={translatingQIndex === i}
+                          title={visibleQTranslations.has(i) ? t('story.hideTranslation') : t('vocab.translateToEnglish')}
+                          aria-label={visibleQTranslations.has(i) ? t('story.hideTranslation') : t('vocab.translateToEnglish')}
+                        >
+                          {getNativeLang(nativeLang).shortLabel}
+                        </button>
+                      )}
                     </>
                   )}
                 </span>
-                {visibleQTranslations.has(i) && (qTranslation || fetchedQTranslations[i]) && (
+                {/* Per-question translate button result */}
+                {!translateQuestions && visibleQTranslations.has(i) && (qTranslation || fetchedQTranslations[i]) && (
                   <span className="comprehension__translation text-muted">{qTranslation || fetchedQTranslations[i]}</span>
+                )}
+                {/* Translate-all: show cached question translation */}
+                {translateQuestions && questionTranslations?.[`q-${i}`] && (
+                  <span className="comprehension__translation text-muted">{questionTranslations[`q-${i}`]}</span>
+                )}
+                {translateQuestions && translatingAll && !questionTranslations?.[`q-${i}`] && (
+                  <span className="comprehension__translating-indicator text-muted">{t('comprehension.translatingAll')}</span>
                 )}
 
                   {results === null ? (
@@ -345,7 +413,12 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                                 onChange={() => handleAnswerChange(i, letter)}
                                 disabled={isChecked || grading}
                               />
-                              <span>{opt}</span>
+                              <span>
+                                {opt}
+                                {translateQuestions && questionTranslations?.[`opt-${i}-${letter}`] && (
+                                  <span className="comprehension__option-translation">{questionTranslations[`opt-${i}-${letter}`]}</span>
+                                )}
+                              </span>
                             </label>
                           );
                         })}
@@ -417,14 +490,17 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                             if (isChecked && isSelected && !isCorrectAnswer) chipClass += ' comprehension__fb-chip--incorrect';
                             if (isChecked && !isSelected && isCorrectAnswer) chipClass += ' comprehension__fb-chip--correct';
                             if (isChecked) chipClass += ' comprehension__fb-chip--disabled';
+                            const fbTranslation = translateQuestions ? questionTranslations?.[`bank-${i}-${word}`] : null;
                             return (
                               <button
                                 key={word}
                                 className={chipClass}
                                 onClick={() => !isChecked && handleAnswerChange(i, word)}
                                 disabled={isChecked || grading}
+                                title={fbTranslation || undefined}
                               >
                                 {word}
+                                {fbTranslation && <span className="comprehension__option-translation">{fbTranslation}</span>}
                               </button>
                             );
                           })}
@@ -454,6 +530,9 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                         onCheck={() => handleCheckMc(i)}
                         results={mcChecked[i] ? gradeMultipleChoice([q], { 0: answers[i] }).feedback[0] : null}
                         t={t}
+                        translateAllOn={translateQuestions}
+                        questionTranslations={questionTranslations}
+                        questionIndex={i}
                       />
                     ) : (
                       <textarea

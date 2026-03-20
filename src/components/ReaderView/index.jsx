@@ -240,6 +240,11 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
     act.setReader(lessonKey, { ...reader, vocabTranslations: { ...existing, ...translations } });
   }
 
+  function handleCacheQuestionTranslations(translations) {
+    const existing = reader.questionTranslations || {};
+    act.setReader(lessonKey, { ...reader, questionTranslations: { ...existing, ...translations } });
+  }
+
   async function handleRestore() {
     setRestoring(true);
     try {
@@ -406,6 +411,8 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
         speakingKey={speakingKey}
         ttsSupported={ttsSupported}
         onOpenSettings={onOpenSettings}
+        questionTranslations={reader?.questionTranslations || {}}
+        onCacheQuestionTranslations={handleCacheQuestionTranslations}
       />
 
       {/* Vocabulary */}

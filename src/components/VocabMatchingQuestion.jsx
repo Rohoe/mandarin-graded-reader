@@ -9,7 +9,7 @@ function shuffle(arr) {
   return a;
 }
 
-export default function VocabMatchingQuestion({ question, answer, onAnswerChange, checked, onCheck, results, t }) {
+export default function VocabMatchingQuestion({ question, answer, onAnswerChange, checked, onCheck, results, t, translateAllOn, questionTranslations, questionIndex }) {
   const pairs = question.pairs || [];
   const [selectedWord, setSelectedWord] = useState(null);
 
@@ -98,14 +98,17 @@ export default function VocabMatchingQuestion({ question, answer, onAnswerChange
               }
               cls += ' comprehension__vm-item--disabled';
             }
+            const vmTranslation = translateAllOn && questionTranslations?.[`vm-${questionIndex}-${pairs.find(p => p.definition === def)?.word}`];
             return (
               <button
                 key={def}
                 className={cls}
                 onClick={() => handleDefClick(def)}
                 disabled={checked || !selectedWord}
+                title={vmTranslation || undefined}
               >
                 {def}
+                {vmTranslation && <span className="comprehension__vm-def-translation">{vmTranslation}</span>}
               </button>
             );
           })}

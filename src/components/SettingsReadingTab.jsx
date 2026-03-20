@@ -113,6 +113,26 @@ export default function SettingsReadingTab({ state, act }) {
 
       <hr className="divider" />
 
+      {/* Translate comprehension questions */}
+      <section className="settings-section">
+        <div className="settings-toggle-row">
+          <div>
+            <h3 className="settings-section__title form-label">{t('settings.reading.translateQuestions')}</h3>
+            <p className="settings-section__desc text-muted">{t('settings.reading.translateQuestionsDesc')}</p>
+          </div>
+          <button
+            role="switch"
+            aria-checked={state.translateQuestions}
+            className={`settings-toggle ${state.translateQuestions ? 'settings-toggle--on' : ''}`}
+            onClick={() => act.setTranslateQuestions(!state.translateQuestions)}
+          >
+            <span className="settings-toggle__thumb" />
+          </button>
+        </div>
+      </section>
+
+      <hr className="divider" />
+
       {/* Reading speed */}
       {'speechSynthesis' in window && (
         <>

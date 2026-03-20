@@ -81,6 +81,8 @@ vi.mock('../lib/storage', () => ({
   saveRomanizationOn: vi.fn(),
   loadTranslateButtons: () => true,
   saveTranslateButtons: vi.fn(),
+  loadTranslateQuestions: () => false,
+  saveTranslateQuestions: vi.fn(),
   loadExportSentenceRom: () => ({ zh: false, ko: false, yue: false }),
   saveExportSentenceRom: vi.fn(),
   loadExportSentenceTrans: () => ({ zh: false, ko: false, yue: false }),

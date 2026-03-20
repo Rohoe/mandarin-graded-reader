@@ -60,6 +60,7 @@ const KEYS = {
   TTS_SPEECH_RATE:    'gradedReader_ttsSpeechRate',
   ROMANIZATION_ON:    'gradedReader_romanizationOn',
   TRANSLATE_BUTTONS:  'gradedReader_translateButtons',
+  TRANSLATE_QUESTIONS: 'gradedReader_translateQuestions',
   EVICTED_READER_KEYS: 'gradedReader_evictedReaderKeys',
   NEW_CARDS_PER_DAY:   'gradedReader_newCardsPerDay',
   GRAMMAR:             'gradedReader_learnedGrammar',
@@ -750,6 +751,16 @@ export function loadTranslateButtons() {
 
 export function saveTranslateButtons(val) {
   save(KEYS.TRANSLATE_BUTTONS, val);
+}
+
+// ── Translate questions preference ──────────────────────────
+
+export function loadTranslateQuestions() {
+  return load(KEYS.TRANSLATE_QUESTIONS, false);
+}
+
+export function saveTranslateQuestions(val) {
+  save(KEYS.TRANSLATE_QUESTIONS, val);
 }
 
 // ── Export sentence options (per-language) ────────────────────

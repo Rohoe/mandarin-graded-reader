@@ -64,6 +64,7 @@ export function actions(dispatch) {
     setTtsSpeechRate:      rate   => dispatch({ type: T.SET_TTS_SPEECH_RATE, payload: Number(rate) }),
     setRomanizationOn:     val    => dispatch({ type: T.SET_ROMANIZATION_ON, payload: Boolean(val) }),
     setTranslateButtons:   val    => dispatch({ type: T.SET_TRANSLATE_BUTTONS, payload: Boolean(val) }),
+    setTranslateQuestions: val    => dispatch({ type: T.SET_TRANSLATE_QUESTIONS, payload: Boolean(val) }),
     setStructuredOutput:   val    => dispatch({ type: T.SET_STRUCTURED_OUTPUT, payload: Boolean(val) }),
     setNewCardsPerDay:     n      => dispatch({ type: T.SET_NEW_CARDS_PER_DAY, payload: Number(n) }),
     setDefaultLevelForLang:(langId, level) => dispatch({ type: T.SET_DEFAULT_LEVEL_FOR_LANG, payload: { langId, level: Number(level) } }),
