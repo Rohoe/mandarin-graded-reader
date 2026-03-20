@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock fileStorage
 vi.mock('./fileStorage', () => ({
   writeJSON: vi.fn(() => Promise.resolve()),
-  FILES: { syllabi: 'graded-reader-syllabi.json', readers: 'graded-reader-readers.json', vocabulary: 'graded-reader-vocabulary.json', exported: 'graded-reader-exported.json' },
+  FILES: { syllabi: 'graded-reader-syllabi.json', readers: 'graded-reader-readers.json', vocabulary: 'graded-reader-vocabulary.json', grammar: 'graded-reader-grammar.json', exported: 'graded-reader-exported.json' },
 }));
 
 import {
@@ -46,6 +46,11 @@ import {
   saveGradingModels,
   loadEvictedReaderKeys,
   saveEvictedReaderKeys,
+  loadLearnedGrammar,
+  saveLearnedGrammar,
+  mergeGrammar,
+  loadGrammarSession,
+  saveGrammarSession,
 } from './storage';
 
 // ── Basic localStorage operations ────────────────────────────
@@ -510,6 +515,59 @@ describe('flashcard session', () => {
     saveFlashcardSession(session, 'zh');
     expect(loadFlashcardSession('zh')).toEqual(session);
     expect(loadFlashcardSession('ko')).toBeNull();
+  });
+});
+
+// ── Grammar storage ──────────────────────────────────────────
+
+describe('mergeGrammar', () => {
+  it('merges new grammar notes with SRS defaults', () => {
+    const merged = mergeGrammar({}, [
+      { pattern: '了', langId: 'zh', explanation: 'Completion', label: 'le', example: '他吃了' },
+    ]);
+    expect(merged['zh::了']).toBeDefined();
+    expect(merged['zh::了'].pattern).toBe('了');
+    expect(merged['zh::了'].interval).toBe(0);
+    expect(merged['zh::了'].ease).toBe(2.5);
+    expect(merged['zh::了'].reviewCount).toBe(0);
+    expect(merged['zh::了'].dateAdded).toBeTruthy();
+  });
+
+  it('skips duplicates', () => {
+    const existing = { 'zh::了': { pattern: '了', langId: 'zh', interval: 5 } };
+    const merged = mergeGrammar(existing, [
+      { pattern: '了', langId: 'zh', explanation: 'New' },
+    ]);
+    expect(merged['zh::了'].interval).toBe(5);
+  });
+
+  it('uses composite key langId::pattern', () => {
+    const merged = mergeGrammar({}, [
+      { pattern: '了', langId: 'zh' },
+      { pattern: '了', langId: 'yue' },
+    ]);
+    expect(Object.keys(merged)).toEqual(['zh::了', 'yue::了']);
+  });
+});
+
+describe('grammar session', () => {
+  it('round-trips per language', () => {
+    const session = { cards: ['a', 'b'], index: 0 };
+    saveGrammarSession(session, 'zh');
+    expect(loadGrammarSession('zh')).toEqual(session);
+    expect(loadGrammarSession('ko')).toBeNull();
+  });
+});
+
+describe('learnedGrammar load/save', () => {
+  it('defaults to empty object', () => {
+    expect(loadLearnedGrammar()).toEqual({});
+  });
+
+  it('round-trips', () => {
+    const data = { 'zh::了': { pattern: '了', langId: 'zh' } };
+    saveLearnedGrammar(data);
+    expect(loadLearnedGrammar()).toEqual(data);
   });
 });
 

@@ -14,6 +14,7 @@ export function dataReducer(state, action, buildInitialState) {
       const restoredProgress = d.syllabusProgress || d.syllabus_progress || {};
       const restoredStandalone = normalizeStandaloneReaders(d.standaloneReaders || d.standalone_readers || []);
       const restoredVocab = d.learnedVocabulary || d.learned_vocabulary || {};
+      const restoredGrammar = d.learnedGrammar || d.learned_grammar || {};
       const restoredExported = d.exportedWords || d.exported_words || [];
       return {
         ...state,
@@ -22,6 +23,7 @@ export function dataReducer(state, action, buildInitialState) {
         standaloneReaders: restoredStandalone,
         generatedReaders:  {},
         learnedVocabulary: restoredVocab,
+        learnedGrammar:    restoredGrammar,
         exportedWords:     new Set(Array.isArray(restoredExported) ? restoredExported : Object.keys(restoredExported)),
       };
     }
@@ -69,6 +71,7 @@ export function dataReducer(state, action, buildInitialState) {
         standaloneReaders: normalizeStandaloneReaders(d.standaloneReaders),
         generatedReaders:  d.generatedReaders,
         learnedVocabulary: d.learnedVocabulary,
+        learnedGrammar:    d.learnedGrammar || {},
         exportedWords:     d.exportedWords,
       };
     }

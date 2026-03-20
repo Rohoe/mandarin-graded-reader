@@ -29,6 +29,7 @@ export async function pushToCloud(state) {
     syllabus_progress:  state.syllabusProgress,
     standalone_readers: state.standaloneReaders,
     learned_vocabulary: state.learnedVocabulary,
+    learned_grammar:    state.learnedGrammar,
     exported_words:     [...state.exportedWords],
     updated_at:         new Date().toISOString(),
   });
@@ -112,6 +113,7 @@ function hashData(data) {
     syllabusProgress: data.syllabusProgress,
     standaloneReaders: data.standaloneReaders,
     learnedVocabulary: data.learnedVocabulary,
+    learnedGrammar: data.learnedGrammar,
     exportedWords: data.exportedWords,
   });
   let hash = 0;
@@ -131,6 +133,7 @@ export function detectConflict(localState, cloudData) {
     syllabusProgress: localState.syllabusProgress,
     standaloneReaders: localState.standaloneReaders,
     learnedVocabulary: localState.learnedVocabulary,
+    learnedGrammar: localState.learnedGrammar,
     exportedWords: localState.exportedWords,
   });
 
@@ -139,6 +142,7 @@ export function detectConflict(localState, cloudData) {
     syllabusProgress: cloudData.syllabus_progress,
     standaloneReaders: cloudData.standalone_readers,
     learnedVocabulary: cloudData.learned_vocabulary,
+    learnedGrammar: cloudData.learned_grammar,
     exportedWords: cloudData.exported_words,
   });
 
@@ -157,6 +161,8 @@ export function detectConflict(localState, cloudData) {
     localStandaloneCount: localState.standaloneReaders?.length || 0,
     cloudVocabCount: Object.keys(cloudData.learned_vocabulary || {}).length,
     localVocabCount: Object.keys(localState.learnedVocabulary || {}).length,
+    cloudGrammarCount: Object.keys(cloudData.learned_grammar || {}).length,
+    localGrammarCount: Object.keys(localState.learnedGrammar || {}).length,
   };
 }
 
@@ -209,6 +215,19 @@ export function mergeData(localState, cloudData) {
     }
   }
 
+  // Learned grammar: union by key; prefer newer dateAdded
+  const learned_grammar = { ...(cloudData.learned_grammar || {}) };
+  for (const [key, local] of Object.entries(localState.learnedGrammar || {})) {
+    const cloud = learned_grammar[key];
+    if (!cloud) {
+      learned_grammar[key] = local;
+    } else {
+      const localDate = local.dateAdded || 0;
+      const cloudDate = cloud.dateAdded || 0;
+      learned_grammar[key] = localDate >= cloudDate ? local : cloud;
+    }
+  }
+
   // Exported words: set union
   const cloudExported = Array.isArray(cloudData.exported_words) ? cloudData.exported_words : [];
   const localExported = localState.exportedWords instanceof Set
@@ -222,6 +241,7 @@ export function mergeData(localState, cloudData) {
     standalone_readers,
     generated_readers,
     learned_vocabulary,
+    learned_grammar,
     exported_words,
     updated_at: new Date().toISOString(),
   };
@@ -242,6 +262,9 @@ export function computeMergeSummary(preState, postMerged) {
   const vocabDiff = Object.keys(postMerged.learned_vocabulary || {}).length - Object.keys(preState.learnedVocabulary || {}).length;
   if (vocabDiff > 0) parts.push(`+${vocabDiff} vocab ${vocabDiff === 1 ? 'word' : 'words'}`);
 
+  const grammarDiff = Object.keys(postMerged.learned_grammar || {}).length - Object.keys(preState.learnedGrammar || {}).length;
+  if (grammarDiff > 0) parts.push(`+${grammarDiff} grammar ${grammarDiff === 1 ? 'pattern' : 'patterns'}`);
+
   if (parts.length > 0) return `Synced from cloud: ${parts.join(', ')}`;
   return 'Synced from cloud (content updated)';
 }
@@ -257,6 +280,7 @@ export async function pushMergedToCloud(mergedData) {
     standalone_readers: mergedData.standalone_readers,
     generated_readers:  mergedData.generated_readers,
     learned_vocabulary: mergedData.learned_vocabulary,
+    learned_grammar:    mergedData.learned_grammar,
     exported_words:     mergedData.exported_words,
     updated_at:         mergedData.updated_at || new Date().toISOString(),
   });

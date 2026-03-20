@@ -9,6 +9,7 @@ import { providerReducer } from './reducers/providerReducer';
 import { syllabusReducer } from './reducers/syllabusReducer';
 import { readerReducer } from './reducers/readerReducer';
 import { vocabularyReducer } from './reducers/vocabularyReducer';
+import { grammarReducer } from './reducers/grammarReducer';
 import { uiReducer } from './reducers/uiReducer';
 import { preferencesReducer } from './reducers/preferencesReducer';
 import { cloudReducer } from './reducers/cloudReducer';
@@ -32,6 +33,7 @@ import {
   clearReaders,
   saveReader,
   loadLearnedVocabulary,
+  loadLearnedGrammar,
   loadExportedWords,
   clearAllAppData,
   getDirectoryHandle,
@@ -105,6 +107,7 @@ function buildInitialState() {
     standaloneReaders: demoStandalone,
     generatedReaders:  demoReaders,
     learnedVocabulary: loadLearnedVocabulary(),
+    learnedGrammar:    loadLearnedGrammar(),
     exportedWords:     loadExportedWords(),
     loading:           false,
     loadingMessage:    '',
@@ -167,6 +170,7 @@ const sliceReducers = [
   syllabusReducer,
   readerReducer,
   vocabularyReducer,
+  grammarReducer,
   uiReducer,
   preferencesReducer,
   cloudReducer,

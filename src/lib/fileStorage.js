@@ -100,6 +100,7 @@ const FILES = {
   syllabi:     'graded-reader-syllabi.json',
   readers:     'graded-reader-readers.json',
   vocabulary:  'graded-reader-vocabulary.json',
+  grammar:     'graded-reader-grammar.json',
   exported:    'graded-reader-exported.json',
 };
 

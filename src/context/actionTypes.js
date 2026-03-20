@@ -50,6 +50,11 @@ export const CLEAR_VOCABULARY = 'CLEAR_VOCABULARY';
 export const ADD_EXPORTED_WORDS = 'ADD_EXPORTED_WORDS';
 export const CLEAR_EXPORTED_WORDS = 'CLEAR_EXPORTED_WORDS';
 
+// ── Grammar ──────────────────────────────────────────────────
+export const ADD_GRAMMAR = 'ADD_GRAMMAR';
+export const UPDATE_GRAMMAR_SRS = 'UPDATE_GRAMMAR_SRS';
+export const CLEAR_GRAMMAR = 'CLEAR_GRAMMAR';
+
 // ── UI ────────────────────────────────────────────────────────
 export const SET_LOADING = 'SET_LOADING';
 export const SET_ERROR = 'SET_ERROR';
@@ -109,4 +114,5 @@ export const DATA_ACTIONS = new Set([
   SET_READER, CLEAR_READER,
   ADD_VOCABULARY, CLEAR_VOCABULARY, UPDATE_VOCAB_SRS,
   ADD_EXPORTED_WORDS, CLEAR_EXPORTED_WORDS,
+  ADD_GRAMMAR, UPDATE_GRAMMAR_SRS, CLEAR_GRAMMAR,
 ]);

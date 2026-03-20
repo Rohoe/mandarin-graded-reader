@@ -37,6 +37,18 @@ vi.mock('../lib/storage', () => ({
     return merged;
   },
   saveLearnedVocabulary: vi.fn(),
+  loadLearnedGrammar: () => ({}),
+  mergeGrammar: (existing, noteList) => {
+    const merged = { ...existing };
+    for (const note of noteList) {
+      const key = `${note.langId}::${note.pattern}`;
+      if (key && !merged[key]) merged[key] = { pattern: note.pattern, langId: note.langId, dateAdded: new Date().toISOString(), interval: 0, ease: 2.5, nextReview: null, reviewCount: 0, lapses: 0 };
+    }
+    return merged;
+  },
+  saveLearnedGrammar: vi.fn(),
+  loadGrammarSession: vi.fn(() => null),
+  saveGrammarSession: vi.fn(),
   loadExportedWords: () => new Set(),
   mergeExportedWords: (existing, newWords) => { const s = new Set(existing); for (const w of newWords) s.add(w); return s; },
   saveExportedWordsFull: vi.fn(),

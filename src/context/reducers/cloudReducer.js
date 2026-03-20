@@ -28,6 +28,7 @@ export function cloudReducer(state, action) {
         standaloneReaders: normalizedStandalone,
         generatedReaders:  d.generated_readers || {},
         learnedVocabulary: d.learned_vocabulary,
+        learnedGrammar:    d.learned_grammar || {},
         exportedWords:     new Set(d.exported_words),
         lastModified:      cloudTs,
       };
@@ -44,6 +45,7 @@ export function cloudReducer(state, action) {
         standaloneReaders: normalizedStandalone,
         generatedReaders:  d.generated_readers || {},
         learnedVocabulary: d.learned_vocabulary,
+        learnedGrammar:    d.learned_grammar || {},
         exportedWords:     new Set(d.exported_words),
         lastModified:      Date.now(),
       };
@@ -77,6 +79,7 @@ export function cloudReducer(state, action) {
         syllabusProgress: s.syllabusProgress || state.syllabusProgress,
         standaloneReaders: revertedStandalone,
         learnedVocabulary: s.learnedVocabulary || state.learnedVocabulary,
+        learnedGrammar: s.learnedGrammar || state.learnedGrammar,
         exportedWords: new Set(s.exportedWords || []),
         hasMergeSnapshot: false,
         lastModified: Date.now(),

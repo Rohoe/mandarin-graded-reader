@@ -5,7 +5,7 @@ import { useT } from '../../i18n';
  * Mode picker screen shown when the flashcard modal opens.
  * Two main modes (SRS Review, Quiz Mix) + collapsible practice section.
  */
-export default function ModePicker({ dueCount, newCount, langCards, onSelectMode, langId }) {
+export default function ModePicker({ dueCount, newCount, langCards, onSelectMode, langId, grammarDueCount, grammarNewCount, grammarTotal }) {
   const t = useT();
   const [practiceOpen, setPracticeOpen] = useState(false);
 
@@ -63,6 +63,23 @@ export default function ModePicker({ dueCount, newCount, langCards, onSelectMode
           <span className="flashcard-stat-badge flashcard-stat-badge--new">{t('flashcard.new', { count: newCount })}</span>
         </div>
       </button>
+
+      {/* Grammar Review card */}
+      {grammarTotal > 0 && (
+        <button
+          className="flashcard-mode-card"
+          onClick={() => onSelectMode('grammar')}
+        >
+          <div className="flashcard-mode-card__header">
+            <span className="flashcard-mode-card__title">{t('flashcard.grammarReview')}</span>
+          </div>
+          <p className="flashcard-mode-card__desc">{t('flashcard.grammarReviewDesc')}</p>
+          <div className="flashcard-mode-card__counts">
+            <span className="flashcard-stat-badge flashcard-stat-badge--due">{t('flashcard.due', { count: grammarDueCount })}</span>
+            <span className="flashcard-stat-badge flashcard-stat-badge--new">{t('flashcard.new', { count: grammarNewCount })}</span>
+          </div>
+        </button>
+      )}
 
       {/* Practice specific exercises — collapsible */}
       <button

@@ -462,6 +462,11 @@ export default {
   'flashcard.quizMixDesc': 'Fill blank, listening, multiple choice & more',
   'flashcard.practiceSpecific': 'Practice specific exercise',
   'flashcard.backToModes': 'Modes',
+  'flashcard.grammarReview': 'Grammar Review',
+  'flashcard.grammarReviewDesc': 'Review grammar patterns with spaced repetition',
+  'flashcard.noGrammar': 'No grammar patterns learned yet. Complete some readers to build your grammar deck.',
+  'flashcard.grammarComplete': 'Grammar Review Complete',
+  'flashcard.grammarPattern': 'What does this pattern mean?',
 
   // ── PWA ───────────────────────────────────────────────────────
   'pwa.offline': 'You are offline — reading and flashcards still work.',
@@ -548,6 +553,7 @@ export default {
   // ── Home page ──────────────────────────────────────────────────
   'home.streak': 'Day streak',
   'home.wordsLearned': 'Words learned',
+  'home.grammarLearned': 'Grammar patterns',
   'home.minutesRead': 'Minutes read',
   'home.retention': 'Retention',
   'home.weeklyGoals': 'Weekly Goals',

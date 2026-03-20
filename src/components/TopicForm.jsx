@@ -8,6 +8,7 @@ import { buildLearnerProfile } from '../lib/stats';
 import { getProvider } from '../lib/providers';
 import { parseReaderResponse } from '../lib/parser';
 import { mapReaderVocabulary } from '../lib/vocabMapper';
+import { mapReaderGrammar } from '../lib/grammarMapper';
 import { getLang, getAllLanguages, DEFAULT_LANG_ID } from '../lib/languages';
 import { useT } from '../i18n';
 import GenerationProgress from './GenerationProgress';
@@ -122,6 +123,8 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
       act.updateStandaloneReaderMeta(metaUpdate);
       const vocab = mapReaderVocabulary(parsed, langId);
       if (vocab) act.addVocabulary(vocab);
+      const grammar = mapReaderGrammar(parsed, langId);
+      if (grammar) act.addGrammar(grammar);
       act.notify('success', t('notify.readerReady', { topic: topicStr }));
     } catch (err) {
       act.notify('error', t('notify.generationFailed', { error: err.message.slice(0, 80) }));

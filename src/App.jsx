@@ -9,6 +9,7 @@ import { buildLLMConfig } from './lib/llmConfig';
 import { loadLastSession, saveLastSession } from './lib/storage';
 import { parseReaderResponse, normalizeStructuredReader } from './lib/parser';
 import { mapReaderVocabulary } from './lib/vocabMapper';
+import { mapReaderGrammar } from './lib/grammarMapper';
 import { DEMO_READER_KEY } from './lib/demoReader';
 import SyllabusPanel from './components/SyllabusPanel';
 import SyllabusHome from './components/SyllabusHome';
@@ -167,6 +168,8 @@ function AppShell() {
     const readerLangId = currentSyllabus?.langId || reader?.langId || 'zh';
     const vocab = mapReaderVocabulary(reader, readerLangId);
     if (vocab) act.addVocabulary(vocab);
+    const grammar = mapReaderGrammar(reader, readerLangId);
+    if (grammar) act.addGrammar(grammar);
     if (standaloneKey) {
       act.updateStandaloneReaderMeta({ key: standaloneKey, completedAt: Date.now() });
     } else {

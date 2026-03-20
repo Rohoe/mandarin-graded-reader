@@ -18,6 +18,7 @@ import MatchingMode from './MatchingMode';
 import SentenceBuilderMode from './SentenceBuilderMode';
 import ContextClueMode from './ContextClueMode';
 import ReverseListeningMode from './ReverseListeningMode';
+import GrammarReviewMode from './GrammarReviewMode';
 import './FlashcardReview.css';
 
 function formatInterval(days) {
@@ -32,6 +33,7 @@ function resolveInitialMode(initialMode) {
   if (!initialMode) return 'pick';
   if (initialMode === 'flashcard') return 'srs';
   if (initialMode === 'quizmix') return 'quizmix';
+  if (initialMode === 'grammar') return 'grammar';
   // Specific exercise types pass through
   return initialMode;
 }
@@ -40,8 +42,9 @@ const STANDALONE_MODES = new Set(['fillblank', 'listening', 'matching', 'sentenc
 
 export default function FlashcardReview({ onClose, initialLangId, initialMode, vocabFilter }) {
   const t = useT();
-  const { learnedVocabulary, newCardsPerDay, romanizationOn } = useAppSelector(s => ({
+  const { learnedVocabulary, learnedGrammar, newCardsPerDay, romanizationOn } = useAppSelector(s => ({
     learnedVocabulary: s.learnedVocabulary,
+    learnedGrammar: s.learnedGrammar,
     newCardsPerDay: s.newCardsPerDay,
     romanizationOn: s.romanizationOn,
   }));
@@ -49,13 +52,16 @@ export default function FlashcardReview({ onClose, initialLangId, initialMode, v
   const act = actions(dispatch);
   const languages = getAllLanguages();
 
-  // Detect which languages have vocab
+  // Detect which languages have vocab or grammar
   const availableLangs = useMemo(() => {
     const langIds = new Set(
       Object.values(learnedVocabulary).map(d => d.langId || 'zh')
     );
+    for (const g of Object.values(learnedGrammar || {})) {
+      if (g.langId) langIds.add(g.langId);
+    }
     return languages.filter(l => langIds.has(l.id));
-  }, [learnedVocabulary, languages]);
+  }, [learnedVocabulary, learnedGrammar, languages]);
 
   const [langFilter, setLangFilter] = useState(() => {
     if (initialLangId && availableLangs.some(l => l.id === initialLangId)) return initialLangId;
@@ -121,6 +127,42 @@ export default function FlashcardReview({ onClose, initialLangId, initialMode, v
     }
     return filtered;
   }, [allCards, langFilter, vocabFilter]);
+
+  // Build grammar card list
+  const grammarCards = useMemo(() =>
+    Object.entries(learnedGrammar || {}).map(([compositeKey, data]) => ({
+      compositeKey,
+      pattern: data.pattern,
+      label: data.label || '',
+      explanation: data.explanation || '',
+      example: data.example || '',
+      langId: data.langId,
+      interval: data.interval ?? 0,
+      ease: data.ease ?? 2.5,
+      nextReview: data.nextReview ?? null,
+      reviewCount: data.reviewCount ?? 0,
+      lapses: data.lapses ?? 0,
+    })),
+  [learnedGrammar]);
+
+  const langGrammarCards = useMemo(() =>
+    grammarCards.filter(c => c.langId === langFilter),
+  [grammarCards, langFilter]);
+
+  // Grammar due/new counts
+  const { grammarDueCount, grammarNewCount, grammarTotal } = useMemo(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const nowMs = now.getTime();
+    let due = 0, nc = 0;
+    for (const card of langGrammarCards) {
+      const rc = card.reviewCount ?? 0;
+      const nr = card.nextReview ? new Date(card.nextReview).getTime() : null;
+      if (rc === 0 && !nr) nc++;
+      else if (!nr || nr <= nowMs) due++;
+    }
+    return { grammarDueCount: due, grammarNewCount: nc, grammarTotal: langGrammarCards.length };
+  }, [langGrammarCards]);
 
   // Session management (per-language persistence)
   const [session, setSession] = useState(() => {
@@ -295,7 +337,7 @@ export default function FlashcardReview({ onClose, initialLangId, initialMode, v
   // Mode picker handler
   const handleSelectMode = useCallback((mode) => {
     setReviewMode(mode);
-    // Reset phase when entering SRS/quizmix from picker
+    // Reset phase when entering SRS/quizmix/grammar from picker
     if (mode === 'srs' || mode === 'quizmix') {
       if (session.index < session.cardKeys.length) {
         setPhase('front');
@@ -319,7 +361,7 @@ export default function FlashcardReview({ onClose, initialLangId, initialMode, v
         return;
       }
 
-      // Only handle keyboard for SRS and quizmix modes (not standalone exercises)
+      // Only handle keyboard for SRS and quizmix modes (not standalone exercises or grammar — grammar handles its own)
       if (reviewMode !== 'srs' && reviewMode !== 'quizmix') return;
 
       if (phase === 'front' && (e.key === ' ' || e.key === 'Enter')) {
@@ -344,7 +386,7 @@ export default function FlashcardReview({ onClose, initialLangId, initialMode, v
     return testSession.cardKeys.length > 0 && testSession.index < testSession.cardKeys.length;
   }, [langCards, newCardsPerDay, session, langFilter]);
 
-  if (allCards.length === 0) {
+  if (allCards.length === 0 && grammarCards.length === 0) {
     return (
       <div className="modal-overlay flashcard-overlay" role="dialog" aria-modal="true" aria-label="Flashcard review" onClick={e => e.target === e.currentTarget && onClose?.()}>
         <div className="flashcard-modal card card-padded fade-in">
@@ -402,6 +444,9 @@ export default function FlashcardReview({ onClose, initialLangId, initialMode, v
             langCards={langCards}
             langId={langFilter}
             onSelectMode={handleSelectMode}
+            grammarDueCount={grammarDueCount}
+            grammarNewCount={grammarNewCount}
+            grammarTotal={grammarTotal}
           />
         )}
 
@@ -423,6 +468,18 @@ export default function FlashcardReview({ onClose, initialLangId, initialMode, v
         )}
         {reviewMode === 'reverse' && (
           <ReverseListeningMode cards={langCards} onJudge={handleQuizJudge} onClose={onClose} />
+        )}
+
+        {/* ── Grammar Review mode ────────────────────────── */}
+        {reviewMode === 'grammar' && (
+          <GrammarReviewMode
+            cards={langGrammarCards}
+            langId={langFilter}
+            newCardsPerDay={newCardsPerDay}
+            act={act}
+            onClose={onClose}
+            onBack={handleBackToModes}
+          />
         )}
 
         {/* ── SRS / Quiz Mix session stats ────────────────── */}

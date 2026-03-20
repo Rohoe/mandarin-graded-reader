@@ -5,7 +5,7 @@
 import { getLang } from './languages';
 
 export function computeStats(state) {
-  const { learnedVocabulary, syllabi, syllabusProgress, standaloneReaders, learningActivity, readingTime, generatedReaders } = state;
+  const { learnedVocabulary, learnedGrammar, syllabi, syllabusProgress, standaloneReaders, learningActivity, readingTime, generatedReaders } = state;
 
   // ── Vocabulary stats ───────────────────────────────────────
   const vocabEntries = Object.entries(learnedVocabulary || {});
@@ -69,6 +69,18 @@ export function computeStats(state) {
   const reviewHeatmap = getReviewHeatmap(learningActivity);
   const readingStats = getReadingStats(readingTime, generatedReaders);
 
+  // ── Grammar stats ─────────────────────────────────────────
+  const grammarEntries = Object.entries(learnedGrammar || {});
+  const grammarTotal = grammarEntries.length;
+  let gMastered = 0, gLearning = 0, gNew = 0;
+  for (const [, info] of grammarEntries) {
+    const rc = info.reviewCount ?? 0;
+    const interval = info.interval ?? 0;
+    if (rc === 0) gNew++;
+    else if (interval >= 21) gMastered++;
+    else gLearning++;
+  }
+
   return {
     totalWords,
     wordsByLang,
@@ -92,6 +104,9 @@ export function computeStats(state) {
     reviewHeatmap,
     // Reading stats
     readingStats,
+    // Grammar stats
+    grammarTotal,
+    grammarMastery: { mastered: gMastered, learning: gLearning, new: gNew },
   };
 }
 

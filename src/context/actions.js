@@ -40,6 +40,10 @@ export function actions(dispatch) {
     updateVocabSRS:        (word, srsData) => dispatch({ type: T.UPDATE_VOCAB_SRS, payload: { word, ...srsData } }),
     addExportedWords:      words  => dispatch({ type: T.ADD_EXPORTED_WORDS, payload: words }),
     clearExportedWords:    ()     => dispatch({ type: T.CLEAR_EXPORTED_WORDS }),
+    // Grammar
+    addGrammar:            notes  => dispatch({ type: T.ADD_GRAMMAR, payload: notes }),
+    clearGrammar:          ()     => dispatch({ type: T.CLEAR_GRAMMAR }),
+    updateGrammarSRS:      (key, srsData) => dispatch({ type: T.UPDATE_GRAMMAR_SRS, payload: { key, ...srsData } }),
     // UI
     setLoading:            (loading, message) => dispatch({ type: T.SET_LOADING, payload: { loading, message } }),
     setError:              msg    => dispatch({ type: T.SET_ERROR, payload: msg }),

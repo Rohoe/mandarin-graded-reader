@@ -21,6 +21,7 @@ export default function HomeView({
     learningActivity: s.learningActivity,
     readingTime: s.readingTime,
     generatedReaders: s.generatedReaders,
+    learnedGrammar: s.learnedGrammar,
   }));
 
   const stats = computeStats(state);
@@ -81,6 +82,12 @@ export default function HomeView({
           <span className="home-stats__value">{stats.totalWords}</span>
           <span className="home-stats__label">{t('home.wordsLearned')}</span>
         </div>
+        {stats.grammarTotal > 0 && (
+          <div className="home-stats__card">
+            <span className="home-stats__value">{stats.grammarTotal}</span>
+            <span className="home-stats__label">{t('home.grammarLearned')}</span>
+          </div>
+        )}
         <div className="home-stats__card">
           <span className="home-stats__value">{stats.readingStats?.totalMinutes || 0}</span>
           <span className="home-stats__label">{t('home.minutesRead')}</span>
