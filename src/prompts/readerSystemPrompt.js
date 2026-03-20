@@ -42,15 +42,15 @@ ${nativeLangName} subtitle on the next line
 ### 2. Story
 With bolded vocabulary and italicized proper nouns
 
-### 3. Vocabulary List
-For each word, use EXACTLY this format (4 lines per word, no labels or prefixes):
-${p.vocabFormat}
-- A sentence from the story that uses this word (copy it exactly, keep bold markers)
-- *One-sentence ${nativeLangName} note: explain the grammar pattern, collocation, or nuance in that sentence*
-- A new example sentence (not from the story, showing different usage)
-- *One-sentence ${nativeLangName} note: explain what this second example demonstrates*
-
-IMPORTANT: Do NOT prefix example sentences with labels like "Example sentence:" or "From story:". Just write the sentence directly.
+### 3. Vocabulary
+Return a JSON block tagged \`\`\`vocab-json containing an array of vocabulary objects.
+Each object includes: the word fields, a story example sentence (copied exactly from the story, without bold markers), a one-sentence usage note, an extra example sentence, and its usage note.
+Do NOT prefix example sentences with labels like "Example:" — just write the sentence directly.
+\`\`\`vocab-json
+[
+  ${p.vocabJsonFields}
+]
+\`\`\`
 
 ### 4. Comprehension Questions
 ${questionRange} questions in ${p.targetLanguage} at the target level.
@@ -80,18 +80,11 @@ For vocabulary matching questions (use 3-5 vocabulary words from the story), use
 2. word2 = definition2
 3. word3 = definition3
 
-### 5. Anki Cards Data (JSON)
-Return a JSON block tagged \`\`\`anki-json containing an array of card objects:
-[
-  ${p.ankiFields}
-]
-\`\`\`
-
-### 6. Grammar Notes
+### 5. Grammar Notes
 Identify ${grammarRange} key ${p.grammarContext} used in the story. For each pattern:
 - **Pattern** (${nativeLangName} name) — one-sentence explanation of the structure and when to use it
 - Example sentence taken directly from the story
 
-### 7. Suggested Topics
+### 6. Suggested Topics
 2-3 follow-up topic ideas (in ${nativeLangName}), one per line. Suggest topics that complement this story.${recentTopics?.length > 0 ? `\n(The learner has recently studied: ${recentTopics.join(', ')} — suggest different ones.)` : ''}`;
 }

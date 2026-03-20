@@ -66,8 +66,14 @@ describe('buildReaderSystem', () => {
     expect(prompt).toContain('### 2. Story');
     expect(prompt).toContain('### 3. Vocabulary');
     expect(prompt).toContain('### 4. Comprehension');
-    expect(prompt).toContain('### 5. Anki');
-    expect(prompt).toContain('### 6. Grammar');
+    expect(prompt).toContain('### 5. Grammar');
+    expect(prompt).toContain('### 6. Suggested');
+  });
+
+  it('includes vocab-json block in prompt', () => {
+    const prompt = buildReaderSystem(zhConfig, 2, 'Test', '500-700', 600);
+    expect(prompt).toContain('```vocab-json');
+    expect(prompt).not.toContain('```anki-json');
   });
 
   it('uses Korean config correctly', () => {

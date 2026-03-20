@@ -79,9 +79,61 @@ function extractStory(rawText, scriptRegex) {
   return { story: '', warnings };
 }
 
+function extractVocabJson(rawText) {
+  const match = rawText.match(/```vocab-json\s*\n([\s\S]*?)\n```/);
+  if (match) {
+    try {
+      const arr = JSON.parse(match[1]);
+      return Array.isArray(arr) ? arr : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function normalizeVocabEntry(v) {
+  const target = v.target || v.word || v.chinese || v.korean || v.french || v.spanish || v.english_word || '';
+  const romanization = v.romanization || v.pinyin || v.jyutping || '';
+  const translation = v.translation || v.english || v.definition || '';
+  return {
+    target,
+    romanization,
+    translation,
+    chinese:      v.chinese || target,
+    korean:       v.korean || target,
+    pinyin:       romanization,
+    english:      v.english || translation,
+    exampleStory:             stripExamplePrefix(v.example_story || ''),
+    exampleStoryTranslation:  v.example_story_translation || '',
+    exampleExtra:             stripExamplePrefix(v.example_extra || ''),
+    exampleExtraTranslation:  v.example_extra_translation || '',
+    usageNoteStory:           v.usage_note_story || '',
+    usageNoteExtra:           v.usage_note_extra || '',
+  };
+}
+
+function synthesizeAnkiJson(vocabulary) {
+  return vocabulary.map(v => ({
+    chinese:      v.chinese || v.target,
+    korean:       v.korean || v.target,
+    target:       v.target,
+    pinyin:       v.pinyin || v.romanization,
+    romanization: v.romanization,
+    english:      v.english || v.translation,
+    translation:  v.translation,
+    example_story:             v.exampleStory,
+    example_story_translation: v.exampleStoryTranslation,
+    usage_note_story:          v.usageNoteStory,
+    example_extra:             v.exampleExtra,
+    example_extra_translation: v.exampleExtraTranslation,
+    usage_note_extra:          v.usageNoteExtra,
+  }));
+}
+
 function extractVocabularySection(rawText, scriptRegex) {
   const vocabSectionMatch = rawText.match(
-    /#{2,4}\s*(?:3\.[^\n]*|(?:Vocabulary|词汇|어휘)[^\n]*)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:4\.|Questions|理解|Comprehension|이해|```anki-json)|```anki-json|$)/i
+    /#{2,4}\s*(?:\d\.\s*)?(?:Vocabulary|词汇|어휘)[^\n]*\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:\d\.\s*)?(?:Questions|Comprehension|理解|이해)|```anki-json|```vocab-json|$)/i
   );
   if (vocabSectionMatch) {
     return parseVocabularySection(vocabSectionMatch[1], scriptRegex);
@@ -91,7 +143,7 @@ function extractVocabularySection(rawText, scriptRegex) {
 
 function extractComprehensionQuestions(rawText) {
   const questionsSectionMatch = rawText.match(
-    /#{2,4}\s*(?:4\.[^\n]*|(?:Questions|Comprehension|理解|이해)[^\n]*)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:5\.|Anki|anki)|```anki-json|$)/i
+    /#{2,4}\s*(?:\d\.\s*)?(?:Questions|Comprehension|理解|이해)[^\n]*\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:\d\.\s*)?(?:Anki|Grammar|语法|문법)|```anki-json|$)/i
   );
   if (questionsSectionMatch) {
     return parseQuestions(questionsSectionMatch[1]);
@@ -113,7 +165,7 @@ function extractAnkiJson(rawText) {
 
 function extractGrammarNotes(rawText) {
   const grammarSectionMatch = rawText.match(
-    /#{2,4}\s*(?:6\.[^\n]*|(?:Grammar|语法|문법)[^\n]*)\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:7\.|Suggested)|$)/i
+    /#{2,4}\s*(?:\d\.\s*)?(?:Grammar|语法|문법)[^\n]*\s*\n+([\s\S]*?)(?=#{2,4}\s*(?:\d\.\s*)?Suggested|$)/i
   );
   if (grammarSectionMatch) {
     return parseGrammarNotes(grammarSectionMatch[1]);
@@ -123,7 +175,7 @@ function extractGrammarNotes(rawText) {
 
 function extractSuggestedTopics(rawText) {
   const match = rawText.match(
-    /#{2,4}\s*(?:7\.[^\n]*|Suggested\s+Topics[^\n]*)\s*\n+([\s\S]*?)(?=#{2,4}\s|$)/i
+    /#{2,4}\s*(?:\d\.\s*)?Suggested[^\n]*\s*\n+([\s\S]*?)(?=#{2,4}\s|$)/i
   );
   if (!match) return [];
   return match[1].split('\n')
@@ -199,17 +251,27 @@ export function parseReaderResponse(rawText, langId = DEFAULT_LANG_ID) {
   try {
     const { titleZh, titleEn, warnings: titleWarnings } = extractTitle(rawText);
     const { story, warnings: storyWarnings } = extractStory(rawText, scriptRegex);
-    const vocabulary = extractVocabularySection(rawText, scriptRegex);
     const questions = extractComprehensionQuestions(rawText);
-    const ankiJson = extractAnkiJson(rawText);
     const grammarNotes = extractGrammarNotes(rawText);
     const suggestedTopics = extractSuggestedTopics(rawText);
-    const enrichedVocabulary = enrichVocabularyWithAnki(vocabulary, ankiJson, langConfig);
+
+    // Try new vocab-json format first
+    let vocabulary, ankiJson;
+    const vocabJsonEntries = extractVocabJson(rawText);
+    if (vocabJsonEntries.length > 0) {
+      vocabulary = vocabJsonEntries.map(normalizeVocabEntry);
+      ankiJson = synthesizeAnkiJson(vocabulary);
+    } else {
+      // Legacy fallback: markdown vocab + anki-json enrichment
+      const rawVocabulary = extractVocabularySection(rawText, scriptRegex);
+      ankiJson = extractAnkiJson(rawText);
+      vocabulary = enrichVocabularyWithAnki(rawVocabulary, ankiJson, langConfig);
+    }
 
     return {
       raw: rawText,
       titleZh, titleEn, story,
-      vocabulary: enrichedVocabulary,
+      vocabulary,
       questions, ankiJson, grammarNotes, suggestedTopics,
       parseWarnings: [...titleWarnings, ...storyWarnings],
       parseError: null,
@@ -609,37 +671,8 @@ export function normalizeStructuredReader(rawJson, langId = DEFAULT_LANG_ID) {
     return parseReaderResponse(rawJson, langId);
   }
 
-  const vocabulary = (data.vocabulary || []).map(v => ({
-    target:       v.target || v.word || v.chinese || v.korean || '',
-    chinese:      v.target || v.word || v.chinese || '',
-    korean:       v.korean || v.target || v.word || '',
-    romanization: v.romanization || v.pinyin || v.jyutping || '',
-    pinyin:       v.romanization || v.pinyin || '',
-    translation:  v.translation || v.english || v.definition || '',
-    english:      v.translation || v.english || v.definition || '',
-    exampleStory:             v.example_story || '',
-    exampleStoryTranslation:  v.example_story_translation || '',
-    usageNoteStory:           v.usage_note_story || '',
-    exampleExtra:             v.example_extra || '',
-    exampleExtraTranslation:  v.example_extra_translation || '',
-    usageNoteExtra:           v.usage_note_extra || '',
-  }));
-
-  const ankiJson = vocabulary.map(v => ({
-    chinese:      v.target,
-    korean:       v.target,
-    target:       v.target,
-    pinyin:       v.romanization,
-    romanization: v.romanization,
-    english:      v.translation,
-    translation:  v.translation,
-    example_story:             v.exampleStory,
-    example_story_translation: v.exampleStoryTranslation,
-    usage_note_story:          v.usageNoteStory,
-    example_extra:             v.exampleExtra,
-    example_extra_translation: v.exampleExtraTranslation,
-    usage_note_extra:          v.usageNoteExtra,
-  }));
+  const vocabulary = (data.vocabulary || []).map(normalizeVocabEntry);
+  const ankiJson = synthesizeAnkiJson(vocabulary);
 
   const questions = (data.questions || []).map(q => ({
     type:          q.type || 'fr',

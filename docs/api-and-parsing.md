@@ -23,7 +23,7 @@
 ## Prompt types
 
 - **Syllabus:** Returns JSON `{ summary, lessons[] }` (no markdown fences). Each lesson includes `vocabulary_focus` (3–5 theme keywords) and `difficulty_hint` (`"review"`, `"core"`, or `"stretch"`). Falls back if LLM returns plain array.
-- **Reader (text mode):** Structured markdown with sections 1–6; section 5 is ` ```anki-json``` `
+- **Reader (text mode):** Structured markdown with sections 1–6; section 3 contains a ` ```vocab-json``` ` block (single source of truth for vocabulary + Anki data)
 - **Reader (structured mode):** JSON matching `READER_JSON_SCHEMA`: `title_target`, `title_en`, `story`, `vocabulary[]`, `questions[]`, `grammar_notes[]`
 - `learnedVocabulary` keys passed to LLM — not repeated as new vocab, but 3–5 are actively reinforced in the story
 - **Syllabus-aware generation:** When generating within a syllabus, the reader prompt includes: `vocabFocus` (lesson's vocabulary themes), `syllabusContext` (prior lesson summaries and position), `taughtGrammar` (grammar patterns from completed lessons to avoid repetition), and `difficultyHint` (adjusts grammar complexity). Built by `useReaderGeneration` from syllabus + reader state.
@@ -32,10 +32,11 @@
 ## Response parsing (lib/parser.js)
 
 ### Regex parser (default)
-- Sections: `### 1. Title`, `### 2. Story`, `### 3. Vocabulary`, `### 4. Comprehension`, `### 5. Anki`
+- Sections: `### 1. Title`, `### 2. Story`, `### 3. Vocabulary` (vocab-json), `### 4. Comprehension`, `### 5. Grammar`, `### 6. Suggested Topics`
 - `#{2,4}\s*N\.` tolerates 2–4 hash marks. Also handles alternative heading formats (CJK headings, unnumbered headings) via fallback extraction.
 - `parseWarnings` array in output tracks which fallback paths were used (e.g. "Title extracted via fallback").
-- `parseVocabularySection` handles numbered vocab lines (e.g. `1. 词语 ...`) in addition to bullet/dash formats.
+- **Primary path:** `extractVocabJson()` parses the `` ```vocab-json``` `` block → `normalizeVocabEntry()` maps fields → `synthesizeAnkiJson()` builds `ankiJson` for export
+- **Legacy fallback:** If no vocab-json block found, falls back to markdown vocab parsing (`parseVocabularySection`) + `anki-json` enrichment. Section number regexes accept both old (5=Anki, 6=Grammar, 7=Suggested) and new (5=Grammar, 6=Suggested) numbering.
 - Fallback: raw text with "Regenerate" button
 - `parseStorySegments()` → `{ type: 'text'|'bold'|'italic', content }[]`
 - `parseQuestions()` → array of question objects with `{ type, text, translation }` plus type-specific fields:
@@ -44,7 +45,6 @@
   - `fb`: `{ correctAnswer, bank }` — fill-in-the-blank with word bank
   - `vm`: `{ pairs: [{ word, definition }] }` — vocabulary matching
   - `fr`: (no extra fields) — free-response (legacy, kept for backward compat)
-- `parseVocabularySection`: Pattern A = `(pinyin)` or `[pinyin]`; Pattern B = no-bracket (backfill from ankiJson). Missing vocab words auto-appended from ankiJson.
 - Vocab items: canonical fields (target/romanization/translation) + legacy aliases (chinese/pinyin/english)
 
 ### Structured parser (opt-in)

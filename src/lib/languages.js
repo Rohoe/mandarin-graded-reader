@@ -91,8 +91,7 @@ const zhConfig = {
       };
       return `- Calibrate language complexity to HSK ${level}:\n${bands[level] || bands[3]}\n${suffix}`;
     },
-    vocabFormat: `- **Word** (pinyin) — English definition\n- Story example sentence using the word\n- *Brief usage note about the story example*\n- New example sentence (different context)\n- *Brief usage note about the new example*`,
-    ankiFields: `{ "chinese": "词", "pinyin": "cí", "english": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
+    vocabJsonFields: `{ "chinese": "词", "pinyin": "cí", "english": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
     grammarContext: 'Mandarin grammar patterns',
     gradingContext: 'Chinese language teacher',
     gradingLanguage: 'Mandarin',
@@ -191,8 +190,7 @@ const koConfig = {
       };
       return `- Calibrate language complexity to TOPIK ${level}:\n${bands[level] || bands[3]}\n${suffix}`;
     },
-    vocabFormat: `- **Word** (romanization) — English definition\n- Story example sentence using the word\n- *Brief usage note about the story example*\n- New example sentence (different context)\n- *Brief usage note about the new example*`,
-    ankiFields: `{ "korean": "단어", "romanization": "dan-eo", "english": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
+    vocabJsonFields: `{ "korean": "단어", "romanization": "dan-eo", "english": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
     grammarContext: 'Korean grammar patterns',
     gradingContext: 'Korean language teacher',
     gradingLanguage: 'Korean',
@@ -291,8 +289,7 @@ const yueConfig = {
       };
       return `${cantoPrefix}\n- Calibrate language complexity to YUE ${level}:\n${bands[level] || bands[3]}\n${suffix}`;
     },
-    vocabFormat: `- **Word** (jyutping) — English definition\n- Story example sentence using the word\n- *Brief usage note about the story example*\n- New example sentence (different context)\n- *Brief usage note about the new example*`,
-    ankiFields: `{ "chinese": "詞", "jyutping": "ci4", "english": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
+    vocabJsonFields: `{ "chinese": "詞", "jyutping": "ci4", "english": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
     grammarContext: 'Cantonese grammar patterns',
     gradingContext: 'Cantonese language teacher',
     gradingLanguage: 'Cantonese',
@@ -375,8 +372,7 @@ const frConfig = {
       };
       return `- Calibrate language complexity to CEFR ${['A0','A1','A2','B1','B2','C1','C2'][level] || 'B1'}:\n${bands[level] || bands[3]}\n${suffix}`;
     },
-    vocabFormat: `- **Word** \u2014 English definition\n- Story example sentence using the word\n- *Brief usage note about the story example*\n- New example sentence (different context)\n- *Brief usage note about the new example*`,
-    ankiFields: `{ "french": "mot", "english": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
+    vocabJsonFields: `{ "french": "mot", "english": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
     grammarContext: 'French grammar patterns',
     gradingContext: 'French language teacher',
     gradingLanguage: 'French',
@@ -459,8 +455,7 @@ const esConfig = {
       };
       return `- Calibrate language complexity to CEFR ${['A0','A1','A2','B1','B2','C1','C2'][level] || 'B1'}:\n${bands[level] || bands[3]}\n${suffix}`;
     },
-    vocabFormat: `- **Word** \u2014 English definition\n- Story example sentence using the word\n- *Brief usage note about the story example*\n- New example sentence (different context)\n- *Brief usage note about the new example*`,
-    ankiFields: `{ "spanish": "palabra", "english": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
+    vocabJsonFields: `{ "spanish": "palabra", "english": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
     grammarContext: 'Spanish grammar patterns',
     gradingContext: 'Spanish language teacher',
     gradingLanguage: 'Spanish',
@@ -545,8 +540,7 @@ const enConfig = {
       };
       return `- Calibrate language complexity to CEFR ${['A0','A1','A2','B1','B2','C1','C2'][level] || 'B1'}:\n${bands[level] || bands[3]}\n${suffix}`;
     },
-    vocabFormat: `- **Word** \u2014 definition in the learner's native language\n- Story example sentence using the word\n- *Brief usage note about the story example*\n- New example sentence (different context)\n- *Brief usage note about the new example*`,
-    ankiFields: `{ "english_word": "word", "translation": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
+    vocabJsonFields: `{ "english_word": "word", "translation": "n. definition", "example_story": "...", "usage_note_story": "...", "example_extra": "...", "usage_note_extra": "..." }`,
     grammarContext: 'English grammar patterns',
     gradingContext: 'ESL teacher',
     gradingLanguage: 'English',

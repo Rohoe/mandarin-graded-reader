@@ -43,11 +43,13 @@ describe('parseReaderResponse', () => {
       expect(q3.text).toContain('谁帮助了小猫');
     });
 
-    it('extracts anki JSON', () => {
+    it('synthesizes ankiJson from vocab-json', () => {
       const result = parseReaderResponse(zhReaderMarkdown, 'zh');
       expect(result.ankiJson.length).toBeGreaterThanOrEqual(5);
       expect(result.ankiJson[0].chinese).toBe('小猫');
       expect(result.ankiJson[0].pinyin).toBe('xiǎo māo');
+      expect(result.ankiJson[0].example_story).toBeTruthy();
+      expect(result.ankiJson[0].usage_note_story).toBeTruthy();
     });
 
     it('extracts grammar notes', () => {
@@ -69,7 +71,7 @@ describe('parseReaderResponse', () => {
       expect(result.parseError).toBeNull();
     });
 
-    it('enriches vocab with usage notes from anki block', () => {
+    it('extracts usage notes from vocab-json', () => {
       const result = parseReaderResponse(zhReaderMarkdown, 'zh');
       const pao = result.vocabulary.find(v => v.target === '跑');
       expect(pao).toBeTruthy();
@@ -454,6 +456,201 @@ Test
       const catEntries = result.vocabulary.filter(v => v.target === '猫');
       expect(catEntries.length).toBe(1);
     });
+  });
+});
+
+// ── vocab-json extraction ────────────────────────────────────
+
+describe('vocab-json format', () => {
+  it('extracts vocabulary from vocab-json block', () => {
+    const md = `### 1. Title
+测试
+Test
+
+### 2. Story
+**猫**很可爱。
+
+### 3. Vocabulary
+\`\`\`vocab-json
+[{"chinese": "猫", "pinyin": "māo", "english": "n. cat", "example_story": "猫很可爱。", "usage_note_story": "Simple noun.", "example_extra": "我有一只猫。", "usage_note_extra": "With measure word."}]
+\`\`\`
+
+### 4. Comprehension Questions
+1. 什么？
+
+### 5. Grammar Notes
+`;
+    const result = parseReaderResponse(md, 'zh');
+    expect(result.vocabulary.length).toBe(1);
+    expect(result.vocabulary[0].target).toBe('猫');
+    expect(result.vocabulary[0].romanization).toBe('māo');
+    expect(result.vocabulary[0].translation).toBe('n. cat');
+    expect(result.vocabulary[0].exampleStory).toBe('猫很可爱。');
+    expect(result.vocabulary[0].usageNoteStory).toBe('Simple noun.');
+    expect(result.vocabulary[0].exampleExtra).toBe('我有一只猫。');
+    expect(result.vocabulary[0].usageNoteExtra).toBe('With measure word.');
+  });
+
+  it('synthesizes ankiJson from vocab-json entries', () => {
+    const md = `### 1. Title
+测试
+Test
+
+### 2. Story
+**猫**很可爱。
+
+### 3. Vocabulary
+\`\`\`vocab-json
+[{"chinese": "猫", "pinyin": "māo", "english": "n. cat", "example_story": "猫很可爱。", "usage_note_story": "Simple.", "example_extra": "", "usage_note_extra": ""}]
+\`\`\`
+
+### 4. Comprehension Questions
+1. 什么？
+`;
+    const result = parseReaderResponse(md, 'zh');
+    expect(result.ankiJson.length).toBe(1);
+    expect(result.ankiJson[0].chinese).toBe('猫');
+    expect(result.ankiJson[0].pinyin).toBe('māo');
+    expect(result.ankiJson[0].english).toBe('n. cat');
+    expect(result.ankiJson[0].example_story).toBe('猫很可爱。');
+    expect(result.ankiJson[0].usage_note_story).toBe('Simple.');
+  });
+
+  it('handles malformed vocab-json gracefully (falls back to legacy)', () => {
+    const md = `### 1. Title
+测试
+Test
+
+### 2. Story
+**猫**很可爱。
+
+### 3. Vocabulary
+\`\`\`vocab-json
+{ this is not valid json [[[
+\`\`\`
+
+### 4. Comprehension Questions
+1. 什么？
+
+### 5. Anki Cards Data (JSON)
+\`\`\`anki-json
+[{"chinese": "猫", "pinyin": "māo", "english": "cat", "example_story": "", "usage_note_story": "", "example_extra": "", "usage_note_extra": ""}]
+\`\`\`
+
+### 6. Grammar Notes
+`;
+    const result = parseReaderResponse(md, 'zh');
+    // Falls back to anki-json
+    expect(result.vocabulary.length).toBe(1);
+    expect(result.vocabulary[0].target).toBe('猫');
+    expect(result.parseError).toBeNull();
+  });
+
+  it('prefers vocab-json over legacy markdown vocab', () => {
+    const md = `### 1. Title
+测试
+Test
+
+### 2. Story
+**猫**很可爱。**狗**也可爱。
+
+### 3. Vocabulary
+\`\`\`vocab-json
+[{"chinese": "猫", "pinyin": "māo", "english": "n. cat", "example_story": "猫很可爱。", "usage_note_story": "From JSON.", "example_extra": "", "usage_note_extra": ""}]
+\`\`\`
+
+### 4. Comprehension Questions
+1. 什么？
+`;
+    const result = parseReaderResponse(md, 'zh');
+    expect(result.vocabulary.length).toBe(1);
+    expect(result.vocabulary[0].usageNoteStory).toBe('From JSON.');
+  });
+
+  it('parses grammar notes at new section 5 position', () => {
+    const md = `### 1. Title
+测试
+Test
+
+### 2. Story
+**猫**很可爱。
+
+### 3. Vocabulary
+\`\`\`vocab-json
+[{"chinese": "猫", "pinyin": "māo", "english": "cat", "example_story": "", "usage_note_story": "", "example_extra": "", "usage_note_extra": ""}]
+\`\`\`
+
+### 4. Comprehension Questions
+1. 什么？
+
+### 5. Grammar Notes
+**Adj + 了** (Change of state) — Adding 了 indicates a new state.
+- 猫很可爱了。
+
+### 6. Suggested Topics
+- Topic 1
+- Topic 2
+`;
+    const result = parseReaderResponse(md, 'zh');
+    expect(result.grammarNotes.length).toBe(1);
+    expect(result.grammarNotes[0].pattern).toContain('Adj + 了');
+    expect(result.suggestedTopics.length).toBe(2);
+  });
+
+  it('strips example prefixes from vocab-json entries', () => {
+    const md = `### 1. Title
+测试
+Test
+
+### 2. Story
+**猫**很可爱。
+
+### 3. Vocabulary
+\`\`\`vocab-json
+[{"chinese": "猫", "pinyin": "māo", "english": "cat", "example_story": "Example sentence: 猫很可爱。", "usage_note_story": "", "example_extra": "- 我有猫。", "usage_note_extra": ""}]
+\`\`\`
+
+### 4. Comprehension Questions
+1. 什么？
+`;
+    const result = parseReaderResponse(md, 'zh');
+    expect(result.vocabulary[0].exampleStory).toBe('猫很可爱。');
+    expect(result.vocabulary[0].exampleExtra).toBe('我有猫。');
+  });
+});
+
+describe('Legacy format fallback', () => {
+  it('parses old format with markdown vocab + anki-json', () => {
+    const md = `### 1. Title
+测试
+Test
+
+### 2. Story
+**猫**很可爱。
+
+### 3. Vocabulary List
+**猫** (māo) — cat
+- **猫**很可爱。
+- *A simple noun.*
+
+### 4. Comprehension Questions
+1. 什么？
+
+### 5. Anki Cards Data (JSON)
+\`\`\`anki-json
+[{"chinese": "猫", "pinyin": "māo", "english": "cat", "example_story": "猫很可爱。", "usage_note_story": "Simple.", "example_extra": "", "usage_note_extra": ""}]
+\`\`\`
+
+### 6. Grammar Notes
+**V + 到** (Directional complement) — Indicates arrival.
+- 跑到大树下面。
+`;
+    const result = parseReaderResponse(md, 'zh');
+    expect(result.vocabulary.length).toBe(1);
+    expect(result.vocabulary[0].target).toBe('猫');
+    expect(result.vocabulary[0].usageNoteStory).toBe('Simple.');
+    expect(result.ankiJson.length).toBe(1);
+    expect(result.grammarNotes.length).toBe(1);
   });
 });
 

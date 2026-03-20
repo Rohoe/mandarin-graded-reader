@@ -13,50 +13,8 @@ The Kitten's Adventure
 
 一个小女孩看到了小猫。她**温柔**地说："别怕，我带你回家。"
 
-### 3. Vocabulary List
-**小猫** (xiǎo māo) — kitten
-- **小猫**很喜欢在公园里玩。
-- *The subject 小猫 is introduced at the beginning of the story as the main character.*
-- 我家有一只**小猫**，非常可爱。
-- *Here 小猫 is used with the measure word 只 for animals.*
-
-**跑** (pǎo) — to run
-- 它都会**跑**到大树下面。
-- *The verb 跑 is followed by the directional complement 到 indicating arrival at a destination.*
-- 他每天早上都去公园**跑**步。
-- *跑步 is a compound word meaning "to jog," formed by adding 步 (step) to 跑.*
-
-**蝴蝶** (hú dié) — butterfly
-- 小猫看到一只**蝴蝶**。
-- *蝴蝶 is used with the measure word 只, typical for insects and small animals.*
-- 花园里有很多**蝴蝶**在飞。
-- *This example shows 蝴蝶 in a location-subject-verb pattern.*
-
-**追** (zhuī) — to chase
-- 它很想**追**那只蝴蝶。
-- *想 + verb expresses desire; 追 takes a direct object (那只蝴蝶).*
-- 别**追**我！
-- *A simple imperative using 别 (don't) + verb.*
-
-**害怕** (hài pà) — to be scared
-- 小猫**害怕**了。
-- *害怕 + 了 indicates a change of state — the cat became scared.*
-- 你不要**害怕**，这里很安全。
-- *害怕 used as a predicate adjective meaning "afraid."*
-
-**温柔** (wēn róu) — gentle
-- 她**温柔**地说。
-- *温柔 is used as an adverb with 地 to modify the verb 说.*
-- 妈妈的声音很**温柔**。
-- *Here 温柔 is a predicate adjective meaning "gentle."*
-
-### 4. Comprehension Questions
-1. 小猫每天早上做什么？
-2. 小猫为什么害怕了？
-3. 谁帮助了小猫？(Who helped the kitten?)
-
-### 5. Anki Cards Data (JSON)
-\`\`\`anki-json
+### 3. Vocabulary
+\`\`\`vocab-json
 [
   { "chinese": "小猫", "pinyin": "xiǎo māo", "english": "n. kitten", "example_story": "小猫很喜欢在公园里玩。", "usage_note_story": "The subject is introduced as the main character.", "example_extra": "我家有一只小猫。", "usage_note_extra": "Used with measure word 只 for animals." },
   { "chinese": "跑", "pinyin": "pǎo", "english": "v. to run", "example_story": "它都会跑到大树下面。", "usage_note_story": "跑 followed by directional complement 到.", "example_extra": "他每天早上都去公园跑步。", "usage_note_extra": "跑步 is a compound meaning to jog." },
@@ -67,7 +25,12 @@ The Kitten's Adventure
 ]
 \`\`\`
 
-### 6. Grammar Notes
+### 4. Comprehension Questions
+1. 小猫每天早上做什么？
+2. 小猫为什么害怕了？
+3. 谁帮助了小猫？(Who helped the kitten?)
+
+### 5. Grammar Notes
 **V + 到** (Directional complement) — Indicates that an action results in arrival at a destination.
 - 它都会跑到大树下面。
 
@@ -87,32 +50,19 @@ The Cat's Adventure
 
 어느 날, 고양이가 **나비**를 봤어요. 나비를 **쫓고** 싶었어요.
 
-### 3. Vocabulary List
-**고양이** (go-yang-i) — cat
-- **고양이**가 공원에서 놀고 있었어요.
-- *고양이 is the subject marked with 가 particle.*
-- 우리 집에 **고양이** 두 마리가 있어요.
-- *Used with counter 마리 for animals.*
-
-**달려** (dal-lyeo) — to run
-- 큰 나무 아래로 **달려**갔어요.
-- *달려가다 is a compound verb meaning to run toward somewhere.*
-- 아이들이 운동장에서 **달려**요.
-- *Simple present tense form.*
-
-### 4. Comprehension Questions
-1. 고양이가 매일 아침 어디에 갔어요?
-2. 고양이가 무엇을 봤어요?
-
-### 5. Anki Cards Data (JSON)
-\`\`\`anki-json
+### 3. Vocabulary
+\`\`\`vocab-json
 [
   { "korean": "고양이", "romanization": "go-yang-i", "english": "n. cat", "example_story": "고양이가 공원에서 놀고 있었어요.", "usage_note_story": "Subject marked with 가.", "example_extra": "우리 집에 고양이 두 마리가 있어요.", "usage_note_extra": "Used with counter 마리." },
   { "korean": "달려", "romanization": "dal-lyeo", "english": "v. to run", "example_story": "큰 나무 아래로 달려갔어요.", "usage_note_story": "Compound verb 달려가다.", "example_extra": "아이들이 운동장에서 달려요.", "usage_note_extra": "Simple present tense." }
 ]
 \`\`\`
 
-### 6. Grammar Notes
+### 4. Comprehension Questions
+1. 고양이가 매일 아침 어디에 갔어요?
+2. 고양이가 무엇을 봤어요?
+
+### 5. Grammar Notes
 **V + 고 있다** (Progressive) — Indicates an ongoing action, similar to English "-ing."
 - 고양이가 공원에서 놀고 있었어요.
 
@@ -129,32 +79,19 @@ The Kitten's Adventure
 
 有一日，貓仔見到一隻**蝴蝶**。佢好想**追**嗰隻蝴蝶。
 
-### 3. Vocabulary List
-**貓仔** (maau1 zai2) — kitten
-- **貓仔**好鍾意喺公園度玩。
-- *貓仔 uses the diminutive suffix 仔.*
-- 我屋企有隻**貓仔**。
-- *Used with measure word 隻.*
-
-**走** (zau2) — to run
-- 佢都會**走**去大樹下面。
-- *走 in Cantonese means "to run" (not "to walk" as in Mandarin).*
-- 佢**走**得好快。
-- *走 with the degree complement 得好快.*
-
-### 4. Comprehension Questions
-1. 貓仔每日朝早做咩？
-2. 貓仔見到咩？
-
-### 5. Anki Cards Data (JSON)
-\`\`\`anki-json
+### 3. Vocabulary
+\`\`\`vocab-json
 [
   { "chinese": "貓仔", "jyutping": "maau1 zai2", "english": "n. kitten", "example_story": "貓仔好鍾意喺公園度玩。", "usage_note_story": "Diminutive suffix 仔.", "example_extra": "我屋企有隻貓仔。", "usage_note_extra": "Used with measure word 隻." },
   { "chinese": "走", "jyutping": "zau2", "english": "v. to run", "example_story": "佢都會走去大樹下面。", "usage_note_story": "走 means to run in Cantonese.", "example_extra": "佢走得好快。", "usage_note_extra": "Degree complement 得好快." }
 ]
 \`\`\`
 
-### 6. Grammar Notes
+### 4. Comprehension Questions
+1. 貓仔每日朝早做咩？
+2. 貓仔見到咩？
+
+### 5. Grammar Notes
 **好 + Adj** (Degree adverb) — Cantonese uses 好 (not 很) to intensify adjectives.
 - 貓仔好鍾意喺公園度玩。
 

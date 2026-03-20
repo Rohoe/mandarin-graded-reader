@@ -209,10 +209,10 @@ The story should be 300-500 characters. Use vocabulary appropriate for
 HSK 3. Format your response with these sections:
 ## 1. Title
 ## 2. Story
-## 3. Vocabulary List
+## 3. Vocabulary (vocab-json block)
 ## 4. Comprehension Questions
-## 5. Anki Cards Data (JSON)
-## 6. Grammar Notes"
+## 5. Grammar Notes
+## 6. Suggested Topics"
 ```
 
 The prompt includes language-specific rules (character counts, romanization format, level-appropriate grammar patterns) pulled from the language config in `languages.js`.
@@ -321,12 +321,12 @@ The `useReaderGeneration` hook consumes this generator and updates `streamingTex
 The AI is instructed to format its response with markdown headings. The parser looks for these headings and extracts content between them:
 
 ```
-## 1. Title          → captures Chinese title + English title
+## 1. Title          → captures target-language title + native-language title
 ## 2. Story          → captures story body (everything until next heading)
-## 3. Vocabulary     → captures word|pinyin|meaning rows
+## 3. Vocabulary     → captures vocab-json block (JSON array of vocab objects)
 ## 4. Questions      → captures numbered questions with answer options
-## 5. Anki Cards     → captures JSON array for flashcard export
-## 6. Grammar Notes  → captures grammar pattern explanations
+## 5. Grammar Notes  → captures grammar pattern explanations
+## 6. Suggested Topics → follow-up topic ideas
 ```
 
 Each section has a primary regex and 1-2 fallback patterns for when the AI formats things slightly differently.
@@ -394,7 +394,7 @@ Each language is a config object:
   tts: { lang: 'zh-CN', ... },
   prompts: {
     storyLength: '300-500 characters',
-    vocabFormat: 'word | pinyin | meaning',
+    vocabJsonFields: '{ "chinese": "...", "pinyin": "...", ... }',
     // ... lots more language-specific prompt fragments
   },
 }
