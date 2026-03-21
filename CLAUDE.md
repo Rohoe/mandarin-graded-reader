@@ -8,8 +8,8 @@ Single-page React + Vite app that generates graded readers in **Mandarin Chinese
 npm install        # first time only
 npm run dev        # http://localhost:5173
 npm run build      # production build
-npm test           # unit tests (Vitest, 614 tests)
-npm run test:e2e   # E2E tests (Playwright, 22 tests)
+npm test           # unit tests (Vitest, 657 tests)
+npm run test:e2e   # E2E tests (Playwright, 48 tests across 2 projects)
 ```
 
 No `.env` needed for basic use. Users add their own API key in Settings. Cloud sync requires `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`.
@@ -19,11 +19,11 @@ No `.env` needed for basic use. Users add their own API key in Settings. Cloud s
 ```
 src/
   App.jsx              Root layout, UI-only state (sidebar, modals, activeSyllabusId, standaloneKey, syllabusView). Default view: 'dashboard' (Home page)
-  context/             useReducer global store (AppContext.jsx), useApp hook, actions factory, reducers/ (8 domain slices)
+  context/             useReducer global store (AppContext.jsx), useApp hook, actions factory, reducers/ (9 domain slices)
   i18n/                UI string translations: useT() hook, en/zh/yue/ko/fr/es language files
-  lib/                 Core logic: api.js, chatApi.js, parser.js, storage.js, languages.js, nativeLanguages.js, providers.js, cloudSync.js, anki.js, stats.js
+  lib/                 Core logic: api.js, apiUtils.js, chatApi.js, parser.js, storage.js, readerStorage.js, languages.js, nativeLanguages.js, providers.js, llmConfig.js, cloudSync.js, anki.js, ankiApkg.js, stats.js, translate.js, vocabMapper.js, vocabNormalizer.js, grammarMapper.js, sentenceSplitter.js, romanizer.js
   prompts/             LLM prompt builders (syllabus, reader, grading, extend, tutor)
-  hooks/               useTTS, useRomanization, useVocabPopover, useReaderGeneration, useTutorChat, useFocusTrap, useReadingTimer, usePWA
+  hooks/               useTTS, useRomanization, useVocabPopover, useReaderGeneration, useTutorChat, useFocusTrap, useReadingTimer, usePWA, useBufferedMarkdown, useFlashcardKeyboard, useFlashcardSession, useQuestionTranslation, useSentenceTranslate, useStreamAccumulator, useTextSelection, usePopoverDismissal
   components/          UI components (see docs/components.md for details)
 e2e/                   Playwright E2E specs + fixtures
 ```
@@ -32,14 +32,19 @@ e2e/                   Playwright E2E specs + fixtures
 
 - **Multi-language:** Config registry in `src/lib/languages.js` — each lang defines proficiency levels, script regex, fonts, TTS, romanization, prompt fragments. All API/parser/export functions accept `langId`. CJK langs (zh, yue) use character-based splitting; syllabic (ko) and Latin-script langs (fr, es, en) use word-based splitting.
 - **Native language:** `src/lib/nativeLanguages.js` — configurable explanation language (English, Chinese, Korean, French, Spanish, Japanese). Prompts, vocab definitions, and translations use the learner's native language instead of always English.
-- **UI i18n:** `src/i18n/` — lightweight custom `useT()` hook reads `state.nativeLang` and returns a `t(key, params)` function. ~400 keys across 6 language files (en, zh, yue, ko, fr, es). Fallback chain: current lang → English → raw key. Simple `{param}` interpolation. No external library.
+- **UI i18n:** `src/i18n/` — lightweight custom `useT()` hook reads `state.nativeLang` and returns a `t(key, params)` function. ~500 keys across 6 language files (en, zh, yue, ko, fr, es). Fallback chain: current lang → English → raw key. Simple `{param}` interpolation. No external library.
 - **Multi-provider LLM:** Registry in `src/lib/providers.js`. `callLLM()` dispatches to provider-specific functions. `buildLLMConfig(state)` from `llmConfig.js` builds config from state.
-- **State:** useReducer in AppContext.jsx. Reducer split into 8 domain slices in `src/context/reducers/`. Persistence extracted to `usePersistence.js`. Test-only exports: `_baseReducer`, `_reducer`, `_DATA_ACTIONS`.
+- **State:** useReducer in AppContext.jsx. Reducer split into 9 domain slices in `src/context/reducers/` (data, syllabus, reader, vocabulary, grammar, preferences, provider, cloud, ui). Persistence extracted to `usePersistence.js`. Test-only exports: `_baseReducer`, `_reducer`, `_DATA_ACTIONS`.
 - **Storage:** localStorage (primary) + opt-in File System Access API (Chrome) + Supabase cloud sync with auto-merge and undo.
 - **Parsing:** `vocab-json` block is primary vocab format (single source of truth); legacy markdown+anki-json fallback in `parser.js`. Structured JSON parser (opt-in) via `normalizeStructuredReader()`.
 - **Syllabus→Reader connection:** Syllabus lesson metadata (`vocabulary_focus`, `difficulty_hint`) is threaded into reader prompts. `useReaderGeneration` builds cumulative context (prior lesson summaries, taught grammar patterns) so each lesson builds on previous ones. `SyllabusHome` aggregates a learning summary from completed readers.
-- **Streaming:** Anthropic provider supports streaming responses via `generateReaderStream()` async generator. Text streams progressively to UI, then parses on completion.
+- **Streaming:** Anthropic provider supports streaming responses via `generateReaderStream()` async generator. Text streams progressively to UI with debounced markdown rendering (`useBufferedMarkdown`), then parses on completion.
 - **AI Tutor Chat:** `src/lib/chatApi.js` provides multi-turn `callLLMChat`/`callLLMChatStream` for all providers. `src/prompts/tutorPrompt.js` builds context-rich system prompts. `src/hooks/useTutorChat.js` manages chat state, persists `chatHistory`/`chatSummary` on reader objects via `SET_READER`. "Open in Claude/ChatGPT" always available (copies lesson context to clipboard). UI in `src/components/TutorChat/`.
+- **Grammar SRS:** `grammarReducer.js` + `grammarMapper.js` manage grammar pattern spaced repetition. Grammar cards extracted from reader grammar notes with independent SRS tracking.
+- **Flashcard modes:** `FlashcardReview/` supports multiple modes: SRS Review (vocab + grammar), Quiz Mix, Practice, Sentence Builder, Context Clue, Reverse Listening. Mode picker UI replaced the previous tab-based interface. `useFlashcardSession` manages session state.
+- **Home dashboard:** `HomeView/` component serves as the default landing page (`syllabusView: 'dashboard'`). Shows weekly reading goals, reading session logs, and activity overview. Reading sessions tracked via `useReadingTimer`.
+- **Inline topic suggestions:** LLM generates topic suggestions during syllabus creation, shown as clickable chips.
+- **Comprehension translation:** `useQuestionTranslation` hook + "Translate All" toggle translates comprehension questions via Google Translate.
 
 ## Lesson keys
 
@@ -53,7 +58,7 @@ CSS custom properties in `index.css`. Key tokens: `--color-bg` (#FAF8F5), `--col
 
 ## Testing
 
-Unit tests colocated with source (`*.test.js`). E2E in `e2e/` with Desktop Chrome + iPhone 14 projects. API mocking via `page.route()`. Test helpers in `e2e/helpers/appHelpers.js`.
+Unit tests colocated with source (`*.test.js`). E2E in `e2e/` with Desktop Chrome + iPhone 14 projects (24 specs × 2 = 48 total). API mocking via `page.route()`. Test helpers in `e2e/helpers/appHelpers.js`.
 
 ## Detailed documentation
 
