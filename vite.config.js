@@ -28,9 +28,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: '漫读 Mandarin Reader',
-        short_name: '漫读',
-        description: 'Graded reader generator for Mandarin Chinese, Cantonese, and Korean',
+        name: 'Mandu — Graded Reader',
+        short_name: 'Mandu',
+        description: 'AI-powered graded reader for Mandarin Chinese, Cantonese, Korean, French, Spanish, and English',
         theme_color: '#4A7C7E',
         background_color: '#FAF8F5',
         display: 'standalone',

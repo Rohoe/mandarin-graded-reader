@@ -1,4 +1,4 @@
-# 漫读 — Multi-Language Graded Reader
+# Mandu — Multi-Language Graded Reader
 
 A single-page web app for generating graded readers in **Mandarin Chinese**, **Cantonese**, **Korean**, **French**, **Spanish**, and **English** using AI. Supports multiple LLM providers: **Anthropic Claude**, **OpenAI (GPT-4o)**, **Google Gemini**, and **OpenAI-compatible** endpoints (DeepSeek, Groq, custom). Designed for HSK, TOPIK, Cantonese, CEFR, and ESL learners who want personalised reading practice with vocabulary tracking and Anki export.
 

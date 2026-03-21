@@ -334,7 +334,7 @@ function AppShell() {
           onClick={() => { setSyllabusView('dashboard'); setStandaloneKey(null); setSidebarOpen(false); }}
           aria-label={t('sidebar.home')}
         >
-          漫读
+          Mandu
         </button>
         <button className="btn btn-ghost btn-sm" onClick={() => setShowSettings(true)} aria-label={t('common.settings')}>
           ⚙

@@ -79,11 +79,11 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
   // Set data-lang on <html> and update page title when reader changes
   useEffect(() => {
     document.documentElement.setAttribute('data-lang', langId);
-    const titles = { zh: '漫读 — Mandarin Reader', yue: '漫读 — Cantonese Reader', ko: '漫读 — Korean Reader', fr: '漫读 — French Reader', es: '漫读 — Spanish Reader', en: '漫读 — English Reader' };
-    document.title = titles[langId] || '漫读 — Graded Reader';
+    const titles = { zh: 'Mandu — Mandarin Reader', yue: 'Mandu — Cantonese Reader', ko: 'Mandu — Korean Reader', fr: 'Mandu — French Reader', es: 'Mandu — Spanish Reader', en: 'Mandu — English Reader' };
+    document.title = titles[langId] || 'Mandu — Graded Reader';
     return () => {
       document.documentElement.removeAttribute('data-lang');
-      document.title = '漫读 — Graded Reader';
+      document.title = 'Mandu — Graded Reader';
     };
   }, [langId]);
 

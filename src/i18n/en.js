@@ -1,7 +1,7 @@
 /**
  * English UI strings — source of truth for all i18n keys.
  * Keys use flat dot-notation grouped by component area.
- * Don't translate: brand "漫读", provider names, proficiency acronyms, file extensions.
+ * Don't translate: brand "Mandu", provider names, proficiency acronyms, file extensions.
  */
 export default {
   // ── Common ────────────────────────────────────────────────────

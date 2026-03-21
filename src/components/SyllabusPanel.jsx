@@ -176,7 +176,7 @@ export default function SyllabusPanel({
       {/* Header */}
       <div className="syllabus-panel__header">
         <h1 className="syllabus-panel__app-title font-display">
-          <span className="syllabus-panel__hanzi">漫读</span>
+          <span className="syllabus-panel__hanzi">Mandu</span>
           {pendingCount > 0 && (
             <span className="syllabus-panel__pending-badge" title={`${pendingCount} reader${pendingCount > 1 ? 's' : ''} generating`}>
               ⟳ {pendingCount}
