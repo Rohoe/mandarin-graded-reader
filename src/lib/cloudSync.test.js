@@ -321,6 +321,45 @@ describe('mergeData', () => {
     expect(result.learned_vocabulary['猫'].dateAdded).toBe(3000);
   });
 
+  it('excludes demo readers from merged standalone_readers and generated_readers', () => {
+    const localState = {
+      syllabi: [],
+      syllabusProgress: {},
+      standaloneReaders: [
+        { key: 'sr1', topic: 'real reader' },
+        { key: 'standalone_demo', topic: 'Sample', isDemo: true },
+      ],
+      generatedReaders: {
+        sr1: { story: 'real' },
+        standalone_demo: { story: 'demo' },
+        standalone_demo_en: { story: 'demo en' },
+      },
+      learnedVocabulary: {},
+      exportedWords: new Set(),
+    };
+    const cloudData = {
+      syllabi: [],
+      syllabus_progress: {},
+      standalone_readers: [
+        { key: 'sr2', topic: 'cloud reader' },
+        { key: 'standalone_demo_en', topic: 'Sample EN', isDemo: true },
+      ],
+      generated_readers: {
+        sr2: { story: 'cloud' },
+        standalone_demo: { story: 'demo cloud' },
+      },
+      learned_vocabulary: {},
+      exported_words: [],
+    };
+    const result = mergeData(localState, cloudData);
+    expect(result.standalone_readers.length).toBe(2);
+    expect(result.standalone_readers.map(r => r.key).sort()).toEqual(['sr1', 'sr2']);
+    expect(result.generated_readers).toHaveProperty('sr1');
+    expect(result.generated_readers).toHaveProperty('sr2');
+    expect(result.generated_readers).not.toHaveProperty('standalone_demo');
+    expect(result.generated_readers).not.toHaveProperty('standalone_demo_en');
+  });
+
   it('merges syllabus progress with max lessonIndex and union completedLessons', () => {
     const localState = {
       syllabi: [],

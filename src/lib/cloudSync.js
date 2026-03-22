@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { DEMO_READER_KEYS } from './demoReader';
 
 /**
  * Returns the authenticated Supabase user, or throws if not signed in.
@@ -35,7 +36,7 @@ export async function pushToCloud(state) {
     user_id:            user.id,
     syllabi:            state.syllabi,
     syllabus_progress:  state.syllabusProgress,
-    standalone_readers: state.standaloneReaders,
+    standalone_readers: state.standaloneReaders.filter(r => !r.isDemo),
     learned_vocabulary: state.learnedVocabulary,
     learned_grammar:    state.learnedGrammar,
     exported_words:     [...state.exportedWords],
@@ -181,10 +182,14 @@ export function mergeData(localState, cloudData) {
   for (const s of (localState.syllabi || [])) syllabusMap.set(s.id, s); // local wins on conflict
   const syllabi = [...syllabusMap.values()];
 
-  // Standalone readers: union by key
+  // Standalone readers: union by key (exclude demo readers)
   const standaloneMap = new Map();
-  for (const r of (cloudData.standalone_readers || [])) standaloneMap.set(r.key, r);
-  for (const r of (localState.standaloneReaders || [])) standaloneMap.set(r.key, r);
+  for (const r of (cloudData.standalone_readers || [])) {
+    if (!r.isDemo && !DEMO_READER_KEYS.has(r.key)) standaloneMap.set(r.key, r);
+  }
+  for (const r of (localState.standaloneReaders || [])) {
+    if (!r.isDemo && !DEMO_READER_KEYS.has(r.key)) standaloneMap.set(r.key, r);
+  }
   const standalone_readers = [...standaloneMap.values()];
 
   // Syllabus progress: union by syllabus ID; merge completedLessons + max lessonIndex
@@ -203,10 +208,14 @@ export function mergeData(localState, cloudData) {
   }
 
   // Generated readers: union by lesson key; local wins (has user answers, grading)
-  const generated_readers = {
-    ...(cloudData.generated_readers || {}),
-    ...(localState.generatedReaders || {}),
-  };
+  // Exclude demo reader content from cloud sync
+  const generated_readers = {};
+  for (const [k, v] of Object.entries(cloudData.generated_readers || {})) {
+    if (!DEMO_READER_KEYS.has(k)) generated_readers[k] = v;
+  }
+  for (const [k, v] of Object.entries(localState.generatedReaders || {})) {
+    if (!DEMO_READER_KEYS.has(k)) generated_readers[k] = v;
+  }
 
   // Learned vocabulary: union by word; prefer newer dateAdded
   const learned_vocabulary = { ...(cloudData.learned_vocabulary || {}) };
