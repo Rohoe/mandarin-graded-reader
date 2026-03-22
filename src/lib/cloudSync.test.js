@@ -435,6 +435,167 @@ describe('mergeData', () => {
     expect(result.generated_readers.key2.story).toBe('cloud-only');
   });
 
+  it('cloud wins picks up extended syllabus lessons', () => {
+    // Desktop extends syllabus from 3 to 5 lessons, pushes to cloud.
+    // Mobile still has 3 lessons. Pull should get the 5-lesson version.
+    const localState = {
+      syllabi: [{
+        id: 's1', topic: 'Chinese Food',
+        lessons: [{ title: 'L1' }, { title: 'L2' }, { title: 'L3' }],
+      }],
+      syllabusProgress: { s1: { lessonIndex: 2, completedLessons: [0, 1] } },
+      standaloneReaders: [],
+      generatedReaders: {},
+      learnedVocabulary: {},
+      exportedWords: new Set(),
+    };
+    const cloudData = {
+      syllabi: [{
+        id: 's1', topic: 'Chinese Food',
+        lessons: [{ title: 'L1' }, { title: 'L2' }, { title: 'L3' }, { title: 'L4' }, { title: 'L5' }],
+      }],
+      syllabus_progress: { s1: { lessonIndex: 4, completedLessons: [0, 1, 2, 3] } },
+      standalone_readers: [],
+      generated_readers: {},
+      learned_vocabulary: {},
+      exported_words: [],
+    };
+    const result = mergeData(localState, cloudData, { prefer: 'cloud' });
+    expect(result.syllabi[0].lessons.length).toBe(5);
+    // Progress merges: max lessonIndex, union completedLessons
+    expect(result.syllabus_progress.s1.lessonIndex).toBe(4);
+    expect(result.syllabus_progress.s1.completedLessons.sort()).toEqual([0, 1, 2, 3]);
+  });
+
+  it('cloud wins still preserves local-only items', () => {
+    // Mobile has a local-only reader not yet pushed. Cloud wins merge
+    // should still keep it (union), not discard it.
+    const localState = {
+      syllabi: [
+        { id: 's1', topic: 'shared' },
+        { id: 's2', topic: 'local-only-syllabus' },
+      ],
+      syllabusProgress: {},
+      standaloneReaders: [{ key: 'sr_local', topic: 'just created' }],
+      generatedReaders: { sr_local: { story: 'local story' } },
+      learnedVocabulary: { '猫': { dateAdded: 5000 } },
+      exportedWords: new Set(['猫']),
+    };
+    const cloudData = {
+      syllabi: [{ id: 's1', topic: 'shared-updated' }],
+      syllabus_progress: {},
+      standalone_readers: [{ key: 'sr_cloud', topic: 'from desktop' }],
+      generated_readers: { sr_cloud: { story: 'cloud story' } },
+      learned_vocabulary: {},
+      exported_words: ['狗'],
+    };
+    const result = mergeData(localState, cloudData, { prefer: 'cloud' });
+    // Cloud wins for shared syllabus
+    expect(result.syllabi.find(s => s.id === 's1').topic).toBe('shared-updated');
+    // Local-only items preserved
+    expect(result.syllabi.find(s => s.id === 's2')).toBeTruthy();
+    expect(result.standalone_readers.find(r => r.key === 'sr_local')).toBeTruthy();
+    expect(result.generated_readers.sr_local).toBeTruthy();
+    // Cloud-only items also present
+    expect(result.standalone_readers.find(r => r.key === 'sr_cloud')).toBeTruthy();
+    expect(result.generated_readers.sr_cloud).toBeTruthy();
+    // Exported words: union from both sides
+    expect(result.exported_words).toContain('猫');
+    expect(result.exported_words).toContain('狗');
+  });
+
+  it('simulates cross-device sync: desktop extends, mobile pulls', () => {
+    // Full scenario: desktop added lessons + completed more + learned new vocab.
+    // Mobile has older state + its own local vocab. Cloud preference merge
+    // should pick up desktop changes while keeping mobile-only data.
+    const mobileState = {
+      syllabi: [{ id: 's1', topic: 'Travel', lessons: [{ title: 'Airport' }, { title: 'Hotel' }] }],
+      syllabusProgress: { s1: { lessonIndex: 1, completedLessons: [0] } },
+      standaloneReaders: [{ key: 'sr1', topic: 'Food' }],
+      generatedReaders: {
+        lesson_s1_0: { story: 'airport story' },
+        sr1: { story: 'food story' },
+      },
+      learnedVocabulary: {
+        '机场': { dateAdded: 1000 },
+        '美食': { dateAdded: 3000 }, // mobile-only, newer
+      },
+      learnedGrammar: {
+        '了': { dateAdded: 1000 },
+      },
+      exportedWords: new Set(['机场']),
+    };
+    const cloudFromDesktop = {
+      syllabi: [{ id: 's1', topic: 'Travel', lessons: [{ title: 'Airport' }, { title: 'Hotel' }, { title: 'Restaurant' }] }],
+      syllabus_progress: { s1: { lessonIndex: 2, completedLessons: [0, 1] } },
+      standalone_readers: [{ key: 'sr1', topic: 'Food' }, { key: 'sr2', topic: 'Weather' }],
+      generated_readers: {
+        lesson_s1_0: { story: 'airport story v2', grading: 'A' },
+        lesson_s1_1: { story: 'hotel story' },
+        sr1: { story: 'food story' },
+        sr2: { story: 'weather story' },
+      },
+      learned_vocabulary: {
+        '机场': { dateAdded: 2000 },
+        '酒店': { dateAdded: 2000 },
+      },
+      learned_grammar: {
+        '了': { dateAdded: 500 },
+        '过': { dateAdded: 2000 },
+      },
+      exported_words: ['机场', '酒店'],
+    };
+    const result = mergeData(mobileState, cloudFromDesktop, { prefer: 'cloud' });
+
+    // Cloud syllabus wins — has 3 lessons (extended)
+    expect(result.syllabi[0].lessons.length).toBe(3);
+    // Progress: max lessonIndex, union completedLessons
+    expect(result.syllabus_progress.s1.lessonIndex).toBe(2);
+    expect(result.syllabus_progress.s1.completedLessons.sort()).toEqual([0, 1]);
+    // Standalone readers: union (cloud sr2 added)
+    expect(result.standalone_readers.length).toBe(2);
+    // Generated readers: cloud wins on overlap (graded version), union adds rest
+    expect(result.generated_readers.lesson_s1_0.grading).toBe('A');
+    expect(result.generated_readers.lesson_s1_1).toBeTruthy();
+    expect(result.generated_readers.sr2).toBeTruthy();
+    // Vocab: newer dateAdded wins per word
+    expect(result.learned_vocabulary['机场'].dateAdded).toBe(2000); // cloud newer
+    expect(result.learned_vocabulary['美食'].dateAdded).toBe(3000); // mobile-only preserved
+    expect(result.learned_vocabulary['酒店']).toBeTruthy();         // cloud-only added
+    // Grammar: newer dateAdded wins per pattern
+    expect(result.learned_grammar['了'].dateAdded).toBe(1000);  // mobile newer
+    expect(result.learned_grammar['过'].dateAdded).toBe(2000);  // cloud-only added
+    // Exported words: union
+    expect(result.exported_words.sort()).toEqual(['机场', '酒店']);
+  });
+
+  it('default prefer:local keeps stale local data (pre-fix behavior)', () => {
+    // Documents the old buggy behavior as a regression guard:
+    // with prefer:local, mobile's stale syllabus wins over cloud's extended one.
+    const localState = {
+      syllabi: [{ id: 's1', lessons: [{ title: 'L1' }] }],
+      syllabusProgress: {},
+      standaloneReaders: [],
+      generatedReaders: {},
+      learnedVocabulary: {},
+      exportedWords: new Set(),
+    };
+    const cloudData = {
+      syllabi: [{ id: 's1', lessons: [{ title: 'L1' }, { title: 'L2' }] }],
+      syllabus_progress: {},
+      standalone_readers: [],
+      generated_readers: {},
+      learned_vocabulary: {},
+      exported_words: [],
+    };
+    // Default (prefer:local) — local's 1-lesson version wins
+    const resultLocal = mergeData(localState, cloudData);
+    expect(resultLocal.syllabi[0].lessons.length).toBe(1);
+    // prefer:cloud — cloud's 2-lesson version wins
+    const resultCloud = mergeData(localState, cloudData, { prefer: 'cloud' });
+    expect(resultCloud.syllabi[0].lessons.length).toBe(2);
+  });
+
   it('merges syllabus progress with max lessonIndex and union completedLessons', () => {
     const localState = {
       syllabi: [],
