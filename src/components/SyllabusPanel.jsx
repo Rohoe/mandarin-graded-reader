@@ -318,6 +318,7 @@ export default function SyllabusPanel({
             onSyllabusClick={handleSyllabusClick}
             onSelectStandalone={onSelectStandalone}
             standaloneKey={standaloneKey}
+            activeSyllabusId={activeSyllabusId}
             loading={loading}
           />
 

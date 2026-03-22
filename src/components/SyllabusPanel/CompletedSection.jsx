@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { getLang, getLessonTitle } from '../../lib/languages';
+import { getLang } from '../../lib/languages';
 import { useT } from '../../i18n';
 
-export default function CompletedSection({ completedSyllabi, completedStandalone, completedSeries, generatedReaders, syllabusProgress, onSyllabusClick, onSelectStandalone, standaloneKey, loading }) {
+export default function CompletedSection({ completedSyllabi, completedStandalone, completedSeries, generatedReaders, syllabusProgress, onSyllabusClick, onSelectStandalone, standaloneKey, activeSyllabusId, loading }) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const count = completedSyllabi.length + completedStandalone.length + completedSeries.length;
@@ -20,72 +20,73 @@ export default function CompletedSection({ completedSyllabi, completedStandalone
         <span className="syllabus-panel__caret-btn">{open ? '\u25BE' : '\u25B8'}</span>
       </button>
       {open && (
-        <ul id="completed-items-list" className="syllabus-panel__list" role="list">
+        <div id="completed-items-list">
           {completedSyllabi.map(s => {
             const sLang = getLang(s.langId);
             const progress = syllabusProgress[s.id] || { completedLessons: [] };
             const lessons = s.lessons || [];
             return (
-              <li key={s.id}>
+              <div key={s.id} className="syllabus-panel__item-group">
                 <button
-                  className="syllabus-panel__lesson-btn syllabus-panel__standalone-item syllabus-panel__lesson-btn--completed"
+                  className={`syllabus-panel__item-btn ${s.id === activeSyllabusId ? 'syllabus-panel__item-btn--active' : ''}`}
                   onClick={() => onSyllabusClick(s.id)}
                   disabled={loading}
                 >
-                  <span className="syllabus-panel__lesson-num">{'\u2713'}</span>
-                  <span className="syllabus-panel__lesson-text">
-                    <span className="syllabus-panel__lesson-zh text-chinese">{s.topic}</span>
-                    <span className="syllabus-panel__lesson-en text-muted">
+                  <span className="syllabus-panel__item-text">
+                    <span className="syllabus-panel__item-title text-chinese">{s.topic}</span>
+                    <span className="syllabus-panel__item-meta text-muted">
                       {sLang.proficiency.name} {s.level} {'\u00B7'} {progress.completedLessons.length}/{lessons.length}
                     </span>
                   </span>
                 </button>
-              </li>
+              </div>
             );
           })}
           {completedSeries.map(({ seriesId, episodes }) => {
             const firstEp = episodes[0];
             const baseTopic = (firstEp.topic || '').replace(/^Continuation:\s*/i, '');
             return (
-              <li key={`series-${seriesId}`}>
-                <button
-                  className="syllabus-panel__lesson-btn syllabus-panel__standalone-item syllabus-panel__lesson-btn--completed"
-                  onClick={() => onSelectStandalone?.(firstEp.key)}
-                  disabled={loading}
-                >
-                  <span className="syllabus-panel__lesson-num">{'\u2713'}</span>
-                  <span className="syllabus-panel__lesson-text">
-                    <span className="syllabus-panel__lesson-zh text-chinese">
-                      {firstEp.titleZh || generatedReaders[firstEp.key]?.titleZh || baseTopic}
+              <div key={`series-${seriesId}`} className="syllabus-panel__item-group">
+                <div className={`syllabus-panel__lesson-btn syllabus-panel__standalone-item ${standaloneKey && episodes.some(r => r.key === standaloneKey) ? 'syllabus-panel__lesson-btn--active' : ''}`}>
+                  <button
+                    className="syllabus-panel__standalone-select"
+                    onClick={() => onSelectStandalone?.(firstEp.key)}
+                    disabled={loading}
+                  >
+                    <span className="syllabus-panel__lesson-text">
+                      <span className="syllabus-panel__lesson-zh text-chinese">
+                        {firstEp.titleZh || generatedReaders[firstEp.key]?.titleZh || baseTopic}
+                      </span>
+                      <span className="syllabus-panel__lesson-en text-muted">
+                        {t('series.episodes', { count: episodes.length })}
+                      </span>
                     </span>
-                    <span className="syllabus-panel__lesson-en text-muted">
-                      {t('series.episodes', { count: episodes.length })}
-                    </span>
-                  </span>
-                </button>
-              </li>
+                  </button>
+                </div>
+              </div>
             );
           })}
           {completedStandalone.map(r => (
-            <li key={r.key}>
-              <button
-                className={`syllabus-panel__lesson-btn syllabus-panel__standalone-item syllabus-panel__lesson-btn--completed ${standaloneKey === r.key ? 'syllabus-panel__lesson-btn--active' : ''}`}
-                onClick={() => onSelectStandalone?.(r.key)}
-                disabled={loading}
-              >
-                <span className="syllabus-panel__lesson-num">{'\u2713'}</span>
-                <span className="syllabus-panel__lesson-text">
-                  <span className="syllabus-panel__lesson-zh text-chinese">
-                    {r.titleZh || generatedReaders[r.key]?.titleZh || r.topic}
+            <div key={r.key} className="syllabus-panel__item-group">
+              <div className={`syllabus-panel__lesson-btn syllabus-panel__standalone-item ${standaloneKey === r.key ? 'syllabus-panel__lesson-btn--active' : ''}`}>
+                <button
+                  className="syllabus-panel__standalone-select"
+                  onClick={() => onSelectStandalone?.(r.key)}
+                  disabled={loading}
+                >
+                  <span className="syllabus-panel__lesson-text">
+                    <span className="syllabus-panel__lesson-zh text-chinese">
+                      {r.titleZh || generatedReaders[r.key]?.titleZh || r.topic}
+                    </span>
+                    <span className="syllabus-panel__lesson-en text-muted">
+                      {r.titleEn || generatedReaders[r.key]?.titleEn || `${getLang(r.langId).proficiency.name} ${r.level}`}
+                    </span>
                   </span>
-                  <span className="syllabus-panel__lesson-en text-muted">
-                    {r.titleEn || generatedReaders[r.key]?.titleEn || `${getLang(r.langId).proficiency.name} ${r.level}`}
-                  </span>
-                </span>
-              </button>
-            </li>
+                </button>
+              </div>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
