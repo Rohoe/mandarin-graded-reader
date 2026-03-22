@@ -82,6 +82,32 @@ export default function SettingsAdvancedTab({
 
       <hr className="divider" />
 
+      {/* Force reload */}
+      <section className="settings-section">
+        <h3 className="settings-section__title form-label">{t('settings.advanced.forceReload')}</h3>
+        <p className="settings-section__desc text-muted">
+          {t('settings.advanced.forceReloadDesc')}
+        </p>
+        <button
+          className="btn btn-secondary btn-sm"
+          onClick={async () => {
+            if ('serviceWorker' in navigator) {
+              const registrations = await navigator.serviceWorker.getRegistrations();
+              await Promise.all(registrations.map(r => r.unregister()));
+            }
+            if ('caches' in window) {
+              const keys = await caches.keys();
+              await Promise.all(keys.map(k => caches.delete(k)));
+            }
+            window.location.reload();
+          }}
+        >
+          {t('settings.advanced.forceReloadBtn')}
+        </button>
+      </section>
+
+      <hr className="divider" />
+
       {/* Danger zone */}
       <section className="settings-section">
         <h3 className="settings-section__title form-label" style={{ color: 'var(--color-error)' }}>
