@@ -44,8 +44,18 @@ export function usePWA() {
       });
     });
 
+    // Check for SW updates when app is foregrounded (critical for installed PWAs
+    // that can sit in the background for days running stale code)
+    function onVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        navigator.serviceWorker.ready.then(reg => reg.update()).catch(() => {});
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
     return () => {
       navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, []);
 
