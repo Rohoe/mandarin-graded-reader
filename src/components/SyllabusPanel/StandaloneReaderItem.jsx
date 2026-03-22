@@ -1,7 +1,7 @@
 import { getLang } from '../../lib/languages';
 import { useT } from '../../i18n';
 
-export default function StandaloneReaderItem({ reader, isActive, loading, generatedReader, onSelect, onArchive, onDelete }) {
+export default function StandaloneReaderItem({ reader, isActive, loading, generatedReader, onSelect }) {
   const t = useT();
 
   return (
@@ -14,7 +14,7 @@ export default function StandaloneReaderItem({ reader, isActive, loading, genera
           onClick={() => onSelect?.(reader.key)}
           disabled={loading}
         >
-          {reader.completedAt && <span className="syllabus-panel__lesson-num">✓</span>}
+          {reader.completedAt && <span className="syllabus-panel__lesson-num">{'\u2713'}</span>}
           <span className="syllabus-panel__lesson-text">
             <span className="syllabus-panel__lesson-zh text-chinese">
               {reader.titleZh || generatedReader?.titleZh || reader.topic}
@@ -25,22 +25,6 @@ export default function StandaloneReaderItem({ reader, isActive, loading, genera
             </span>
           </span>
         </button>
-        {!reader.isDemo && (
-          <button
-            className="btn btn-ghost btn-sm syllabus-panel__archive-btn"
-            onClick={() => onArchive(reader.key)}
-            aria-label={t('standalone.archiveReader')}
-            title={t('standalone.archiveTooltip')}
-          >⊟</button>
-        )}
-        {!reader.isDemo && (
-          <button
-            className="btn btn-ghost btn-sm syllabus-panel__delete-btn"
-            onClick={() => onDelete(reader.key, reader.topic)}
-            aria-label={t('standalone.deleteReader')}
-            title={t('standalone.deleteTooltip')}
-          >×</button>
-        )}
       </div>
     </div>
   );

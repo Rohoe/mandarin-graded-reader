@@ -74,6 +74,7 @@ const KEYS = {
   NATIVE_LANG:         'gradedReader_nativeLang',
   READING_TIME_LOG:    'gradedReader_readingTimeLog',
   WEEKLY_GOALS:        'gradedReader_weeklyGoals',
+  SHOW_ARCHIVED:       'gradedReader_showArchived',
 };
 
 const READER_KEY_PREFIX = 'gradedReader_reader_';
@@ -823,6 +824,16 @@ export function loadWeeklyGoals() {
 
 export function saveWeeklyGoals(goals) {
   save(KEYS.WEEKLY_GOALS, goals);
+}
+
+// ── Show archived preference ─────────────────────────────────
+
+export function loadShowArchived() {
+  return load(KEYS.SHOW_ARCHIVED, false);
+}
+
+export function saveShowArchived(val) {
+  save(KEYS.SHOW_ARCHIVED, val);
 }
 
 // ── Storage usage estimate ────────────────────────────────────

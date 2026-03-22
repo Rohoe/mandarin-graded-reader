@@ -6,6 +6,7 @@ import {
   SET_NEW_CARDS_PER_DAY, SET_DEFAULT_LEVEL_FOR_LANG,
   SET_NATIVE_LANG,
   SET_WEEKLY_GOALS,
+  SET_SHOW_ARCHIVED,
 } from '../actionTypes';
 
 export function preferencesReducer(state, action) {
@@ -75,6 +76,9 @@ export function preferencesReducer(state, action) {
 
     case SET_WEEKLY_GOALS:
       return { ...state, weeklyGoals: action.payload };
+
+    case SET_SHOW_ARCHIVED:
+      return { ...state, showArchived: action.payload };
 
     case SET_DEFAULT_LEVEL_FOR_LANG:
       return {

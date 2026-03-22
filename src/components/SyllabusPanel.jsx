@@ -9,6 +9,7 @@ import SyllabusCourseItem from './SyllabusPanel/SyllabusCourseItem';
 import StandaloneReaderItem from './SyllabusPanel/StandaloneReaderItem';
 import SeriesGroup from './SyllabusPanel/SeriesGroup';
 import ArchivedSection from './SyllabusPanel/ArchivedSection';
+import CompletedSection from './SyllabusPanel/CompletedSection';
 import SyncFooter from './SyllabusPanel/SyncFooter';
 import ConfirmDialog from './SyllabusPanel/ConfirmDialog';
 import './SyllabusPanel.css';
@@ -28,10 +29,11 @@ export default function SyllabusPanel({
   onShowNewForm,
   onShowSignIn,
 }) {
-  const { syllabi, syllabusProgress, standaloneReaders, generatedReaders, loading, pendingReaders, cloudUser, cloudSyncing, cloudLastSynced, lastModified } = useAppSelector(s => ({
+  const { syllabi, syllabusProgress, standaloneReaders, generatedReaders, loading, pendingReaders, cloudUser, cloudSyncing, cloudLastSynced, lastModified, showArchived } = useAppSelector(s => ({
     syllabi: s.syllabi, syllabusProgress: s.syllabusProgress, standaloneReaders: s.standaloneReaders,
     generatedReaders: s.generatedReaders, loading: s.loading, pendingReaders: s.pendingReaders,
     cloudUser: s.cloudUser, cloudSyncing: s.cloudSyncing, cloudLastSynced: s.cloudLastSynced, lastModified: s.lastModified,
+    showArchived: s.showArchived,
   }));
   const dispatch = useAppDispatch();
   const act = actions(dispatch);
@@ -72,6 +74,14 @@ export default function SyllabusPanel({
   }, [activeSyllabi, regularStandalone]);
   const multiLang = contentLanguages.size > 1;
 
+  // Helper: check if a syllabus has all lessons completed
+  function isSyllabusCompleted(s) {
+    const lessons = s.lessons || [];
+    if (lessons.length === 0) return false;
+    const completed = syllabusProgress[s.id]?.completedLessons || [];
+    return completed.length >= lessons.length;
+  }
+
   // ── Filtering & sorting ────────────────────
   const { filteredSyllabi, filteredStandalone } = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
@@ -97,6 +107,10 @@ export default function SyllabusPanel({
     return { filteredSyllabi: fSyllabi, filteredStandalone: fStandalone };
   }, [activeSyllabi, regularStandalone, viewMode, langFilter, searchQuery, sortBy]);
 
+  // Split into in-progress vs completed
+  const inProgressSyllabi = filteredSyllabi.filter(s => !isSyllabusCompleted(s));
+  const completedSyllabi = filteredSyllabi.filter(s => isSyllabusCompleted(s));
+
   // Group standalone readers by seriesId
   const { ungrouped, seriesGroups } = useMemo(() => {
     const groups = {};
@@ -114,6 +128,25 @@ export default function SyllabusPanel({
     }
     return { ungrouped: solo, seriesGroups: groups };
   }, [filteredStandalone]);
+
+  // Split ungrouped standalone into in-progress vs completed
+  const inProgressUngrouped = ungrouped.filter(r => !r.completedAt);
+  const completedUngrouped = ungrouped.filter(r => r.completedAt);
+
+  // Split series into in-progress vs all-completed
+  const { inProgressSeriesGroups, completedSeriesGroups } = useMemo(() => {
+    const inProg = {};
+    const done = [];
+    for (const [sId, episodes] of Object.entries(seriesGroups)) {
+      const allDone = episodes.every(r => r.completedAt);
+      if (allDone) {
+        done.push({ seriesId: sId, episodes });
+      } else {
+        inProg[sId] = episodes;
+      }
+    }
+    return { inProgressSeriesGroups: inProg, completedSeriesGroups: done };
+  }, [seriesGroups]);
 
   const [expandedSeries, setExpandedSeries] = useState({});
   const [archivedOpen, setArchivedOpen] = useState(false);
@@ -161,7 +194,9 @@ export default function SyllabusPanel({
   }
 
   const hasContent = activeSyllabi.length > 0 || regularStandalone.length > 0;
-  const hasFilteredContent = filteredSyllabi.length > 0 || filteredStandalone.length > 0;
+  const hasInProgressContent = inProgressSyllabi.length > 0 || Object.keys(inProgressSeriesGroups).length > 0 || inProgressUngrouped.length > 0;
+  const hasCompletedContent = completedSyllabi.length > 0 || completedSeriesGroups.length > 0 || completedUngrouped.length > 0;
+  const hasFilteredContent = hasInProgressContent || hasCompletedContent;
   const isFiltering = searchQuery || langFilter !== 'all' || viewMode !== 'all';
 
   const langOptions = [
@@ -229,7 +264,7 @@ export default function SyllabusPanel({
       {/* Content list */}
       {hasFilteredContent && (
         <div className="syllabus-panel__content-list">
-          {filteredSyllabi.map(s => (
+          {inProgressSyllabi.map(s => (
             <SyllabusCourseItem
               key={s.id}
               syllabus={s}
@@ -245,11 +280,11 @@ export default function SyllabusPanel({
             />
           ))}
 
-          {filteredSyllabi.length > 0 && filteredStandalone.length > 0 && (
+          {inProgressSyllabi.length > 0 && (Object.keys(inProgressSeriesGroups).length > 0 || inProgressUngrouped.length > 0) && (
             <div className="syllabus-panel__divider" />
           )}
 
-          {Object.entries(seriesGroups).map(([sId, episodes]) => (
+          {Object.entries(inProgressSeriesGroups).map(([sId, episodes]) => (
             <SeriesGroup
               key={`series-${sId}`}
               seriesId={sId}
@@ -260,12 +295,10 @@ export default function SyllabusPanel({
               isExpanded={expandedSeries[sId] ?? false}
               onToggle={toggleSeriesExpand}
               onSelect={onSelectStandalone}
-              onArchive={key => act.archiveStandaloneReader(key)}
-              onDelete={(key, topic) => requestDelete(key, topic, 'standalone')}
             />
           ))}
 
-          {ungrouped.map(r => (
+          {inProgressUngrouped.map(r => (
             <StandaloneReaderItem
               key={r.key}
               reader={r}
@@ -273,21 +306,33 @@ export default function SyllabusPanel({
               loading={loading}
               generatedReader={generatedReaders[r.key]}
               onSelect={onSelectStandalone}
-              onArchive={key => act.archiveStandaloneReader(key)}
-              onDelete={(key, topic) => requestDelete(key, topic, 'standalone')}
             />
           ))}
 
-          <ArchivedSection
-            archivedSyllabi={archivedSyllabi}
-            archivedStandalone={archivedRegularStandalone}
-            archivedOpen={archivedOpen}
-            setArchivedOpen={setArchivedOpen}
+          <CompletedSection
+            completedSyllabi={completedSyllabi}
+            completedStandalone={completedUngrouped}
+            completedSeries={completedSeriesGroups}
             generatedReaders={generatedReaders}
-            onUnarchiveSyllabus={id => act.unarchiveSyllabus(id)}
-            onUnarchiveReader={key => act.unarchiveStandaloneReader(key)}
-            onDelete={requestDelete}
+            syllabusProgress={syllabusProgress}
+            onSyllabusClick={handleSyllabusClick}
+            onSelectStandalone={onSelectStandalone}
+            standaloneKey={standaloneKey}
+            loading={loading}
           />
+
+          {showArchived && (
+            <ArchivedSection
+              archivedSyllabi={archivedSyllabi}
+              archivedStandalone={archivedRegularStandalone}
+              archivedOpen={archivedOpen}
+              setArchivedOpen={setArchivedOpen}
+              generatedReaders={generatedReaders}
+              onUnarchiveSyllabus={id => act.unarchiveSyllabus(id)}
+              onUnarchiveReader={key => act.unarchiveStandaloneReader(key)}
+              onDelete={requestDelete}
+            />
+          )}
         </div>
       )}
 

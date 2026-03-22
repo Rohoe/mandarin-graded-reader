@@ -64,6 +64,8 @@ export default {
   'settings.reading.translateQuestionsDesc': 'Afficher automatiquement les traductions de toutes les questions et options de r\u00e9ponse.',
   'settings.reading.readingSpeed': 'Vitesse de lecture',
   'settings.reading.readingSpeedDesc': 'Ajuster la vitesse de lecture de la synth\u00e8se vocale.',
+  'settings.reading.showArchived': 'Afficher les archives',
+  'settings.reading.showArchivedDesc': 'Afficher les lecteurs et programmes archivés dans la barre latérale.',
   'settings.reading.flashcardsPerDay': 'Nouvelles cartes par jour',
   'settings.reading.flashcardsPerDayDesc': 'Nombre maximum de nouvelles cartes introduites par session quotidienne.',
   'settings.reading.defaultLevels': 'Niveaux par d\u00e9faut',
@@ -230,6 +232,10 @@ export default {
   'archived.unarchiveReader': 'D\u00e9sarchiver le lecteur',
   'archived.deleteSyllabus': 'Supprimer le programme',
   'archived.syllabus': 'Programme',
+
+  // ── CompletedSection
+  'completed.title': 'Termin\u00e9s ({count})',
+
   'footer.syncing': 'Synchronisation\u2026',
   'footer.unsynced': 'Non synchronis\u00e9',
   'footer.synced': 'Synchronis\u00e9',
@@ -273,6 +279,10 @@ export default {
   'reader.actions.regenerate': 'Reg\u00e9n\u00e9rer',
   'reader.actions.regenerateReader': 'Reg\u00e9n\u00e9rer le lecteur',
   'reader.actions.nextEpisode': '\u00c9pisode suivant \u2192',
+  'reader.actions.dangerZone': 'zone dangereuse',
+  'reader.actions.archiveReader': 'Archiver le lecteur',
+  'reader.actions.deleteReader': 'Supprimer le lecteur',
+  'reader.actions.confirmDelete': 'Supprimer d\u00e9finitivement ce lecteur ?',
   'story.clickToTranslate': 'Cliquez pour traduire',
   'story.stop': 'Arr\u00eater',
   'story.listen': '\u00c9couter',

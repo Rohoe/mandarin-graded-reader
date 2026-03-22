@@ -1,6 +1,6 @@
 import { useT } from '../../i18n';
 
-export default function SeriesGroup({ seriesId, episodes, standaloneKey, loading, generatedReaders, isExpanded, onToggle, onSelect, onArchive, onDelete }) {
+export default function SeriesGroup({ seriesId, episodes, standaloneKey, loading, generatedReaders, isExpanded, onToggle, onSelect }) {
   const t = useT();
   const firstEp = episodes[0];
   const baseTopic = (firstEp.topic || '').replace(/^Continuation:\s*/i, '');
@@ -21,7 +21,7 @@ export default function SeriesGroup({ seriesId, episodes, standaloneKey, loading
             {episodes.length === 1 ? t('series.episodeOne') : t('series.episodes', { count: episodes.length })}
           </span>
         </span>
-        <span className="syllabus-panel__caret-btn">{isExpanded ? '▾' : '▸'}</span>
+        <span className="syllabus-panel__caret-btn">{isExpanded ? '\u25BE' : '\u25B8'}</span>
       </button>
       {isExpanded && (
         <ul className="syllabus-panel__nested-lessons syllabus-panel__list" role="list">
@@ -34,24 +34,12 @@ export default function SeriesGroup({ seriesId, episodes, standaloneKey, loading
                   disabled={loading}
                 >
                   <span className="syllabus-panel__lesson-text">
-                    <span className="syllabus-panel__lesson-num">{r.completedAt ? '✓' : (r.episodeNumber || '·')}</span>
+                    <span className="syllabus-panel__lesson-num">{r.completedAt ? '\u2713' : (r.episodeNumber || '\u00B7')}</span>
                     <span className="syllabus-panel__lesson-zh text-chinese">
                       {r.titleZh || generatedReaders[r.key]?.titleZh || r.topic}
                     </span>
                   </span>
                 </button>
-                <button
-                  className="btn btn-ghost btn-sm syllabus-panel__archive-btn"
-                  onClick={() => onArchive(r.key)}
-                  aria-label={t('standalone.archiveReader')}
-                  title={t('standalone.archiveTooltip')}
-                >⊟</button>
-                <button
-                  className="btn btn-ghost btn-sm syllabus-panel__delete-btn"
-                  onClick={() => onDelete(r.key, r.topic)}
-                  aria-label={t('standalone.deleteReader')}
-                  title={t('standalone.deleteTooltip')}
-                >×</button>
               </div>
             </li>
           ))}

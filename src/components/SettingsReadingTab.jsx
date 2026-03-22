@@ -158,6 +158,26 @@ export default function SettingsReadingTab({ state, act }) {
         </>
       )}
 
+      {/* Show Archived */}
+      <section className="settings-section">
+        <div className="settings-toggle-row">
+          <div>
+            <h3 className="settings-section__title form-label">{t('settings.reading.showArchived')}</h3>
+            <p className="settings-section__desc text-muted">{t('settings.reading.showArchivedDesc')}</p>
+          </div>
+          <button
+            role="switch"
+            aria-checked={state.showArchived}
+            className={`settings-toggle ${state.showArchived ? 'settings-toggle--on' : ''}`}
+            onClick={() => act.setShowArchived(!state.showArchived)}
+          >
+            <span className="settings-toggle__thumb" />
+          </button>
+        </div>
+      </section>
+
+      <hr className="divider" />
+
       {/* New flashcards per day */}
       <section className="settings-section">
         <h3 className="settings-section__title form-label">{t('settings.reading.flashcardsPerDay')}</h3>

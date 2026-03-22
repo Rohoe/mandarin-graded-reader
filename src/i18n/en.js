@@ -72,6 +72,8 @@ export default {
   'settings.reading.paragraphToolsDesc': 'Show inline TTS and translate buttons at the end of each paragraph.',
   'settings.reading.readingSpeed': 'Reading Speed',
   'settings.reading.readingSpeedDesc': 'Adjust the text-to-speech playback speed.',
+  'settings.reading.showArchived': 'Show Archived',
+  'settings.reading.showArchivedDesc': 'Show archived readers and syllabi in the sidebar.',
   'settings.reading.flashcardsPerDay': 'New Flashcards Per Day',
   'settings.reading.flashcardsPerDayDesc': 'Maximum number of new cards introduced in each daily session.',
   'settings.reading.defaultLevels': 'Default Levels',
@@ -265,6 +267,9 @@ export default {
   'archived.deleteSyllabus': 'Delete syllabus',
   'archived.syllabus': 'Syllabus',
 
+  // ── CompletedSection ────────────────────────────────────────────
+  'completed.title': 'Completed ({count})',
+
   // ── SyncFooter ────────────────────────────────────────────────
   'footer.syncing': 'Syncing…',
   'footer.unsynced': 'Unsynced',
@@ -323,6 +328,10 @@ export default {
   'reader.actions.regenerate': 'Regenerate',
   'reader.actions.regenerateReader': 'Regenerate reader',
   'reader.actions.nextEpisode': 'Next episode →',
+  'reader.actions.dangerZone': 'danger zone',
+  'reader.actions.archiveReader': 'Archive Reader',
+  'reader.actions.deleteReader': 'Delete Reader',
+  'reader.actions.confirmDelete': 'Permanently delete this reader?',
 
   // ── Story section ─────────────────────────────────────────────
   'story.clickToTranslate': 'Click to translate',

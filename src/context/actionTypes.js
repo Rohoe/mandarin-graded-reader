@@ -82,6 +82,7 @@ export const SET_STRUCTURED_OUTPUT = 'SET_STRUCTURED_OUTPUT';
 export const SET_NEW_CARDS_PER_DAY = 'SET_NEW_CARDS_PER_DAY';
 export const SET_DEFAULT_LEVEL_FOR_LANG = 'SET_DEFAULT_LEVEL_FOR_LANG';
 export const SET_NATIVE_LANG = 'SET_NATIVE_LANG';
+export const SET_SHOW_ARCHIVED = 'SET_SHOW_ARCHIVED';
 
 // ── Cloud ─────────────────────────────────────────────────────
 export const SET_CLOUD_USER = 'SET_CLOUD_USER';

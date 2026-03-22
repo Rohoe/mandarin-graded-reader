@@ -32,7 +32,7 @@ import ReaderPregenerate from './ReaderPregenerate';
 import ChatSummary from '../TutorChat/ChatSummary';
 import './ReaderView.css';
 
-export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar, onOpenSettings, onOpenChat }) {
+export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar, onOpenSettings, onOpenChat, onArchive, onDelete }) {
   const t = useT();
   // Track which lesson keys we've already tried to load from cache
   const loadedKeysRef = useRef(new Set());
@@ -448,6 +448,8 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
         lessonMeta={lessonMeta}
         isPending={isPending}
         langId={langId}
+        onArchive={onArchive}
+        onDelete={onDelete}
       />
     </article>
   );

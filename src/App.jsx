@@ -413,6 +413,16 @@ function AppShell() {
               onOpenSidebar={() => setSidebarOpen(true)}
               onOpenSettings={() => setShowSettings(true)}
               onOpenChat={() => setChatOpen(true)}
+              onArchive={standaloneKey ? () => {
+                act.archiveStandaloneReader(standaloneKey);
+                setStandaloneKey(null);
+                setSyllabusView('dashboard');
+              } : undefined}
+              onDelete={standaloneKey ? () => {
+                act.removeStandaloneReader(standaloneKey);
+                setStandaloneKey(null);
+                setSyllabusView('dashboard');
+              } : undefined}
             />
           )
         }

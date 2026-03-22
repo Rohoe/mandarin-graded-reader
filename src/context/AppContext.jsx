@@ -64,6 +64,7 @@ import {
   loadWeeklyGoals,
   loadDefaultLevels,
   loadNativeLang,
+  loadShowArchived,
   setDirectoryHandle,
 } from '../lib/storage';
 import {
@@ -140,6 +141,7 @@ function buildInitialState() {
     exportSentenceTrans: loadExportSentenceTrans(),
     useStructuredOutput: loadStructuredOutput(),
     newCardsPerDay:    loadNewCardsPerDay(),
+    showArchived:      loadShowArchived(),
     // Evicted reader keys (persisted)
     evictedReaderKeys: loadEvictedReaderKeys(),
     // Fetched models from provider APIs (ephemeral, not persisted)
