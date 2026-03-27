@@ -353,6 +353,9 @@ export function AppProvider({ children }) {
     // syncPausedRef stays true — resumed only on next sign-in + startup sync
   }
 
+  function pauseSync() { syncPausedRef.current = true; }
+  function resumeSync() { syncPausedRef.current = false; }
+
   // Stabilize context value — reference never changes, so useContext(AppContext)
   // alone won't trigger re-renders. Consumers use useAppSelector for fine-grained
   // subscriptions, or useApp() which reads via getSnapshot() for backward compat.
@@ -367,6 +370,8 @@ export function AppProvider({ children }) {
     restoreEvictedReader,
     performRestore,
     performRevertMerge,
+    pauseSync,
+    resumeSync,
   }), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (

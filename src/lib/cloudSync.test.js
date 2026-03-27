@@ -310,7 +310,7 @@ describe('mergeData', () => {
     expect(result.exported_words.length).toBe(1);
   });
 
-  it('merges overlapping syllabi with different lessons', () => {
+  it('merges overlapping syllabi — version with more lessons always wins', () => {
     const localState = {
       syllabi: [
         { id: 's1', topic: 'topic-a', lessons: [{ title: 'L1' }] },
@@ -335,9 +335,9 @@ describe('mergeData', () => {
     };
     const result = mergeData(localState, cloudData);
     expect(result.syllabi.length).toBe(3);
-    // Local wins for s1
+    // Cloud has more lessons for s1, so cloud version wins even with prefer:local
     const s1 = result.syllabi.find(s => s.id === 's1');
-    expect(s1.topic).toBe('topic-a');
+    expect(s1.lessons.length).toBe(2);
     expect(result.syllabi.find(s => s.id === 's2')).toBeTruthy();
     expect(result.syllabi.find(s => s.id === 's3')).toBeTruthy();
   });
@@ -569,9 +569,7 @@ describe('mergeData', () => {
     expect(result.exported_words.sort()).toEqual(['机场', '酒店']);
   });
 
-  it('default prefer:local keeps stale local data (pre-fix behavior)', () => {
-    // Documents the old buggy behavior as a regression guard:
-    // with prefer:local, mobile's stale syllabus wins over cloud's extended one.
+  it('version with more lessons wins regardless of prefer setting', () => {
     const localState = {
       syllabi: [{ id: 's1', lessons: [{ title: 'L1' }] }],
       syllabusProgress: {},
@@ -588,12 +586,50 @@ describe('mergeData', () => {
       learned_vocabulary: {},
       exported_words: [],
     };
-    // Default (prefer:local) — local's 1-lesson version wins
+    // Both prefer:local and prefer:cloud keep the 2-lesson version
+    // because extensions only append — the longer array is always newer
     const resultLocal = mergeData(localState, cloudData);
-    expect(resultLocal.syllabi[0].lessons.length).toBe(1);
-    // prefer:cloud — cloud's 2-lesson version wins
+    expect(resultLocal.syllabi[0].lessons.length).toBe(2);
     const resultCloud = mergeData(localState, cloudData, { prefer: 'cloud' });
     expect(resultCloud.syllabi[0].lessons.length).toBe(2);
+  });
+
+  it('extended syllabus is preserved when cloud has stale shorter version (bug fix)', () => {
+    // Scenario: user extended syllabus from 9 to 15 lessons locally.
+    // Cloud still has the old 9-lesson version (push failed or hasn't fired).
+    // On startup, cloud-preferred merge must NOT revert to 9 lessons.
+    const localState = {
+      syllabi: [{
+        id: 's1', topic: 'Chinese Food',
+        lessons: Array.from({ length: 15 }, (_, i) => ({ title: `L${i + 1}` })),
+      }],
+      syllabusProgress: {
+        s1: { lessonIndex: 9, completedLessons: [0, 1, 2, 3, 4, 5, 6, 7, 8] },
+      },
+      standaloneReaders: [],
+      generatedReaders: {},
+      learnedVocabulary: {},
+      exportedWords: new Set(),
+    };
+    const cloudData = {
+      syllabi: [{
+        id: 's1', topic: 'Chinese Food',
+        lessons: Array.from({ length: 9 }, (_, i) => ({ title: `L${i + 1}` })),
+      }],
+      syllabus_progress: {
+        s1: { lessonIndex: 8, completedLessons: [0, 1, 2, 3, 4, 5, 6, 7, 8] },
+      },
+      standalone_readers: [],
+      generated_readers: {},
+      learned_vocabulary: {},
+      exported_words: [],
+    };
+    const result = mergeData(localState, cloudData, { prefer: 'cloud' });
+    // Local's 15-lesson version must be preserved (not reverted to cloud's 9)
+    expect(result.syllabi[0].lessons.length).toBe(15);
+    // Progress: union of completed + max lessonIndex
+    expect(result.syllabus_progress.s1.lessonIndex).toBe(9);
+    expect(result.syllabus_progress.s1.completedLessons.length).toBe(9);
   });
 
   it('merges syllabus progress with max lessonIndex and union completedLessons', () => {
@@ -616,5 +652,181 @@ describe('mergeData', () => {
     const result = mergeData(localState, cloudData);
     expect(result.syllabus_progress.s1.lessonIndex).toBe(3);
     expect(result.syllabus_progress.s1.completedLessons.sort()).toEqual([0, 1, 2]);
+  });
+
+  // ── Standalone reader completedAt preservation ──────────────
+
+  it('standalone reader merge preserves completedAt when preferred side lacks it', () => {
+    const localState = {
+      syllabi: [],
+      syllabusProgress: {},
+      standaloneReaders: [{ key: 'sr1', topic: 'Food', completedAt: 1700000000 }],
+      generatedReaders: {},
+      learnedVocabulary: {},
+      exportedWords: new Set(),
+    };
+    const cloudData = {
+      syllabi: [],
+      syllabus_progress: {},
+      standalone_readers: [{ key: 'sr1', topic: 'Food' }],
+      generated_readers: {},
+      learned_vocabulary: {},
+      exported_words: [],
+    };
+    // Cloud wins but local has completedAt — local version should be kept
+    const result = mergeData(localState, cloudData, { prefer: 'cloud' });
+    expect(result.standalone_readers[0].completedAt).toBe(1700000000);
+  });
+
+  it('standalone reader merge prefers completedAt regardless of prefer setting', () => {
+    const localState = {
+      syllabi: [],
+      syllabusProgress: {},
+      standaloneReaders: [{ key: 'sr1', topic: 'Food' }],
+      generatedReaders: {},
+      learnedVocabulary: {},
+      exportedWords: new Set(),
+    };
+    const cloudData = {
+      syllabi: [],
+      syllabus_progress: {},
+      standalone_readers: [{ key: 'sr1', topic: 'Food', completedAt: 1700000000 }],
+      generated_readers: {},
+      learned_vocabulary: {},
+      exported_words: [],
+    };
+    // prefer:local but cloud has completedAt — cloud version should be kept
+    const result = mergeData(localState, cloudData);
+    expect(result.standalone_readers[0].completedAt).toBe(1700000000);
+  });
+
+  it('standalone reader merge uses preferred side when both have completedAt', () => {
+    const localState = {
+      syllabi: [],
+      syllabusProgress: {},
+      standaloneReaders: [{ key: 'sr1', topic: 'local-topic', completedAt: 1700000000 }],
+      generatedReaders: {},
+      learnedVocabulary: {},
+      exportedWords: new Set(),
+    };
+    const cloudData = {
+      syllabi: [],
+      syllabus_progress: {},
+      standalone_readers: [{ key: 'sr1', topic: 'cloud-topic', completedAt: 1800000000 }],
+      generated_readers: {},
+      learned_vocabulary: {},
+      exported_words: [],
+    };
+    const result = mergeData(localState, cloudData);
+    // Both have completedAt — local wins (default prefer:local)
+    expect(result.standalone_readers[0].topic).toBe('local-topic');
+  });
+
+  // ── Generated reader user data preservation ─────────────────
+
+  it('generated reader merge preserves gradingResults when preferred side lacks them', () => {
+    const localState = {
+      syllabi: [],
+      syllabusProgress: {},
+      standaloneReaders: [],
+      generatedReaders: {
+        key1: { story: 'local-story', gradingResults: { score: 80 }, userAnswers: ['a', 'b'] },
+      },
+      learnedVocabulary: {},
+      exportedWords: new Set(),
+    };
+    const cloudData = {
+      syllabi: [],
+      syllabus_progress: {},
+      standalone_readers: [],
+      generated_readers: {
+        key1: { story: 'cloud-story' },
+      },
+      learned_vocabulary: {},
+      exported_words: [],
+    };
+    const result = mergeData(localState, cloudData, { prefer: 'cloud' });
+    // Local has gradingResults + userAnswers (score 2), cloud has none (score 0)
+    expect(result.generated_readers.key1.gradingResults).toBeTruthy();
+    expect(result.generated_readers.key1.userAnswers).toBeTruthy();
+  });
+
+  it('generated reader merge preserves chatHistory when preferred side lacks it', () => {
+    const localState = {
+      syllabi: [],
+      syllabusProgress: {},
+      standaloneReaders: [],
+      generatedReaders: {
+        key1: { story: 'story', chatHistory: [{ role: 'user', content: 'hi' }], chatSummary: 'summary' },
+      },
+      learnedVocabulary: {},
+      exportedWords: new Set(),
+    };
+    const cloudData = {
+      syllabi: [],
+      syllabus_progress: {},
+      standalone_readers: [],
+      generated_readers: {
+        key1: { story: 'story' },
+      },
+      learned_vocabulary: {},
+      exported_words: [],
+    };
+    const result = mergeData(localState, cloudData, { prefer: 'cloud' });
+    expect(result.generated_readers.key1.chatHistory).toBeTruthy();
+    expect(result.generated_readers.key1.chatSummary).toBe('summary');
+  });
+
+  it('generated reader merge uses preferred side when it has more user data', () => {
+    const localState = {
+      syllabi: [],
+      syllabusProgress: {},
+      standaloneReaders: [],
+      generatedReaders: {
+        key1: { story: 'local', gradingResults: { score: 50 } },
+      },
+      learnedVocabulary: {},
+      exportedWords: new Set(),
+    };
+    const cloudData = {
+      syllabi: [],
+      syllabus_progress: {},
+      standalone_readers: [],
+      generated_readers: {
+        key1: { story: 'cloud', gradingResults: { score: 80 }, userAnswers: ['a'], chatHistory: [{}] },
+      },
+      learned_vocabulary: {},
+      exported_words: [],
+    };
+    // Cloud has more user data (score 3) vs local (score 1) — cloud wins with prefer:cloud
+    const result = mergeData(localState, cloudData, { prefer: 'cloud' });
+    expect(result.generated_readers.key1.story).toBe('cloud');
+    expect(result.generated_readers.key1.gradingResults.score).toBe(80);
+  });
+
+  it('generated reader merge uses preferred side when scores are equal', () => {
+    const localState = {
+      syllabi: [],
+      syllabusProgress: {},
+      standaloneReaders: [],
+      generatedReaders: {
+        key1: { story: 'local', gradingResults: { score: 50 } },
+      },
+      learnedVocabulary: {},
+      exportedWords: new Set(),
+    };
+    const cloudData = {
+      syllabi: [],
+      syllabus_progress: {},
+      standalone_readers: [],
+      generated_readers: {
+        key1: { story: 'cloud', gradingResults: { score: 80 } },
+      },
+      learned_vocabulary: {},
+      exported_words: [],
+    };
+    // Both have score 1 — preferred side (local, default) wins
+    const result = mergeData(localState, cloudData);
+    expect(result.generated_readers.key1.story).toBe('local');
   });
 });

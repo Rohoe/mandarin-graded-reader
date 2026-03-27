@@ -179,16 +179,37 @@ export function detectConflict(localState, cloudData) {
 // Union-merge local state and cloud data. Returns cloud-row shaped data
 // suitable for HYDRATE_FROM_CLOUD / MERGE_WITH_CLOUD.
 // prefer: 'local' (default) or 'cloud' — controls which side wins on conflict
+// Count user-interaction fields on a generated reader.
+// Used during merge to keep the version with more user work.
+function _readerUserDataScore(reader) {
+  if (!reader) return 0;
+  let score = 0;
+  if (reader.gradingResults) score++;
+  if (reader.userAnswers) score++;
+  if (reader.chatHistory?.length) score++;
+  if (reader.chatSummary) score++;
+  return score;
+}
+
 export function mergeData(localState, cloudData, { prefer = 'local' } = {}) {
   const cloudWins = prefer === 'cloud';
 
-  // Syllabi: union by id — preferred side inserted last so it wins on conflict
+  // Syllabi: union by id — preferred side wins on conflict, but always
+  // keep the version with more lessons (extensions only append, so the
+  // longer array is strictly newer and losing it drops user work).
   const syllabusMap = new Map();
   const [syllFirst, syllSecond] = cloudWins
     ? [localState.syllabi || [], cloudData.syllabi || []]
     : [cloudData.syllabi || [], localState.syllabi || []];
   for (const s of syllFirst) syllabusMap.set(s.id, s);
-  for (const s of syllSecond) syllabusMap.set(s.id, s);
+  for (const s of syllSecond) {
+    const existing = syllabusMap.get(s.id);
+    if (existing && (existing.lessons?.length || 0) > (s.lessons?.length || 0)) {
+      // Keep the version with more lessons — it was extended locally
+      continue;
+    }
+    syllabusMap.set(s.id, s);
+  }
   const syllabi = [...syllabusMap.values()];
 
   // Standalone readers: union by key (exclude demo readers)
@@ -200,7 +221,14 @@ export function mergeData(localState, cloudData, { prefer = 'local' } = {}) {
     if (!r.isDemo && !DEMO_READER_KEYS.has(r.key)) standaloneMap.set(r.key, r);
   }
   for (const r of srSecond) {
-    if (!r.isDemo && !DEMO_READER_KEYS.has(r.key)) standaloneMap.set(r.key, r);
+    if (!r.isDemo && !DEMO_READER_KEYS.has(r.key)) {
+      const existing = standaloneMap.get(r.key);
+      if (existing && existing.completedAt && !r.completedAt) {
+        // Keep the completed version — completedAt is a one-way transition
+        continue;
+      }
+      standaloneMap.set(r.key, r);
+    }
   }
   const standalone_readers = [...standaloneMap.values()];
 
@@ -229,7 +257,14 @@ export function mergeData(localState, cloudData, { prefer = 'local' } = {}) {
     if (!DEMO_READER_KEYS.has(k)) generated_readers[k] = v;
   }
   for (const [k, v] of Object.entries(grSecond)) {
-    if (!DEMO_READER_KEYS.has(k)) generated_readers[k] = v;
+    if (!DEMO_READER_KEYS.has(k)) {
+      const existing = generated_readers[k];
+      if (existing && _readerUserDataScore(existing) > _readerUserDataScore(v)) {
+        // Keep the version with more user interaction data
+        continue;
+      }
+      generated_readers[k] = v;
+    }
   }
 
   // Learned vocabulary: union by word; prefer newer dateAdded

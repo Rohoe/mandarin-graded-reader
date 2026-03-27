@@ -14,7 +14,7 @@ import SettingsAdvancedTab from './SettingsAdvancedTab';
 import './Settings.css';
 
 export default function Settings({ onClose }) {
-  const { state, dispatch, pickSaveFolder, removeSaveFolder, clearAllData, performRestore, performRevertMerge } = useApp();
+  const { state, dispatch, pickSaveFolder, removeSaveFolder, clearAllData, performRestore, performRevertMerge, pauseSync, resumeSync } = useApp();
   const act = actions(dispatch);
   const t = useT();
 
@@ -112,6 +112,7 @@ export default function Settings({ onClose }) {
   }
 
   async function handlePushToCloud() {
+    pauseSync();
     act.setCloudSyncing(true);
     try {
       await pushToCloud(state);
@@ -126,10 +127,12 @@ export default function Settings({ onClose }) {
       act.notify('error', t('notify.pushFailed', { error: e.message }));
     } finally {
       act.setCloudSyncing(false);
+      resumeSync();
     }
   }
 
   async function handlePullFromCloud() {
+    pauseSync();
     act.setCloudSyncing(true);
     try {
       const cloudData = await pullFromCloud();
@@ -152,6 +155,7 @@ export default function Settings({ onClose }) {
       act.notify('error', t('notify.pullFailed', { error: e.message }));
     } finally {
       act.setCloudSyncing(false);
+      resumeSync();
     }
   }
 
