@@ -335,6 +335,20 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
               />
             </div>
           )}
+          {!loading && !sourceTitle.trim() && (
+            <div className="topic-form__suggestions">
+              <span className="topic-form__suggestions-label">{t('topicForm.tryNarrative')}</span>
+              <div className="topic-form__suggestions-chips">
+                {(narrativeType === 'historical'
+                  ? [t('topicForm.narrativeSuggestHistory1'), t('topicForm.narrativeSuggestHistory2'), t('topicForm.narrativeSuggestHistory3')]
+                  : [t('topicForm.narrativeSuggestBook1'), t('topicForm.narrativeSuggestBook2'), t('topicForm.narrativeSuggestBook3')]
+                ).map((s, i) => (
+                  <button key={i} type="button" className="topic-form__suggestion-chip"
+                    onClick={() => setSourceTitle(s)}>{s}</button>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
 

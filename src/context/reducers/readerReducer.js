@@ -1,5 +1,5 @@
 import { loadReader } from '../../lib/storage';
-import { DEMO_READER_KEYS } from '../../lib/demoReader';
+import { DEMO_READER_KEYS, DEMO_NARRATIVE_SYLLABUS_ID } from '../../lib/demoReader';
 import {
   ADD_STANDALONE_READER, UPDATE_STANDALONE_READER_META,
   REMOVE_STANDALONE_READER, UNDO_REMOVE_STANDALONE_READER,
@@ -12,12 +12,17 @@ import {
 export function readerReducer(state, action) {
   switch (action.type) {
     case ADD_STANDALONE_READER: {
-      const withoutDemo = state.standaloneReaders.filter(r => !r.isDemo);
+      const hasDemoStandalone = state.standaloneReaders.some(r => r.isDemo);
+      const hasDemoSyllabus = state.syllabi.some(s => s.isDemo);
+      const withoutDemo = hasDemoStandalone ? state.standaloneReaders.filter(r => !r.isDemo) : state.standaloneReaders;
+      const filteredSyllabi = hasDemoSyllabus ? state.syllabi.filter(s => !s.isDemo) : state.syllabi;
       const filteredReaders = { ...state.generatedReaders };
-      if (withoutDemo.length !== state.standaloneReaders.length) {
+      const filteredProgress = { ...state.syllabusProgress };
+      if (hasDemoStandalone || hasDemoSyllabus) {
         for (const k of DEMO_READER_KEYS) delete filteredReaders[k];
       }
-      return { ...state, standaloneReaders: [action.payload, ...withoutDemo], generatedReaders: filteredReaders };
+      if (hasDemoSyllabus) delete filteredProgress[DEMO_NARRATIVE_SYLLABUS_ID];
+      return { ...state, standaloneReaders: [action.payload, ...withoutDemo], syllabi: filteredSyllabi, syllabusProgress: filteredProgress, generatedReaders: filteredReaders };
     }
 
     case UPDATE_STANDALONE_READER_META: {

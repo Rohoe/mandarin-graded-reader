@@ -14,7 +14,10 @@ export default function SyllabusCourseItem({ syllabus, progress, isActive, isExp
         onClick={() => onSyllabusClick(syllabus.id)}
       >
         <span className="syllabus-panel__item-text">
-          <span className="syllabus-panel__item-title text-chinese">{syllabus.topic}</span>
+          <span className="syllabus-panel__item-title text-chinese">
+            {syllabus.topic}
+            {syllabus.isDemo && <span className="text-muted" style={{ fontSize: 'var(--text-xs)', marginLeft: '0.35em' }}>{t('standalone.sample')}</span>}
+          </span>
           <span className="syllabus-panel__item-meta text-muted">
             {sLang.proficiency.name} {syllabus.level} · {completedSet.size}/{lessons.length}
           </span>

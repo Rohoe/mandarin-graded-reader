@@ -75,7 +75,7 @@ import {
   isSupported,
 } from '../lib/fileStorage';
 import { signOut, pushReaderToCloud, pullReaderFromCloud } from '../lib/cloudSync';
-import { DEMO_READER_KEY, DEMO_READERS } from '../lib/demoReader';
+import { DEMO_READER_KEY, DEMO_READERS, DEMO_NARRATIVE } from '../lib/demoReader';
 
 // ── Initial state ─────────────────────────────────────────────
 
@@ -86,14 +86,15 @@ function buildInitialState() {
   const standaloneReaders = normalizeStandaloneReaders(loadStandaloneReaders())
     .filter(r => !r.key.startsWith('plan_'));  // clean up orphaned plan readers
 
-  // Inject demo readers for new users (no syllabi, no standalone readers)
+  // Inject demo readers + narrative syllabus for new users
   const isEmpty = syllabi.length === 0 && standaloneReaders.length === 0;
   const demoStandalone = isEmpty
     ? DEMO_READERS.map(d => ({ key: d.key, topic: d.data.topic, level: d.data.level, langId: d.data.langId, createdAt: Date.now(), isDemo: true }))
     : standaloneReaders;
   const demoReaders = isEmpty
-    ? Object.fromEntries(DEMO_READERS.map(d => [d.key, d.data]))
+    ? { ...Object.fromEntries(DEMO_READERS.map(d => [d.key, d.data])), [DEMO_NARRATIVE.readerKey]: DEMO_NARRATIVE.readerData }
     : {};
+  const demoSyllabi = isEmpty ? [DEMO_NARRATIVE.syllabus] : syllabi;
 
   return {
     apiKey:            providerKeys[activeProvider] || '',
@@ -104,8 +105,10 @@ function buildInitialState() {
     customBaseUrl:     loadCustomBaseUrl(),
     customModelName:   loadCustomModelName(),
     compatPreset:      loadCompatPreset(),
-    syllabi,
-    syllabusProgress:  loadSyllabusProgress(),
+    syllabi:           demoSyllabi,
+    syllabusProgress:  isEmpty
+      ? { ...loadSyllabusProgress(), [DEMO_NARRATIVE.syllabus.id]: { lessonIndex: 0, completedLessons: [] } }
+      : loadSyllabusProgress(),
     standaloneReaders: demoStandalone,
     generatedReaders:  demoReaders,
     learnedVocabulary: loadLearnedVocabulary(),

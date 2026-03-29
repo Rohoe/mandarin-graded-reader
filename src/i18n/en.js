@@ -194,6 +194,13 @@ export default {
   'topicForm.sourcePeriod': 'Period / Era',
   'topicForm.sourcePeriodPlaceholder': 'e.g. 200 BCE \u2013 1400 CE, 1789\u20131799\u2026',
   'topicForm.narrativeTopicHint': 'Topic (optional if title provided above)',
+  'topicForm.tryNarrative': 'Try these',
+  'topicForm.narrativeSuggestHistory1': 'The Silk Road',
+  'topicForm.narrativeSuggestHistory2': 'The French Revolution',
+  'topicForm.narrativeSuggestHistory3': 'The Three Kingdoms Era',
+  'topicForm.narrativeSuggestBook1': 'Journey to the West',
+  'topicForm.narrativeSuggestBook2': 'Les Misérables',
+  'topicForm.narrativeSuggestBook3': 'Romance of the Three Kingdoms',
 
   // ── Generation Progress ───────────────────────────────────────
   'progress.connectingTo': 'Connecting to {provider}…',
