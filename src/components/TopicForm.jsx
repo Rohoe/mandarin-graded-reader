@@ -45,7 +45,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
 
   const isNarrative = mode === 'syllabus' && syllabusType === 'narrative';
   const minLessons = isNarrative ? 4 : 2;
-  const maxLessons = isNarrative ? 30 : 12;
+  const maxLessons = 12;
 
   useEffect(() => {
     if (isNarrative && lessonCount < 4) setLessonCount(10);

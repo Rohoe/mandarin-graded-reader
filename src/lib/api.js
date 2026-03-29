@@ -369,7 +369,15 @@ export async function generateNarrativeSyllabus(llmConfig, sourceMaterial, narra
   const nativeLangName = getNativeLang(nativeLang).name;
   const prompt = buildNarrativeSyllabusPrompt(langConfig, sourceMaterial, narrativeType, level, lessonCount, nativeLangName, { learnerProfile });
 
-  const raw = await callLLM(llmConfig, '', prompt, 4096);
+  const raw = await callLLM(llmConfig, '', prompt, 8192);
+  if (typeof raw === 'string' && raw.length > 0) {
+    const trimmed = raw.trim();
+    const lastChar = trimmed[trimmed.length - 1];
+    if (lastChar !== '}' && lastChar !== ']') {
+      console.error('[narrativeSyllabus] Response appears truncated. Last 200 chars:', trimmed.slice(-200));
+      throw new Error('Narrative syllabus response was truncated — try reducing the lesson count.');
+    }
+  }
   const result = parseJSONWithFallback(raw, 'LLM returned an invalid narrative syllabus format. Please try again.');
 
   return {
