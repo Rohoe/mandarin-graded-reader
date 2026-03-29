@@ -131,7 +131,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
       act.notify('success', t('notify.syllabusGenerated', { count: lessons.length, topic }));
       onNewSyllabus?.(newSyllabus.id);
     } catch (err) {
-      act.setError(err.message);
+      act.notify('error', t('notify.generationFailed', { error: err.message.slice(0, 80) }));
     } finally {
       act.setLoading(false);
     }
