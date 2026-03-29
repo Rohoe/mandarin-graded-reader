@@ -190,7 +190,10 @@ export function parseJSONWithFallback(raw, errorMessage) {
     } else {
       result = objResult || arrResult;
     }
-    if (!result) throw new Error(errorMessage);
+    if (!result) {
+      console.error('[parseJSONWithFallback] Failed to parse LLM response. Raw output:', raw);
+      throw new Error(errorMessage);
+    }
   }
   return result;
 }
