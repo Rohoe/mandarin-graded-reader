@@ -349,7 +349,7 @@ describe('generateReader', () => {
     expect(userMsg).toContain('E'.repeat(600));
   });
 
-  it('filters vocabulary by langId', async () => {
+  it('does not include raw vocabulary word lists in user message', async () => {
     let capturedBody;
     vi.stubGlobal('fetch', vi.fn((url, opts) => {
       capturedBody = JSON.parse(opts.body);
@@ -366,7 +366,8 @@ describe('generateReader', () => {
     };
     await generateReader(BASE_CONFIG, 'food', 3, learnedWords, 1200, 8192, null, 'zh');
     const userMsg = capturedBody.messages.find(m => m.role === 'user').content;
-    expect(userMsg).toContain('猫');
+    // Learner vocab state is handled by Learner Adaptation Context, not raw word lists
+    expect(userMsg).not.toContain('猫');
     expect(userMsg).not.toContain('한국');
   });
 
