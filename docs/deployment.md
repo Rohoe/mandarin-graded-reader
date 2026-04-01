@@ -12,7 +12,7 @@ Hosted at: `https://mandarin-graded-reader.vercel.app`
 
 ## Testing
 
-### Unit tests (Vitest) — 201 tests, 11 files
+### Unit tests (Vitest) — 738 tests, 29 files
 
 ```bash
 npm test              # run all
@@ -20,9 +20,9 @@ npm run test:watch    # watch mode
 npm run test:coverage # V8 coverage
 ```
 
-Files: `parser.test.js` (36), `reducer.test.js` (36), `stats.test.js` (21), `vocabNormalizer.test.js` (21), `storage.test.js` (21), `anki.test.js` (16), `prompts.test.js` (15), `cloudSync.test.js` (11), `llmConfig.test.js` (10), `api.test.js` (8), `providers.test.js` (6).
+Tests colocated with source (`*.test.js`/`*.test.jsx`). Covers lib, context/reducers, hooks, prompts, and i18n.
 
-### E2E tests (Playwright) — 22 tests, 6 specs
+### E2E tests (Playwright) — 48 tests, 9 specs
 
 ```bash
 npm run test:e2e      # run all
@@ -30,7 +30,7 @@ npm run test:e2e:ui   # UI mode
 ```
 
 Two projects: Desktop Chrome + iPhone 14. Dev server auto-starts.
-Specs: `demo-reader`, `settings`, `standalone-reader`, `syllabus-flow`, `flashcard`, `mobile`.
+Specs: `accessibility`, `demo-reader`, `flashcard`, `mobile`, `settings`, `standalone-reader`, `streaming`, `syllabus-flow`, `undo-delete`.
 API mocking: `page.route()` interception (`e2e/fixtures/mockApiResponses.js`).
 Helpers: `e2e/helpers/appHelpers.js` — `seedLocalStorage()`, `mockLLMApis()`.
 
@@ -44,6 +44,6 @@ Helpers: `e2e/helpers/appHelpers.js` — `seedLocalStorage()`, `mockLLMApis()`.
 - **API key security:** Keys in localStorage plain text (never synced). OK for personal use.
 - **localStorage quota:** ~5MB. LRU eviction after 30 cached / 30 days (only if backup exists). "Restore from backup" for evicted readers.
 - **File System Access API:** Chrome/Edge only. Graceful fallback.
-- **No streaming:** 15–30s generation with loading animation only.
+- **Streaming:** Anthropic-only; other providers show 15–30s loading animation.
 - **Mobile:** `viewport-fit=cover` + `env(safe-area-inset-*)`, `100dvh`, `pointerdown` for popover close, body scroll lock for sidebar overlay.
 - **Mobile sidebar:** Slide-in via `.app-sidebar` in `App.css`. `SyllabusPanel.css` must NOT apply `position: fixed` / `transform` on mobile.

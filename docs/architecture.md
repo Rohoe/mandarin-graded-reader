@@ -6,8 +6,8 @@
 
 | File | Description |
 |------|-------------|
-| `AppContext.jsx` | useReducer-based global store + AppProvider. Reducer composed from 8 domain slices in `reducers/`. Persistence extracted to `usePersistence` hook. Test-only exports: `_baseReducer`, `_reducer`, `_DATA_ACTIONS`. |
-| `reducers/` | 8 domain slice reducers: `providerReducer`, `syllabusReducer`, `readerReducer`, `vocabularyReducer`, `dataReducer`, `preferencesReducer`, `uiReducer`, `cloudReducer`. Each handles its own action types; composed in AppContext. |
+| `AppContext.jsx` | useReducer-based global store + AppProvider. Reducer composed from 10 domain slices in `reducers/`. Persistence extracted to `usePersistence` hook. Test-only exports: `_baseReducer`, `_reducer`, `_DATA_ACTIONS`. |
+| `reducers/` | 10 domain slice reducers: `providerReducer`, `syllabusReducer`, `readerReducer`, `vocabularyReducer`, `grammarReducer`, `dataReducer`, `preferencesReducer`, `uiReducer`, `cloudReducer`, `learningPathReducer`. Each handles its own action types; composed in AppContext. |
 | `usePersistence.js` | Persistence side-effects extracted from AppContext. useEffect hooks keyed to state slices. Uses `mountedRef` to skip initial-render saves. Generated readers use `prevReadersRef` diffing. |
 | `useApp.js` | useApp hook (separate file for ESLint fast-refresh rule) |
 | `actions.js` | actions() helper factory (separate file for same reason) |
@@ -16,7 +16,7 @@
 
 | File | Description |
 |------|-------------|
-| `languages.js` | Language config registry. Exports `getLang(id)`, `getAllLanguages()`, `getLessonTitle()`, `DEFAULT_LANG_ID`. Each lang: proficiency levels, scriptRegex, fonts, TTS config, romanization loader, decorative chars, prompt fragments. Supports `'zh'`, `'yue'`, `'ko'`. |
+| `languages.js` | Language config registry. Exports `getLang(id)`, `getAllLanguages()`, `getLessonTitle()`, `DEFAULT_LANG_ID`. Each lang: proficiency levels, scriptRegex, fonts, TTS config, romanization loader, decorative chars, prompt fragments. Supports `'zh'`, `'yue'`, `'ko'`, `'fr'`, `'es'`, `'en'`. |
 | `romanizer.js` | Async romanization loader. Lazy-loads pinyin-pro (zh), to-jyutping (yue), hangul-romanization (ko). Returns `{ romanize(text): string[] }`. |
 | `vocabNormalizer.js` | Migration helpers: `normalizeSyllabus()` adds langId + title_target. `normalizeVocabWord()` maps chinese/pinyin/english ↔ target/romanization/translation. |
 | `providers.js` | Provider registry. Exports `PROVIDERS`, `getProvider(id)`, `DEFAULT_PROVIDER`. Four providers: anthropic, openai, gemini, openai_compatible (presets: DeepSeek, Groq, custom). |
@@ -32,7 +32,8 @@
 | `parser.js` | Parses LLM markdown → structured data. `normalizeStructuredReader()` for JSON mode. Language-aware via `langConfig.scriptRegex`. Vocab items have both canonical (target/romanization/translation) and legacy (chinese/pinyin/english) fields. |
 | `anki.js` | Tab-separated Anki .txt export. UTF-8 BOM. Duplicate prevention via `exportedWords` Set. |
 | `supabase.js` | Supabase client singleton |
-| `demoReader.js` | Hardcoded HSK 2 demo reader. `DEMO_READER_KEY = 'standalone_demo'`. Injected when no data exists, removed on first generation. |
+| `demoReader.js` | Hardcoded demo content: HSK 2 Chinese reader, CEFR A2 English reader, 3-lesson Silk Road narrative syllabus. Injected when no data exists, removed on first generation. |
+| `learningPathSchema.js` | Learning Path import/export and validation. `validateImportedPath()` accepts wrapped or bare path objects. `exportPath()` for file download. `createLearningPath()` factory from wizard profile. Schema version 1. |
 | `cloudSync.js` | Cloud sync: `signInWithGoogle()`, `signInWithApple()`, `signOut()`, `pushToCloud()`, `pullFromCloud()`. `mergeData()` for union merge. `computeMergeSummary()` for human-readable diffs. `pushReaderToCloud` serialized via promise queue. |
 
 ### `src/prompts/`
@@ -44,6 +45,12 @@
 | `gradingPrompt.js` | `buildGradingSystem(langConfig, level)` |
 | `extendSyllabusPrompt.js` | `buildExtendSyllabusPrompt(langConfig, topic, level, existingLessons, additionalCount)` |
 | `tutorPrompt.js` | `buildTutorSystemPrompt(reader, lessonMeta, langConfig, nativeLangName)` — context-rich system prompt for AI tutor with story, vocabulary, grammar, quiz results, syllabus metadata |
+| `learningPathPrompt.js` | `buildLearningPathPrompt()` — generates 6–15 unit blueprint from learner profile. `buildExtendPathPrompt()` — extends existing path with N new units, injecting covered vocab/topics/grammar to prevent overlap. |
+| `narrativeSyllabusPrompt.js` | `buildNarrativeSyllabusPrompt()` — creates chaptered narrative syllabus from source material (literature/history). 6–12 lessons with character continuity, narrative position, and future arc planning. |
+| `narrativeReaderPrompt.js` | `buildNarrativeReaderSystem()` — generates a single chapter with character/plot continuity. `buildNarrativeContext()` — tiered context: deep (recent chapters), medium (summaries), compressed (running summary). |
+| `extendNarrativeSyllabusPrompt.js` | `buildExtendNarrativeSyllabusPrompt()` — adds N lessons to existing narrative, maintaining character registry, settings, and plot threads. |
+| `pathUnitSyllabusPrompt.js` | Expands a Learning Path unit into a full syllabus. Routes to narrative or standard prompt based on unit style. Injects overlap context from earlier path units. |
+| `portablePrompt.js` | `buildPortablePrompt()` — single-shot prompt for external LLMs to generate importable Learning Path JSON. `buildInteractiveDesignPrompt()` — conversational interview prompt. |
 
 ### `src/hooks/`
 
@@ -61,13 +68,17 @@
 | `useFocusTrap.js` | Focus trap for popovers. Keeps keyboard focus within the active popover until dismissed. |
 | `useReadingTimer.js` | Tracks reading time per reader. Starts on mount, pauses on blur/idle, resumes on focus. Stores `readingTime` (seconds) in reader state. |
 | `usePWA.js` | PWA install prompt hook. Captures `beforeinstallprompt` event, exposes `canInstall` flag and `promptInstall()` method. |
+| `useBufferedMarkdown.jsx` | Buffers streaming text with configurable delay (80ms default) to batch React renders. Converts markdown to React elements (headers, bold, italic, paragraphs). Strips code fences. Used in streaming preview during AI content generation. |
+| `useSentenceTranslate.js` | Manages sentence-level translation state for paragraphs. Tracks per-paragraph translations via Google Translate. |
+| `usePopoverDismissal.js` | Manages popover dismiss logic. Closes popovers on click-outside and Escape key. |
+| `useTextSelection.js` | Handles text selection within story content for drill-down word lookups. |
 
 ### `src/i18n/`
 
 | File | Description |
 |------|-------------|
 | `index.js` | `useT()` hook: reads `state.nativeLang` via `useAppSelector`, returns `t(key, params)`. Fallback chain: current lang → English → raw key. `{param}` interpolation via `replaceAll`. Also exports `getT(nativeLang)` for non-component contexts. |
-| `en.js` | English strings — source of truth for all ~400 keys. Flat dot-notation keys grouped by component area (e.g. `'settings.reading.darkMode'`). |
+| `en.js` | English strings — source of truth for all ~700 keys. Flat dot-notation keys grouped by component area (e.g. `'settings.reading.darkMode'`). |
 | `zh.js` | Simplified Chinese translations (complete) |
 | `yue.js` | Cantonese translations in Traditional Chinese (complete) |
 | `ko.js` | Korean translations (complete) |
@@ -91,6 +102,9 @@
   learnedVocabulary: { [targetWord]: { romanization, translation, langId, dateAdded, SRS fields... } },
   learnedGrammar: { ['langId::pattern']: { pattern, label, explanation, example, langId, dateAdded, SRS fields... } },
   exportedWords: Set<string>,
+
+  // Learning Paths
+  learningPaths: [{ id, title, description, units[], coverage: { vocab, topics, grammar }, continuationContext, archived, createdAt }],
 
   // Reading
   readingTime: { [lessonKey]: seconds },  // accumulated reading time per reader
