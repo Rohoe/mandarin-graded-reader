@@ -3,8 +3,10 @@ import { useAppSelector } from '../../context/useAppSelector';
 import { exportPath } from '../../lib/learningPathSchema';
 import { buildPortablePrompt, buildImportInstructions } from '../../prompts/portablePrompt';
 import { getLang } from '../../lib/languages';
+import { useT } from '../../i18n';
 
 export default function ExportModal({ pathId, onClose }) {
+  const t = useT();
   const { learningPaths, nativeLang } = useAppSelector(s => ({
     learningPaths: s.learningPaths,
     nativeLang: s.nativeLang || 'en',
@@ -25,7 +27,7 @@ export default function ExportModal({ pathId, onClose }) {
   }, [path]);
 
   if (!path) {
-    return <div>Path not found.</div>;
+    return <div>{t('path.notFound')}</div>;
   }
 
   function handleCopy(text) {
@@ -47,21 +49,21 @@ export default function ExportModal({ pathId, onClose }) {
 
   return (
     <div className="path-ie-modal">
-      <h3 className="path-ie-modal__title font-display">Export Learning Path</h3>
+      <h3 className="path-ie-modal__title font-display">{t('pathExport.title')}</h3>
 
       <div className="path-ie-modal__tabs">
         <button
           className={`path-ie-modal__tab ${tab === 'json' ? 'active' : ''}`}
           onClick={() => setTab('json')}
         >
-          JSON Export
+          {t('pathExport.tabJson')}
         </button>
         {portablePrompt && (
           <button
             className={`path-ie-modal__tab ${tab === 'prompt' ? 'active' : ''}`}
             onClick={() => setTab('prompt')}
           >
-            Portable Prompt
+            {t('pathExport.tabPrompt')}
           </button>
         )}
       </div>
@@ -75,9 +77,9 @@ export default function ExportModal({ pathId, onClose }) {
             rows={12}
           />
           <div className="path-ie-modal__actions">
-            <button className="btn btn-primary" onClick={handleDownload}>Download JSON</button>
+            <button className="btn btn-primary" onClick={handleDownload}>{t('pathExport.download')}</button>
             <button className="btn btn-ghost" onClick={() => handleCopy(exportedJson)}>
-              {copied ? 'Copied!' : 'Copy to Clipboard'}
+              {copied ? t('pathExport.copied') : t('pathExport.copy')}
             </button>
           </div>
         </>
@@ -86,8 +88,7 @@ export default function ExportModal({ pathId, onClose }) {
       {tab === 'prompt' && portablePrompt && (
         <>
           <p className="path-ie-modal__hint">
-            Copy this prompt and paste it into ChatGPT, Claude, or any LLM.
-            The output can be imported back into Mandu.
+            {t('pathExport.promptHint')}
           </p>
           <textarea
             className="input path-ie-modal__textarea"
@@ -100,14 +101,14 @@ export default function ExportModal({ pathId, onClose }) {
           </div>
           <div className="path-ie-modal__actions">
             <button className="btn btn-primary" onClick={() => handleCopy(portablePrompt)}>
-              {copied ? 'Copied!' : 'Copy Prompt'}
+              {copied ? t('pathExport.copied') : t('pathExport.copyPrompt')}
             </button>
           </div>
         </>
       )}
 
       <div className="path-ie-modal__actions">
-        <button className="btn btn-ghost" onClick={onClose}>Close</button>
+        <button className="btn btn-ghost" onClick={onClose}>{t('common.close')}</button>
       </div>
     </div>
   );

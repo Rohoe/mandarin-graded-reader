@@ -4,6 +4,7 @@ import { usePersistence } from './usePersistence';
 import { useFileStorageInit } from './hooks/useFileStorageInit';
 import { useCloudStartup } from './hooks/useCloudStartup';
 import { useStartupEviction } from './hooks/useStartupEviction';
+import { usePathCoverage } from './hooks/usePathCoverage';
 import { normalizeSyllabi, normalizeStandaloneReaders } from '../lib/vocabNormalizer';
 import { providerReducer } from './reducers/providerReducer';
 import { syllabusReducer } from './reducers/syllabusReducer';
@@ -238,6 +239,7 @@ export function AppProvider({ children }) {
   useFileStorageInit(dispatch);
   useCloudStartup(state, dispatch, stateRef, startupSyncDoneRef, syncPausedRef);
   useStartupEviction(state, dispatch, stateRef);
+  usePathCoverage(state, dispatch);
 
   // ── Persistence effects (extracted to custom hook) ──
   usePersistence(state, dispatch, stateRef);

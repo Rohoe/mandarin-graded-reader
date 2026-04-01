@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '../../context/useAppSelector';
 import { actions } from '../../context/actions';
-import { generatePathUnitSyllabus } from '../../lib/api';
+import { generatePathUnitSyllabus, extendLearningPathAPI } from '../../lib/api';
 import { buildLLMConfig, hasAnyUserKey } from '../../lib/llmConfig';
 import { buildLearnerProfile } from '../../lib/stats';
 import { getLang } from '../../lib/languages';
@@ -9,11 +9,6 @@ import { useT } from '../../i18n';
 import UnitCard from './UnitCard';
 import './PathHome.css';
 
-const STYLE_LABELS = {
-  thematic: 'Thematic',
-  narrative: 'Narrative',
-  exploratory: 'Exploratory',
-};
 
 export default function PathHome({ pathId, onSelectUnit, onOpenSettings, onShowImportExport }) {
   const { learningPaths, syllabi, syllabusProgress, generatedReaders, learnedVocabulary, learningActivity, providerKeys, activeProvider, activeModels, customBaseUrl, customModelName, compatPreset, maxTokens, nativeLang, loading } = useAppSelector(s => ({
@@ -30,9 +25,10 @@ export default function PathHome({ pathId, onSelectUnit, onOpenSettings, onShowI
   const path = learningPaths.find(p => p.id === pathId);
   const [generatingUnit, setGeneratingUnit] = useState(null);
   const [editingUnit, setEditingUnit] = useState(null);
+  const [extending, setExtending] = useState(false);
 
   if (!path) {
-    return <div className="path-home__empty">Learning path not found.</div>;
+    return <div className="path-home__empty">{t('path.notFound')}</div>;
   }
 
   const defaultKeyAvailable = !hasAnyUserKey(providerKeys) && !!import.meta.env.VITE_DEFAULT_GEMINI_KEY;
@@ -121,6 +117,32 @@ export default function PathHome({ pathId, onSelectUnit, onOpenSettings, onShowI
     setEditingUnit(null);
   }
 
+  async function handleExtendPath() {
+    setExtending(true);
+    try {
+      act.setLoading(true, t('pathHome.extendingPath'));
+      const llmConfig = buildLLMConfig({
+        apiKey: providerKeys[activeProvider], providerKeys, activeProvider,
+        activeModels, customBaseUrl, customModelName, compatPreset, maxTokens,
+      });
+      const result = await extendLearningPathAPI(llmConfig, path, 5, nativeLang);
+      const newUnits = (result.units || []).map((u, i) => ({
+        title: u.title, description: u.description,
+        estimatedLessons: u.estimatedLessons || u.estimated_lessons || 8,
+        style: u.style || 'thematic',
+        vocabThemes: u.vocabThemes || u.vocab_themes || [],
+        sourceMaterial: u.sourceMaterial || u.source_material || null,
+      }));
+      act.extendLearningPath(path.id, newUnits, result.continuationContext || null);
+      act.notify('success', `Added ${newUnits.length} new units`);
+    } catch (err) {
+      act.notify('error', `Failed to extend path: ${err.message.slice(0, 80)}`);
+    } finally {
+      act.setLoading(false, '');
+      setExtending(false);
+    }
+  }
+
   return (
     <div className="path-home">
       {/* Header */}
@@ -128,15 +150,24 @@ export default function PathHome({ pathId, onSelectUnit, onOpenSettings, onShowI
         <h2 className="path-home__title font-display">{path.title}</h2>
         <p className="path-home__description">{path.description}</p>
         <div className="path-home__stats">
-          <span>{path.units.length} units</span>
-          <span>{completedUnits} completed</span>
-          <span>{completedLessons}/{totalLessons} lessons</span>
-          {path.coveredVocab.length > 0 && <span>{path.coveredVocab.length} vocab covered</span>}
+          <span>{t('pathHome.units', { count: path.units.length })}</span>
+          <span>{t('pathHome.completed', { count: completedUnits })}</span>
+          <span>{t('pathHome.lessonsProgress', { done: completedLessons, total: totalLessons })}</span>
+          {path.coveredVocab.length > 0 && <span>{t('pathHome.vocabCovered', { count: path.coveredVocab.length })}</span>}
         </div>
         <div className="path-home__actions-row">
+          {canGenerate && (
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={handleExtendPath}
+              disabled={loading || extending}
+            >
+              {extending ? t('pathHome.extendingPath') : t('pathHome.extendPath')}
+            </button>
+          )}
           {onShowImportExport && (
             <button className="btn btn-ghost btn-sm" onClick={() => onShowImportExport(path.id)}>
-              Export / Share
+              {t('path.exportShare')}
             </button>
           )}
         </div>

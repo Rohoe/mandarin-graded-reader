@@ -47,7 +47,7 @@ export default function PathWizard({ onCreated, onCancel, onOpenSettings, onShow
     setError(null);
 
     try {
-      act.setLoading(true, 'Designing your learning path...');
+      act.setLoading(true, t('pathWizard.generating'));
       const llmConfig = buildLLMConfig({
         apiKey: providerKeys[activeProvider], providerKeys, activeProvider,
         activeModels, customBaseUrl, customModelName, compatPreset, maxTokens,
@@ -92,7 +92,7 @@ export default function PathWizard({ onCreated, onCancel, onOpenSettings, onShow
       ...prev,
       units: [...prev.units, {
         unitIndex: prev.units.length,
-        title: 'New Unit',
+        title: t('pathWizard.newUnit') || 'New Unit',
         description: '',
         estimatedLessons: 8,
         style: 'thematic',

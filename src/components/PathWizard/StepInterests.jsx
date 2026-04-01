@@ -1,6 +1,8 @@
 import { getLang } from '../../lib/languages';
+import { useT } from '../../i18n';
 
 export default function StepInterests({ profile, onChange, languages, canGenerate, onGenerate, onCancel, onOpenSettings, onShowImport }) {
+  const t = useT();
   const langConfig = getLang(profile.langId);
   const profLevels = langConfig.proficiency.levels;
 
@@ -12,12 +14,12 @@ export default function StepInterests({ profile, onChange, languages, canGenerat
 
   return (
     <form className="path-wizard__step" onSubmit={handleSubmit}>
-      <h3 className="path-wizard__step-title font-display">What do you want to learn?</h3>
-      <p className="path-wizard__step-subtitle">Tell us about your interests and we'll design a personalized learning path.</p>
+      <h3 className="path-wizard__step-title font-display">{t('pathWizard.stepTitle')}</h3>
+      <p className="path-wizard__step-subtitle">{t('pathWizard.stepSubtitle')}</p>
 
       {/* Language selector */}
       <fieldset className="path-wizard__field">
-        <legend className="path-wizard__label">Target Language</legend>
+        <legend className="path-wizard__label">{t('pathWizard.targetLang')}</legend>
         <div className="path-wizard__lang-pills">
           {languages.map(lang => (
             <button
@@ -56,11 +58,11 @@ export default function StepInterests({ profile, onChange, languages, canGenerat
 
       {/* Interests */}
       <fieldset className="path-wizard__field">
-        <legend className="path-wizard__label">Interests & Topics</legend>
+        <legend className="path-wizard__label">{t('pathWizard.interests')}</legend>
         <input
           type="text"
           className="input"
-          placeholder="e.g., Chinese history, cooking, business, the ShiJi, K-drama..."
+          placeholder={t('pathWizard.interestsPlaceholder')}
           value={profile.interests}
           onChange={e => onChange('interests', e.target.value)}
         />
@@ -68,30 +70,30 @@ export default function StepInterests({ profile, onChange, languages, canGenerat
 
       {/* Goals */}
       <fieldset className="path-wizard__field">
-        <legend className="path-wizard__label">Learning Goals</legend>
+        <legend className="path-wizard__label">{t('pathWizard.goals')}</legend>
         <select
           className="input"
           value={profile.goals}
           onChange={e => onChange('goals', e.target.value)}
         >
-          <option value="">Select a goal (optional)</option>
-          <option value="reading fluency">Reading fluency</option>
-          <option value="vocabulary building">Vocabulary building</option>
-          <option value="cultural knowledge">Cultural knowledge</option>
-          <option value="exam preparation">Exam preparation</option>
-          <option value="read specific texts">Read specific texts</option>
-          <option value="general proficiency">General proficiency</option>
+          <option value="">{t('pathWizard.goalsPlaceholder')}</option>
+          <option value="reading fluency">{t('pathWizard.goalReading')}</option>
+          <option value="vocabulary building">{t('pathWizard.goalVocab')}</option>
+          <option value="cultural knowledge">{t('pathWizard.goalCulture')}</option>
+          <option value="exam preparation">{t('pathWizard.goalExam')}</option>
+          <option value="read specific texts">{t('pathWizard.goalTexts')}</option>
+          <option value="general proficiency">{t('pathWizard.goalGeneral')}</option>
         </select>
       </fieldset>
 
       {/* Commitment */}
       <fieldset className="path-wizard__field">
-        <legend className="path-wizard__label">Time Commitment</legend>
+        <legend className="path-wizard__label">{t('pathWizard.commitment')}</legend>
         <div className="path-wizard__commitment-row">
           {[
-            { value: 'casual', label: 'Casual', desc: '1-2x/week' },
-            { value: 'regular', label: 'Regular', desc: '3-4x/week' },
-            { value: 'intensive', label: 'Intensive', desc: '5+/week' },
+            { value: 'casual', label: t('pathWizard.casual'), desc: t('pathWizard.casualDesc') },
+            { value: 'regular', label: t('pathWizard.regular'), desc: t('pathWizard.regularDesc') },
+            { value: 'intensive', label: t('pathWizard.intensive'), desc: t('pathWizard.intensiveDesc') },
           ].map(opt => (
             <button
               key={opt.value}
@@ -108,10 +110,10 @@ export default function StepInterests({ profile, onChange, languages, canGenerat
 
       {/* Free text */}
       <fieldset className="path-wizard__field">
-        <legend className="path-wizard__label">Anything else? (optional)</legend>
+        <legend className="path-wizard__label">{t('pathWizard.anythingElse')}</legend>
         <textarea
           className="input path-wizard__textarea"
-          placeholder="Describe specific books, topics, goals, or what you've already studied..."
+          placeholder={t('pathWizard.freeTextPlaceholder')}
           value={profile.freeText}
           onChange={e => onChange('freeText', e.target.value)}
           rows={3}
@@ -122,7 +124,7 @@ export default function StepInterests({ profile, onChange, languages, canGenerat
       <div className="path-wizard__actions">
         {!canGenerate && (
           <p className="path-wizard__api-hint">
-            Set up an API key in <button type="button" className="btn-link" onClick={onOpenSettings}>Settings</button> to generate learning paths.
+            {t('pathWizard.apiHint', { link: '' })}<button type="button" className="btn-link" onClick={onOpenSettings}>{t('common.settings')}</button>
           </p>
         )}
         <button
@@ -130,14 +132,14 @@ export default function StepInterests({ profile, onChange, languages, canGenerat
           className="btn btn-primary path-wizard__submit"
           disabled={!canGenerate || (!profile.interests.trim() && !profile.freeText.trim())}
         >
-          Design My Learning Path
+          {t('pathWizard.designButton')}
         </button>
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
-          Cancel
+          {t('common.cancel')}
         </button>
         {onShowImport && (
           <button type="button" className="btn-link path-wizard__import-link" onClick={onShowImport}>
-            or import from JSON
+            {t('pathWizard.importLink')}
           </button>
         )}
       </div>

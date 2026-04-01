@@ -537,7 +537,7 @@ function AppShell() {
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="path-wizard-title" onClick={e => e.target === e.currentTarget && setShowPathWizard(false)}>
           <div className="settings-panel card card-padded fade-in" style={{ maxWidth: '600px' }}>
             <div className="settings-panel__header">
-              <h2 id="path-wizard-title" className="font-display" style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>Create Learning Path</h2>
+              <h2 id="path-wizard-title" className="font-display" style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>{t('path.createTitle')}</h2>
               <button className="btn btn-ghost settings-panel__close" onClick={() => setShowPathWizard(false)} aria-label={t('common.close')}>✕</button>
             </div>
             <PathWizard
@@ -555,7 +555,7 @@ function AppShell() {
         <div className="modal-overlay" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowPathImport(false)}>
           <div className="settings-panel card card-padded fade-in" style={{ maxWidth: '600px' }}>
             <div className="settings-panel__header">
-              <h2 className="font-display" style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>Import</h2>
+              <h2 className="font-display" style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>{t('path.importTitle')}</h2>
               <button className="btn btn-ghost settings-panel__close" onClick={() => setShowPathImport(false)} aria-label={t('common.close')}>✕</button>
             </div>
             <ImportModal

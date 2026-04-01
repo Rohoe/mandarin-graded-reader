@@ -1,15 +1,11 @@
 import { useState } from 'react';
-
-const STYLE_LABELS = {
-  thematic: 'Thematic',
-  narrative: 'Narrative',
-  exploratory: 'Exploratory',
-};
+import { useT } from '../../i18n';
 
 export default function UnitCard({
   unit, index, progress, isGenerating, isEditing, canGenerate,
   onGenerate, onClick, onEdit, onSaveEdit, onCancelEdit,
 }) {
+  const t = useT();
   const hasContent = unit.syllabusId && progress.status !== 'pending';
   const isCompleted = progress.status === 'completed';
 
@@ -38,16 +34,16 @@ export default function UnitCard({
           <div className="unit-card__desc">{unit.description}</div>
           <div className="unit-card__meta">
             <span className={`unit-card__style unit-card__style--${unit.style}`}>
-              {STYLE_LABELS[unit.style] || unit.style}
+              {t(`unitStyle.${unit.style}`) || unit.style}
             </span>
             {hasContent && (
               <span className="unit-card__progress-text">
-                {progress.completed}/{progress.total} lessons
+                {t('pathHome.lessonsProgress', { done: progress.completed, total: progress.total })}
               </span>
             )}
             {!hasContent && (
               <span className="unit-card__progress-text">
-                ~{unit.estimatedLessons || 8} lessons
+                {t('pathHome.estimatedLessons', { count: unit.estimatedLessons || 8 })}
               </span>
             )}
             {unit.vocabThemes?.length > 0 && (
@@ -72,22 +68,22 @@ export default function UnitCard({
                 onClick={(e) => { e.stopPropagation(); onGenerate(); }}
                 disabled={!canGenerate}
               >
-                Generate
+                {t('pathHome.generate')}
               </button>
               <button
                 className="btn btn-sm btn-ghost"
                 onClick={(e) => { e.stopPropagation(); onEdit(); }}
-                aria-label="Edit unit"
+                aria-label={t('pathWizard.edit')}
               >
-                Edit
+                {t('pathWizard.edit')}
               </button>
             </>
           )}
           {isGenerating && (
-            <span className="unit-card__generating">Generating...</span>
+            <span className="unit-card__generating">{t('pathHome.generating')}</span>
           )}
           {hasContent && !isCompleted && (
-            <span className="unit-card__continue">Continue →</span>
+            <span className="unit-card__continue">{t('pathHome.continue')}</span>
           )}
         </div>
       </div>
@@ -96,6 +92,7 @@ export default function UnitCard({
 }
 
 function UnitEditor({ unit, onSave, onCancel }) {
+  const t = useT();
   const [title, setTitle] = useState(unit.title);
   const [description, setDescription] = useState(unit.description);
   const [style, setStyle] = useState(unit.style);
@@ -105,27 +102,27 @@ function UnitEditor({ unit, onSave, onCancel }) {
     <div className="unit-card__editor">
       <input
         type="text" className="input" value={title}
-        onChange={e => setTitle(e.target.value)} placeholder="Unit title"
+        onChange={e => setTitle(e.target.value)} placeholder={t('pathWizard.unitTitle')}
       />
       <textarea
         className="input" value={description}
-        onChange={e => setDescription(e.target.value)} placeholder="Description" rows={2}
+        onChange={e => setDescription(e.target.value)} placeholder={t('pathWizard.unitDesc')} rows={2}
       />
       <div className="unit-card__editor-row">
         <select className="input" value={style} onChange={e => setStyle(e.target.value)}>
-          <option value="thematic">Thematic</option>
-          <option value="narrative">Narrative</option>
-          <option value="exploratory">Exploratory</option>
+          <option value="thematic">{t('unitStyle.thematic')}</option>
+          <option value="narrative">{t('unitStyle.narrative')}</option>
+          <option value="exploratory">{t('unitStyle.exploratory')}</option>
         </select>
         <label className="unit-card__editor-label">
-          Lessons:
+          {t('pathWizard.lessons')}
           <input type="number" className="input" min={4} max={12} value={estimatedLessons}
             onChange={e => setEstimatedLessons(Number(e.target.value))} style={{ width: '4rem' }} />
         </label>
       </div>
       <div className="unit-card__editor-actions">
-        <button className="btn btn-primary btn-sm" onClick={() => onSave({ title, description, style, estimatedLessons })}>Save</button>
-        <button className="btn btn-ghost btn-sm" onClick={onCancel}>Cancel</button>
+        <button className="btn btn-primary btn-sm" onClick={() => onSave({ title, description, style, estimatedLessons })}>{t('pathWizard.save')}</button>
+        <button className="btn btn-ghost btn-sm" onClick={onCancel}>{t('common.cancel')}</button>
       </div>
     </div>
   );

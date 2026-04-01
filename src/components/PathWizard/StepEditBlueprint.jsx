@@ -1,29 +1,25 @@
 import { useState } from 'react';
-
-const STYLE_LABELS = {
-  thematic: 'Thematic',
-  narrative: 'Narrative',
-  exploratory: 'Exploratory',
-};
+import { useT } from '../../i18n';
 
 export default function StepEditBlueprint({
   blueprint, onEditTitle, onEditDescription, onEditUnit,
   onRemoveUnit, onMoveUnit, onAddUnit, onConfirm, onBack, onRegenerate,
 }) {
+  const t = useT();
   const [editingUnit, setEditingUnit] = useState(null);
 
   const totalLessons = blueprint.units.reduce((sum, u) => sum + (u.estimatedLessons || 8), 0);
 
   return (
     <div className="path-wizard__step">
-      <h3 className="path-wizard__step-title font-display">Review Your Learning Path</h3>
+      <h3 className="path-wizard__step-title font-display">{t('pathWizard.reviewTitle')}</h3>
       <p className="path-wizard__step-subtitle">
-        Edit titles, reorder, or remove units. You can always add more later.
+        {t('pathWizard.reviewSubtitle')}
       </p>
 
       {/* Path title & description */}
       <div className="path-wizard__field">
-        <label className="path-wizard__label">Path Title</label>
+        <label className="path-wizard__label">{t('pathWizard.pathTitle')}</label>
         <input
           type="text"
           className="input"
@@ -33,7 +29,7 @@ export default function StepEditBlueprint({
       </div>
 
       <div className="path-wizard__field">
-        <label className="path-wizard__label">Description</label>
+        <label className="path-wizard__label">{t('pathWizard.description')}</label>
         <textarea
           className="input path-wizard__textarea"
           value={blueprint.description}
@@ -44,8 +40,8 @@ export default function StepEditBlueprint({
 
       {/* Stats bar */}
       <div className="path-wizard__stats">
-        <span>{blueprint.units.length} units</span>
-        <span>~{totalLessons} lessons total</span>
+        <span>{t('pathWizard.unitsCount', { count: blueprint.units.length })}</span>
+        <span>{t('pathWizard.lessonsTotal', { count: totalLessons })}</span>
       </div>
 
       {/* Unit cards */}
@@ -67,9 +63,9 @@ export default function StepEditBlueprint({
                     <div className="path-wizard__unit-desc">{unit.description}</div>
                     <div className="path-wizard__unit-meta">
                       <span className={`path-wizard__style-badge path-wizard__style-badge--${unit.style}`}>
-                        {STYLE_LABELS[unit.style] || unit.style}
+                        {t(`unitStyle.${unit.style}`) || unit.style}
                       </span>
-                      <span>~{unit.estimatedLessons || 8} lessons</span>
+                      <span>{t('pathHome.estimatedLessons', { count: unit.estimatedLessons || 8 })}</span>
                       {unit.vocabThemes?.length > 0 && (
                         <span className="path-wizard__unit-themes">
                           {unit.vocabThemes.slice(0, 3).join(', ')}
@@ -81,10 +77,10 @@ export default function StepEditBlueprint({
               </div>
               {editingUnit !== i && (
                 <div className="path-wizard__unit-actions">
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => onMoveUnit(i, -1)} disabled={i === 0} aria-label="Move up">↑</button>
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => onMoveUnit(i, 1)} disabled={i === blueprint.units.length - 1} aria-label="Move down">↓</button>
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditingUnit(i)} aria-label="Edit">Edit</button>
-                  <button type="button" className="btn btn-ghost btn-sm path-wizard__unit-remove" onClick={() => onRemoveUnit(i)} aria-label="Remove" disabled={blueprint.units.length <= 1}>✕</button>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => onMoveUnit(i, -1)} disabled={i === 0} aria-label={t('pathWizard.moveUp')}>↑</button>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => onMoveUnit(i, 1)} disabled={i === blueprint.units.length - 1} aria-label={t('pathWizard.moveDown')}>↓</button>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditingUnit(i)} aria-label={t('pathWizard.edit')}>{t('pathWizard.edit')}</button>
+                  <button type="button" className="btn btn-ghost btn-sm path-wizard__unit-remove" onClick={() => onRemoveUnit(i)} aria-label={t('pathWizard.remove')} disabled={blueprint.units.length <= 1}>✕</button>
                 </div>
               )}
             </div>
@@ -93,17 +89,17 @@ export default function StepEditBlueprint({
       </div>
 
       <button type="button" className="btn btn-ghost path-wizard__add-unit" onClick={onAddUnit}>
-        + Add Unit
+        {t('pathWizard.addUnit')}
       </button>
 
       {/* Actions */}
       <div className="path-wizard__actions">
         <button type="button" className="btn btn-primary path-wizard__submit" onClick={onConfirm}>
-          Create Learning Path ({blueprint.units.length} units)
+          {t('pathWizard.confirmButton', { count: blueprint.units.length })}
         </button>
         <div className="path-wizard__secondary-actions">
-          <button type="button" className="btn btn-ghost" onClick={onBack}>Back</button>
-          <button type="button" className="btn btn-ghost" onClick={onRegenerate}>Regenerate</button>
+          <button type="button" className="btn btn-ghost" onClick={onBack}>{t('pathWizard.back')}</button>
+          <button type="button" className="btn btn-ghost" onClick={onRegenerate}>{t('pathWizard.regenerate')}</button>
         </div>
       </div>
     </div>
@@ -111,6 +107,7 @@ export default function StepEditBlueprint({
 }
 
 function UnitEditor({ unit, onSave, onCancel }) {
+  const t = useT();
   const [title, setTitle] = useState(unit.title);
   const [description, setDescription] = useState(unit.description);
   const [style, setStyle] = useState(unit.style);
@@ -123,23 +120,23 @@ function UnitEditor({ unit, onSave, onCancel }) {
         className="input"
         value={title}
         onChange={e => setTitle(e.target.value)}
-        placeholder="Unit title"
+        placeholder={t('pathWizard.unitTitle')}
       />
       <textarea
         className="input path-wizard__textarea"
         value={description}
         onChange={e => setDescription(e.target.value)}
-        placeholder="Unit description"
+        placeholder={t('pathWizard.unitDesc')}
         rows={2}
       />
       <div className="path-wizard__unit-editor-row">
         <select className="input" value={style} onChange={e => setStyle(e.target.value)}>
-          <option value="thematic">Thematic</option>
-          <option value="narrative">Narrative</option>
-          <option value="exploratory">Exploratory</option>
+          <option value="thematic">{t('unitStyle.thematic')}</option>
+          <option value="narrative">{t('unitStyle.narrative')}</option>
+          <option value="exploratory">{t('unitStyle.exploratory')}</option>
         </select>
         <label className="path-wizard__inline-label">
-          Lessons:
+          {t('pathWizard.lessons')}
           <input
             type="number"
             className="input"
@@ -152,8 +149,8 @@ function UnitEditor({ unit, onSave, onCancel }) {
         </label>
       </div>
       <div className="path-wizard__unit-editor-actions">
-        <button type="button" className="btn btn-primary btn-sm" onClick={() => onSave({ title, description, style, estimatedLessons })}>Save</button>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={onCancel}>Cancel</button>
+        <button type="button" className="btn btn-primary btn-sm" onClick={() => onSave({ title, description, style, estimatedLessons })}>{t('pathWizard.save')}</button>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={onCancel}>{t('common.cancel')}</button>
       </div>
     </div>
   );

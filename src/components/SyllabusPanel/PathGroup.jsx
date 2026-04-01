@@ -1,4 +1,5 @@
 import { getLang } from '../../lib/languages';
+import { useT } from '../../i18n';
 
 const STATUS_ICONS = {
   pending: '○',
@@ -10,6 +11,7 @@ const STATUS_ICONS = {
 export default function PathGroup({
   path, isActive, isExpanded, onPathClick, onToggleExpand, onUnitClick,
 }) {
+  const t = useT();
   const langConfig = getLang(path.langId);
   const completedCount = path.units.filter(u => u.status === 'completed').length;
   const generatedCount = path.units.filter(u => u.syllabusId).length;
@@ -29,7 +31,7 @@ export default function PathGroup({
         <button
           className="path-group__expand btn-unstyled"
           onClick={(e) => { e.stopPropagation(); onToggleExpand(path.id); }}
-          aria-label={isExpanded ? 'Collapse' : 'Expand'}
+          aria-label={isExpanded ? t('path.collapse') : t('path.expand')}
         >
           {isExpanded ? '▾' : '▸'}
         </button>

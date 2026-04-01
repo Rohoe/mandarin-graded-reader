@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useAppDispatch } from '../../context/useAppSelector';
 import { actions } from '../../context/actions';
 import { validateImportedPath } from '../../lib/learningPathSchema';
+import { useT } from '../../i18n';
 
 export default function ImportModal({ onClose, onImported }) {
   const dispatch = useAppDispatch();
   const act = actions(dispatch);
+  const t = useT();
   const [jsonText, setJsonText] = useState('');
   const [errors, setErrors] = useState([]);
   const [preview, setPreview] = useState(null);
@@ -18,7 +20,7 @@ export default function ImportModal({ onClose, onImported }) {
     try {
       parsed = JSON.parse(jsonText.trim());
     } catch {
-      setErrors(['Invalid JSON. Please check your input.']);
+      setErrors([t('pathImport.invalidJson')]);
       return;
     }
 
@@ -53,14 +55,14 @@ export default function ImportModal({ onClose, onImported }) {
 
   return (
     <div className="path-ie-modal">
-      <h3 className="path-ie-modal__title font-display">Import Learning Path</h3>
+      <h3 className="path-ie-modal__title font-display">{t('pathImport.title')}</h3>
       <p className="path-ie-modal__hint">
-        Paste JSON from an LLM or upload a .json file exported from Mandu.
+        {t('pathImport.hint')}
       </p>
 
       <div className="path-ie-modal__upload-row">
         <label className="btn btn-ghost btn-sm">
-          Upload JSON
+          {t('pathImport.upload')}
           <input type="file" accept=".json" onChange={handleFileUpload} style={{ display: 'none' }} />
         </label>
       </div>
@@ -69,7 +71,7 @@ export default function ImportModal({ onClose, onImported }) {
         className="input path-ie-modal__textarea"
         value={jsonText}
         onChange={e => { setJsonText(e.target.value); setErrors([]); setPreview(null); }}
-        placeholder='Paste learning path JSON here...'
+        placeholder={t('pathImport.placeholder')}
         rows={10}
       />
 
@@ -103,15 +105,15 @@ export default function ImportModal({ onClose, onImported }) {
             onClick={handleValidate}
             disabled={!jsonText.trim()}
           >
-            Validate
+            {t('pathImport.validate')}
           </button>
         )}
         {preview && (
           <button className="btn btn-primary" onClick={handleImport}>
-            Import Learning Path
+            {t('pathImport.import')}
           </button>
         )}
-        <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+        <button className="btn btn-ghost" onClick={onClose}>{t('common.cancel')}</button>
       </div>
     </div>
   );

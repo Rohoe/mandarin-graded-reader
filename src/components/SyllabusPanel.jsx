@@ -235,9 +235,9 @@ export default function SyllabusPanel({
           <button
             className="btn btn-ghost btn-sm syllabus-panel__new-btn"
             onClick={() => onShowPathWizard?.()}
-            title="Create a guided learning path"
+            title={t('path.newPathTooltip')}
           >
-            + Path
+            {t('path.newPathButton')}
           </button>
         </div>
       </div>
@@ -279,7 +279,7 @@ export default function SyllabusPanel({
       {/* Learning Paths */}
       {learningPaths.filter(p => !p.archived).length > 0 && (
         <div className="syllabus-panel__content-list">
-          <div className="syllabus-panel__section-label">Learning Paths</div>
+          <div className="syllabus-panel__section-label">{t('path.sectionLabel')}</div>
           {learningPaths.filter(p => !p.archived).map(path => (
             <PathGroup
               key={path.id}
