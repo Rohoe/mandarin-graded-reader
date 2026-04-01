@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
-import { UNDO_REMOVE_SYLLABUS, UNDO_REMOVE_STANDALONE_READER } from '../context/actionTypes';
+import { UNDO_REMOVE_SYLLABUS, UNDO_REMOVE_STANDALONE_READER, UNDO_REMOVE_LEARNING_PATH } from '../context/actionTypes';
 import { getLang, getAllLanguages } from '../lib/languages';
 import { useT } from '../i18n';
 import SyllabusToolbar from './SyllabusPanel/SyllabusToolbar';
@@ -29,7 +29,6 @@ export default function SyllabusPanel({
   onGoHome,
   onShowNewForm,
   onShowSignIn,
-  onShowPathWizard,
   onSelectPath,
   activePathId,
 }) {
@@ -70,13 +69,17 @@ export default function SyllabusPanel({
     }
   }, [activeSyllabusId, standaloneKey]);
 
+  const activePaths = learningPaths.filter(p => !p.archived);
+  const archivedPaths = learningPaths.filter(p => p.archived);
+
   // Detect if content spans multiple languages
   const contentLanguages = useMemo(() => {
     const langs = new Set();
     for (const s of activeSyllabi) langs.add(s.langId || 'zh');
     for (const r of regularStandalone) langs.add(r.langId || 'zh');
+    for (const p of activePaths) langs.add(p.langId || 'zh');
     return langs;
-  }, [activeSyllabi, regularStandalone]);
+  }, [activeSyllabi, regularStandalone, activePaths]);
   const multiLang = contentLanguages.size > 1;
 
   // Helper: check if a syllabus has all lessons completed
@@ -87,34 +90,48 @@ export default function SyllabusPanel({
     return completed.length >= lessons.length;
   }
 
+  // Helper: check if a learning path has all units completed
+  function isPathCompleted(path) {
+    const units = path.units || [];
+    if (units.length === 0) return false;
+    return units.every(u => u.status === 'completed');
+  }
+
   // ── Filtering & sorting ────────────────────
-  const { filteredSyllabi, filteredStandalone } = useMemo(() => {
+  const { filteredSyllabi, filteredStandalone, filteredPaths } = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     let fSyllabi = activeSyllabi;
     let fStandalone = regularStandalone;
-    if (viewMode === 'readers') { fSyllabi = []; }
+    let fPaths = activePaths;
+    if (viewMode === 'readers') { fSyllabi = []; fPaths = []; }
     if (viewMode === 'courses') { fStandalone = []; }
     if (langFilter !== 'all') {
       fSyllabi = fSyllabi.filter(s => (s.langId || 'zh') === langFilter);
       fStandalone = fStandalone.filter(r => (r.langId || 'zh') === langFilter);
+      fPaths = fPaths.filter(p => (p.langId || 'zh') === langFilter);
     }
     if (query) {
       fSyllabi = fSyllabi.filter(s => s.topic.toLowerCase().includes(query));
       fStandalone = fStandalone.filter(r => r.topic.toLowerCase().includes(query));
+      fPaths = fPaths.filter(p => (p.title || '').toLowerCase().includes(query));
     }
     if (sortBy === 'alpha') {
       fSyllabi = [...fSyllabi].sort((a, b) => a.topic.localeCompare(b.topic));
       fStandalone = [...fStandalone].sort((a, b) => a.topic.localeCompare(b.topic));
+      fPaths = [...fPaths].sort((a, b) => (a.title || '').localeCompare(b.title || ''));
     } else {
       fSyllabi = [...fSyllabi].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       fStandalone = [...fStandalone].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      fPaths = [...fPaths].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     }
-    return { filteredSyllabi: fSyllabi, filteredStandalone: fStandalone };
-  }, [activeSyllabi, regularStandalone, viewMode, langFilter, searchQuery, sortBy]);
+    return { filteredSyllabi: fSyllabi, filteredStandalone: fStandalone, filteredPaths: fPaths };
+  }, [activeSyllabi, regularStandalone, activePaths, viewMode, langFilter, searchQuery, sortBy]);
 
   // Split into in-progress vs completed
   const inProgressSyllabi = filteredSyllabi.filter(s => !isSyllabusCompleted(s));
   const completedSyllabi = filteredSyllabi.filter(s => isSyllabusCompleted(s));
+  const inProgressPaths = filteredPaths.filter(p => !isPathCompleted(p));
+  const completedPaths = filteredPaths.filter(p => isPathCompleted(p));
 
   // Group standalone readers by seriesId
   const { ungrouped, seriesGroups } = useMemo(() => {
@@ -168,6 +185,9 @@ export default function SyllabusPanel({
     if (confirmPending.type === 'syllabus') {
       act.removeSyllabus(confirmPending.id);
       act.notify('success', `Deleted "${confirmPending.label}"`, { type: UNDO_REMOVE_SYLLABUS, label: 'Undo' });
+    } else if (confirmPending.type === 'path') {
+      act.removeLearningPath(confirmPending.id);
+      act.notify('success', `Deleted "${confirmPending.label}"`, { type: UNDO_REMOVE_LEARNING_PATH, label: 'Undo' });
     } else {
       act.removeStandaloneReader(confirmPending.id);
       act.notify('success', `Deleted "${confirmPending.label}"`, { type: UNDO_REMOVE_STANDALONE_READER, label: 'Undo' });
@@ -199,9 +219,9 @@ export default function SyllabusPanel({
     setExpandedSeries(prev => ({ ...prev, [sId]: !prev[sId] }));
   }
 
-  const hasContent = activeSyllabi.length > 0 || regularStandalone.length > 0;
-  const hasInProgressContent = inProgressSyllabi.length > 0 || Object.keys(inProgressSeriesGroups).length > 0 || inProgressUngrouped.length > 0;
-  const hasCompletedContent = completedSyllabi.length > 0 || completedSeriesGroups.length > 0 || completedUngrouped.length > 0;
+  const hasContent = activeSyllabi.length > 0 || regularStandalone.length > 0 || activePaths.length > 0;
+  const hasInProgressContent = inProgressSyllabi.length > 0 || Object.keys(inProgressSeriesGroups).length > 0 || inProgressUngrouped.length > 0 || inProgressPaths.length > 0;
+  const hasCompletedContent = completedSyllabi.length > 0 || completedSeriesGroups.length > 0 || completedUngrouped.length > 0 || completedPaths.length > 0;
   const hasFilteredContent = hasInProgressContent || hasCompletedContent;
   const isFiltering = searchQuery || langFilter !== 'all' || viewMode !== 'all';
 
@@ -224,22 +244,13 @@ export default function SyllabusPanel({
             </span>
           )}
         </h1>
-        <div className="syllabus-panel__new-group">
-          <button
-            className="btn btn-ghost btn-sm syllabus-panel__new-btn"
-            onClick={() => onShowNewForm?.()}
-            title={t('sidebar.newTooltip')}
-          >
-            {t('sidebar.new')}
-          </button>
-          <button
-            className="btn btn-ghost btn-sm syllabus-panel__new-btn"
-            onClick={() => onShowPathWizard?.()}
-            title={t('path.newPathTooltip')}
-          >
-            {t('path.newPathButton')}
-          </button>
-        </div>
+        <button
+          className="btn btn-ghost btn-sm syllabus-panel__new-btn"
+          onClick={() => onShowNewForm?.()}
+          title={t('sidebar.newTooltip')}
+        >
+          {t('sidebar.new')}
+        </button>
       </div>
 
       {/* Home button */}
@@ -276,11 +287,10 @@ export default function SyllabusPanel({
         </div>
       )}
 
-      {/* Learning Paths */}
-      {learningPaths.filter(p => !p.archived).length > 0 && (
+      {/* Content list */}
+      {hasFilteredContent && (
         <div className="syllabus-panel__content-list">
-          <div className="syllabus-panel__section-label">{t('path.sectionLabel')}</div>
-          {learningPaths.filter(p => !p.archived).map(path => (
+          {inProgressPaths.map(path => (
             <PathGroup
               key={path.id}
               path={path}
@@ -295,12 +305,11 @@ export default function SyllabusPanel({
               onUnitClick={(syllabusId) => onSwitchSyllabus?.(syllabusId)}
             />
           ))}
-        </div>
-      )}
 
-      {/* Content list */}
-      {hasFilteredContent && (
-        <div className="syllabus-panel__content-list">
+          {inProgressPaths.length > 0 && inProgressSyllabi.length > 0 && (
+            <div className="syllabus-panel__divider" />
+          )}
+
           {inProgressSyllabi.map(s => (
             <SyllabusCourseItem
               key={s.id}
@@ -350,12 +359,15 @@ export default function SyllabusPanel({
             completedSyllabi={completedSyllabi}
             completedStandalone={completedUngrouped}
             completedSeries={completedSeriesGroups}
+            completedPaths={completedPaths}
             generatedReaders={generatedReaders}
             syllabusProgress={syllabusProgress}
             onSyllabusClick={handleSyllabusClick}
             onSelectStandalone={onSelectStandalone}
+            onSelectPath={onSelectPath}
             standaloneKey={standaloneKey}
             activeSyllabusId={activeSyllabusId}
+            activePathId={activePathId}
             loading={loading}
           />
 
@@ -363,11 +375,13 @@ export default function SyllabusPanel({
             <ArchivedSection
               archivedSyllabi={archivedSyllabi}
               archivedStandalone={archivedRegularStandalone}
+              archivedPaths={archivedPaths}
               archivedOpen={archivedOpen}
               setArchivedOpen={setArchivedOpen}
               generatedReaders={generatedReaders}
               onUnarchiveSyllabus={id => act.unarchiveSyllabus(id)}
               onUnarchiveReader={key => act.unarchiveStandaloneReader(key)}
+              onUnarchivePath={id => act.unarchiveLearningPath(id)}
               onDelete={requestDelete}
             />
           )}

@@ -11,10 +11,11 @@ import { mapReaderVocabulary } from '../lib/vocabMapper';
 import { mapReaderGrammar } from '../lib/grammarMapper';
 import { getLang, getAllLanguages, DEFAULT_LANG_ID } from '../lib/languages';
 import { useT } from '../i18n';
+import PathWizard from './PathWizard';
 import GenerationProgress from './GenerationProgress';
 import './TopicForm.css';
 
-export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStandaloneGenerating, onCancel, onOpenSettings }) {
+export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStandaloneGenerating, onCancel, onOpenSettings, onPathCreated, onShowImport }) {
   const { apiKey, defaultLevels, learnedVocabulary, generatedReaders, syllabi, standaloneReaders, learningActivity, maxTokens, loading, providerKeys, activeProvider, activeModels, customBaseUrl, nativeLang } = useAppSelector(s => ({
     apiKey: s.apiKey, defaultLevels: s.defaultLevels || {}, nativeLang: s.nativeLang || 'en',
     learnedVocabulary: s.learnedVocabulary, generatedReaders: s.generatedReaders, syllabi: s.syllabi, standaloneReaders: s.standaloneReaders || [], learningActivity: s.learningActivity,
@@ -33,7 +34,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
   const [langId, setLangId]       = useState(DEFAULT_LANG_ID);
   const defaultLevelForLang = defaultLevels[langId] ?? 2;
   const [level, setLevel]         = useState(defaultLevelForLang);
-  const [mode, setMode]           = useState('syllabus'); // 'syllabus' | 'standalone'
+  const [mode, setMode]           = useState('syllabus'); // 'syllabus' | 'standalone' | 'path'
   const [lessonCount, setLessonCount] = useState(6);
   const [readerLength, setReaderLength] = useState(1200);
   const [syllabusType, setSyllabusType] = useState('standard'); // 'standard' | 'narrative'
@@ -204,8 +205,25 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
         >
           {t('topicForm.singleReader')}
         </button>
+        <button
+          type="button"
+          role="radio"
+          aria-checked={mode === 'path'}
+          className={`topic-form__mode-btn ${mode === 'path' ? 'active' : ''}`}
+          onClick={() => setMode('path')}
+        >
+          {t('topicForm.learningPath')}
+        </button>
       </div>
 
+      {mode === 'path' ? (
+        <PathWizard
+          onCreated={onPathCreated}
+          onCancel={onCancel}
+          onOpenSettings={onOpenSettings}
+          onShowImport={onShowImport}
+        />
+      ) : (<>
       {mode === 'syllabus' && (
         <div className="form-group">
           <label className="form-label">{t('topicForm.syllabusType')}</label>
@@ -485,6 +503,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
           </button>
         </div>
       )}
+      </>)}
     </form>
   );
 }

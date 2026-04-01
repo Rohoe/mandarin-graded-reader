@@ -21,7 +21,6 @@ import FlashcardReview from './components/FlashcardReview';
 import SignInModal from './components/SignInModal';
 import TutorChat from './components/TutorChat';
 import HomeView from './components/HomeView';
-import PathWizard from './components/PathWizard';
 import PathHome from './components/PathHome';
 import ImportModal from './components/PathImportExport/ImportModal';
 import ExportModal from './components/PathImportExport/ExportModal';
@@ -83,7 +82,6 @@ function AppShell() {
   const [sidebarOpen,    setSidebarOpen]     = useState(false);
   const [chatOpen,       setChatOpen]       = useState(false);
   const [flashcardConfig, setFlashcardConfig] = useState(null);
-  const [showPathWizard, setShowPathWizard] = useState(false);
   const [showPathImport, setShowPathImport] = useState(false);
   const [showPathExport, setShowPathExport] = useState(null); // pathId or null
   const [activePathId,   setActivePathId]   = useState(null);
@@ -172,11 +170,6 @@ function AppShell() {
     setSyllabusView('pathHome');
     setStandaloneKey(null);
     setSidebarOpen(false);
-  }
-
-  function handlePathCreated(pathId) {
-    setShowPathWizard(false);
-    handleSelectPath(pathId);
   }
 
   function handlePathSelectUnit(syllabusId) {
@@ -404,7 +397,6 @@ function AppShell() {
             onGoHome={() => { setSyllabusView('dashboard'); setStandaloneKey(null); setSidebarOpen(false); }}
             onShowNewForm={() => setShowNewForm(true)}
             onShowSignIn={() => setShowSignIn(true)}
-            onShowPathWizard={() => setShowPathWizard(true)}
             onSelectPath={handleSelectPath}
             activePathId={activePathId}
           />
@@ -527,24 +519,8 @@ function AppShell() {
               onStandaloneGenerating={handleStandaloneGenerating}
               onCancel={() => setShowNewForm(false)}
               onOpenSettings={() => { setShowNewForm(false); setShowSettings(true); }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* ─ Path wizard modal ────────────────────────────── */}
-      {showPathWizard && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="path-wizard-title" onClick={e => e.target === e.currentTarget && setShowPathWizard(false)}>
-          <div className="settings-panel card card-padded fade-in" style={{ maxWidth: '600px' }}>
-            <div className="settings-panel__header">
-              <h2 id="path-wizard-title" className="font-display" style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>{t('path.createTitle')}</h2>
-              <button className="btn btn-ghost settings-panel__close" onClick={() => setShowPathWizard(false)} aria-label={t('common.close')}>✕</button>
-            </div>
-            <PathWizard
-              onCreated={handlePathCreated}
-              onCancel={() => setShowPathWizard(false)}
-              onOpenSettings={() => { setShowPathWizard(false); setShowSettings(true); }}
-              onShowImport={() => { setShowPathWizard(false); setShowPathImport(true); }}
+              onPathCreated={(pathId) => { setShowNewForm(false); handleSelectPath(pathId); }}
+              onShowImport={() => { setShowNewForm(false); setShowPathImport(true); }}
             />
           </div>
         </div>

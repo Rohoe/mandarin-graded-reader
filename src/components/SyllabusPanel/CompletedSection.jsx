@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { getLang } from '../../lib/languages';
 import { useT } from '../../i18n';
 
-export default function CompletedSection({ completedSyllabi, completedStandalone, completedSeries, generatedReaders, syllabusProgress, onSyllabusClick, onSelectStandalone, standaloneKey, activeSyllabusId, loading }) {
+export default function CompletedSection({ completedSyllabi, completedStandalone, completedSeries, completedPaths = [], generatedReaders, syllabusProgress, onSyllabusClick, onSelectStandalone, onSelectPath, standaloneKey, activeSyllabusId, activePathId, loading }) {
   const t = useT();
   const [open, setOpen] = useState(false);
-  const count = completedSyllabi.length + completedStandalone.length + completedSeries.length;
+  const count = completedSyllabi.length + completedStandalone.length + completedSeries.length + completedPaths.length;
   if (count === 0) return null;
 
   return (
@@ -42,6 +42,22 @@ export default function CompletedSection({ completedSyllabi, completedStandalone
               </div>
             );
           })}
+          {completedPaths.map(path => (
+            <div key={path.id} className="syllabus-panel__item-group">
+              <button
+                className={`syllabus-panel__item-btn ${activePathId === path.id ? 'syllabus-panel__item-btn--active' : ''}`}
+                onClick={() => onSelectPath?.(path.id)}
+                disabled={loading}
+              >
+                <span className="syllabus-panel__item-text">
+                  <span className="syllabus-panel__item-title">📚 {path.title}</span>
+                  <span className="syllabus-panel__item-meta text-muted">
+                    {path.units?.length || 0} units
+                  </span>
+                </span>
+              </button>
+            </div>
+          ))}
           {completedSeries.map(({ seriesId, episodes }) => {
             const firstEp = episodes[0];
             const baseTopic = (firstEp.topic || '').replace(/^Continuation:\s*/i, '');

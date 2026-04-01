@@ -161,6 +161,7 @@ export default {
   // ── TopicForm ─────────────────────────────────────────────────
   'topicForm.courseSyllabus': 'Course Syllabus',
   'topicForm.singleReader': 'Single Reader',
+  'topicForm.learningPath': 'Learning Path',
   'topicForm.language': 'Language',
   'topicForm.topic': 'Topic',
   'topicForm.level': '{profName} Level',
@@ -628,9 +629,6 @@ export default {
   'path.createTitle': 'Create Learning Path',
   'path.importTitle': 'Import',
   'path.exportTitle': 'Export',
-  'path.newPathButton': '+ Path',
-  'path.newPathTooltip': 'Create a guided learning path',
-  'path.sectionLabel': 'Learning Paths',
   'path.notFound': 'Learning path not found.',
   'path.exportShare': 'Export / Share',
   'path.collapse': 'Collapse',
