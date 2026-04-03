@@ -34,21 +34,25 @@ export default function SyncFooter({ cloudUser, cloudSyncing, cloudLastSynced, l
         className="syllabus-panel__footer-btn"
         onClick={onShowFlashcards}
         title={t('footer.flashcardReview')}
+        aria-label={t('footer.flashcardReview')}
       >
-        <Hexagon size={14} /> {t('footer.cards')}
+        <Hexagon size={15} />
       </button>
       <button
         className="syllabus-panel__footer-btn"
         onClick={onShowStats}
         title={t('footer.learningStats')}
+        aria-label={t('footer.learningStats')}
       >
-        <BarChart3 size={14} /> {t('footer.stats')}
+        <BarChart3 size={15} />
       </button>
       <button
         className="syllabus-panel__footer-btn"
         onClick={onShowSettings}
+        title={t('footer.settings')}
+        aria-label={t('footer.settings')}
       >
-        <SettingsIcon size={14} /> {t('footer.settings')}
+        <SettingsIcon size={15} />
       </button>
     </div>
   );

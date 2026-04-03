@@ -45,14 +45,13 @@ export default function StepInterests({ profile, onChange, languages, canGenerat
     });
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
+  function handleSubmit() {
     if (!profile.interests.trim() && !profile.freeText.trim()) return;
     onGenerate();
   }
 
   return (
-    <form className="path-wizard__step" onSubmit={handleSubmit}>
+    <div className="path-wizard__step">
       <h3 className="path-wizard__step-title font-display">{t('pathWizard.stepTitle')}</h3>
       <p className="path-wizard__step-subtitle">{t('pathWizard.stepSubtitle')}</p>
 
@@ -169,9 +168,10 @@ export default function StepInterests({ profile, onChange, languages, canGenerat
           </p>
         )}
         <button
-          type="submit"
+          type="button"
           className="btn btn-primary path-wizard__submit"
           disabled={!canGenerate || (!profile.interests.trim() && !profile.freeText.trim())}
+          onClick={handleSubmit}
         >
           {t('pathWizard.designButton')}
         </button>
@@ -257,6 +257,6 @@ export default function StepInterests({ profile, onChange, languages, canGenerat
           </div>
         )}
       </div>
-    </form>
+    </div>
   );
 }
