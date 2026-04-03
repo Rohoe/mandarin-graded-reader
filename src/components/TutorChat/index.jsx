@@ -14,6 +14,7 @@ import { useTutorChat } from '../../hooks/useTutorChat';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import ChatSummary from './ChatSummary';
+import { X } from 'lucide-react';
 import './TutorChat.css';
 
 export default function TutorChat({ lessonKey, reader, lessonMeta, syllabus, onClose }) {
@@ -121,7 +122,7 @@ export default function TutorChat({ lessonKey, reader, lessonMeta, syllabus, onC
                 </button>
               </>
             )}
-            <button className="btn btn-ghost btn-sm tutor-chat__close" onClick={onClose} aria-label={t('common.close')}>✕</button>
+            <button className="btn btn-ghost btn-sm tutor-chat__close" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
           </div>
         </div>
 

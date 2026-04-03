@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { checkMilestones } from '../lib/milestones';
+import { fireCelebration, getMilestoneIntensity } from '../lib/confetti';
 
 /**
  * Checks for newly-earned milestones and manages a display queue.
@@ -40,6 +41,7 @@ export function useMilestoneCheck() {
     const next = queueRef.current.shift();
     setActiveMilestone(next);
     act.markMilestoneShown(next.id);
+    fireCelebration(getMilestoneIntensity(next));
 
     // Auto-dismiss after 6s
     clearTimeout(timerRef.current);

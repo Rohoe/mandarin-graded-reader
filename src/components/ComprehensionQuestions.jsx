@@ -9,6 +9,7 @@ import { getNativeLang } from '../lib/nativeLanguages';
 import { renderInline, stripMarkdown } from '../lib/renderInline';
 import { useT } from '../i18n';
 import { useQuestionTranslation } from '../hooks/useQuestionTranslation';
+import { Volume2, Square } from 'lucide-react';
 import './ComprehensionQuestions.css';
 
 function scoreBadgeClass(scoreStr) {
@@ -281,7 +282,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                           title={t('story.listen')}
                           aria-label={t('comprehension.listenToQuestion')}
                         >
-                          {speakingKey === `question-${i}` ? '⏹' : '🔊'}
+                          {speakingKey === `question-${i}` ? <Square size={12} /> : <Volume2 size={14} />}
                         </button>
                       )}
                       {!translateQuestions && (

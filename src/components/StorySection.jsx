@@ -5,6 +5,7 @@ import { stripMarkdown } from '../lib/renderInline';
 import { getNativeLang } from '../lib/nativeLanguages';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useT } from '../i18n';
+import { Volume2, Square } from 'lucide-react';
 import SentencePopover from './SentencePopover';
 
 export default function StorySection({
@@ -133,7 +134,7 @@ export default function StorySection({
                     title={isSpeaking ? t('story.stop') : t('story.listen')}
                     aria-label={isSpeaking ? t('story.stopSpeaking') : t('story.listenToParagraph')}
                   >
-                    {isSpeaking ? '■' : 'TTS'}
+                    {isSpeaking ? <Square size={12} /> : 'TTS'}
                   </button>
                 )}
                 {showParagraphTools && (
@@ -168,7 +169,7 @@ export default function StorySection({
                 title={speakingKey === `vocab-${activeVocab.word.target || activeVocab.word.chinese}` ? t('story.stop') : t('story.listen')}
                 aria-label={speakingKey === `vocab-${activeVocab.word.target || activeVocab.word.chinese}` ? t('story.stopSpeaking') : t('story.listenToWord')}
               >
-                {speakingKey === `vocab-${activeVocab.word.target || activeVocab.word.chinese}` ? '■' : 'TTS'}
+                {speakingKey === `vocab-${activeVocab.word.target || activeVocab.word.chinese}` ? <Square size={12} /> : 'TTS'}
               </button>
             )}
           </div>
@@ -188,7 +189,7 @@ export default function StorySection({
                 title={speakingKey === `sel-${selectionPopover.text}` ? t('story.stop') : t('story.listen')}
                 aria-label={speakingKey === `sel-${selectionPopover.text}` ? t('story.stopSpeaking') : t('story.listenToSelection')}
               >
-                {speakingKey === `sel-${selectionPopover.text}` ? '■' : 'TTS'}
+                {speakingKey === `sel-${selectionPopover.text}` ? <Square size={12} /> : 'TTS'}
               </button>
             )}
           </div>

@@ -4,6 +4,7 @@ import { computeStats } from '../../lib/stats';
 import { getAllLanguages } from '../../lib/languages';
 import { loadActivityStash } from '../../lib/storage';
 import { useT } from '../../i18n';
+import { X } from 'lucide-react';
 import './StatsDashboard.css';
 
 export default function StatsDashboard({ onClose, onShowFlashcards }) {
@@ -48,7 +49,7 @@ export default function StatsDashboard({ onClose, onShowFlashcards }) {
       <div className="stats-dashboard card" onClick={e => e.stopPropagation()}>
         <div className="stats-dashboard__header">
           <h2 className="stats-dashboard__title font-display">{t('stats.title')}</h2>
-          <button className="btn btn-ghost btn-sm stats-dashboard__close" onClick={onClose} aria-label={t('common.close')}>✕</button>
+          <button className="btn btn-ghost btn-sm stats-dashboard__close" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
         </div>
 
         {/* Summary cards */}

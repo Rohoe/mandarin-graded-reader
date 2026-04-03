@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { signInWithGoogle, signInWithApple } from '../lib/cloudSync';
 import { useT } from '../i18n';
+import { X } from 'lucide-react';
 
 export default function SignInModal({ onClose }) {
   const t = useT();
@@ -35,7 +36,7 @@ export default function SignInModal({ onClose }) {
           aria-label={t('common.close')}
           style={{ position: 'absolute', top: 8, right: 8, fontSize: '1.25rem', lineHeight: 1 }}
         >
-          ✕
+          <X size={18} />
         </button>
 
         <h2 className="font-display" style={{ fontSize: 'var(--text-lg)', marginBottom: '0.25rem' }}>

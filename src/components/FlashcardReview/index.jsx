@@ -18,6 +18,7 @@ import SentenceBuilderMode from './SentenceBuilderMode';
 import ContextClueMode from './ContextClueMode';
 import ReverseListeningMode from './ReverseListeningMode';
 import GrammarReviewMode from './GrammarReviewMode';
+import { X, ArrowLeft } from 'lucide-react';
 import './FlashcardReview.css';
 
 // Map initialMode values to reviewMode values
@@ -216,7 +217,7 @@ export default function FlashcardReview({ onClose, initialLangId, initialMode, v
         <div className="flashcard-modal card card-padded fade-in">
           <div className="flashcard-modal__header">
             <h2 className="font-display flashcard-modal__title">{t('flashcard.title')}</h2>
-            <button className="btn btn-ghost btn-sm flashcard-modal__close" onClick={onClose} aria-label="Close">✕</button>
+            <button className="btn btn-ghost btn-sm flashcard-modal__close" onClick={onClose} aria-label="Close"><X size={18} /></button>
           </div>
           <p className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-6) 0' }}>
             {t('flashcard.noVocab')}
@@ -236,13 +237,13 @@ export default function FlashcardReview({ onClose, initialLangId, initialMode, v
         <div className="flashcard-modal__header">
           {reviewMode !== 'pick' && (
             <button className="btn btn-ghost btn-sm flashcard-modal__back" onClick={handleBackToModes} aria-label={t('flashcard.backToModes')}>
-              ← {t('flashcard.backToModes')}
+              <ArrowLeft size={14} /> {t('flashcard.backToModes')}
             </button>
           )}
           {reviewMode === 'pick' && (
             <h2 className="font-display flashcard-modal__title">{t('flashcard.title')}</h2>
           )}
-          <button className="btn btn-ghost btn-sm flashcard-modal__close" onClick={onClose} aria-label="Close">✕</button>
+          <button className="btn btn-ghost btn-sm flashcard-modal__close" onClick={onClose} aria-label="Close"><X size={18} /></button>
         </div>
 
         {/* Language filter pills */}

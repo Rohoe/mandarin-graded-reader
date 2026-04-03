@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useT } from '../../i18n';
+import { ArrowUp, ArrowDown, X } from 'lucide-react';
 
 export default function StepEditBlueprint({
   blueprint, onEditTitle, onEditDescription, onEditUnit,
@@ -77,10 +78,10 @@ export default function StepEditBlueprint({
               </div>
               {editingUnit !== i && (
                 <div className="path-wizard__unit-actions">
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => onMoveUnit(i, -1)} disabled={i === 0} aria-label={t('pathWizard.moveUp')}>↑</button>
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => onMoveUnit(i, 1)} disabled={i === blueprint.units.length - 1} aria-label={t('pathWizard.moveDown')}>↓</button>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => onMoveUnit(i, -1)} disabled={i === 0} aria-label={t('pathWizard.moveUp')}><ArrowUp size={14} /></button>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => onMoveUnit(i, 1)} disabled={i === blueprint.units.length - 1} aria-label={t('pathWizard.moveDown')}><ArrowDown size={14} /></button>
                   <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditingUnit(i)} aria-label={t('pathWizard.edit')}>{t('pathWizard.edit')}</button>
-                  <button type="button" className="btn btn-ghost btn-sm path-wizard__unit-remove" onClick={() => onRemoveUnit(i)} aria-label={t('pathWizard.remove')} disabled={blueprint.units.length <= 1}>✕</button>
+                  <button type="button" className="btn btn-ghost btn-sm path-wizard__unit-remove" onClick={() => onRemoveUnit(i)} aria-label={t('pathWizard.remove')} disabled={blueprint.units.length <= 1}><X size={14} /></button>
                 </div>
               )}
             </div>

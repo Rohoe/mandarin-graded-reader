@@ -51,6 +51,12 @@ export default {
   'notify.couldNotRestore': 'Could not restore — you can regenerate it.',
   'notify.restoreFailed': 'Restore failed — you can regenerate it.',
   'notify.apkgFailed': 'APKG export failed. Try .txt format instead.',
+  'notify.darkModeOn': 'Dark mode enabled',
+  'notify.darkModeOff': 'Dark mode disabled',
+  'notify.romanizationOn': 'Romanization enabled',
+  'notify.romanizationOff': 'Romanization disabled',
+  'notify.paragraphToolsOn': 'Paragraph tools enabled',
+  'notify.paragraphToolsOff': 'Paragraph tools disabled',
 
   // ── Settings ──────────────────────────────────────────────────
   'settings.title': 'Settings',

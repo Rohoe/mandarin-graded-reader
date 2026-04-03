@@ -1,5 +1,6 @@
 import { getLang, getLessonTitle } from '../../lib/languages';
 import { useT } from '../../i18n';
+import { Check, ChevronDown, ChevronRight } from 'lucide-react';
 
 export default function SyllabusCourseItem({ syllabus, progress, isActive, isExpanded, standaloneKey, syllabusView, loading, onSyllabusClick, onToggleExpand, onLessonClick }) {
   const t = useT();
@@ -31,7 +32,7 @@ export default function SyllabusCourseItem({ syllabus, progress, isActive, isExp
             aria-expanded={isExpanded}
             aria-label={isExpanded ? t('course.collapseLessons') : t('course.expandLessons')}
           >
-            {isExpanded ? '▾' : '▸'}
+            {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
           </span>
         )}
       </button>
@@ -64,7 +65,7 @@ export default function SyllabusCourseItem({ syllabus, progress, isActive, isExp
                     disabled={loading}
                   >
                     <span className="syllabus-panel__lesson-num">
-                      {isCompleted ? '✓' : `${idx + 1}`}
+                      {isCompleted ? <Check size={14} /> : `${idx + 1}`}
                     </span>
                     <span className="syllabus-panel__lesson-text">
                       <span className="syllabus-panel__lesson-zh text-chinese">

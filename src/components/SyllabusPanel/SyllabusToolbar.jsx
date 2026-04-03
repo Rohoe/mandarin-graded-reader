@@ -1,4 +1,5 @@
 import { useT } from '../../i18n';
+import { X } from 'lucide-react';
 
 export default function SyllabusToolbar({ viewMode, setViewMode, searchQuery, setSearchQuery, multiLang, langFilter, setLangFilter, langOptions, sortBy, setSortBy }) {
   const t = useT();
@@ -36,7 +37,7 @@ export default function SyllabusToolbar({ viewMode, setViewMode, searchQuery, se
             className="syllabus-panel__search-clear"
             onClick={() => setSearchQuery('')}
             aria-label={t('toolbar.clearSearch')}
-          >×</button>
+          ><X size={12} /></button>
         )}
       </div>
 

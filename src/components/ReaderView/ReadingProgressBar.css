@@ -1,0 +1,17 @@
+.reading-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 100;
+  pointer-events: none;
+  background: transparent;
+}
+
+.reading-progress-bar__fill {
+  height: 100%;
+  background: var(--color-accent);
+  transition: width 100ms linear;
+  border-radius: 0 1px 1px 0;
+}

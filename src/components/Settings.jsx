@@ -11,6 +11,7 @@ import SettingsReadingTab from './SettingsReadingTab';
 import SettingsAITab from './SettingsAITab';
 import SettingsSyncTab from './SettingsSyncTab';
 import SettingsAdvancedTab from './SettingsAdvancedTab';
+import { X } from 'lucide-react';
 import './Settings.css';
 
 export default function Settings({ onClose }) {
@@ -181,7 +182,7 @@ export default function Settings({ onClose }) {
       <div className="settings-panel card card-padded fade-in">
         <div className="settings-panel__header">
           <h2 className="font-display settings-panel__title">{t('settings.title')}</h2>
-          <button className="btn btn-ghost settings-panel__close" onClick={onClose} aria-label={t('settings.closeSettings')}>✕</button>
+          <button className="btn btn-ghost settings-panel__close" onClick={onClose} aria-label={t('settings.closeSettings')}><X size={18} /></button>
         </div>
 
         {/* Tab bar */}

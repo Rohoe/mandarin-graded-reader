@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useT } from '../../i18n';
+import { Check } from 'lucide-react';
 
 export default function UnitCard({
   unit, index, progress, isGenerating, isEditing, canGenerate,
@@ -27,7 +28,7 @@ export default function UnitCard({
     >
       <div className="unit-card__header">
         <div className={`unit-card__number ${isCompleted ? 'unit-card__number--done' : ''}`}>
-          {isCompleted ? '✓' : index + 1}
+          {isCompleted ? <Check size={14} /> : index + 1}
         </div>
         <div className="unit-card__content">
           <div className="unit-card__title">{unit.title}</div>

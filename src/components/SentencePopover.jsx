@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { getLang } from '../lib/languages';
 import { useT } from '../i18n';
+import { Check, Copy, Square } from 'lucide-react';
 
 const LANG_LOCALE = { zh: 'zh', yue: 'zh', ko: 'ko', fr: 'fr', es: 'es', en: 'en' };
 
@@ -187,7 +188,7 @@ const SentencePopoverInner = forwardRef(function SentencePopoverInner(
             title={speakingKey === `sent-${sentenceText}` ? t('story.stop') : t('story.listen')}
             aria-label={speakingKey === `sent-${sentenceText}` ? t('story.stopSpeaking') : t('story.listenToSentence')}
           >
-            {speakingKey === `sent-${sentenceText}` ? '■' : 'TTS'}
+            {speakingKey === `sent-${sentenceText}` ? <Square size={12} /> : 'TTS'}
           </button>
         )}
       </div>
@@ -200,7 +201,7 @@ const SentencePopoverInner = forwardRef(function SentencePopoverInner(
           onClick={(e) => { e.stopPropagation(); handleCopy(); }}
           aria-label={copied ? 'Copied' : 'Copy text'}
         >
-          {copied ? '✓' : '⧉'}
+          {copied ? <Check size={14} /> : <Copy size={14} />}
         </button>
       </div>
       {subText && (

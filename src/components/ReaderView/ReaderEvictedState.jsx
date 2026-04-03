@@ -1,5 +1,6 @@
 import { getLessonTitle } from '../../lib/languages';
 import { useT } from '../../i18n';
+import Skeleton from '../Skeleton';
 
 export default function ReaderEvictedState({ lessonMeta, langId, restoring, onRestore }) {
   const t = useT();
@@ -23,6 +24,12 @@ export default function ReaderEvictedState({ lessonMeta, langId, restoring, onRe
         >
           {restoring ? t('reader.evicted.restoring') : t('reader.evicted.restore')}
         </button>
+        {restoring && (
+          <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            <Skeleton variant="title" />
+            <Skeleton variant="text" lines={3} />
+          </div>
+        )}
       </div>
     </div>
   );

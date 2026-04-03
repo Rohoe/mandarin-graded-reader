@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useT } from '../../i18n';
 import { splitSentence } from './sentenceSplitter';
 import { useFlashcardKeyboard } from '../../hooks/useFlashcardKeyboard';
+import { useDragDrop } from '../../hooks/useDragDrop';
 
 /**
  * Sentence Builder mode.
@@ -96,6 +97,19 @@ export default function SentenceBuilderMode({ cards, onJudge, onClose, langId, s
     setIsCorrect(false);
   }, [singleCard, onComplete]);
 
+  const handleDrop = useCallback((id, sourceZone, targetZone) => {
+    if (revealed) return;
+    const tileIdx = Number(id);
+    if (sourceZone === 'available' && targetZone === 'answer') {
+      handleTapAvailable(tileIdx);
+    } else if (sourceZone === 'answer' && targetZone === 'available') {
+      const placedPosition = placed.indexOf(tileIdx);
+      if (placedPosition >= 0) handleTapPlaced(placedPosition);
+    }
+  }, [revealed, placed, handleTapAvailable, handleTapPlaced]);
+
+  const { makeDraggable, makeDropZone } = useDragDrop({ onDrop: handleDrop });
+
   useFlashcardKeyboard({ onClose, onNext: handleNext, enabled: revealed });
 
   if (eligibleCards.length === 0) {
@@ -138,7 +152,7 @@ export default function SentenceBuilderMode({ cards, onJudge, onClose, langId, s
       </div>
 
       {/* Answer area — placed tiles */}
-      <div className="quiz-sentence__answer" aria-label="Your sentence">
+      <div className="quiz-sentence__answer" aria-label="Your sentence" {...makeDropZone('answer')}>
         {placed.length === 0 ? (
           <span className="quiz-sentence__placeholder text-muted">{t('flashcard.tapToPlace')}</span>
         ) : (
@@ -150,6 +164,7 @@ export default function SentenceBuilderMode({ cards, onJudge, onClose, langId, s
               }`}
               onClick={() => handleTapPlaced(i)}
               disabled={revealed}
+              {...(!revealed ? makeDraggable(tileIdx, 'answer', card.tiles[tileIdx]) : {})}
             >
               {card.tiles[tileIdx]}
             </button>
@@ -159,12 +174,13 @@ export default function SentenceBuilderMode({ cards, onJudge, onClose, langId, s
 
       {/* Available tiles — scrambled */}
       {!revealed && (
-        <div className="quiz-sentence__tiles" aria-label="Available tiles">
+        <div className="quiz-sentence__tiles" aria-label="Available tiles" {...makeDropZone('available')}>
           {available.map((tileIdx) => (
             <button
               key={`avail-${tileIdx}`}
               className="quiz-sentence__tile text-target"
               onClick={() => handleTapAvailable(tileIdx)}
+              {...makeDraggable(tileIdx, 'available', card.tiles[tileIdx])}
             >
               {card.tiles[tileIdx]}
             </button>

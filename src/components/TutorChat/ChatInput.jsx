@@ -4,6 +4,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useT } from '../../i18n';
+import { ArrowUp } from 'lucide-react';
 
 const SUGGESTION_KEYS = [
   'tutor.quizMe',
@@ -79,7 +80,7 @@ export default function ChatInput({ onSend, onSuggestion, isGenerating, showChip
           disabled={!text.trim() || isGenerating}
           aria-label={t('tutor.send')}
         >
-          ↑
+          <ArrowUp size={16} />
         </button>
       </form>
     </div>

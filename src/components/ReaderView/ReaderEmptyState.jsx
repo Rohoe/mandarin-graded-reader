@@ -1,4 +1,5 @@
 import { useT } from '../../i18n';
+import { Menu } from 'lucide-react';
 
 export default function ReaderEmptyState({ decorativeChars, charIndex, onOpenSidebar }) {
   const t = useT();
@@ -10,7 +11,7 @@ export default function ReaderEmptyState({ decorativeChars, charIndex, onOpenSid
           {t('reader.empty.text')}
         </p>
         <button className="btn btn-primary reader-view__empty-open-menu" onClick={onOpenSidebar}>
-          ☰ {t('reader.empty.openMenu')}
+          <Menu size={16} /> {t('reader.empty.openMenu')}
         </button>
       </div>
     </div>

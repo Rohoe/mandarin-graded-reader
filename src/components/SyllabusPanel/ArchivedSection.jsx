@@ -1,5 +1,6 @@
 import { getLang } from '../../lib/languages';
 import { useT } from '../../i18n';
+import { Undo2, X, BookOpen, ChevronDown, ChevronRight } from 'lucide-react';
 
 export default function ArchivedSection({ archivedSyllabi, archivedStandalone, archivedPaths = [], archivedOpen, setArchivedOpen, generatedReaders, onUnarchiveSyllabus, onUnarchiveReader, onUnarchivePath, onDelete }) {
   const t = useT();
@@ -15,7 +16,7 @@ export default function ArchivedSection({ archivedSyllabi, archivedStandalone, a
         aria-controls="archived-items-list"
       >
         <span className="form-label text-muted">{t('archived.title', { count: archivedCount })}</span>
-        <span className="syllabus-panel__caret-btn">{archivedOpen ? '▾' : '▸'}</span>
+        <span className="syllabus-panel__caret-btn">{archivedOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}</span>
       </button>
       {archivedOpen && (
         <ul id="archived-items-list" className="syllabus-panel__list" role="list">
@@ -33,13 +34,13 @@ export default function ArchivedSection({ archivedSyllabi, archivedStandalone, a
                   onClick={() => onUnarchiveSyllabus(s.id)}
                   aria-label={t('archived.unarchiveSyllabus')}
                   title={t('archived.unarchive')}
-                >↩</button>
+                ><Undo2 size={14} /></button>
                 <button
                   className="btn btn-ghost btn-sm syllabus-panel__delete-btn"
                   onClick={() => onDelete(s.id, s.topic, 'syllabus')}
                   aria-label={t('archived.deleteSyllabus')}
                   title={t('archived.deletePermanently')}
-                >×</button>
+                ><X size={14} /></button>
               </div>
             </li>
           ))}
@@ -47,7 +48,7 @@ export default function ArchivedSection({ archivedSyllabi, archivedStandalone, a
             <li key={p.id}>
               <div className="syllabus-panel__lesson-btn syllabus-panel__standalone-item syllabus-panel__archived-item">
                 <span className="syllabus-panel__lesson-text">
-                  <span className="syllabus-panel__lesson-zh">📚 {p.title}</span>
+                  <span className="syllabus-panel__lesson-zh"><BookOpen size={14} style={{ verticalAlign: 'text-bottom', marginRight: 4 }} />{p.title}</span>
                   <span className="syllabus-panel__lesson-en text-muted">
                     {p.units?.length || 0} units · {t('archived.syllabus')}
                   </span>
@@ -57,13 +58,13 @@ export default function ArchivedSection({ archivedSyllabi, archivedStandalone, a
                   onClick={() => onUnarchivePath?.(p.id)}
                   aria-label={t('archived.unarchive')}
                   title={t('archived.unarchive')}
-                >↩</button>
+                ><Undo2 size={14} /></button>
                 <button
                   className="btn btn-ghost btn-sm syllabus-panel__delete-btn"
                   onClick={() => onDelete(p.id, p.title, 'path')}
                   aria-label={t('common.delete')}
                   title={t('archived.deletePermanently')}
-                >×</button>
+                ><X size={14} /></button>
               </div>
             </li>
           ))}
@@ -83,13 +84,13 @@ export default function ArchivedSection({ archivedSyllabi, archivedStandalone, a
                   onClick={() => onUnarchiveReader(r.key)}
                   aria-label={t('archived.unarchiveReader')}
                   title={t('archived.unarchive')}
-                >↩</button>
+                ><Undo2 size={14} /></button>
                 <button
                   className="btn btn-ghost btn-sm syllabus-panel__delete-btn"
                   onClick={() => onDelete(r.key, r.topic, 'standalone')}
                   aria-label={t('standalone.deleteReader')}
                   title={t('archived.deletePermanently')}
-                >×</button>
+                ><X size={14} /></button>
               </div>
             </li>
           ))}

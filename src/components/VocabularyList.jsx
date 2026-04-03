@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { renderInline, stripMarkdown } from '../lib/renderInline';
 import { useT } from '../i18n';
+import { Volume2, Square } from 'lucide-react';
 import './VocabularyList.css';
 
 function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSupported, showParagraphTools, onTranslateExample, translatingKey, vocabTranslations, visibleTranslations, toggleTranslation }) {
@@ -56,7 +57,7 @@ function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSuppor
                         title={t('story.listen')}
                         aria-label={t('vocab.listenToExample')}
                       >
-                        {speakingKey === `vocab-story-${index}` ? '⏹' : '🔊'}
+                        {speakingKey === `vocab-story-${index}` ? <Square size={12} /> : <Volume2 size={14} />}
                       </button>
                     )}
                     <button
@@ -93,7 +94,7 @@ function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSuppor
                         title={t('story.listen')}
                         aria-label={t('vocab.listenToExample')}
                       >
-                        {speakingKey === `vocab-extra-${index}` ? '⏹' : '🔊'}
+                        {speakingKey === `vocab-extra-${index}` ? <Square size={12} /> : <Volume2 size={14} />}
                       </button>
                     )}
                     <button

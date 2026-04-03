@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useT } from '../../i18n';
 import { useFlashcardKeyboard } from '../../hooks/useFlashcardKeyboard';
+import { useDragDrop } from '../../hooks/useDragDrop';
 
 /**
  * Matching quiz mode.
@@ -86,6 +87,21 @@ export default function MatchingMode({ cards, onJudge, onClose }) {
     }
   }, [matched.size, batch.length]);
 
+  const handleDrop = useCallback((id, sourceZone, targetZone) => {
+    // Drag from one side and drop on the other triggers match attempt
+    const sourceIdx = Number(id);
+    if (sourceZone === 'left' && targetZone.startsWith('right-')) {
+      const rightIdx = Number(targetZone.split('-')[1]);
+      handleClick('left', sourceIdx);
+      // Simulate second click on right side
+      setTimeout(() => handleClick('right', rightIdx), 0);
+    } else if (sourceZone.startsWith('right-') && targetZone === 'left') {
+      // Not a useful drop direction, ignore
+    }
+  }, [handleClick]);
+
+  const { makeDraggable, makeDropZone } = useDragDrop({ onDrop: handleDrop });
+
   useFlashcardKeyboard({ onClose });
 
   if (cards.length === 0) {
@@ -129,6 +145,7 @@ export default function MatchingMode({ cards, onJudge, onClose }) {
                 ${selected?.side === 'left' && selected?.index === i ? 'quiz-matching__item--selected' : ''}`}
               onClick={() => handleClick('left', i)}
               disabled={matched.has(i)}
+              {...(!matched.has(i) ? makeDraggable(i, 'left', card.target) : {})}
             >
               {card.target}
             </button>
@@ -144,6 +161,7 @@ export default function MatchingMode({ cards, onJudge, onClose }) {
                 ${shaking === i ? 'quiz-matching__item--shake' : ''}`}
               onClick={() => handleClick('right', i)}
               disabled={matched.has(origIdx)}
+              {...(!matched.has(origIdx) ? makeDropZone(`right-${i}`) : {})}
             >
               {batch[origIdx].translation}
             </button>

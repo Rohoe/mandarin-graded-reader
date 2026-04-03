@@ -76,7 +76,7 @@ export default function SettingsSyncTab({
         </div>
         {restoreError && (
           <p className="settings-section__desc" style={{ color: 'var(--color-error)', marginTop: 'var(--space-2)' }}>
-            ⚠ {restoreError}
+            {restoreError}
           </p>
         )}
       </section>

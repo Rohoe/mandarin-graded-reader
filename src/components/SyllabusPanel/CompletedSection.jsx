@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { getLang } from '../../lib/languages';
 import { useT } from '../../i18n';
+import { BookOpen, ChevronDown, ChevronRight } from 'lucide-react';
 
 export default function CompletedSection({ completedSyllabi, completedStandalone, completedSeries, completedPaths = [], generatedReaders, syllabusProgress, onSyllabusClick, onSelectStandalone, onSelectPath, standaloneKey, activeSyllabusId, activePathId, loading }) {
   const t = useT();
@@ -17,7 +18,7 @@ export default function CompletedSection({ completedSyllabi, completedStandalone
         aria-controls="completed-items-list"
       >
         <span className="form-label text-muted">{t('completed.title', { count })}</span>
-        <span className="syllabus-panel__caret-btn">{open ? '\u25BE' : '\u25B8'}</span>
+        <span className="syllabus-panel__caret-btn">{open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}</span>
       </button>
       {open && (
         <div id="completed-items-list">
@@ -50,7 +51,7 @@ export default function CompletedSection({ completedSyllabi, completedStandalone
                 disabled={loading}
               >
                 <span className="syllabus-panel__item-text">
-                  <span className="syllabus-panel__item-title">📚 {path.title}</span>
+                  <span className="syllabus-panel__item-title"><BookOpen size={14} style={{ verticalAlign: 'text-bottom', marginRight: 4 }} />{path.title}</span>
                   <span className="syllabus-panel__item-meta text-muted">
                     {path.units?.length || 0} units
                   </span>

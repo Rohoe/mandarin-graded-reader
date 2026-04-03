@@ -3,12 +3,20 @@ import { useAppSelector, useAppDispatch } from '../../context/useAppSelector';
 import { actions } from '../../context/actions';
 import { computeWeeklyProgress } from '../../lib/stats';
 import { useT } from '../../i18n';
+import { Book, Layers, Pencil, Clock } from 'lucide-react';
+
+const GOAL_ICONS = {
+  lessons: Book,
+  flashcards: Layers,
+  quizzes: Pencil,
+  minutes: Clock,
+};
 
 const GOAL_KEYS = [
-  { key: 'lessons', icon: '📖', labelKey: 'home.lessonsGoal' },
-  { key: 'flashcards', icon: '🃏', labelKey: 'home.flashcardsGoal' },
-  { key: 'quizzes', icon: '✏️', labelKey: 'home.quizzesGoal' },
-  { key: 'minutes', icon: '⏱', labelKey: 'home.minutesGoal' },
+  { key: 'lessons', labelKey: 'home.lessonsGoal' },
+  { key: 'flashcards', labelKey: 'home.flashcardsGoal' },
+  { key: 'quizzes', labelKey: 'home.quizzesGoal' },
+  { key: 'minutes', labelKey: 'home.minutesGoal' },
 ];
 
 const PROGRESS_KEYS = {
@@ -52,13 +60,14 @@ export default function WeeklyGoals() {
         </button>
       </div>
       <div className="home-goals__list">
-        {GOAL_KEYS.map(({ key, icon, labelKey }) => {
+        {GOAL_KEYS.map(({ key, labelKey }) => {
+          const IconComponent = GOAL_ICONS[key];
           const current = progress[PROGRESS_KEYS[key]] || 0;
           const target = (editing ? draft : weeklyGoals)[key] || 1;
           const pct = Math.min(100, Math.round((current / target) * 100));
           return (
             <div key={key} className="home-goals__row">
-              <span className="home-goals__icon">{icon}</span>
+              <span className="home-goals__icon"><IconComponent size={18} /></span>
               <div className="home-goals__info">
                 <span className="home-goals__label">{t(labelKey)}</span>
                 <div className="home-goals__bar">

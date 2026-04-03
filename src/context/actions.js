@@ -60,7 +60,13 @@ export function actions(dispatch) {
     setLoading:            (loading, message) => dispatch({ type: T.SET_LOADING, payload: { loading, message } }),
     setError:              msg    => dispatch({ type: T.SET_ERROR, payload: msg }),
     clearError:            ()     => dispatch({ type: T.CLEAR_ERROR }),
-    notify:                (type, message, action) => dispatch({ type: T.SET_NOTIFICATION, payload: { type, message, ...(action ? { action } : {}) } }),
+    notify:                (type, message, actionOrOpts, opts) => {
+      // Support: notify(type, msg), notify(type, msg, action), notify(type, msg, { timeout }), notify(type, msg, action, { timeout })
+      const isOpts = actionOrOpts && !actionOrOpts.type && typeof actionOrOpts === 'object' && ('timeout' in actionOrOpts);
+      const action = isOpts ? undefined : actionOrOpts;
+      const finalOpts = isOpts ? actionOrOpts : opts;
+      dispatch({ type: T.SET_NOTIFICATION, payload: { type, message, ...(action ? { action } : {}), ...(finalOpts?.timeout ? { timeout: finalOpts.timeout } : {}) } });
+    },
     clearAll:              ()     => dispatch({ type: T.CLEAR_ALL_DATA }),
     setMaxTokens:          n      => dispatch({ type: T.SET_MAX_TOKENS, payload: Number(n) }),
     setDefaultLevel:       n      => dispatch({ type: T.SET_DEFAULT_LEVEL, payload: Number(n) }),

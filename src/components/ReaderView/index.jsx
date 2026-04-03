@@ -33,6 +33,9 @@ import ReaderGeneratingState from './ReaderGeneratingState';
 import ReaderEvictedState from './ReaderEvictedState';
 import ReaderPregenerate from './ReaderPregenerate';
 import ChatSummary from '../TutorChat/ChatSummary';
+import { AlertTriangle, X } from 'lucide-react';
+import { useScrollProgress } from '../../hooks/useScrollProgress';
+import ReadingProgressBar from './ReadingProgressBar';
 import './ReaderView.css';
 
 export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar, onOpenSettings, onOpenChat, onArchive, onDelete, onShowFlashcards, onShowNewForm, onSelectLesson }) {
@@ -75,6 +78,7 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
     : null;
   const isDemo = DEMO_READER_KEYS.has(lessonKey);
   const scrollRef = useRef(null);
+  const { progress: scrollProgress } = useScrollProgress(scrollRef);
   const [confirmRegen, setConfirmRegen] = useState(false);
   const [demoBannerDismissed, setDemoBannerDismissed] = useState(false);
   const [nativeLangTipDismissed, setNativeLangTipDismissed] = useState(
@@ -321,7 +325,7 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
     return (
       <div className="reader-view">
         <div className="alert alert-error">
-          <span>⚠</span>
+          <span><AlertTriangle size={16} /></span>
           <div><strong>{t('reader.parseError')}</strong> {reader.parseError}. {t('reader.rawOutput')}</div>
         </div>
         <pre className="reader-view__raw">{reader.raw}</pre>
@@ -336,11 +340,12 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
 
   return (
     <article className="reader-view fade-in" ref={scrollRef}>
+      {storyParagraphs.length > 1 && <ReadingProgressBar progress={scrollProgress} />}
       {/* Quota warning banner */}
       {quotaWarning && (
         <div className="reader-view__quota-warning">
           <span>{t('reader.quotaWarning')}</span>
-          <button className="reader-view__quota-dismiss" onClick={() => dispatch({ type: SET_QUOTA_WARNING, payload: false })} aria-label="Dismiss">✕</button>
+          <button className="reader-view__quota-dismiss" onClick={() => dispatch({ type: SET_QUOTA_WARNING, payload: false })} aria-label="Dismiss"><X size={14} /></button>
         </div>
       )}
 
@@ -348,7 +353,7 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
       {isDemo && !demoBannerDismissed && (
         <div className="reader-view__demo-banner">
           <span>{t('reader.demoBanner')}</span>
-          <button className="reader-view__quota-dismiss" onClick={() => setDemoBannerDismissed(true)} aria-label="Dismiss">✕</button>
+          <button className="reader-view__quota-dismiss" onClick={() => setDemoBannerDismissed(true)} aria-label="Dismiss"><X size={14} /></button>
         </div>
       )}
 
@@ -356,7 +361,7 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
       {!isDemo && !nativeLangTipDismissed && (
         <div className="reader-view__tip-banner">
           <span>{t('reader.nativeLangTip')}</span>
-          <button className="reader-view__quota-dismiss" onClick={() => { localStorage.setItem('gradedReader_nativeLangTipDismissed', '1'); setNativeLangTipDismissed(true); }} aria-label="Dismiss">✕</button>
+          <button className="reader-view__quota-dismiss" onClick={() => { localStorage.setItem('gradedReader_nativeLangTipDismissed', '1'); setNativeLangTipDismissed(true); }} aria-label="Dismiss"><X size={14} /></button>
         </div>
       )}
 

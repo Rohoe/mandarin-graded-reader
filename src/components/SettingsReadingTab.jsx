@@ -64,7 +64,7 @@ export default function SettingsReadingTab({ state, act }) {
             role="switch"
             aria-checked={state.darkMode}
             className={`settings-toggle ${state.darkMode ? 'settings-toggle--on' : ''}`}
-            onClick={() => act.setDarkMode(!state.darkMode)}
+            onClick={() => { act.setDarkMode(!state.darkMode); act.notify('success', t(!state.darkMode ? 'notify.darkModeOn' : 'notify.darkModeOff'), { timeout: 2500 }); }}
           >
             <span className="settings-toggle__thumb" />
           </button>
@@ -84,7 +84,7 @@ export default function SettingsReadingTab({ state, act }) {
             role="switch"
             aria-checked={state.romanizationOn}
             className={`settings-toggle ${state.romanizationOn ? 'settings-toggle--on' : ''}`}
-            onClick={() => act.setRomanizationOn(!state.romanizationOn)}
+            onClick={() => { act.setRomanizationOn(!state.romanizationOn); act.notify('success', t(!state.romanizationOn ? 'notify.romanizationOn' : 'notify.romanizationOff'), { timeout: 2500 }); }}
           >
             <span className="settings-toggle__thumb" />
           </button>
@@ -104,7 +104,7 @@ export default function SettingsReadingTab({ state, act }) {
             role="switch"
             aria-checked={state.translateButtons}
             className={`settings-toggle ${state.translateButtons ? 'settings-toggle--on' : ''}`}
-            onClick={() => act.setTranslateButtons(!state.translateButtons)}
+            onClick={() => { act.setTranslateButtons(!state.translateButtons); act.notify('success', t(!state.translateButtons ? 'notify.paragraphToolsOn' : 'notify.paragraphToolsOff'), { timeout: 2500 }); }}
           >
             <span className="settings-toggle__thumb" />
           </button>

@@ -1,5 +1,6 @@
 import { getLang } from '../../lib/languages';
 import { useT } from '../../i18n';
+import { BookOpen, ChevronDown, ChevronRight } from 'lucide-react';
 
 const STATUS_ICONS = {
   pending: '○',
@@ -23,7 +24,7 @@ export default function PathGroup({
         onClick={() => onPathClick(path.id)}
         aria-expanded={isExpanded}
       >
-        <span className="path-group__icon">📚</span>
+        <span className="path-group__icon"><BookOpen size={16} /></span>
         <span className="path-group__title">{path.title}</span>
         <span className="path-group__badge">
           {completedCount}/{path.units.length}
@@ -33,7 +34,7 @@ export default function PathGroup({
           onClick={(e) => { e.stopPropagation(); onToggleExpand(path.id); }}
           aria-label={isExpanded ? t('path.collapse') : t('path.expand')}
         >
-          {isExpanded ? '▾' : '▸'}
+          {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         </button>
       </button>
 

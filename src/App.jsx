@@ -30,6 +30,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import LoadingIndicator from './components/LoadingIndicator';
 import PWABanner from './components/PWABanner';
 import { useMilestoneCheck } from './hooks/useMilestoneCheck';
+import { X, Menu, Settings as SettingsIcon, Check, AlertTriangle } from 'lucide-react';
 import './App.css';
 
 // ── Notification toast ─────────────────────────────────────────
@@ -44,7 +45,7 @@ function Notification() {
       role={notification.type === 'error' ? 'alert' : 'status'}
       aria-live={notification.type === 'error' ? 'assertive' : 'polite'}
     >
-      <span>{notification.type === 'success' ? '✓' : '⚠'}</span>
+      <span>{notification.type === 'success' ? <Check size={14} /> : <AlertTriangle size={14} />}</span>
       <span>{notification.message}</span>
       {notification.action && (
         <button
@@ -62,7 +63,7 @@ function Notification() {
         onClick={() => dispatch({ type: CLEAR_NOTIFICATION })}
         aria-label="Dismiss"
       >
-        ✕
+        <X size={14} />
       </button>
     </div>
   );
@@ -364,7 +365,7 @@ function AppShell() {
           onClick={() => setSidebarOpen(o => !o)}
           aria-label={t('app.openMenu')}
         >
-          ☰
+          <Menu size={18} />
         </button>
         <button
           className="app-mobile-title font-display btn-unstyled"
@@ -374,7 +375,7 @@ function AppShell() {
           Mandu
         </button>
         <button className="btn btn-ghost btn-sm" onClick={() => setShowSettings(true)} aria-label={t('common.settings')}>
-          ⚙
+          <SettingsIcon size={18} />
         </button>
       </header>
 
@@ -517,7 +518,7 @@ function AppShell() {
           <div className="settings-panel card card-padded fade-in">
             <div className="settings-panel__header">
               <h2 id="new-reader-title" className="font-display" style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>{t('app.newReader')}</h2>
-              <button className="btn btn-ghost settings-panel__close" onClick={() => setShowNewForm(false)} aria-label={t('common.close')}>✕</button>
+              <button className="btn btn-ghost settings-panel__close" onClick={() => setShowNewForm(false)} aria-label={t('common.close')}><X size={18} /></button>
             </div>
             <TopicForm
               onNewSyllabus={(id) => { setShowNewForm(false); handleNewSyllabus(id); }}
@@ -538,7 +539,7 @@ function AppShell() {
           <div className="settings-panel card card-padded fade-in" style={{ maxWidth: '600px' }}>
             <div className="settings-panel__header">
               <h2 className="font-display" style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>{t('path.importTitle')}</h2>
-              <button className="btn btn-ghost settings-panel__close" onClick={() => setShowPathImport(false)} aria-label={t('common.close')}>✕</button>
+              <button className="btn btn-ghost settings-panel__close" onClick={() => setShowPathImport(false)} aria-label={t('common.close')}><X size={18} /></button>
             </div>
             <ImportModal
               onClose={() => setShowPathImport(false)}
@@ -554,7 +555,7 @@ function AppShell() {
           <div className="settings-panel card card-padded fade-in" style={{ maxWidth: '600px' }}>
             <div className="settings-panel__header">
               <h2 className="font-display" style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>Export</h2>
-              <button className="btn btn-ghost settings-panel__close" onClick={() => setShowPathExport(null)} aria-label={t('common.close')}>✕</button>
+              <button className="btn btn-ghost settings-panel__close" onClick={() => setShowPathExport(null)} aria-label={t('common.close')}><X size={18} /></button>
             </div>
             <ExportModal pathId={showPathExport} onClose={() => setShowPathExport(null)} />
           </div>

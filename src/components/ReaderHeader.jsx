@@ -1,5 +1,6 @@
 import { getLessonTitle } from '../lib/languages';
 import { useT } from '../i18n';
+import { MessageCircle, Volume2, Square } from 'lucide-react';
 
 export default function ReaderHeader({ reader, lessonMeta, langId, profBadge, storyText, ttsSupported, speakingKey, speakText, stopSpeaking, onOpenChat }) {
   const t = useT();
@@ -23,7 +24,7 @@ export default function ReaderHeader({ reader, lessonMeta, langId, profBadge, st
             title={t('tutor.chatWithTutor')}
             aria-label={t('tutor.chatWithTutor')}
           >
-            💬
+            <MessageCircle size={18} />
           </button>
         )}
         {ttsSupported && (
@@ -33,7 +34,7 @@ export default function ReaderHeader({ reader, lessonMeta, langId, profBadge, st
             title={speakingKey ? t('reader.header.stop') : t('reader.header.listenToStory')}
             aria-label={speakingKey ? t('reader.header.stop') : t('reader.header.listenToStory')}
           >
-            {speakingKey ? '⏹' : '🔊'}
+            {speakingKey ? <Square size={16} /> : <Volume2 size={18} />}
           </button>
         )}
       </div>

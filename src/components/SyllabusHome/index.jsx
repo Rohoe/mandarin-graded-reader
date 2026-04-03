@@ -3,6 +3,7 @@ import { useAppSelector } from '../../context/useAppSelector';
 import { getLang, getLessonTitle } from '../../lib/languages';
 import { buildReviewContext, getLevelUpRecommendation } from '../../lib/stats';
 import { useT } from '../../i18n';
+import { Check, ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
 import LoadingIndicator from '../LoadingIndicator';
 import './SyllabusHome.css';
 
@@ -208,7 +209,7 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
                   onClick={() => onSelectLesson?.(syllabus.id, idx)}
                 >
                   <span className={`syllabus-home__lesson-status ${isCompleted ? 'syllabus-home__lesson-status--done' : ''}`}>
-                    {isCompleted ? '✓' : idx + 1}
+                    {isCompleted ? <Check size={14} /> : idx + 1}
                   </span>
                   <span className="syllabus-home__lesson-titles">
                     <span className="syllabus-home__lesson-zh text-target">
@@ -225,7 +226,7 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
                     )}
                   </span>
                   <span className="syllabus-home__lesson-cta text-muted">
-                    {isCompleted ? t('syllabusHome.review') : t('syllabusHome.start')} →
+                    {isCompleted ? t('syllabusHome.review') : t('syllabusHome.start')} <ArrowRight size={14} />
                   </span>
                 </button>
               </li>
@@ -241,7 +242,7 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
             className="syllabus-home__section-title syllabus-home__summary-toggle"
             onClick={() => setLearningSummaryOpen(o => !o)}
           >
-            {t('syllabusHome.whatYouveLearned')} {learningSummaryOpen ? '▾' : '▸'}
+            {t('syllabusHome.whatYouveLearned')} {learningSummaryOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           </button>
 
           {learningSummaryOpen && (

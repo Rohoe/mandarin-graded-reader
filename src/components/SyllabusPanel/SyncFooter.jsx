@@ -1,4 +1,5 @@
 import { useT } from '../../i18n';
+import { Cloud, BarChart3, Settings as SettingsIcon, Hexagon } from 'lucide-react';
 
 export default function SyncFooter({ cloudUser, cloudSyncing, cloudLastSynced, lastModified, onShowSettings, onShowStats, onShowFlashcards, onShowSignIn }) {
   const t = useT();
@@ -8,7 +9,7 @@ export default function SyncFooter({ cloudUser, cloudSyncing, cloudLastSynced, l
       <div className="syllabus-panel__sync-status">
         {cloudUser ? (
           <>
-            <span className="syllabus-panel__sync-icon" title={cloudUser.email || 'Signed in'}>☁</span>
+            <span className="syllabus-panel__sync-icon" title={cloudUser.email || 'Signed in'}><Cloud size={14} /></span>
             {cloudSyncing ? (
               <span className="syllabus-panel__sync-label syllabus-panel__sync-label--syncing">{t('footer.syncing')}</span>
             ) : cloudLastSynced && lastModified > cloudLastSynced ? (
@@ -21,7 +22,7 @@ export default function SyncFooter({ cloudUser, cloudSyncing, cloudLastSynced, l
           </>
         ) : (
           <>
-            <span className="syllabus-panel__sync-icon syllabus-panel__sync-icon--off" title={t('footer.notSignedIn')}>☁</span>
+            <span className="syllabus-panel__sync-icon syllabus-panel__sync-icon--off" title={t('footer.notSignedIn')}><Cloud size={14} /></span>
             <span className="syllabus-panel__sync-label syllabus-panel__sync-label--off">
               {t('footer.notSignedIn')}
               <button className="syllabus-panel__sign-in-link" onClick={onShowSignIn}>{t('footer.signIn')}</button>
@@ -34,20 +35,20 @@ export default function SyncFooter({ cloudUser, cloudSyncing, cloudLastSynced, l
         onClick={onShowFlashcards}
         title={t('footer.flashcardReview')}
       >
-        ⬡ {t('footer.cards')}
+        <Hexagon size={14} /> {t('footer.cards')}
       </button>
       <button
         className="btn btn-ghost btn-sm"
         onClick={onShowStats}
         title={t('footer.learningStats')}
       >
-        ▦ {t('footer.stats')}
+        <BarChart3 size={14} /> {t('footer.stats')}
       </button>
       <button
         className="btn btn-ghost btn-sm"
         onClick={onShowSettings}
       >
-        ⚙ {t('footer.settings')}
+        <SettingsIcon size={14} /> {t('footer.settings')}
       </button>
     </div>
   );

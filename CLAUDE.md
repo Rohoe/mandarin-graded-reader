@@ -21,9 +21,9 @@ src/
   App.jsx              Root layout, UI-only state (sidebar, modals, activeSyllabusId, standaloneKey, syllabusView). Default view: 'dashboard' (Home page)
   context/             useReducer global store (AppContext.jsx), useApp hook, actions factory, reducers/ (10 domain slices)
   i18n/                UI string translations: useT() hook, en/zh/yue/ko/fr/es language files
-  lib/                 Core logic: api.js, apiUtils.js, chatApi.js, parser.js, storage.js, readerStorage.js, fileStorage.js, languages.js, nativeLanguages.js, providers.js, llmConfig.js, cloudSync.js, supabase.js, anki.js, ankiApkg.js, stats.js, translate.js, vocabMapper.js, vocabNormalizer.js, grammarMapper.js, sentenceSplitter.js, romanizer.js, demoReader.js, learningPathSchema.js, nextActions.js, milestones.js
+  lib/                 Core logic: api.js, apiUtils.js, chatApi.js, parser.js, storage.js, readerStorage.js, fileStorage.js, languages.js, nativeLanguages.js, providers.js, llmConfig.js, cloudSync.js, supabase.js, anki.js, ankiApkg.js, stats.js, translate.js, vocabMapper.js, vocabNormalizer.js, grammarMapper.js, sentenceSplitter.js, romanizer.js, demoReader.js, learningPathSchema.js, nextActions.js, milestones.js, confetti.js
   prompts/             LLM prompt builders (syllabus, reader, grading, extend, tutor, learningPath, narrative, pathUnit, portable)
-  hooks/               useTTS, useRomanization, useVocabPopover, useReaderGeneration, useTutorChat, useFocusTrap, useReadingTimer, usePWA, useBufferedMarkdown, useFlashcardKeyboard, useFlashcardSession, useQuestionTranslation, useSentenceTranslate, useStreamAccumulator, useTextSelection, usePopoverDismissal, useMilestoneCheck
+  hooks/               useTTS, useRomanization, useVocabPopover, useReaderGeneration, useTutorChat, useFocusTrap, useReadingTimer, usePWA, useBufferedMarkdown, useFlashcardKeyboard, useFlashcardSession, useQuestionTranslation, useSentenceTranslate, useStreamAccumulator, useTextSelection, usePopoverDismissal, useMilestoneCheck, useScrollProgress, useDragDrop
   components/          UI components (see docs/components.md for details)
 e2e/                   Playwright E2E specs + fixtures
 ```
@@ -41,7 +41,7 @@ e2e/                   Playwright E2E specs + fixtures
 - **Streaming:** Anthropic provider supports streaming responses via `generateReaderStream()` async generator. Text streams progressively to UI with debounced markdown rendering (`useBufferedMarkdown`), then parses on completion.
 - **AI Tutor Chat:** `src/lib/chatApi.js` provides multi-turn `callLLMChat`/`callLLMChatStream` for all providers. `src/prompts/tutorPrompt.js` builds context-rich system prompts. `src/hooks/useTutorChat.js` manages chat state, persists `chatHistory`/`chatSummary` on reader objects via `SET_READER`. "Open in Claude/ChatGPT" always available (copies lesson context to clipboard). UI in `src/components/TutorChat/`.
 - **Grammar SRS:** `grammarReducer.js` + `grammarMapper.js` manage grammar pattern spaced repetition. Grammar cards extracted from reader grammar notes with independent SRS tracking.
-- **Flashcard modes:** `FlashcardReview/` supports multiple modes: SRS Review (vocab + grammar), Quiz Mix, Practice, Sentence Builder, Context Clue, Reverse Listening. Mode picker UI replaced the previous tab-based interface. `useFlashcardSession` manages session state. Adaptive SRS uses `leechFactor` (0.5–1.0 based on lapses) and differentiated `almost` handling.
+- **Flashcard modes:** `FlashcardReview/` supports multiple modes: SRS Review (vocab + grammar), Quiz Mix, Practice, Sentence Builder, Context Clue, Reverse Listening. Mode picker UI replaced the previous tab-based interface. `useFlashcardSession` manages session state. Adaptive SRS uses `leechFactor` (0.5–1.0 based on lapses) and differentiated `almost` handling. SRS cards use 3D flip animation (perspective + backface-visibility). Sentence Builder and Matching modes support drag-and-drop via `useDragDrop` hook (pointer events, ghost element, click preserved).
 - **Grammar active recall:** `GrammarReviewMode` supports 3 modes: Classic (flip), Cloze (fill blanks via `grammarCloze.js`), Build (arrange tiles). Mode picker UI in grammar review.
 - **Difficulty feedback:** After completing a reader, users rate difficulty (Too Easy / Just Right / Too Difficult). Per-language rolling window of 10 stored in `difficultyFeedback`. `computeDifficultyCalibration()` in `stats.js` produces an exponential-decay-weighted offset injected into reader prompts via `buildLearnerContext`.
 - **Smart next actions:** `src/lib/nextActions.js` returns ranked suggestions (due flashcards, continue lesson, streak protection, struggling vocab, create new). Shown on dashboard (`HomeView`) and post-lesson (`ReaderActions`).
@@ -60,7 +60,7 @@ e2e/                   Playwright E2E specs + fixtures
 
 ## Design system
 
-CSS custom properties in `index.css`. Key tokens: `--color-bg` (#FAF8F5), `--color-accent` (#4A7C7E), `--font-chinese`, `--font-target` (overridden by `[data-lang]`). Dark mode via `[data-theme="dark"]`. Two-column desktop (280px sidebar), single-column mobile (≤768px).
+CSS custom properties in `index.css`. Key tokens: `--color-bg` (#FAF8F5), `--color-accent` (#4A7C7E), `--font-chinese`, `--font-target` (overridden by `[data-lang]`), `--font-reading` (Cormorant Garamond for reading content), `--font-display`/`--font-body` (system sans-serif for UI). Dark mode via `[data-theme="dark"]`. Two-column desktop (280px sidebar), single-column mobile (≤768px). Icons via `lucide-react` (tree-shakeable). Milestone confetti via `canvas-confetti`.
 
 ## Testing
 

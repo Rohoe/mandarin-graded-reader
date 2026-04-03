@@ -1,6 +1,7 @@
 import { getLessonTitle } from '../../lib/languages';
 import { useT } from '../../i18n';
 import GenerationProgress from '../GenerationProgress';
+import Skeleton from '../Skeleton';
 
 export default function ReaderGeneratingState({ lessonMeta, langId, targetLength }) {
   const t = useT();
@@ -15,6 +16,12 @@ export default function ReaderGeneratingState({ lessonMeta, langId, targetLength
           </>
         )}
         <GenerationProgress type="reader" targetLength={targetLength} langId={langId} />
+        <div style={{ marginTop: 'var(--space-6)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <Skeleton variant="title" />
+          <Skeleton variant="text" lines={4} />
+          <Skeleton variant="text" lines={3} />
+          <Skeleton variant="card" />
+        </div>
       </div>
     </div>
   );

@@ -96,3 +96,17 @@ Progress bars for 4 weekly goals (lessons, flashcard reviews, quizzes, minutes s
 
 ## `GenerationProgress`
 Phase-based progress bar. type='reader' (6 phases, ~30s) or type='syllabus' (4 phases, ~10s). Shows dynamic provider name.
+
+## `Skeleton`
+Shimmer-animated placeholder for loading states. Variants: `text` (single/multi-line via `lines` prop), `title` (wider/taller), `card` (rectangle), `stat` (small block). CSS shimmer animation with dark mode variant. Used in `ReaderGeneratingState` and `ReaderEvictedState`.
+
+## `ReadingProgressBar`
+Fixed 3px bar at viewport top showing scroll progress through the reader. Uses `useScrollProgress` hook (passive scroll + rAF throttling). Rendered in ReaderView when story has >1 paragraph. `pointer-events: none`, `role="progressbar"` with ARIA attributes.
+
+## Utilities
+
+### `src/lib/confetti.js`
+`fireCelebration(intensity)` — fires canvas-confetti bursts. `'major'` = dual burst from both sides (80 particles × 2), `'normal'` = single burst (40 particles). Respects `prefers-reduced-motion`. `getMilestoneIntensity(milestone)` maps milestone types to intensity levels. Called from `useMilestoneCheck` hook.
+
+### `src/hooks/useDragDrop.js`
+Custom pointer events hook for drag-and-drop in flashcard exercises. Uses `setPointerCapture` for cross-element tracking. Ghost element follows cursor via direct DOM manipulation. Drop zones identified by `data-drop-zone` attributes. Click preserved if movement < 5px. Used in `SentenceBuilderMode` and `MatchingMode`.
