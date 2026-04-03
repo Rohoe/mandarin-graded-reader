@@ -773,6 +773,9 @@ export default {
   'pathHome.estimatedLessons': '~{count} lessons',
   'pathHome.extendPath': 'Add More Units',
   'pathHome.extendingPath': 'Generating new units…',
+  'pathHome.archivePath': 'Archive Path',
+  'pathHome.deletePath': 'Delete Path',
+  'pathHome.confirmDelete': 'Delete "{title}" and all its data? This cannot be undone.',
 
   // Path Import/Export
   'pathImport.title': 'Import Learning Path',

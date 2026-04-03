@@ -9,7 +9,10 @@ export default function StepInterests({ profile, onChange, languages, canGenerat
   const t = useT();
   const langConfig = getLang(profile.langId);
   const profLevels = langConfig.proficiency.levels;
-  const nativeLang = useAppSelector(s => s.nativeLang || 'en');
+  const { nativeLang, defaultLevels } = useAppSelector(s => ({
+    nativeLang: s.nativeLang || 'en',
+    defaultLevels: s.defaultLevels || {},
+  }));
 
   // External design flow: null | { target: 'claude' | 'chatgpt', step: 'preview' | 'copied' }
   const [externalFlow, setExternalFlow] = useState(null);
@@ -64,7 +67,9 @@ export default function StepInterests({ profile, onChange, languages, canGenerat
               className={`path-wizard__pill ${profile.langId === lang.id ? 'active' : ''}`}
               onClick={() => {
                 onChange('langId', lang.id);
-                const defaultLevel = getLang(lang.id).proficiency.levels[Math.floor(getLang(lang.id).proficiency.levels.length / 2)]?.value || 2;
+                const savedLevel = defaultLevels[lang.id];
+                const levels = getLang(lang.id).proficiency.levels;
+                const defaultLevel = savedLevel ?? levels[Math.floor(levels.length / 2)]?.value ?? 2;
                 onChange('level', defaultLevel);
               }}
             >

@@ -10,7 +10,7 @@ import UnitCard from './UnitCard';
 import './PathHome.css';
 
 
-export default function PathHome({ pathId, onSelectUnit, onOpenSettings, onShowImportExport }) {
+export default function PathHome({ pathId, onSelectUnit, onOpenSettings, onShowImportExport, onArchive, onDelete }) {
   const { learningPaths, syllabi, syllabusProgress, generatedReaders, learnedVocabulary, learningActivity, providerKeys, activeProvider, activeModels, customBaseUrl, customModelName, compatPreset, maxTokens, nativeLang, loading } = useAppSelector(s => ({
     learningPaths: s.learningPaths, syllabi: s.syllabi, syllabusProgress: s.syllabusProgress,
     generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, learningActivity: s.learningActivity,
@@ -26,6 +26,7 @@ export default function PathHome({ pathId, onSelectUnit, onOpenSettings, onShowI
   const [generatingUnit, setGeneratingUnit] = useState(null);
   const [editingUnit, setEditingUnit] = useState(null);
   const [extending, setExtending] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   if (!path) {
     return <div className="path-home__empty">{t('path.notFound')}</div>;
@@ -193,6 +194,52 @@ export default function PathHome({ pathId, onSelectUnit, onOpenSettings, onShowI
           />
         ))}
       </div>
+
+      {/* Danger zone */}
+      <section className="path-home__danger-zone">
+        <div className="path-home__danger-divider">
+          <span className="text-subtle">{t('syllabusHome.dangerZone')}</span>
+        </div>
+
+        {confirmingDelete ? (
+          <div className="path-home__confirm">
+            <p className="path-home__confirm-text">
+              {t('pathHome.confirmDelete', { title: path.title })}
+            </p>
+            <div className="path-home__confirm-actions">
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setConfirmingDelete(false)}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                className="btn btn-sm path-home__delete-confirm-btn"
+                onClick={() => { setConfirmingDelete(false); onDelete?.(); }}
+              >
+                {t('common.delete')}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="path-home__danger-actions">
+            {onArchive && (
+              <button
+                className="btn btn-ghost path-home__archive-btn"
+                onClick={onArchive}
+              >
+                {t('pathHome.archivePath')}
+              </button>
+            )}
+            <button
+              className="btn path-home__delete-btn"
+              onClick={() => setConfirmingDelete(true)}
+            >
+              {t('pathHome.deletePath')}
+            </button>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

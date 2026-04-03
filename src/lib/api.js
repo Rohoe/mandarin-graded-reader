@@ -389,7 +389,7 @@ export async function generateLearningPath(llmConfig, profile, langId = DEFAULT_
   const nativeLangName = getNativeLang(nativeLang).name;
   const prompt = buildLearningPathPrompt(langConfig, profile, nativeLangName);
 
-  const raw = await callLLM(llmConfig, '', prompt, 4096);
+  const raw = await callLLM(llmConfig, '', prompt, 8192);
   const result = parseJSONWithFallback(raw, 'LLM returned an invalid learning path format. Please try again.');
 
   return {
@@ -415,7 +415,7 @@ export async function extendLearningPathAPI(llmConfig, path, additionalCount = 5
   const nativeLangName = getNativeLang(nativeLang).name;
   const prompt = buildExtendPathPrompt(langConfig, path, additionalCount, nativeLangName);
 
-  const raw = await callLLM(llmConfig, '', prompt, 4096);
+  const raw = await callLLM(llmConfig, '', prompt, 8192);
   const result = parseJSONWithFallback(raw, 'LLM returned an invalid extension format. Please try again.');
 
   return {

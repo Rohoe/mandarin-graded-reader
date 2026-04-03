@@ -123,6 +123,7 @@ CREATE TABLE user_data (
   learned_vocabulary JSONB DEFAULT '{}',
   learned_grammar JSONB DEFAULT '{}',
   exported_words JSONB DEFAULT '[]',
+  learning_paths JSONB DEFAULT '[]',
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE user_data ENABLE ROW LEVEL SECURITY;
@@ -131,6 +132,11 @@ CREATE POLICY "Users manage own data"
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 ```
+
+> **Migration (existing installations):** If your `user_data` table already exists, add the new column:
+> ```sql
+> ALTER TABLE user_data ADD COLUMN IF NOT EXISTS learning_paths JSONB DEFAULT '[]';
+> ```
 
 5. Create a `.env` file in the project root:
 

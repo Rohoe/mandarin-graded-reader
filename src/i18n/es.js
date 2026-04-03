@@ -705,6 +705,9 @@ export default {
   'pathHome.estimatedLessons': '~{count} lecciones',
   'pathHome.extendPath': 'A\u00f1adir m\u00e1s unidades',
   'pathHome.extendingPath': 'Generando nuevas unidades\u2026',
+  'pathHome.archivePath': 'Archivar ruta',
+  'pathHome.deletePath': 'Eliminar ruta',
+  'pathHome.confirmDelete': '\u00bfEliminar "{title}" y todos sus datos? Esta acci\u00f3n no se puede deshacer.',
 
   'pathImport.title': 'Importar ruta',
   'pathImport.hint': 'Pega JSON de un LLM o sube un archivo .json exportado de Mandu.',

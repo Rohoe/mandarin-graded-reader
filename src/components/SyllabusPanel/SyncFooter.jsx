@@ -31,21 +31,21 @@ export default function SyncFooter({ cloudUser, cloudSyncing, cloudLastSynced, l
         )}
       </div>
       <button
-        className="btn btn-ghost btn-sm"
+        className="syllabus-panel__footer-btn"
         onClick={onShowFlashcards}
         title={t('footer.flashcardReview')}
       >
         <Hexagon size={14} /> {t('footer.cards')}
       </button>
       <button
-        className="btn btn-ghost btn-sm"
+        className="syllabus-panel__footer-btn"
         onClick={onShowStats}
         title={t('footer.learningStats')}
       >
         <BarChart3 size={14} /> {t('footer.stats')}
       </button>
       <button
-        className="btn btn-ghost btn-sm"
+        className="syllabus-panel__footer-btn"
         onClick={onShowSettings}
       >
         <SettingsIcon size={14} /> {t('footer.settings')}

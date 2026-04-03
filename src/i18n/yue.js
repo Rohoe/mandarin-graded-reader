@@ -704,6 +704,9 @@ export default {
   'pathHome.estimatedLessons': '大約 {count} 堂課',
   'pathHome.extendPath': '添加更多單元',
   'pathHome.extendingPath': '生成緊新單元……',
+  'pathHome.archivePath': '歸檔路徑',
+  'pathHome.deletePath': '刪除路徑',
+  'pathHome.confirmDelete': '刪除「{title}」同所有數據？呢個操作冇得撤銷。',
 
   'pathImport.title': '匯入學習路徑',
   'pathImport.hint': '貼上嚟自 LLM 嘅 JSON，或者上載從 Mandu 匯出嘅 .json 文件。',

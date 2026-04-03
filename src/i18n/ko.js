@@ -704,6 +704,9 @@ export default {
   'pathHome.estimatedLessons': '약 {count}개 수업',
   'pathHome.extendPath': '단원 더 추가',
   'pathHome.extendingPath': '새 단원 생성 중…',
+  'pathHome.archivePath': '경로 보관',
+  'pathHome.deletePath': '경로 삭제',
+  'pathHome.confirmDelete': '"{title}"과(와) 모든 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
 
   'pathImport.title': '학습 경로 가져오기',
   'pathImport.hint': 'LLM에서 받은 JSON을 붙여넣거나 Mandu에서 내보낸 .json 파일을 업로드하세요.',

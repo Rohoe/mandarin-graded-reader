@@ -708,6 +708,9 @@ export default {
   'pathHome.estimatedLessons': '~{count} le\u00e7ons',
   'pathHome.extendPath': 'Ajouter des unit\u00e9s',
   'pathHome.extendingPath': 'G\u00e9n\u00e9ration de nouvelles unit\u00e9s\u2026',
+  'pathHome.archivePath': 'Archiver le parcours',
+  'pathHome.deletePath': 'Supprimer le parcours',
+  'pathHome.confirmDelete': 'Supprimer \u00ab {title} \u00bb et toutes ses donn\u00e9es ? Cette action est irr\u00e9versible.',
 
   'pathImport.title': 'Importer un parcours',
   'pathImport.hint': 'Collez du JSON d\u2019un LLM ou t\u00e9l\u00e9versez un fichier .json export\u00e9 de Mandu.',

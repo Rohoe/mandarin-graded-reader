@@ -213,6 +213,99 @@
   gap: var(--space-2);
 }
 
+/* ── Danger zone ─────────────────────────── */
+.path-home__danger-zone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+}
+
+.path-home__danger-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.path-home__danger-divider::before,
+.path-home__danger-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.path-home__danger-actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.path-home__archive-btn {
+  align-self: flex-start;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  background: none;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius);
+  transition: background var(--transition);
+}
+
+.path-home__archive-btn:hover {
+  background: var(--color-bg-subtle);
+}
+
+.path-home__delete-btn {
+  align-self: flex-start;
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
+  font-size: var(--text-sm);
+  background: none;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius);
+  transition: background var(--transition), color var(--transition);
+}
+
+.path-home__delete-btn:hover {
+  background: var(--color-error-light);
+}
+
+.path-home__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--color-bg-elevated);
+}
+
+.path-home__confirm-text {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-text);
+}
+
+.path-home__confirm-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.path-home__delete-confirm-btn {
+  background: var(--color-error);
+  color: #fff;
+  border: none;
+}
+
+.path-home__delete-confirm-btn:hover {
+  background: var(--color-error);
+  opacity: 0.85;
+}
+
 /* Dark mode */
 [data-theme="dark"] .path-home__stats {
   background: var(--color-surface, #2a2a2a);

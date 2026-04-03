@@ -427,6 +427,16 @@ function AppShell() {
               onSelectUnit={handlePathSelectUnit}
               onOpenSettings={() => setShowSettings(true)}
               onShowImportExport={(id) => setShowPathExport(id)}
+              onArchive={() => {
+                act.archiveLearningPath(activePathId);
+                setActivePathId(null);
+                setSyllabusView('dashboard');
+              }}
+              onDelete={() => {
+                act.removeLearningPath(activePathId);
+                setActivePathId(null);
+                setSyllabusView('dashboard');
+              }}
             />
           )
           : activeSyllabusId && syllabusView === 'home' && !standaloneKey

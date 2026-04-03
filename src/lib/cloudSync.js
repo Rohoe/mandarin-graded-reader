@@ -32,7 +32,7 @@ export async function signOut() {
 // Readers are pushed individually via pushReaderToCloud when generated.
 export async function pushToCloud(state) {
   const user = await getAuthUser();
-  const { error } = await supabase.from('user_data').upsert({
+  const payload = {
     user_id:            user.id,
     syllabi:            state.syllabi,
     syllabus_progress:  state.syllabusProgress,
@@ -42,8 +42,16 @@ export async function pushToCloud(state) {
     exported_words:     [...state.exportedWords],
     learning_paths:     state.learningPaths || [],
     updated_at:         new Date().toISOString(),
-  });
-  if (error) throw error;
+  };
+  const { error } = await supabase.from('user_data').upsert(payload);
+  if (error) {
+    // Fallback: if push fails (e.g., learning_paths column not yet added),
+    // retry without learning_paths so other data still syncs
+    const { learning_paths, ...payloadWithout } = payload;
+    const { error: fallbackError } = await supabase.from('user_data').upsert(payloadWithout);
+    if (fallbackError) throw fallbackError;
+    console.warn('[cloudSync] pushToCloud: learning_paths column missing — synced without it. Run: ALTER TABLE user_data ADD COLUMN IF NOT EXISTS learning_paths JSONB DEFAULT \'[]\';');
+  }
 }
 
 // Serialize concurrent reader pushes to prevent read-modify-write races.
