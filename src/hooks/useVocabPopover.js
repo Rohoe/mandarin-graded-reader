@@ -57,7 +57,7 @@ export function useVocabPopover(reader, langConfig) {
 
   // Close popover on Escape, outside click, or scroll
   usePopoverDismissal(!!activeVocab, popoverRef, () => setActiveVocab(null), {
-    ignoreSelectors: ['.reader-view__vocab-btn'],
+    ignoreSelectors: ['.reader-view__vocab-btn', '.popover-drill-word'],
   });
 
   return { activeVocab, setActiveVocab, popoverRef, vocabMap, handleVocabClick, lookupVocab, getPopoverPosition };

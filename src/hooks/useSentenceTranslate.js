@@ -128,7 +128,7 @@ export function useSentenceTranslate(langId, nativeLang = 'en') {
 
   // Close on Escape, outside click, or scroll
   usePopoverDismissal(!!sentencePopover, popoverRef, closeSentencePopover, {
-    ignoreSelectors: ['.reader-view__word', '.reader-view__vocab-btn', '.reader-view__sentence-end'],
+    ignoreSelectors: ['.reader-view__word', '.reader-view__vocab-btn', '.reader-view__sentence-end', '.popover-drill-word'],
     pointerDelay: 50,
   });
 
