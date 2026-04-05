@@ -374,7 +374,7 @@ export default function StorySection({
         <div ref={sentencePopoverRef} className="reader-view__popover" role="dialog" aria-label={sentencePopover.mode === 'sentence' ? 'Sentence translation' : 'Word translation'} style={getPopoverPosition(sentencePopover.rect, sentencePopover.mode === 'sentence' ? 300 : 220)}>
           <PopoverContent
             text={sentencePopover.text}
-            romanization={sentencePopover.mode === 'word' ? getRomanization(sentencePopover.text) : null}
+            romanization={getRomanization(sentencePopover.text)}
             translation={sentencePopover.translation}
             ttsKey={sentencePopover.mode === 'sentence' ? `sent-${sentencePopover.pi}-${sentencePopover.si}` : `word-${sentencePopover.text}`}
             {...popoverContentProps}
