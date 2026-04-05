@@ -127,7 +127,7 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
   const { selection, popoverRef: selectionPopoverRef, clearSelection } = useTextSelection(scrollRef);
   const [selectionPopover, setSelectionPopover] = useState(null);
 
-  const { sentencePopover, sentencePopoverRef, handleWordClick, handleTranslateSentence, closeSentencePopover } = useSentenceTranslate(langId, nativeLang);
+  const { sentencePopover, highlightedSentence, sentencePopoverRef, handleWordClick, handleSentenceEndClick, closeSentencePopover } = useSentenceTranslate(langId, nativeLang);
 
   // Track reading time for this lesson
   useReadingTimer(reader ? lessonKey : null);
@@ -392,7 +392,7 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
         romanizer={romanizer}
         ttsProps={{ ttsSupported, speakingKey, speakText }}
         vocabProps={{ lookupVocab, handleVocabClick, activeVocab, onCloseVocab: () => setActiveVocab(null) }}
-        popoverProps={{ popoverRef, getPopoverPosition, selectionPopover, selectionPopoverRef, sentencePopover, sentencePopoverRef, onWordClick: handleWordClick, onTranslateSentence: handleTranslateSentence, onCloseSelection: () => { setSelectionPopover(null); clearSelection(); }, onCloseSentence: closeSentencePopover }}
+        popoverProps={{ popoverRef, getPopoverPosition, selectionPopover, selectionPopoverRef, sentencePopover, highlightedSentence, sentencePopoverRef, onWordClick: handleWordClick, onSentenceEndClick: handleSentenceEndClick, onCloseSelection: () => { setSelectionPopover(null); clearSelection(); }, onCloseSentence: closeSentencePopover }}
         translationProps={{ paragraphTranslations: reader.paragraphTranslations, onTranslate: handleTranslate, translatingIndex }}
       />
 

@@ -3,25 +3,33 @@ import { translateText } from '../lib/translate';
 import { usePopoverDismissal } from './usePopoverDismissal';
 
 /**
- * Manages word-click-to-translate popover state.
- * Clicking a word shows its translation; a button expands to sentence translation.
+ * Manages click-to-translate popovers for words and sentence-end punctuation.
+ *
+ * Two modes:
+ * - 'word': click any word → popover shows word translation
+ * - 'sentence': click sentence-end punctuation → sentence highlights, popover shows sentence translation
+ *
+ * highlightedSentence persists through word clicks so users can drill into
+ * individual words while keeping the sentence context visible.
  */
 export function useSentenceTranslate(langId, nativeLang = 'en') {
-  // { wordText, sentenceText, rect, wordTranslation, sentenceTranslation, showSentence }
+  // { mode: 'word'|'sentence', text, rect, translation, pi?, si? }
   const [sentencePopover, setSentencePopover] = useState(null);
+  // { pi, si } — which sentence is highlighted (persists through word clicks)
+  const [highlightedSentence, setHighlightedSentence] = useState(null);
   const popoverRef = useRef(null);
-  const wordAbortRef = useRef(null);
-  const sentenceAbortRef = useRef(null);
+  const abortRef = useRef(null);
 
   const closeSentencePopover = useCallback(() => {
     setSentencePopover(null);
-    if (wordAbortRef.current) { wordAbortRef.current.abort(); wordAbortRef.current = null; }
-    if (sentenceAbortRef.current) { sentenceAbortRef.current.abort(); sentenceAbortRef.current = null; }
+    setHighlightedSentence(null);
+    if (abortRef.current) { abortRef.current.abort(); abortRef.current = null; }
   }, []);
 
   /**
    * Called when a word in the story text is clicked.
-   * Opens a popover showing the word translation, with option to translate sentence.
+   * Opens a popover showing the word translation.
+   * Keeps any active sentence highlight so users can explore words in context.
    */
   const handleWordClick = useCallback((e, wordText, sentence) => {
     // Bail if clicking a vocab button (let vocab popover handle it)
@@ -32,94 +40,104 @@ export function useSentenceTranslate(langId, nativeLang = 'en') {
     if (sel && !sel.isCollapsed) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
-    const sentenceText = sentence.plainText;
+
+    // Abort any previous translation request
+    if (abortRef.current) abortRef.current.abort();
 
     // Toggle off if clicking the same word
+    let isToggleOff = false;
     setSentencePopover(prev => {
-      if (prev && prev.wordText === wordText && prev.sentenceText === sentenceText) return null;
-      return { wordText, sentenceText, rect, wordTranslation: null, sentenceTranslation: null, showSentence: false };
+      if (prev && prev.mode === 'word' && prev.text === wordText) {
+        isToggleOff = true;
+        return null;
+      }
+      return { mode: 'word', text: wordText, rect, translation: null };
     });
-
-    // Abort any previous word translation request
-    if (wordAbortRef.current) wordAbortRef.current.abort();
-    const controller = new AbortController();
-    wordAbortRef.current = controller;
+    if (isToggleOff) return;
 
     // Fetch word translation
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     translateText(wordText, langId, { to: nativeLang })
       .then(translation => {
         if (controller.signal.aborted) return;
         setSentencePopover(prev =>
-          prev && prev.wordText === wordText && prev.sentenceText === sentenceText
-            ? { ...prev, wordTranslation: translation }
+          prev && prev.mode === 'word' && prev.text === wordText
+            ? { ...prev, translation }
             : prev
         );
       })
       .catch((err) => {
         if (controller.signal.aborted || err?.name === 'AbortError') return;
         setSentencePopover(prev =>
-          prev && prev.wordText === wordText && prev.sentenceText === sentenceText
-            ? { ...prev, wordTranslation: '(translation failed)' }
+          prev && prev.mode === 'word' && prev.text === wordText
+            ? { ...prev, translation: '(translation failed)' }
             : prev
         );
       });
   }, [langId, nativeLang]);
 
   /**
-   * Called when user clicks "Translate sentence" button in the popover.
-   * Fetches and shows the full sentence translation.
+   * Called when sentence-ending punctuation is clicked.
+   * Highlights the sentence and opens a popover showing the full sentence translation.
    */
-  const handleTranslateSentence = useCallback(() => {
+  const handleSentenceEndClick = useCallback((e, sentence, pi, si) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const sentenceText = sentence.plainText;
+
+    // Abort any previous translation request
+    if (abortRef.current) abortRef.current.abort();
+
+    // Toggle off if clicking the same sentence-end
+    let isToggleOff = false;
     setSentencePopover(prev => {
-      if (!prev) return null;
-      // If already fetched, just toggle visibility
-      if (prev.sentenceTranslation) return { ...prev, showSentence: !prev.showSentence };
-      return { ...prev, showSentence: true };
+      if (prev && prev.mode === 'sentence' && prev.pi === pi && prev.si === si) {
+        isToggleOff = true;
+        setHighlightedSentence(null);
+        return null;
+      }
+      setHighlightedSentence({ pi, si });
+      return { mode: 'sentence', text: sentenceText, rect, translation: null, pi, si };
     });
+    if (isToggleOff) return;
 
-    // Only fetch if not already fetched
-    setSentencePopover(prev => {
-      if (!prev || prev.sentenceTranslation) return prev;
+    // Fetch sentence translation
+    const controller = new AbortController();
+    abortRef.current = controller;
 
-      // Abort any previous sentence translation request
-      if (sentenceAbortRef.current) sentenceAbortRef.current.abort();
-      const controller = new AbortController();
-      sentenceAbortRef.current = controller;
-      const sentenceText = prev.sentenceText;
-
-      translateText(sentenceText, langId, { to: nativeLang })
-        .then(translation => {
-          if (controller.signal.aborted) return;
-          setSentencePopover(p =>
-            p && p.sentenceText === sentenceText
-              ? { ...p, sentenceTranslation: translation }
-              : p
-          );
-        })
-        .catch((err) => {
-          if (controller.signal.aborted || err?.name === 'AbortError') return;
-          setSentencePopover(p =>
-            p && p.sentenceText === sentenceText
-              ? { ...p, sentenceTranslation: '(translation failed)' }
-              : p
-          );
-        });
-
-      return prev;
-    });
+    translateText(sentenceText, langId, { to: nativeLang })
+      .then(translation => {
+        if (controller.signal.aborted) return;
+        setSentencePopover(prev =>
+          prev && prev.mode === 'sentence' && prev.pi === pi && prev.si === si
+            ? { ...prev, translation }
+            : prev
+        );
+      })
+      .catch((err) => {
+        if (controller.signal.aborted || err?.name === 'AbortError') return;
+        setSentencePopover(prev =>
+          prev && prev.mode === 'sentence' && prev.pi === pi && prev.si === si
+            ? { ...prev, translation: '(translation failed)' }
+            : prev
+        );
+      });
   }, [langId, nativeLang]);
 
   // Close on Escape, outside click, or scroll
   usePopoverDismissal(!!sentencePopover, popoverRef, closeSentencePopover, {
-    ignoreSelectors: ['.reader-view__word', '.reader-view__vocab-btn'],
+    ignoreSelectors: ['.reader-view__word', '.reader-view__vocab-btn', '.reader-view__sentence-end'],
     pointerDelay: 50,
   });
 
   return {
     sentencePopover,
+    highlightedSentence,
     sentencePopoverRef: popoverRef,
     handleWordClick,
-    handleTranslateSentence,
+    handleSentenceEndClick,
     closeSentencePopover,
   };
 }

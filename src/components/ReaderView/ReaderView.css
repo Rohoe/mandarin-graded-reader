@@ -532,7 +532,18 @@ rt {
 
 /* ── Word click-to-translate ────────────── */
 .reader-view__sentence {
-  /* Sentence wrapper — no hover effect, just groups words */
+  border-radius: 2px;
+  transition: background 0.2s ease;
+}
+
+/* Highlight sentence on period hover (CSS :has) */
+.reader-view__sentence:has(.reader-view__sentence-end:hover) {
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+
+/* Keep sentence highlighted when its translation popover is open */
+.reader-view__sentence--highlighted {
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 
 .reader-view__word {
@@ -545,147 +556,21 @@ rt {
   background: color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 
-.sentence-popover {
-  width: 280px;
-  padding: var(--space-2) var(--space-3);
-  gap: 2px;
+/* Sentence-ending punctuation — clickable for sentence translation */
+.reader-view__sentence-end {
+  cursor: pointer;
+  border-radius: 2px;
+  transition: color 0.15s ease;
 }
 
-.sentence-popover__original {
-  cursor: text;
-  user-select: text;
-  font-weight: 600;
-  font-size: var(--text-sm);
-  line-height: 1.4;
-}
-
-.sentence-popover__original--ruby {
-  line-height: 2.2;
-}
-
-.sentence-popover__translation {
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  min-height: 1.2em;
-}
-
-@media (min-width: 769px) {
-  .sentence-popover { width: 320px; }
-  .sentence-popover__original { font-size: var(--text-base); }
-  .sentence-popover__translation { font-size: var(--text-sm); }
+.reader-view__sentence-end:hover {
+  color: var(--color-accent);
 }
 
 .popover-tts-row {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-}
-
-.sentence-popover__bottom-row {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-}
-
-.sentence-popover__bottom-row .sentence-popover__translation {
-  flex: 1;
-  min-width: 0;
-}
-
-.sentence-popover__copy-btn {
-  flex-shrink: 0;
-  background: none;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
-  color: var(--color-text-subtle);
-  padding: 1px 4px;
-  cursor: pointer;
-  opacity: 0.6;
-  transition: opacity 0.15s ease, background 0.15s ease;
-  line-height: 1.4;
-}
-
-.sentence-popover__copy-btn:hover {
-  opacity: 1;
-  background: var(--color-accent-light);
-  color: var(--color-accent);
-  border-color: var(--color-accent-dim);
-}
-
-.sentence-popover__sentence-btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-1);
-  width: 100%;
-  background: none;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  padding: var(--space-1) var(--space-2);
-  cursor: pointer;
-  margin-top: var(--space-1);
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.sentence-popover__sentence-btn:hover {
-  background: var(--color-accent-light);
-  color: var(--color-accent);
-  border-color: var(--color-accent-dim);
-}
-
-.sentence-popover__sentence-section {
-  border-top: 1px solid var(--color-border);
-  padding-top: var(--space-1);
-  margin-top: var(--space-1);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.sentence-popover__sentence-text {
-  font-size: var(--text-xs);
-  line-height: 1.4;
-}
-
-.sentence-popover__sentence-text.sentence-popover__original--ruby {
-  line-height: 2.2;
-}
-
-.sentence-popover__sentence-translation {
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  min-height: 1.2em;
-}
-
-/* ── Selection popover ──────────────────── */
-.reader-view__selection-popover {
-  width: 260px;
-}
-
-.reader-view__selection-text {
-  font-size: var(--text-lg);
-  font-weight: 700;
-  color: var(--color-text);
-  word-break: break-word;
-}
-
-.reader-view__selection-romanization {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: var(--text-base);
-  color: var(--color-accent);
-}
-
-.reader-view__selection-translation {
-  font-family: var(--font-display);
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
 }
 
 /* ── Popover TTS button (shared) ──────────── */
