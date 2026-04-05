@@ -298,11 +298,7 @@ export default function StorySection({
                               </button>
                             );
                           }
-                          return (
-                            <strong key={i} className="reader-view__vocab">
-                              {renderChars(seg.content, `${pi}-${si}-b${i}`)}
-                            </strong>
-                          );
+                          return <WordSegments key={i} text={seg.content} langId={langId} sentence={sentence} renderChars={renderChars} keyPrefix={`${pi}-${si}-b${i}`} onWordClick={onWordClick} tag="strong" />;
                         }
                         if (seg.type === 'italic') {
                           return <WordSegments key={i} text={seg.content} langId={langId} sentence={sentence} renderChars={renderChars} keyPrefix={`${pi}-${si}-em${i}`} onWordClick={onWordClick} tag="em" />;
@@ -374,7 +370,7 @@ export default function StorySection({
         <div ref={sentencePopoverRef} className="reader-view__popover" role="dialog" aria-label={sentencePopover.mode === 'sentence' ? 'Sentence translation' : 'Word translation'} style={getPopoverPosition(sentencePopover.rect, sentencePopover.mode === 'sentence' ? 300 : 220)}>
           <PopoverContent
             text={sentencePopover.text}
-            romanization={getRomanization(sentencePopover.text)}
+            romanization={sentencePopover.mode === 'word' ? getRomanization(sentencePopover.text) : null}
             translation={sentencePopover.translation}
             ttsKey={sentencePopover.mode === 'sentence' ? `sent-${sentencePopover.pi}-${sentencePopover.si}` : `word-${sentencePopover.text}`}
             {...popoverContentProps}
