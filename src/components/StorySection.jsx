@@ -129,7 +129,7 @@ function PopoverContent({ text, romanization, translation, ttsKey, langId, nativ
 
   const getSubRomanization = (t) => {
     if (!romanizer) return null;
-    try { return romanizer.romanize(t).join(''); } catch { return null; }
+    try { return romanizer.romanize(t).join(' ').replace(/ +/g, ' ').trim(); } catch { return null; }
   };
 
   const renderText = () => {
@@ -246,10 +246,10 @@ export default function StorySection({
     return sentenceEndRegex.test(seg.content) && seg.content.length <= 2;
   }
 
-  /** Get romanization string for text */
+  /** Get romanization string for text (space-separated) */
   function getRomanization(text) {
     if (!romanizer) return null;
-    try { return romanizer.romanize(text).join(''); } catch { return null; }
+    try { return romanizer.romanize(text).join(' ').replace(/ +/g, ' ').trim(); } catch { return null; }
   }
 
   /** Shared popover content props */

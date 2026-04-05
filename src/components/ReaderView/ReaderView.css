@@ -512,16 +512,19 @@ rt {
 
 .reader-view__popover-chinese {
   font-family: var(--font-chinese);
-  font-size: var(--text-chinese-title);
+  font-size: var(--text-lg);
   font-weight: 700;
   color: var(--color-text);
+  word-break: break-word;
 }
 
 .reader-view__popover-pinyin {
   font-family: var(--font-display);
   font-style: italic;
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   color: var(--color-accent);
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .reader-view__popover-english {
