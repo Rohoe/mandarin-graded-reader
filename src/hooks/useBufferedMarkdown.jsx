@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
  * Debounces streaming text and converts simple markdown to React elements.
  * Handles: ### headers, **bold**, *italic*, paragraphs.
  * Strips code fences (```…```) since those are data blocks, not display content.
+ * Also extracts partial vocab entries from incomplete vocab-json blocks.
  */
 export function useBufferedMarkdown(streamingText, delay = 80) {
   const [buffered, setBuffered] = useState(streamingText);
@@ -21,7 +22,10 @@ export function useBufferedMarkdown(streamingText, delay = 80) {
     return () => clearTimeout(timerRef.current);
   }, [streamingText, delay]);
 
-  return useMemo(() => renderMarkdown(buffered), [buffered]);
+  const rendered = useMemo(() => renderMarkdown(buffered), [buffered]);
+  const partialVocab = useMemo(() => extractPartialVocab(buffered), [buffered]);
+
+  return { rendered, partialVocab };
 }
 
 /* ── Lightweight markdown → React elements ──────────────────── */
@@ -66,6 +70,55 @@ function renderMarkdown(text) {
   flushPara();
 
   return elements.length > 0 ? elements : null;
+}
+
+/* ── Extract completed vocab objects from a partial vocab-json block ── */
+
+const EMPTY_VOCAB = [];
+
+function extractPartialVocab(text) {
+  if (!text) return EMPTY_VOCAB;
+
+  // Find the start of the vocab-json fence
+  const fenceStart = text.indexOf('```vocab-json');
+  if (fenceStart === -1) return EMPTY_VOCAB;
+
+  // Content after the opening fence line
+  const afterFence = text.slice(fenceStart + '```vocab-json'.length);
+
+  // Extract each complete JSON object using brace counting
+  const entries = [];
+  let i = 0;
+  while (i < afterFence.length) {
+    // Find next opening brace
+    const objStart = afterFence.indexOf('{', i);
+    if (objStart === -1) break;
+
+    // Count braces to find the matching close
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    let j = objStart;
+    for (; j < afterFence.length; j++) {
+      const ch = afterFence[j];
+      if (escaped) { escaped = false; continue; }
+      if (ch === '\\' && inString) { escaped = true; continue; }
+      if (ch === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (ch === '{') depth++;
+      else if (ch === '}') { depth--; if (depth === 0) break; }
+    }
+
+    if (depth !== 0) break; // incomplete object — stop here
+
+    try {
+      const obj = JSON.parse(afterFence.slice(objStart, j + 1));
+      entries.push(obj);
+    } catch { /* malformed — skip */ }
+    i = j + 1;
+  }
+
+  return entries.length > 0 ? entries : EMPTY_VOCAB;
 }
 
 function renderInlineMarkdown(text) {
