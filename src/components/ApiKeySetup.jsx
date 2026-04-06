@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
 import './ApiKeySetup.css';
 
 export default function ApiKeySetup() {
   const { dispatch } = useApp();
-  const act = actions(dispatch);
+  const act = useMemo(() => actions(dispatch), [dispatch]);
 
   const [key, setKey]       = useState('');
   const [show, setShow]     = useState(false);

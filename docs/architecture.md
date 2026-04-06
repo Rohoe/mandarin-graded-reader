@@ -10,7 +10,8 @@
 | `reducers/` | 10 domain slice reducers: `providerReducer`, `syllabusReducer`, `readerReducer`, `vocabularyReducer`, `grammarReducer`, `dataReducer`, `preferencesReducer`, `uiReducer`, `cloudReducer`, `learningPathReducer`. Each handles its own action types; composed in AppContext. |
 | `usePersistence.js` | Persistence side-effects extracted from AppContext. useEffect hooks keyed to state slices. Uses `mountedRef` to skip initial-render saves. Generated readers use `prevReadersRef` diffing. |
 | `useApp.js` | useApp hook (separate file for ESLint fast-refresh rule) |
-| `actions.js` | actions() helper factory (separate file for same reason) |
+| `actions.js` | actions() helper factory (separate file for same reason). Memoized via `useMemo(() => actions(dispatch), [dispatch])` at call sites for stable reference. |
+| `ReaderContext.jsx` | Reader-scoped context for shared props (langId, nativeLang, renderChars, TTS, onWordClick). Reduces prop drilling from ReaderView to 5 child components. |
 
 ### `src/lib/`
 
@@ -26,7 +27,16 @@
 | `chatApi.js` | Multi-turn chat API for tutor feature. `callLLMChat()` sends full message array to any provider. `callLLMChatStream()` async generator for Anthropic streaming (delegates to `parseSSEStream()`), falls back to non-streaming for others. Provider message format mapping (Anthropic: system param; OpenAI: system role; Gemini: system_instruction + user/model roles). Sliding window keeps last 20 messages. `buildExternalTutorPrompt()` generates self-contained prompt for pasting into Claude/ChatGPT. |
 | `difficultyValidator.js` | `assessDifficulty(vocab, learnedVocabulary, level)` computes new-word ratio and returns an assessment label/class. Used by ReaderHeader to show a difficulty badge. |
 | `stats.js` | `computeStats(state)`, `getStreak()`, `getWordsByPeriod()`, `buildLearnerProfile()`, `buildLearnerContext()`, `buildReviewContext()`, `getLevelUpRecommendation()` |
-| `storage.js` | localStorage helpers with file fan-out via `setDirectoryHandle()`. Preferences, vocabulary, grammar, activity persistence. Re-exports reader operations from `readerStorage.js`. Provider keys NOT synced to file/cloud. |
+| `storage.js` | Re-export barrel for domain-specific storage modules. Also contains `clearAllAppData()`, `exportAllData()`, `getStorageUsage()`. |
+| `storageHelpers.js` | Shared storage utilities: `load`/`save`/`saveWithFile`, `_dirHandle` management, `saveSyllabiFile` bundler. |
+| `storageProvider.js` | API keys, provider selection, models, presets. NOT synced to file/cloud. |
+| `storageSyllabus.js` | Syllabi, progress, standalone readers, learning paths. Uses `saveSyllabiFile` for bundled file writes. |
+| `storageVocabulary.js` | Learned vocabulary, exported words. File fan-out via `saveWithFile`. |
+| `storageGrammar.js` | Learned grammar patterns, grammar sessions. File fan-out via `saveWithFile`. |
+| `storagePreferences.js` | All UI preferences: dark mode, TTS, levels, romanization, translation, export flags, immersion mode. |
+| `storageSession.js` | Flashcard sessions (per-language), native language, last session restore. |
+| `storageCloud.js` | Cloud sync timestamps, last-modified. |
+| `storageActivity.js` | Learning activity (with stash/prune), reading time, weekly goals, difficulty feedback, milestones. |
 | `readerStorage.js` | Reader-specific storage: per-reader lazy localStorage, migration from monolithic key, CRUD (load/save/delete), safe save with quota handling, LRU eviction (>30 cached, >30 days), evicted keys tracking. |
 | `fileStorage.js` | File System Access API layer. Stores directory handle in IndexedDB. File layout: `graded-reader-syllabi.json`, `graded-reader-readers.json`, `graded-reader-vocabulary.json`, `graded-reader-exported.json`. |
 | `parser.js` | Parses LLM markdown → structured data. `normalizeStructuredReader()` for JSON mode. Language-aware via `langConfig.scriptRegex`. Vocab items have both canonical (target/romanization/translation) and legacy (chinese/pinyin/english) fields. |

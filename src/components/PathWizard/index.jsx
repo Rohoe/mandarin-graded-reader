@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useAppSelector, useAppDispatch } from '../../context/useAppSelector';
 import { actions } from '../../context/actions';
 import { generateLearningPath } from '../../lib/api';
@@ -19,7 +19,7 @@ export default function PathWizard({ onCreated, onCancel, onOpenSettings, onShow
     maxTokens: s.maxTokens, loading: s.loading,
   }));
   const dispatch = useAppDispatch();
-  const act = actions(dispatch);
+  const act = useMemo(() => actions(dispatch), [dispatch]);
   const t = useT();
 
   const defaultKeyAvailable = !hasAnyUserKey(providerKeys) && !!import.meta.env.VITE_DEFAULT_GEMINI_KEY;

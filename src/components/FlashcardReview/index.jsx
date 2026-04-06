@@ -42,7 +42,7 @@ export default function FlashcardReview({ onClose, initialLangId, initialMode, v
     romanizationOn: s.romanizationOn,
   }));
   const dispatch = useAppDispatch();
-  const act = actions(dispatch);
+  const act = useMemo(() => actions(dispatch), [dispatch]);
   const languages = getAllLanguages();
 
   // Detect which languages have vocab or grammar

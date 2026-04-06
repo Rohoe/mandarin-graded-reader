@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
  * Shared hook to dismiss a popover on Escape, outside click, or scroll.
@@ -14,26 +14,35 @@ import { useEffect } from 'react';
 export function usePopoverDismissal(isOpen, popoverRef, onClose, options = {}) {
   const { ignoreSelectors = [], pointerDelay = 0, onEscape } = options;
 
+  // Refs for callbacks/arrays that callers often pass inline (unstable references).
+  // Reading from refs inside handlers avoids thrashing event listeners.
+  const onCloseRef = useRef(onClose);
+  const onEscapeRef = useRef(onEscape);
+  const ignoreSelectorsRef = useRef(ignoreSelectors);
+  onCloseRef.current = onClose;
+  onEscapeRef.current = onEscape;
+  ignoreSelectorsRef.current = ignoreSelectors;
+
   useEffect(() => {
     if (!isOpen) return;
 
     function onKey(e) {
       if (e.key === 'Escape') {
-        onEscape?.();
-        onClose();
+        onEscapeRef.current?.();
+        onCloseRef.current();
       }
     }
 
     function onPointerDown(e) {
       if (popoverRef.current && popoverRef.current.contains(e.target)) return;
-      for (const sel of ignoreSelectors) {
+      for (const sel of ignoreSelectorsRef.current) {
         if (e.target.closest(sel)) return;
       }
-      onClose();
+      onCloseRef.current();
     }
 
     function onScroll() {
-      onClose();
+      onCloseRef.current();
     }
 
     document.addEventListener('keydown', onKey);
@@ -54,5 +63,5 @@ export function usePopoverDismissal(isOpen, popoverRef, onClose, options = {}) {
       document.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('scroll', onScroll, true);
     };
-  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOpen, popoverRef, pointerDelay]);
 }

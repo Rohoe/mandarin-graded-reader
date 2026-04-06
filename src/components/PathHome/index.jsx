@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAppSelector, useAppDispatch } from '../../context/useAppSelector';
 import { actions } from '../../context/actions';
 import { generatePathUnitSyllabus, extendLearningPathAPI } from '../../lib/api';
@@ -20,7 +20,7 @@ export default function PathHome({ pathId, onSelectUnit, onOpenSettings, onShowI
     maxTokens: s.maxTokens, nativeLang: s.nativeLang || 'en', immersionMode: s.immersionMode || 'auto', loading: s.loading,
   }));
   const dispatch = useAppDispatch();
-  const act = actions(dispatch);
+  const act = useMemo(() => actions(dispatch), [dispatch]);
   const t = useT();
 
   const path = learningPaths.find(p => p.id === pathId);

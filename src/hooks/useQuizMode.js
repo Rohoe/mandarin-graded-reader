@@ -29,12 +29,15 @@ export function useQuizMode({
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
 
+  // Capture initial resultKeys to avoid re-shuffling on parent re-renders
+  const resultKeysRef = useRef(resultKeys);
+
   // Build initial results shape: { correct: 0, incorrect: 0, ...extraKeys }
   const initialResults = useMemo(() => {
     const base = { correct: 0, incorrect: 0 };
-    for (const key of resultKeys) base[key] = 0;
+    for (const key of resultKeysRef.current) base[key] = 0;
     return base;
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const [results, setResults] = useState(initialResults);
   const lastJudgmentRef = useRef(null);

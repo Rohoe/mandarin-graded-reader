@@ -40,7 +40,7 @@ export default function SyllabusPanel({
     showArchived: s.showArchived,
   }));
   const dispatch = useAppDispatch();
-  const act = actions(dispatch);
+  const act = useMemo(() => actions(dispatch), [dispatch]);
   const t = useT();
   const pendingCount = Object.keys(pendingReaders).length;
 

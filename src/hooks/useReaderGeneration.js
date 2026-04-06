@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect, useState } from 'react';
+import { useCallback, useRef, useEffect, useState, useMemo } from 'react';
 import { useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { getLang } from '../lib/languages';
@@ -8,7 +8,7 @@ import { startBackgroundGeneration, getRunningGeneration } from '../lib/backgrou
 
 export function useReaderGeneration({ lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength, useStructuredOutput = false, nativeLang = 'en', immersionMode = 'auto', syllabus, generatedReaders, learningActivity, difficultyFeedback }) {
   const dispatch = useAppDispatch();
-  const act = actions(dispatch);
+  const act = useMemo(() => actions(dispatch), [dispatch]);
   const [streamingText, setStreamingText] = useState(null);
   const subRef = useRef(null); // current background generation handle
 

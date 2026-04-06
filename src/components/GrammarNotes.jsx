@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useT } from '../i18n';
+import { useReader } from '../context/ReaderContext';
 import TranslatableText from './TranslatableText';
 import { InteractiveText } from './WordSegments';
 import './GrammarNotes.css';
 
-export default function GrammarNotes({ grammarNotes, renderChars, langId, nativeLang, generatedInTargetLang, onWordClick }) {
+export default function GrammarNotes({ grammarNotes, generatedInTargetLang }) {
+  const { renderChars, langId, nativeLang, onWordClick } = useReader();
   const [collapsed, setCollapsed] = useState(false);
   const t = useT();
   if (!grammarNotes?.length) return null;

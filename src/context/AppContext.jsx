@@ -393,7 +393,7 @@ export function AppProvider({ children }) {
     performRevertMerge,
     pauseSync,
     resumeSync,
-  }), []); // eslint-disable-line react-hooks/exhaustive-deps
+  }), []); // eslint-disable-line react-hooks/exhaustive-deps — intentionally stable: all values are stable refs/callbacks from useReducer
 
   return (
     <AppContext.Provider value={ctxValue}>

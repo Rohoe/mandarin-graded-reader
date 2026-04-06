@@ -30,7 +30,7 @@ export function useTTS({ langConfig, langId, voiceURIs, setTtsVoice, speechRate 
     loadVoices();
     window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
     return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps — langConfig, activeVoiceURI, setTtsVoice derived from langId; pickBestVoice is stable per langId
   }, [ttsSupported, langId]);
 
   const speakText = useCallback((text, key, options = {}) => {

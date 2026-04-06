@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 
@@ -9,7 +9,7 @@ import { actions } from '../context/actions';
  */
 export function useReadingTimer(lessonKey) {
   const dispatch = useAppDispatch();
-  const act = actions(dispatch);
+  const act = useMemo(() => actions(dispatch), [dispatch]);
 
   const startRef = useRef(null);       // timestamp when current active window started
   const accumulatedRef = useRef(0);    // seconds accumulated but not yet flushed
@@ -30,7 +30,7 @@ export function useReadingTimer(lessonKey) {
       }
       accumulatedRef.current = 0;
     }
-  }, [lessonKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [lessonKey, act]); // act is stable after useMemo
 
   const startTimer = useCallback(() => {
     if (startRef.current == null) {
@@ -79,5 +79,5 @@ export function useReadingTimer(lessonKey) {
       document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [lessonKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [lessonKey, startTimer, pauseTimer, resetIdle, flush]); // all stable useCallbacks chained from lessonKey
 }

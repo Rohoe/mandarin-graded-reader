@@ -64,8 +64,7 @@ export default function GenerationProgress({ type = 'reader', targetLength, lang
     // Small initial delay so the bar visibly starts from 0
     const timer = setTimeout(advance, 80);
     return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [phases]);
 
   // Estimated time remaining
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { translateText, batchTranslate } from '../lib/translate';
 
 const LANG_MAP = { zh: 'zh-CN', yue: 'yue', ko: 'ko', fr: 'fr', es: 'es', en: 'en', ja: 'ja' };
@@ -15,10 +15,21 @@ export function useQuestionTranslation({ questions, lessonKey, langId, nativeLan
   const [translatingQIndex, setTranslatingQIndex] = useState(null);
   const [translatingAll, setTranslatingAll] = useState(false);
 
+  // Refs to avoid re-triggering the batch translate effect when these change
+  // (adding questionTranslations as a dep would loop: translate → cache → state change → re-translate)
+  const langIdRef = useRef(langId);
+  const nativeLangRef = useRef(nativeLang);
+  const questionTranslationsRef = useRef(questionTranslations);
+  const onCacheRef = useRef(onCacheQuestionTranslations);
+  langIdRef.current = langId;
+  nativeLangRef.current = nativeLang;
+  questionTranslationsRef.current = questionTranslations;
+  onCacheRef.current = onCacheQuestionTranslations;
+
   // Batch translate all question content when translateQuestions is on
   useEffect(() => {
     if (!translateQuestions || !questions || questions.length === 0) return;
-    const cached = questionTranslations || {};
+    const cached = questionTranslationsRef.current || {};
 
     const toTranslate = [];
     questions.forEach((q, i) => {
@@ -47,8 +58,8 @@ export function useQuestionTranslation({ questions, lessonKey, langId, nativeLan
 
     let cancelled = false;
     setTranslatingAll(true);
-    const fromLang = LANG_MAP[langId] || langId;
-    const toLang = nativeLang === langId ? 'en' : (nativeLang || 'en');
+    const fromLang = LANG_MAP[langIdRef.current] || langIdRef.current;
+    const toLang = nativeLangRef.current === langIdRef.current ? 'en' : (nativeLangRef.current || 'en');
 
     batchTranslate(toTranslate.map(t => t.text), { from: fromLang, to: toLang })
       .then(results => {
@@ -57,7 +68,7 @@ export function useQuestionTranslation({ questions, lessonKey, langId, nativeLan
         toTranslate.forEach((item, idx) => {
           newTranslations[item.key] = results[idx] || '';
         });
-        onCacheQuestionTranslations?.(newTranslations);
+        onCacheRef.current?.(newTranslations);
       })
       .catch(err => {
         if (!cancelled) console.warn('[useQuestionTranslation] Batch translate failed:', err.message);
@@ -67,7 +78,7 @@ export function useQuestionTranslation({ questions, lessonKey, langId, nativeLan
       });
 
     return () => { cancelled = true; };
-  }, [translateQuestions, lessonKey, questions?.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [translateQuestions, lessonKey, questions?.length]);
 
   const handleQTranslateClick = useCallback(async (i, qText, qTranslation) => {
     // Toggle off if already visible

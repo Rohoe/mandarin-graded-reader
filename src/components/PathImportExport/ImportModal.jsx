@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAppDispatch } from '../../context/useAppSelector';
 import { actions } from '../../context/actions';
 import { validateImportedPath } from '../../lib/learningPathSchema';
@@ -6,7 +6,7 @@ import { useT } from '../../i18n';
 
 export default function ImportModal({ onClose, onImported }) {
   const dispatch = useAppDispatch();
-  const act = actions(dispatch);
+  const act = useMemo(() => actions(dispatch), [dispatch]);
   const t = useT();
   const [jsonText, setJsonText] = useState('');
   const [errors, setErrors] = useState([]);

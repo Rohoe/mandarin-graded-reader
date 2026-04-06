@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { useAppSelector } from './context/useAppSelector';
 import { actions } from './context/actions';
@@ -74,7 +74,7 @@ function Notification() {
 
 function AppShell() {
   const { state, dispatch, pushGeneratedReader } = useApp();
-  const act = actions(dispatch);
+  const act = useMemo(() => actions(dispatch), [dispatch]);
   const t = useT();
   const { syllabi, syllabusProgress } = state;
 
@@ -116,13 +116,10 @@ function AppShell() {
   }, [activeSyllabusId, syllabusView, standaloneKey]);
 
   // Auto-show new form for truly new users with no content
-  const nonArchSyllabi = syllabi.filter(s => !s.archived);
-  const nonArchStandalone = state.standaloneReaders.filter(r => !r.archived);
   useEffect(() => {
-    if (nonArchSyllabi.length === 0 && nonArchStandalone.length === 0) {
-      setShowNewForm(true);
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    const hasContent = syllabi.some(s => !s.archived) || state.standaloneReaders.some(r => !r.archived);
+    if (!hasContent) setShowNewForm(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps — mount-only check; filtering moved inside to avoid closure dep
 
   // Lock body scroll when mobile sidebar is open
   useEffect(() => {

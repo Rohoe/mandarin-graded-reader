@@ -32,7 +32,7 @@ export default function MatchingMode({ cards, onJudge, onClose }) {
   // Shuffle right column independently
   const shuffledRight = useMemo(() => {
     return shuffle(batch.map((_, i) => i));
-  }, [batch, batchIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [batch, batchIndex]); // eslint-disable-line react-hooks/exhaustive-deps — batchIndex triggers reshuffle; batch is derived from batchIndex
 
   const handleClick = useCallback((side, index) => {
     if (matched.has(index) && side === 'left') return;

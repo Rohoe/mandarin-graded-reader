@@ -21,26 +21,29 @@ const WASM_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/sql-wasm.
 
 function getSql() {
   if (!_sqlPromise) {
-    _sqlPromise = import('sql.js').then(async mod => {
-      const initSqlJs = mod.default;
+    _sqlPromise = (async () => {
       try {
-        // Try local copy first (from /public/sql-wasm.wasm).
-        // The browser bundle of sql.js requests "sql-wasm-browser.wasm" but
-        // we ship "sql-wasm.wasm" in public/, so normalise the filename.
-        return await initSqlJs({
-          locateFile: file => `/${file.replace('-browser', '')}`,
-        });
-      } catch {
-        // Fallback: fetch WASM from CDN and pass the binary directly
-        const resp = await fetch(WASM_CDN);
-        if (!resp.ok) throw new Error(`Failed to fetch sql-wasm.wasm from CDN (${resp.status})`);
-        const wasmBinary = await resp.arrayBuffer();
-        return await initSqlJs({ wasmBinary });
+        const mod = await import('sql.js');
+        const initSqlJs = mod.default;
+        try {
+          // Try local copy first (from /public/sql-wasm.wasm).
+          // The browser bundle of sql.js requests "sql-wasm-browser.wasm" but
+          // we ship "sql-wasm.wasm" in public/, so normalise the filename.
+          return await initSqlJs({
+            locateFile: file => `/${file.replace('-browser', '')}`,
+          });
+        } catch {
+          // Fallback: fetch WASM from CDN and pass the binary directly
+          const resp = await fetch(WASM_CDN);
+          if (!resp.ok) throw new Error(`Failed to fetch sql-wasm.wasm from CDN (${resp.status})`);
+          const wasmBinary = await resp.arrayBuffer();
+          return await initSqlJs({ wasmBinary });
+        }
+      } catch (err) {
+        _sqlPromise = null;
+        throw err;
       }
-    }).catch(err => {
-      _sqlPromise = null;
-      throw err;
-    });
+    })();
   }
   return _sqlPromise;
 }

@@ -22,7 +22,7 @@ export function useStartupEviction(state, dispatch, stateRef) {
     if (pruned !== state.learningActivity) {
       dispatch({ type: SET_LEARNING_ACTIVITY, payload: pruned });
     }
-  }, [state.fsInitialized]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.fsInitialized, dispatch]); // eslint-disable-line react-hooks/exhaustive-deps — state.learningActivity read once at mount via fsInitialized gate
 
   // Evict stale readers from localStorage on startup (only when backup exists)
   useEffect(() => {
@@ -67,5 +67,5 @@ export function useStartupEviction(state, dispatch, stateRef) {
     }
 
     runEviction();
-  }, [state.fsInitialized]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.fsInitialized]); // eslint-disable-line react-hooks/exhaustive-deps — reads current state via stateRef; dispatch and saveFolder/cloudUser stable at startup
 }

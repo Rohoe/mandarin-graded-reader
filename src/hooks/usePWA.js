@@ -31,7 +31,8 @@ export function usePWA() {
     navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
 
     // Also detect waiting SW on page load
-    navigator.serviceWorker.ready.then(reg => {
+    (async () => {
+      const reg = await navigator.serviceWorker.ready;
       if (reg.waiting) setNeedRefresh(true);
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
@@ -42,13 +43,15 @@ export function usePWA() {
           }
         });
       });
-    });
+    })();
 
     // Check for SW updates when app is foregrounded (critical for installed PWAs
     // that can sit in the background for days running stale code)
     function onVisibilityChange() {
       if (document.visibilityState === 'visible') {
-        navigator.serviceWorker.ready.then(reg => reg.update()).catch(() => {});
+        navigator.serviceWorker.ready
+          .then(reg => reg.update())
+          .catch(e => console.warn('[PWA] SW update check failed:', e));
       }
     }
     document.addEventListener('visibilitychange', onVisibilityChange);

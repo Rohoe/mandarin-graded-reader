@@ -64,5 +64,5 @@ export function useFileStorageInit(dispatch) {
       dispatch({ type: SET_CLOUD_USER, payload: session?.user ?? null });
     });
     return () => subscription.unsubscribe();
-  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dispatch]);  // eslint-disable-line react-hooks/exhaustive-deps — mount-only init; dispatch is stable from useReducer
 }

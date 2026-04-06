@@ -47,7 +47,7 @@ export default function SentenceBuilderMode({ cards, onJudge, onClose, langId, s
   const scrambled = useMemo(() => {
     if (!card) return [];
     return shuffle(card.tiles.map((_, i) => i));
-  }, [card, index]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [card, index]); // eslint-disable-line react-hooks/exhaustive-deps — index triggers reshuffle; card is derived from index
 
   // Which scrambled indices are still available (not placed)
   const available = useMemo(() => {

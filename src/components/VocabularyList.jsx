@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { renderInline, stripMarkdown } from '../lib/renderInline';
 import { useT } from '../i18n';
+import { useReader } from '../context/ReaderContext';
 import TranslatableText from './TranslatableText';
 import { InteractiveText } from './WordSegments';
 import { Volume2, Square } from 'lucide-react';
@@ -139,7 +140,8 @@ const VocabCard = React.memo(function VocabCard({ word, index, renderChars, spea
   );
 });
 
-export default function VocabularyList({ vocabulary, renderChars, speakText, speakingKey, ttsSupported, showParagraphTools, onTranslateExample, translatingKey, vocabTranslations, langId, nativeLang, generatedInTargetLang, onWordClick, romanizer }) {
+export default function VocabularyList({ vocabulary, onTranslateExample, translatingKey, vocabTranslations, generatedInTargetLang, romanizer }) {
+  const { renderChars, speakText, speakingKey, ttsSupported, showParagraphTools, langId, nativeLang, onWordClick } = useReader();
   const [collapsed, setCollapsed] = useState(false);
   const [visibleTranslations, setVisibleTranslations] = useState(new Set());
   const t = useT();

@@ -27,7 +27,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
   const canGenerate = !!apiKey || defaultKeyAvailable;
   const dispatch = useAppDispatch();
   const { pushGeneratedReader } = useContext(AppContext);
-  const act = actions(dispatch);
+  const act = useMemo(() => actions(dispatch), [dispatch]);
   const t = useT();
 
   const [topic, setTopic]         = useState('');

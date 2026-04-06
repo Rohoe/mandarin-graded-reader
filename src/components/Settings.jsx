@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { actions } from '../context/actions';
 import { getStorageUsage, loadAllReaders, exportAllData } from '../lib/storage';
@@ -16,7 +16,7 @@ import './Settings.css';
 
 export default function Settings({ onClose }) {
   const { state, dispatch, pickSaveFolder, removeSaveFolder, clearAllData, performRestore, performRevertMerge, pauseSync, resumeSync } = useApp();
-  const act = actions(dispatch);
+  const act = useMemo(() => actions(dispatch), [dispatch]);
   const t = useT();
 
   const TABS = [

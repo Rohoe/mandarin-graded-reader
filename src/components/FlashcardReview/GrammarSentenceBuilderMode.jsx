@@ -55,7 +55,7 @@ export default function GrammarSentenceBuilderMode({ cards, session, langId, act
     setPlaced([]);
     setRevealed(false);
     setIsCorrect(false);
-  }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [index, eligibleCards]);
 
   const handleTileClick = useCallback((scrambledIdx) => {
     if (revealed) return;

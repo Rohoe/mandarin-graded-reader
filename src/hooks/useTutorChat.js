@@ -14,7 +14,7 @@ import { useStreamAccumulator } from './useStreamAccumulator';
 
 export function useTutorChat({ lessonKey, reader, lessonMeta, langId, nativeLang, llmConfig, syllabus, generatedReaders }) {
   const dispatch = useAppDispatch();
-  const act = actions(dispatch);
+  const act = useMemo(() => actions(dispatch), [dispatch]);
   const abortRef = useRef(null);
   const { streamingText, consumeStream, clearStream } = useStreamAccumulator();
 
@@ -31,7 +31,7 @@ export function useTutorChat({ lessonKey, reader, lessonMeta, langId, nativeLang
     setError(null);
     setIsGenerating(false);
     clearStream();
-  }, [lessonKey, reader?.chatHistory?.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [lessonKey, reader?.chatHistory?.length, clearStream]); // clearStream is a stable function from useStreamAccumulator
 
   // Abort on unmount
   useEffect(() => {

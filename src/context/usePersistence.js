@@ -156,7 +156,7 @@ export function usePersistence(state, dispatch, stateRef) {
     for (const key of Object.keys(prev)) {
       if (!(key in curr)) deleteReader(key);
     }
-  }, [state.generatedReaders]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.generatedReaders]); // eslint-disable-line react-hooks/exhaustive-deps — all "missing" deps are stable: dispatch from useReducer, stateRef, imported storage functions
 
   // ── Apply / remove dark theme attribute on <html> ──
   useEffect(() => {

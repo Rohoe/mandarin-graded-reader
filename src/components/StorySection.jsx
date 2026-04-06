@@ -10,6 +10,7 @@ import { useT } from '../i18n';
 import { Square } from 'lucide-react';
 
 import WordSegments, { segmentWordsInline } from './WordSegments';
+import { useReader } from '../context/ReaderContext';
 
 /**
  * Unified popover content with clickable word drill-down.
@@ -149,18 +150,14 @@ function PopoverContent({ text, romanization, translation, ttsKey, langId, nativ
 export default function StorySection({
   storyParagraphs,
   pinyinOn,
-  renderChars,
-  showParagraphTools,
-  langId,
-  nativeLang,
   romanizer,
   // Grouped props
-  ttsProps: { ttsSupported, speakingKey, speakText } = {},
   vocabProps: { lookupVocab, handleVocabClick, activeVocab, onCloseVocab } = {},
-  popoverProps: { popoverRef, getPopoverPosition, selectionPopover, selectionPopoverRef, sentencePopover, highlightedSentence, sentencePopoverRef, onWordClick, onSentenceEndClick, onCloseSelection, onCloseSentence } = {},
+  popoverProps: { popoverRef, getPopoverPosition, selectionPopover, selectionPopoverRef, sentencePopover, highlightedSentence, sentencePopoverRef, onSentenceEndClick, onCloseSelection, onCloseSentence } = {},
   translationProps: { paragraphTranslations, onTranslate, translatingIndex } = {},
 }) {
   const t = useT();
+  const { renderChars, showParagraphTools, langId, nativeLang, ttsSupported, speakingKey, speakText, onWordClick } = useReader();
   const nativeLangConfig = getNativeLang(nativeLang);
   const [visibleTranslations, setVisibleTranslations] = useState(new Set());
 

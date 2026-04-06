@@ -53,7 +53,7 @@ export default function GrammarReviewMode({ cards, langId, newCardsPerDay, act, 
     setSession(newSession);
     setHistory([]);
     setPhase(newSession.index >= newSession.cardKeys.length ? 'done' : 'front');
-  }, [langId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [langId, sessionCards, newCardsPerDay]);
 
   // Persist session
   useEffect(() => {

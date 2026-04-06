@@ -8,7 +8,7 @@ Single-page React + Vite app that generates graded readers in **Mandarin Chinese
 npm install        # first time only
 npm run dev        # http://localhost:5173
 npm run build      # production build
-npm test           # unit tests (Vitest, 790 tests)
+npm test           # unit tests (Vitest, 821 tests)
 npm run test:e2e   # E2E tests (Playwright, 48 tests across 2 projects)
 ```
 
@@ -21,7 +21,7 @@ src/
   App.jsx              Root layout, UI-only state (sidebar, modals, activeSyllabusId, standaloneKey, syllabusView). Default view: 'dashboard' (Home page)
   context/             useReducer global store (AppContext.jsx), useApp hook, actions factory, reducers/ (10 domain slices)
   i18n/                UI string translations: useT() hook, en/zh/yue/ko/fr/es language files
-  lib/                 Core logic: api.js, apiUtils.js, chatApi.js, parser.js, storage.js, readerStorage.js, fileStorage.js, languages.js, nativeLanguages.js, providers.js, llmConfig.js, cloudSync.js, supabase.js, anki.js, ankiApkg.js, stats.js, translate.js, vocabMapper.js, vocabNormalizer.js, grammarMapper.js, sentenceSplitter.js, romanizer.js, demoReader.js, learningPathSchema.js, nextActions.js, milestones.js, confetti.js, shuffle.js
+  lib/                 Core logic: api.js, apiUtils.js, chatApi.js, parser.js, storage.js (barrel), storageHelpers.js, storageProvider.js, storageSyllabus.js, storageVocabulary.js, storageGrammar.js, storagePreferences.js, storageSession.js, storageCloud.js, storageActivity.js, readerStorage.js, fileStorage.js, languages.js, nativeLanguages.js, providers.js, llmConfig.js, cloudSync.js, supabase.js, anki.js, ankiApkg.js, stats.js, translate.js, vocabMapper.js, vocabNormalizer.js, grammarMapper.js, sentenceSplitter.js, romanizer.js, demoReader.js, learningPathSchema.js, nextActions.js, milestones.js, confetti.js, shuffle.js
   prompts/             LLM prompt builders (syllabus, reader, grading, extend, tutor, learningPath, narrative, pathUnit, portable)
   hooks/               useTTS, useRomanization, useVocabPopover, useReaderGeneration, useTutorChat, useFocusTrap, useReadingTimer, usePWA, useBufferedMarkdown, useFlashcardKeyboard, useFlashcardSession, useQuestionTranslation, useSentenceTranslate, useStreamAccumulator, useTextSelection, usePopoverDismissal, useMilestoneCheck, useScrollProgress, useDragDrop, useQuizMode
   components/          UI components (see docs/components.md for details)
@@ -35,7 +35,8 @@ e2e/                   Playwright E2E specs + fixtures
 - **UI i18n:** `src/i18n/` — lightweight custom `useT()` hook reads `state.nativeLang` and returns a `t(key, params)` function. ~700 keys across 6 language files (en, zh, yue, ko, fr, es). Fallback chain: current lang → English → raw key. Simple `{param}` interpolation. No external library.
 - **Multi-provider LLM:** Registry in `src/lib/providers.js`. `callLLM()` dispatches to provider-specific functions. `buildLLMConfig(state)` from `llmConfig.js` builds config from state.
 - **State:** useReducer in AppContext.jsx. Reducer split into 10 domain slices in `src/context/reducers/` (data, syllabus, reader, vocabulary, grammar, preferences, provider, cloud, ui, learningPath). Persistence extracted to `usePersistence.js`. Test-only exports: `_baseReducer`, `_reducer`, `_DATA_ACTIONS`.
-- **Storage:** localStorage (primary) + opt-in File System Access API (Chrome) + Supabase cloud sync with auto-merge and undo.
+- **Storage:** localStorage (primary) + opt-in File System Access API (Chrome) + Supabase cloud sync with auto-merge and undo. `storage.js` is a re-export barrel; implementations split into 9 domain modules (`storageProvider`, `storageSyllabus`, `storageVocabulary`, `storageGrammar`, `storagePreferences`, `storageSession`, `storageCloud`, `storageActivity`, `storageHelpers`).
+- **ReaderContext:** `src/context/ReaderContext.jsx` provides shared reader props (langId, nativeLang, renderChars, TTS, onWordClick) to child components, reducing prop drilling from ReaderView.
 - **Parsing:** `vocab-json` block is primary vocab format (single source of truth); legacy markdown+anki-json fallback in `parser.js`. Structured JSON parser (opt-in) via `normalizeStructuredReader()`.
 - **Syllabus→Reader connection:** Syllabus lesson metadata (`vocabulary_focus`, `difficulty_hint`) is threaded into reader prompts. `useReaderGeneration` builds cumulative context (prior lesson summaries, taught grammar patterns) so each lesson builds on previous ones. `SyllabusHome` aggregates a learning summary from completed readers.
 - **Streaming:** Anthropic provider supports streaming responses via `generateReaderStream()` async generator. Text streams progressively to UI with debounced markdown rendering (`useBufferedMarkdown`), then parses on completion.

@@ -30,11 +30,10 @@ export default function ExportModal({ pathId, onClose }) {
     return <div>{t('path.notFound')}</div>;
   }
 
-  function handleCopy(text) {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+  async function handleCopy(text) {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   function handleDownload() {

@@ -43,7 +43,7 @@ export default function ContextClueMode({ cards, onJudge, onClose, singleCard, o
 
     // Place correct answer at random position
     return shuffle([...distractors, card.target]);
-  }, [card, activeCards, index]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [card, activeCards, singleCard, cards, index]);
 
   const handleSelect = useCallback((option) => {
     if (revealed || !card) return;

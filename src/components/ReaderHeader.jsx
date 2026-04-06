@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { getLessonTitle } from '../lib/languages';
 import { useT } from '../i18n';
+import { useReader } from '../context/ReaderContext';
 import { MessageCircle, Volume2, Square } from 'lucide-react';
 
 const LANG_LOCALE = { zh: 'zh', yue: 'zh', ko: 'ko', fr: 'fr', es: 'es', en: 'en' };
@@ -13,7 +14,8 @@ function segmentWords(text, langId) {
   catch { return null; }
 }
 
-export default function ReaderHeader({ reader, lessonMeta, langId, profBadge, storyText, ttsSupported, speakingKey, speakText, stopSpeaking, onOpenChat, renderChars, onWordClick }) {
+export default function ReaderHeader({ lessonMeta, profBadge, storyText, onOpenChat }) {
+  const { reader, langId, ttsSupported, speakingKey, speakText, stopSpeaking, renderChars, onWordClick } = useReader();
   const t = useT();
   const titleText = reader.titleZh || getLessonTitle(lessonMeta, langId) || '';
   const segments = useMemo(() => segmentWords(titleText, langId), [titleText, langId]);

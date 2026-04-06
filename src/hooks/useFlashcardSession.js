@@ -30,7 +30,7 @@ export function useFlashcardSession({ langCards, langFilter, newCardsPerDay, act
     setSession(newSession);
     setHistory([]);
     setPhase(newSession.index >= newSession.cardKeys.length ? 'done' : 'front');
-  }, [langFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [langFilter, langCards, newCardsPerDay]);
 
   // Persist session to localStorage on change (per-language key)
   useEffect(() => {

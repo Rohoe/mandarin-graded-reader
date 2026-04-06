@@ -15,6 +15,7 @@ import { renderInline, stripMarkdown } from '../lib/renderInline';
 import { useT } from '../i18n';
 import { useQuestionTranslation } from '../hooks/useQuestionTranslation';
 import { InteractiveText } from './WordSegments';
+import { useReader } from '../context/ReaderContext';
 import { Volume2, Square } from 'lucide-react';
 import './ComprehensionQuestions.css';
 
@@ -36,7 +37,8 @@ const AUTO_SAVE_DELAY = 1500;
 
 const DETERMINISTIC_TYPES = new Set(['mc', 'tf', 'fb', 'vm']);
 
-export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars, showParagraphTools, speakText, speakingKey, ttsSupported, onOpenSettings, questionTranslations, onCacheQuestionTranslations, onWordClick }) {
+export default function ComprehensionQuestions({ questions, reader, story, level, onOpenSettings, questionTranslations, onCacheQuestionTranslations }) {
+  const { lessonKey, langId, renderChars, showParagraphTools, speakText, speakingKey, ttsSupported, onWordClick } = useReader();
   const t = useT();
   const langCfg = getLang(langId);
   const tfTrue = langCfg.tfLabels?.true || t('comprehension.true');
@@ -49,7 +51,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
   const defaultKeyAvailable = !hasAnyUserKey(providerKeys) && !!import.meta.env.VITE_DEFAULT_GEMINI_KEY;
   const canGrade = !!apiKey || defaultKeyAvailable;
   const dispatch = useAppDispatch();
-  const act = actions(dispatch);
+  const act = useMemo(() => actions(dispatch), [dispatch]);
 
   const [collapsed, setCollapsed] = useState(false);
   const [answers, setAnswers] = useState(() => reader?.userAnswers ?? {});
@@ -98,7 +100,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
     setGradingError(null);
     setShowSuggested({});
     setMcChecked({});
-  }, [lessonKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [lessonKey, flushSave]); // flushSave is a stable useCallback
 
   // Flush pending save on unmount
   useEffect(() => {
@@ -110,9 +112,12 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
     && questions.every((q) => DETERMINISTIC_TYPES.has(q.type || 'fr'))
     && questions.every((q, i) => mcChecked[i])
     && !results;
+  // handleGrade intentionally excluded — it captures many closure values (answers, reader, etc.)
+  // and wrapping it in useCallback would require 10+ deps. The effect only fires once per question
+  // set when deterministicAllChecked goes true, so stale closure risk is minimal.
   useEffect(() => {
     if (deterministicAllChecked) handleGrade();
-  }, [deterministicAllChecked]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [deterministicAllChecked]); // eslint-disable-line react-hooks/exhaustive-deps — handleGrade excluded (see comment above)
 
   const { hasAnyAnswer, hasFrQuestions, allDeterministicChecked, hasFrAnswers } = useMemo(() => {
     if (!questions || questions.length === 0) {

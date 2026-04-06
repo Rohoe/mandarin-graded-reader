@@ -36,6 +36,7 @@ import ChatSummary from '../TutorChat/ChatSummary';
 import { AlertTriangle, X } from 'lucide-react';
 import { useScrollProgress } from '../../hooks/useScrollProgress';
 import ReadingProgressBar from './ReadingProgressBar';
+import { ReaderProvider } from '../../context/ReaderContext';
 import './ReaderView.css';
 
 export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComplete, onUnmarkComplete, isCompleted, onContinueStory, onOpenSidebar, onOpenSettings, onOpenChat, onArchive, onDelete, onShowFlashcards, onShowNewForm, onSelectLesson }) {
@@ -58,7 +59,7 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
   }));
   const dispatch = useAppDispatch();
   const { restoreEvictedReader } = useContext(AppContext);
-  const act = actions(dispatch);
+  const act = useMemo(() => actions(dispatch), [dispatch]);
   const isPending = !!(lessonKey && pendingReaders[lessonKey]);
 
   const { standaloneReaders, syllabi, syllabusProgress, learnedGrammar } = useAppSelector(s => ({
@@ -199,15 +200,17 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
     setActiveVocab(null);
     clearSelection();
     closeSentencePopover();
-  }, [lessonKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [lessonKey, stopSpeaking, clearSelection, closeSentencePopover]); // all stable hook returns
 
   // Load from cache to avoid flash of "Generate Reader" button.
+  // generatedReaders intentionally excluded — loadedKeysRef guards against re-runs,
+  // and adding generatedReaders would re-fire on every reader save.
   useEffect(() => {
     if (lessonKey && !generatedReaders[lessonKey] && !loadedKeysRef.current.has(lessonKey)) {
       loadedKeysRef.current.add(lessonKey);
       dispatch({ type: LOAD_CACHED_READER, payload: { lessonKey } });
     }
-  }, [lessonKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [lessonKey, dispatch]); // eslint-disable-line react-hooks/exhaustive-deps — generatedReaders excluded (ref-guard pattern)
 
   // Scroll to top when lesson changes
   useEffect(() => {
@@ -217,7 +220,7 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
   // Track when a reader is opened (for LRU eviction)
   useEffect(() => {
     if (lessonKey && reader) act.touchReader(lessonKey);
-  }, [lessonKey, !!reader]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [lessonKey, !!reader, act]); // act is stable after useMemo
 
   async function handleRegenConfirm() {
     setConfirmRegen(false);
@@ -340,7 +343,15 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
   const storyParagraphs = (reader.story || '').split(/\n\n+/).map(p => p.trim()).filter(Boolean);
   const storyText = storyParagraphs.join('\n\n');
 
+  const readerCtx = useMemo(() => ({
+    reader, lessonKey, langId, nativeLang,
+    renderChars, showParagraphTools: translateButtons,
+    ttsSupported, speakingKey, speakText, stopSpeaking,
+    onWordClick: handleWordClick,
+  }), [reader, lessonKey, langId, nativeLang, renderChars, translateButtons, ttsSupported, speakingKey, speakText, stopSpeaking, handleWordClick]);
+
   return (
+    <ReaderProvider value={readerCtx}>
     <article className="reader-view fade-in" ref={scrollRef}>
       {storyParagraphs.length > 1 && <ReadingProgressBar progress={scrollProgress} />}
       {/* Quota warning banner */}
@@ -369,18 +380,10 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
 
       {/* Title + TTS */}
       <ReaderHeader
-        reader={reader}
         lessonMeta={lessonMeta}
-        langId={langId}
         profBadge={profBadge}
         storyText={storyText}
-        ttsSupported={ttsSupported}
-        speakingKey={speakingKey}
-        speakText={speakText}
-        stopSpeaking={stopSpeaking}
         onOpenChat={onOpenChat}
-        renderChars={renderChars}
-        onWordClick={handleWordClick}
       />
 
       <hr className="divider" />
@@ -389,14 +392,9 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
       <StorySection
         storyParagraphs={storyParagraphs}
         pinyinOn={pinyinOn}
-        renderChars={renderChars}
-        showParagraphTools={translateButtons}
-        langId={langId}
-        nativeLang={nativeLang}
         romanizer={romanizer}
-        ttsProps={{ ttsSupported, speakingKey, speakText }}
         vocabProps={{ lookupVocab, handleVocabClick, activeVocab, onCloseVocab: () => setActiveVocab(null) }}
-        popoverProps={{ popoverRef, getPopoverPosition, selectionPopover, selectionPopoverRef, sentencePopover, highlightedSentence, sentencePopoverRef, onWordClick: handleWordClick, onSentenceEndClick: handleSentenceEndClick, onCloseSelection: () => { setSelectionPopover(null); clearSelection(); }, onCloseSentence: closeSentencePopover }}
+        popoverProps={{ popoverRef, getPopoverPosition, selectionPopover, selectionPopoverRef, sentencePopover, highlightedSentence, sentencePopoverRef, onSentenceEndClick: handleSentenceEndClick, onCloseSelection: () => { setSelectionPopover(null); clearSelection(); }, onCloseSentence: closeSentencePopover }}
         translationProps={{ paragraphTranslations: reader.paragraphTranslations, onTranslate: handleTranslate, translatingIndex }}
       />
 
@@ -406,42 +404,26 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
       <ComprehensionQuestions
         key={lessonKey}
         questions={reader.questions}
-        lessonKey={lessonKey}
         reader={reader}
         story={reader.story}
         level={reader.level ?? lessonMeta?.level ?? 3}
-        langId={langId}
-        renderChars={renderChars}
-        showParagraphTools={translateButtons}
-        speakText={speakText}
-        speakingKey={speakingKey}
-        ttsSupported={ttsSupported}
         onOpenSettings={onOpenSettings}
         questionTranslations={reader?.questionTranslations || {}}
         onCacheQuestionTranslations={handleCacheQuestionTranslations}
-        onWordClick={handleWordClick}
       />
 
       {/* Vocabulary */}
       <VocabularyList
         vocabulary={reader.vocabulary}
-        renderChars={renderChars}
-        speakText={speakText}
-        speakingKey={speakingKey}
-        ttsSupported={ttsSupported}
-        showParagraphTools={translateButtons}
         onTranslateExample={handleTranslateVocabExample}
         translatingKey={translatingVocabKey}
         vocabTranslations={reader?.vocabTranslations || {}}
-        langId={langId}
-        nativeLang={nativeLang}
         generatedInTargetLang={!!reader?.generatedInTargetLang}
-        onWordClick={handleWordClick}
         romanizer={romanizer}
       />
 
       {/* Grammar notes */}
-      <GrammarNotes grammarNotes={reader.grammarNotes} renderChars={renderChars} langId={langId} nativeLang={nativeLang} generatedInTargetLang={!!reader?.generatedInTargetLang} onWordClick={handleWordClick} />
+      <GrammarNotes grammarNotes={reader.grammarNotes} generatedInTargetLang={!!reader?.generatedInTargetLang} />
 
       {/* Accuracy notes */}
       <AccuracyNotes notes={reader.accuracyNotes} langId={langId} nativeLang={nativeLang} generatedInTargetLang={!!reader?.generatedInTargetLang} />
@@ -496,5 +478,6 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
         ) : null}
       />
     </article>
+    </ReaderProvider>
   );
 }

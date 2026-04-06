@@ -77,7 +77,7 @@ export function useCloudStartup(state, dispatch, stateRef, startupSyncDoneRef, s
     }
 
     doStartupSync();
-  }, [state.cloudUser, state.fsInitialized]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.cloudUser, state.fsInitialized]);  // eslint-disable-line react-hooks/exhaustive-deps — reads current state via stateRef, runs once per cloudUser+fsInitialized combo
 
   // Debounced auto-push: 3s after any data change, once startup sync is done
   useEffect(() => {
@@ -103,5 +103,5 @@ export function useCloudStartup(state, dispatch, stateRef, startupSyncDoneRef, s
       }
     }, 3000);
     return () => clearTimeout(timer);
-  }, [state.lastModified, state.cloudUser]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.lastModified, state.cloudUser]);  // eslint-disable-line react-hooks/exhaustive-deps — reads current state via stateRef, refs for startup/pause gates
 }

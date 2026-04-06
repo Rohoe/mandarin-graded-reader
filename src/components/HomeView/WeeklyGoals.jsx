@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAppSelector, useAppDispatch } from '../../context/useAppSelector';
 import { actions } from '../../context/actions';
 import { computeWeeklyProgress } from '../../lib/stats';
@@ -29,7 +29,7 @@ const PROGRESS_KEYS = {
 export default function WeeklyGoals() {
   const t = useT();
   const dispatch = useAppDispatch();
-  const act = actions(dispatch);
+  const act = useMemo(() => actions(dispatch), [dispatch]);
   const { weeklyGoals, learningActivity, readingTimeLog } = useAppSelector(s => ({
     weeklyGoals: s.weeklyGoals,
     learningActivity: s.learningActivity,

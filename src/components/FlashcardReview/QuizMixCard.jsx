@@ -64,7 +64,7 @@ export default function QuizMixCard({
     const pick = candidates[Math.floor(Math.random() * candidates.length)];
     chosenRef.current = pick;
     return pick;
-  }, [card.target, direction]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [card.target, direction, eligibleTypes]);
 
   // Called by sub-modes when user clicks "Next" after seeing feedback.
   // Triggers the parent's handleJudge to do SRS + session advance.
