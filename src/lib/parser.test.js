@@ -597,6 +597,201 @@ Test
     expect(result.suggestedTopics.length).toBe(2);
   });
 
+  it('parses grammar notes with parenthetical inside bold', () => {
+    const md = `### 1. Title
+测试
+Test
+
+### 2. Story
+**猫**很可爱。
+
+### 3. Vocabulary
+\`\`\`vocab-json
+[{"chinese": "猫", "pinyin": "māo", "english": "cat", "example_story": "", "usage_note_story": "", "example_extra": "", "usage_note_extra": ""}]
+\`\`\`
+
+### 4. Comprehension Questions
+1. 什么？
+
+### 5. Grammar Notes
+**V + 到 (Directional complement)** — Indicates arrival at a destination.
+- 跑到大树下面。
+
+**想 + V (Desire pattern)** — Expresses wanting to do something.
+- 它很想追那只蝴蝶。
+
+### 6. Suggested Topics
+- Topic 1
+`;
+    const result = parseReaderResponse(md, 'zh');
+    expect(result.grammarNotes.length).toBe(2);
+    expect(result.grammarNotes[0].pattern).toContain('V + 到');
+    expect(result.grammarNotes[0].label).toContain('Directional complement');
+    expect(result.grammarNotes[0].explanation).toContain('arrival');
+    expect(result.grammarNotes[0].example).toContain('跑到大树下面');
+    expect(result.grammarNotes[1].pattern).toContain('想 + V');
+  });
+
+  it('parses grammar notes without parenthetical label', () => {
+    const md = `### 1. Title
+测试
+Test
+
+### 2. Story
+**猫**很可爱。
+
+### 3. Vocabulary
+\`\`\`vocab-json
+[{"chinese": "猫", "pinyin": "māo", "english": "cat", "example_story": "", "usage_note_story": "", "example_extra": "", "usage_note_extra": ""}]
+\`\`\`
+
+### 4. Comprehension Questions
+1. 什么？
+
+### 5. Grammar Notes
+**V + 到** — Indicates arrival at a destination.
+- 跑到大树下面。
+
+**想 + V** — Expresses wanting to do something.
+- 它很想追那只蝴蝶。
+
+### 6. Suggested Topics
+- Topic 1
+`;
+    const result = parseReaderResponse(md, 'zh');
+    expect(result.grammarNotes.length).toBe(2);
+    expect(result.grammarNotes[0].pattern).toContain('V + 到');
+    expect(result.grammarNotes[0].label).toBe('');
+    expect(result.grammarNotes[0].explanation).toContain('arrival');
+    expect(result.grammarNotes[0].example).toContain('跑到大树下面');
+  });
+
+  it('parses grammar notes in paragraph style with parenthetical inside bold heading', () => {
+    const md = `### 1. Title
+테스트
+Test
+
+### 2. Story
+**고양이**가 공원에서 놀고 있었어요.
+
+### 3. Vocabulary
+\`\`\`vocab-json
+[{"korean": "고양이", "romanization": "goyangi", "english": "cat", "example_story": "", "usage_note_story": "", "example_extra": "", "usage_note_extra": ""}]
+\`\`\`
+
+### 4. Comprehension Questions
+1. 무엇?
+
+### 5. Grammar Notes
+
+1. **~기로 결정하다 (to decide to ~)**
+
+This pattern is used to express making a decision about a future action.
+
+- 시장에 가기로 결정했어요.
+
+2. **~아/어 보이다 (to look/appear ~)**
+
+Attach this to a descriptive verb stem to say something "looks" a certain way.
+
+- 고등어가 아주 신선해 보였어요.
+
+### 6. Suggested Topics
+- Topic 1
+`;
+    const result = parseReaderResponse(md, 'ko');
+    expect(result.grammarNotes.length).toBe(2);
+    expect(result.grammarNotes[0].pattern).toContain('~기로 결정하다');
+    expect(result.grammarNotes[0].label).toContain('to decide to');
+    expect(result.grammarNotes[0].example).toContain('결정했어요');
+    expect(result.grammarNotes[1].pattern).toContain('~아/어 보이다');
+    expect(result.grammarNotes[1].label).toContain('to look/appear');
+  });
+
+  it('parses grammar notes in paragraph style without labels', () => {
+    const md = `### 1. Title
+Test
+Test
+
+### 2. Story
+Claire **s'est réveillée** tôt.
+
+### 3. Vocabulary
+\`\`\`vocab-json
+[{"french": "se réveiller", "english": "to wake up", "example_story": "", "usage_note_story": "", "example_extra": "", "usage_note_extra": ""}]
+\`\`\`
+
+### 4. Comprehension Questions
+1. Pourquoi?
+
+### 5. Grammar Notes
+
+**Passé composé with être**
+
+Many verbs in French form their passé composé with être instead of avoir.
+
+- Claire s'est réveillée tôt.
+
+**Imparfait vs. passé composé**
+
+The story naturally mixes these two past tenses.
+
+- Le marché se trouvait à dix minutes.
+
+### 6. Suggested Topics
+- Topic 1
+`;
+    const result = parseReaderResponse(md, 'fr');
+    expect(result.grammarNotes.length).toBe(2);
+    expect(result.grammarNotes[0].pattern).toContain('Passé composé with être');
+    expect(result.grammarNotes[0].label).toBe('');
+    expect(result.grammarNotes[0].explanation).toContain('verbs in French');
+    expect(result.grammarNotes[0].example).toContain('réveillée');
+    expect(result.grammarNotes[1].pattern).toContain('Imparfait');
+  });
+
+  it('parses grammar notes with dash inside bold heading', () => {
+    const md = `### 1. Title
+测试
+Test
+
+### 2. Story
+**猫**很可爱。
+
+### 3. Vocabulary
+\`\`\`vocab-json
+[{"chinese": "猫", "pinyin": "māo", "english": "cat", "example_story": "", "usage_note_story": "", "example_extra": "", "usage_note_extra": ""}]
+\`\`\`
+
+### 4. Comprehension Questions
+1. 什么？
+
+### 5. Grammar Notes
+
+**觉得 — Expressing opinions and feelings**
+
+觉得 means "to feel" or "to think" and is used to express subjective opinions.
+
+- 小美觉得价格还可以。
+
+**把 structure — Disposal construction**
+
+The 把 construction is used when the action results in a specific change.
+
+- 老板帮她把鱼处理好了。
+
+### 6. Suggested Topics
+- Topic 1
+`;
+    const result = parseReaderResponse(md, 'zh');
+    expect(result.grammarNotes.length).toBe(2);
+    expect(result.grammarNotes[0].pattern).toBe('觉得');
+    expect(result.grammarNotes[0].label).toContain('Expressing opinions');
+    expect(result.grammarNotes[0].example).toContain('觉得');
+    expect(result.grammarNotes[1].pattern).toContain('把');
+    expect(result.grammarNotes[1].label).toContain('Disposal');
+  });
+
   it('strips example prefixes from vocab-json entries', () => {
     const md = `### 1. Title
 测试

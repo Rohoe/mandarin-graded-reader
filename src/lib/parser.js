@@ -605,17 +605,85 @@ function parseQuestions(text) {
 function parseGrammarNotes(text) {
   if (!text) return [];
   const items = [];
-  // Match: **Pattern** (English name) — explanation  (also accepts colon as separator)
-  const headerPattern = /\*\*([^*]+)\*\*\s*\(([^)]+)\)\s*[-–—:：]\s*([^\n]+)/g;
   let match;
-  while ((match = headerPattern.exec(text)) !== null) {
-    const pattern     = match[1].trim();
-    const label       = match[2].trim();
-    const explanation = match[3].trim();
-    // Next non-empty line after the header is the example
+
+  // Helper: find first example line (bullet or story quote) in a block of text
+  function findExample(block) {
+    const lines = block.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    // Prefer bullet lines
+    const bullet = lines.find(l => /^[-•]/.test(l));
+    if (bullet) return bullet.replace(/^[-•]\s*/, '');
+    return lines[0] || '';
+  }
+
+  // Try formats in order of specificity:
+  // 1. **Pattern** (Label) — explanation  (canonical format)
+  const canonicalPattern = /\*\*([^*]+)\*\*\s*\(([^)]+)\)\s*[-–—:：]\s*([^\n]+)/g;
+  while ((match = canonicalPattern.exec(text)) !== null) {
     const afterHeader = text.slice(match.index + match[0].length);
-    const exampleLine = afterHeader.split('\n').map(l => l.trim()).find(l => l.length > 0) || '';
-    items.push({ pattern, label, explanation, example: exampleLine.replace(/^[-•]\s*/, '') });
+    items.push({
+      pattern:     match[1].trim(),
+      label:       match[2].trim(),
+      explanation: match[3].trim(),
+      example:     findExample(afterHeader),
+    });
+  }
+  if (items.length > 0) return items;
+
+  // 2. **Pattern (Label)** — explanation  (parenthetical inside bold, dash after)
+  const insideBoldPattern = /\*\*([^*]+?)\s*\(([^)]+)\)\*\*\s*[-–—:：]\s*([^\n]+)/g;
+  while ((match = insideBoldPattern.exec(text)) !== null) {
+    const afterHeader = text.slice(match.index + match[0].length);
+    items.push({
+      pattern:     match[1].trim(),
+      label:       match[2].trim(),
+      explanation: match[3].trim(),
+      example:     findExample(afterHeader),
+    });
+  }
+  if (items.length > 0) return items;
+
+  // 3. **Pattern** — explanation  (no parenthetical, single-line)
+  const noLabelPattern = /\*\*([^*]+)\*\*\s*[-–—:：]\s*([^\n]+)/g;
+  while ((match = noLabelPattern.exec(text)) !== null) {
+    const afterHeader = text.slice(match.index + match[0].length);
+    items.push({
+      pattern:     match[1].trim(),
+      label:       '',
+      explanation: match[2].trim(),
+      example:     findExample(afterHeader),
+    });
+  }
+  if (items.length > 0) return items;
+
+  // 4. **Heading** as standalone bold line, followed by paragraph explanation
+  //    Handles: **Pattern (Label)** or **Pattern** on its own line with no dash
+  //    Splits on bold headings and extracts explanation from the paragraph body
+  const headingBlocks = text.split(/(?=(?:^|\n)\s*(?:\d+\.\s*)?\*\*)/);
+  for (const block of headingBlocks) {
+    const headMatch = block.match(/^\s*(?:\d+\.\s*)?\*\*([^*]+)\*\*\s*\n([\s\S]*)/);
+    if (!headMatch) continue;
+    const heading = headMatch[1].trim();
+    const body = headMatch[2].trim();
+    if (!body) continue;
+
+    // Extract optional parenthetical from the heading: "Pattern (Label)" or "Pattern — Label"
+    let pattern = heading, label = '';
+    const parenMatch = heading.match(/^(.+?)\s*\(([^)]+)\)$/);
+    const dashMatch = heading.match(/^(.+?)\s*[-–—:：]\s*(.+)$/);
+    if (parenMatch) {
+      pattern = parenMatch[1].trim();
+      label = parenMatch[2].trim();
+    } else if (dashMatch) {
+      pattern = dashMatch[1].trim();
+      label = dashMatch[2].trim();
+    }
+
+    // First non-empty line of body is the explanation
+    const bodyLines = body.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const explanation = bodyLines[0] || '';
+    const exampleBlock = bodyLines.slice(1).join('\n');
+    items.push({ pattern, label, explanation, example: findExample(exampleBlock || body) });
   }
   return items;
 }
