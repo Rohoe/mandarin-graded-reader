@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { renderInline, stripMarkdown } from '../lib/renderInline';
 import { useT } from '../i18n';
 import TranslatableText from './TranslatableText';
@@ -6,15 +6,15 @@ import { InteractiveText } from './WordSegments';
 import { Volume2, Square } from 'lucide-react';
 import './VocabularyList.css';
 
-function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSupported, showParagraphTools, onTranslateExample, translatingKey, vocabTranslations, visibleTranslations, toggleTranslation, langId, nativeLang, generatedInTargetLang, onWordClick, romanizer }) {
+const VocabCard = React.memo(function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSupported, showParagraphTools, onTranslateExample, translatingKey, vocabTranslations, visibleTranslations, toggleTranslation, langId, nativeLang, generatedInTargetLang, onWordClick, romanizer }) {
   const [open, setOpen] = useState(false);
   const t = useT();
 
-  const spacedRomanization = (() => {
+  const spacedRomanization = useMemo(() => {
     if (!romanizer) return word.romanization || word.pinyin;
     try { return romanizer.romanize(word.target || word.chinese).join(' ').replace(/ +/g, ' ').trim(); }
     catch { return word.romanization || word.pinyin; }
-  })();
+  }, [romanizer, word.romanization, word.pinyin, word.target, word.chinese]);
 
   function handleTts(e, text, key) {
     e.stopPropagation();
@@ -137,7 +137,7 @@ function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSuppor
       )}
     </div>
   );
-}
+});
 
 export default function VocabularyList({ vocabulary, renderChars, speakText, speakingKey, ttsSupported, showParagraphTools, onTranslateExample, translatingKey, vocabTranslations, langId, nativeLang, generatedInTargetLang, onWordClick, romanizer }) {
   const [collapsed, setCollapsed] = useState(false);

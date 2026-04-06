@@ -28,7 +28,7 @@ Portal-based popover shown on sentence click. Displays original sentence (select
 Collapsible accordion of vocab cards. Props: `renderChars` (ruby romanization), TTS props (`speakText`, `speakingKey`, `ttsSupported`), translation props (`onTranslateExample`, `translatingKey`, `vocabTranslations`). Inline TTS (🔊) and EN buttons when `showParagraphTools` is true.
 
 ## `ComprehensionQuestions`
-Question list with textarea input + "Grade My Answers" button. Results: per-question score (1–5) + feedback + toggleable suggested answer. Persists userAnswers + gradingResults to reader object. Accepts renderChars, TTS, and translation props.
+Question list with textarea input + "Grade My Answers" button. Results: per-question score (1–5) + feedback + toggleable suggested answer. Persists userAnswers + gradingResults to reader object. Accepts renderChars, TTS, and translation props. Question types dispatched to sub-components: `MCQuestion`, `TFQuestion`, `FBQuestion`, `FRQuestion`, `VocabMatchingQuestion`.
 
 ## `GrammarNotes`
 3–5 grammar pattern cards per reader. Each: pattern (target lang), label, explanation, example sentence. Renders nothing if empty.
@@ -43,13 +43,22 @@ Modal with daily SRS session. `buildDailySession()` collects due + new cards. Fo
 Self-contained grammar SRS review. Harvests grammar patterns from readers on completion into `learnedGrammar` (keyed by `langId::pattern`). Front shows the pattern with "What does this pattern mean?" prompt; back shows label, explanation, and example. Reuses `calculateSRS`/`buildDailySession` from `srs.js`. Per-language session persistence. Keyboard: Space/Enter to reveal, 1/2/3 for judgments, Cmd+Z for undo.
 
 ### `FillBlankMode`
-Cloze-deletion quiz. Shows example sentence with target word blanked out. User types the missing word; graded on match.
+Cloze-deletion quiz. Shows example sentence with target word blanked out. User types the missing word; graded on match. Uses `useQuizMode` hook + `filterFillBlankCards` filter.
+
+### `ContextClueMode`
+Multiple-choice fill-in-the-blank. Shows blanked sentence with 4 shuffled options. Uses `useQuizMode` hook + `filterFillBlankCards` filter.
 
 ### `ListeningMode`
-Audio-first quiz. Plays TTS for the target word; user types what they hear. Tests listening comprehension and spelling.
+Audio-first quiz. Plays TTS for the target word; user types what they hear. Tests listening comprehension and spelling. Uses `useQuizMode` hook.
+
+### `ReverseListeningMode`
+Shows target word, user types translation. 3-level judgment (got/almost/missed). Reverse SRS direction. Uses `useQuizMode` hook with `resultKeys: ['almost']`.
 
 ### `MatchingMode`
 Drag-and-match quiz. Presents a set of target words and translations; user pairs them. Timed, with score tracking.
+
+### Shared quiz components
+`QuizDoneScreen`, `QuizFeedback`, `QuizProgress`, `QuizEmpty` — shared UI components used by the 4 quiz modes above. `quizFilters.js` provides `filterFillBlankCards()` for FillBlank and ContextClue.
 
 ## `StatsDashboard/`
 Modal: vocab growth chart, per-language breakdown, quiz scores, streak, activity counts. Flashcard stats: total reviews, retention rate, mastery breakdown. SRS stats: review forecast chart, retention curve, review heatmap. Reading stats: per-reader reading time, average reading speed. CSS-only charts.

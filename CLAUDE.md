@@ -8,7 +8,7 @@ Single-page React + Vite app that generates graded readers in **Mandarin Chinese
 npm install        # first time only
 npm run dev        # http://localhost:5173
 npm run build      # production build
-npm test           # unit tests (Vitest, 782 tests)
+npm test           # unit tests (Vitest, 790 tests)
 npm run test:e2e   # E2E tests (Playwright, 48 tests across 2 projects)
 ```
 
@@ -21,9 +21,9 @@ src/
   App.jsx              Root layout, UI-only state (sidebar, modals, activeSyllabusId, standaloneKey, syllabusView). Default view: 'dashboard' (Home page)
   context/             useReducer global store (AppContext.jsx), useApp hook, actions factory, reducers/ (10 domain slices)
   i18n/                UI string translations: useT() hook, en/zh/yue/ko/fr/es language files
-  lib/                 Core logic: api.js, apiUtils.js, chatApi.js, parser.js, storage.js, readerStorage.js, fileStorage.js, languages.js, nativeLanguages.js, providers.js, llmConfig.js, cloudSync.js, supabase.js, anki.js, ankiApkg.js, stats.js, translate.js, vocabMapper.js, vocabNormalizer.js, grammarMapper.js, sentenceSplitter.js, romanizer.js, demoReader.js, learningPathSchema.js, nextActions.js, milestones.js, confetti.js
+  lib/                 Core logic: api.js, apiUtils.js, chatApi.js, parser.js, storage.js, readerStorage.js, fileStorage.js, languages.js, nativeLanguages.js, providers.js, llmConfig.js, cloudSync.js, supabase.js, anki.js, ankiApkg.js, stats.js, translate.js, vocabMapper.js, vocabNormalizer.js, grammarMapper.js, sentenceSplitter.js, romanizer.js, demoReader.js, learningPathSchema.js, nextActions.js, milestones.js, confetti.js, shuffle.js
   prompts/             LLM prompt builders (syllabus, reader, grading, extend, tutor, learningPath, narrative, pathUnit, portable)
-  hooks/               useTTS, useRomanization, useVocabPopover, useReaderGeneration, useTutorChat, useFocusTrap, useReadingTimer, usePWA, useBufferedMarkdown, useFlashcardKeyboard, useFlashcardSession, useQuestionTranslation, useSentenceTranslate, useStreamAccumulator, useTextSelection, usePopoverDismissal, useMilestoneCheck, useScrollProgress, useDragDrop
+  hooks/               useTTS, useRomanization, useVocabPopover, useReaderGeneration, useTutorChat, useFocusTrap, useReadingTimer, usePWA, useBufferedMarkdown, useFlashcardKeyboard, useFlashcardSession, useQuestionTranslation, useSentenceTranslate, useStreamAccumulator, useTextSelection, usePopoverDismissal, useMilestoneCheck, useScrollProgress, useDragDrop, useQuizMode
   components/          UI components (see docs/components.md for details)
 e2e/                   Playwright E2E specs + fixtures
 ```

@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useT } from '../../i18n';
 import { useFlashcardKeyboard } from '../../hooks/useFlashcardKeyboard';
 import { useDragDrop } from '../../hooks/useDragDrop';
+import { shuffle } from '../../lib/shuffle';
 
 /**
  * Matching quiz mode.
@@ -30,13 +31,7 @@ export default function MatchingMode({ cards, onJudge, onClose }) {
 
   // Shuffle right column independently
   const shuffledRight = useMemo(() => {
-    const indices = batch.map((_, i) => i);
-    // Fisher-Yates shuffle
-    for (let i = indices.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [indices[i], indices[j]] = [indices[j], indices[i]];
-    }
-    return indices;
+    return shuffle(batch.map((_, i) => i));
   }, [batch, batchIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleClick = useCallback((side, index) => {

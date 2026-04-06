@@ -63,6 +63,7 @@
 | `useTutorChat.js` | Chat state + API hook for tutor feature. Manages messages, summary, error state. Uses `useStreamAccumulator` for streaming. Persists `chatHistory` and `chatSummary` on the reader object via `SET_READER`. AbortController for cancellation. `sendMessage()`, `generateSummary()`, `clearChat()`, `stopGenerating()`. |
 | `useStreamAccumulator.js` | Shared hook for consuming async generator streams. Returns `{ streamingText, consumeStream, clearStream }`. Used by `useReaderGeneration` and `useTutorChat`. |
 | `useFlashcardKeyboard.js` | Shared keyboard handler for flashcard modes. Escape closes, Enter/Space advances (when enabled). Used by 6 flashcard mode components. |
+| `useQuizMode.js` | Shared quiz mode state hook. Manages index, revealed, results, card progression, keyboard handling. Used by FillBlank, ContextClue, Listening, ReverseListening modes. Accepts `filterCards`, `extraResets`, `resultKeys`, `direction` options. |
 | `useFlashcardSession.js` | Manages flashcard SRS session state: card batching, phase transitions, undo history, judgment handling, interval previews, eviction detection. Extracted from `FlashcardReview/index.jsx`. |
 | `useQuestionTranslation.js` | Manages batch and individual question translation state. Extracted from `ComprehensionQuestions.jsx`. |
 | `useFocusTrap.js` | Focus trap for popovers. Keeps keyboard focus within the active popover until dismissed. |

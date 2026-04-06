@@ -113,25 +113,11 @@ export function cancelGeneration(lessonKey) {
 }
 
 /**
- * Check if a generation is actively running for a given key.
- */
-export function isGenerationRunning(lessonKey) {
-  return activeGenerations.has(lessonKey);
-}
-
-/**
  * Get the entry for a running generation (for re-subscribing after navigation).
  * Returns null if not running.
  */
 export function getRunningGeneration(lessonKey) {
   return activeGenerations.get(lessonKey) || null;
-}
-
-/**
- * Get count of active generations.
- */
-export function getActiveCount() {
-  return activeGenerations.size;
 }
 
 // ── Internal ───────────────────────────────────────────────────

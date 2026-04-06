@@ -3,6 +3,7 @@ import { useT } from '../../i18n';
 import { splitSentence } from './sentenceSplitter';
 import { useFlashcardKeyboard } from '../../hooks/useFlashcardKeyboard';
 import { useDragDrop } from '../../hooks/useDragDrop';
+import { shuffle } from '../../lib/shuffle';
 
 /**
  * Sentence Builder mode.
@@ -45,13 +46,7 @@ export default function SentenceBuilderMode({ cards, onJudge, onClose, langId, s
   // Scramble the tiles (stable per card)
   const scrambled = useMemo(() => {
     if (!card) return [];
-    const indices = card.tiles.map((_, i) => i);
-    // Fisher-Yates shuffle
-    for (let i = indices.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [indices[i], indices[j]] = [indices[j], indices[i]];
-    }
-    return indices;
+    return shuffle(card.tiles.map((_, i) => i));
   }, [card, index]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Which scrambled indices are still available (not placed)

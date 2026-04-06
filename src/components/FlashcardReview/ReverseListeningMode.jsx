@@ -1,6 +1,15 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useT } from '../../i18n';
-import { useFlashcardKeyboard } from '../../hooks/useFlashcardKeyboard';
+import { useQuizMode } from '../../hooks/useQuizMode';
+import QuizDoneScreen from './QuizDoneScreen';
+import QuizFeedback from './QuizFeedback';
+import QuizProgress from './QuizProgress';
+import QuizEmpty from './QuizEmpty';
+
+const filterTranslationCards = (cards, singleCard) => {
+  if (singleCard) return singleCard.translation ? [singleCard] : [];
+  return cards.filter(c => c.translation);
+};
 
 /**
  * Reverse Listening mode.
@@ -9,21 +18,22 @@ import { useFlashcardKeyboard } from '../../hooks/useFlashcardKeyboard';
  */
 export default function ReverseListeningMode({ cards, onJudge, onClose, singleCard, onComplete }) {
   const t = useT();
-  const [index, setIndex] = useState(0);
   const [input, setInput] = useState('');
-  const [revealed, setRevealed] = useState(false);
   const [judgment, setJudgment] = useState(null);
-  const [results, setResults] = useState({ correct: 0, almost: 0, incorrect: 0 });
   const inputRef = useRef(null);
-  const lastJudgmentRef = useRef(null);
 
-  const eligibleCards = useMemo(() => {
-    if (singleCard) return singleCard.translation ? [singleCard] : [];
-    return cards.filter(c => c.translation);
-  }, [cards, singleCard]);
+  const resetReverseState = useCallback(() => {
+    setInput('');
+    setJudgment(null);
+  }, []);
 
-  const card = eligibleCards[index] || null;
-  const done = !singleCard && index >= eligibleCards.length;
+  const { index, revealed, results, activeCards, card, done, reveal, handleNext } = useQuizMode({
+    cards, singleCard, onJudge, onClose, onComplete,
+    direction: 'reverse',
+    filterCards: filterTranslationCards,
+    extraResets: resetReverseState,
+    resultKeys: ['almost'],
+  });
 
   useEffect(() => {
     if (!revealed && inputRef.current) inputRef.current.focus();
@@ -32,7 +42,6 @@ export default function ReverseListeningMode({ cards, onJudge, onClose, singleCa
   const handleSubmit = useCallback((e) => {
     e?.preventDefault();
     if (revealed || !card) return;
-    setRevealed(true);
 
     const answer = input.trim().toLowerCase();
     const translation = card.translation.trim().toLowerCase();
@@ -47,61 +56,29 @@ export default function ReverseListeningMode({ cards, onJudge, onClose, singleCa
     }
 
     setJudgment(j);
-    setResults(prev => ({
-      correct: prev.correct + (j === 'got' ? 1 : 0),
-      almost: prev.almost + (j === 'almost' ? 1 : 0),
-      incorrect: prev.incorrect + (j === 'missed' ? 1 : 0),
-    }));
-    lastJudgmentRef.current = j;
-    onJudge(card.target, j, 'reverse');
-  }, [input, card, revealed, onJudge]);
+    reveal(j);
+  }, [input, card, revealed, reveal]);
 
-  const handleNext = useCallback(() => {
-    if (singleCard && onComplete) {
-      onComplete(lastJudgmentRef.current);
-      return;
-    }
-    setIndex(i => i + 1);
-    setInput('');
-    setRevealed(false);
-    setJudgment(null);
-  }, [singleCard, onComplete]);
-
-  useFlashcardKeyboard({ onClose, onNext: handleNext, enabled: revealed });
-
-  if (eligibleCards.length === 0) {
-    return (
-      <div className="quiz-reverse__empty">
-        <p className="text-muted">{t('flashcard.noVocab')}</p>
-      </div>
-    );
+  if (activeCards.length === 0) {
+    return <QuizEmpty className="quiz-reverse__empty" messageKey="flashcard.noVocab" />;
   }
 
   if (done) {
     return (
-      <div className="flashcard-done">
-        <h3 className="font-display flashcard-done__title">{t('flashcard.reverseListeningComplete')}</h3>
-        <div className="flashcard-done__stats">
-          <span className="flashcard-done__stat flashcard-done__stat--got">{t('flashcard.correct', { count: results.correct })}</span>
-          {results.almost > 0 && (
-            <span className="flashcard-done__stat flashcard-done__stat--almost">{t('flashcard.almostResult', { count: results.almost })}</span>
-          )}
-          <span className="flashcard-done__stat flashcard-done__stat--missed">{t('flashcard.incorrect', { count: results.incorrect })}</span>
-        </div>
-        <div className="flashcard-done__actions">
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>{t('common.close')}</button>
-        </div>
-      </div>
+      <QuizDoneScreen
+        titleKey="flashcard.reverseListeningComplete"
+        results={results}
+        onClose={onClose}
+        extraStats={results.almost > 0 && (
+          <span className="flashcard-done__stat flashcard-done__stat--almost">{t('flashcard.almostResult', { count: results.almost })}</span>
+        )}
+      />
     );
   }
 
   return (
     <div className="quiz-reverse">
-      <div className="flashcard-progress">
-        <span className="flashcard-progress__count text-muted">
-          {t('flashcard.remaining', { count: eligibleCards.length - index })}
-        </span>
-      </div>
+      <QuizProgress remaining={activeCards.length - index} />
 
       <div className="quiz-reverse__prompt">
         <p className="text-muted" style={{ fontSize: 'var(--text-sm)' }}>{t('flashcard.whatDoesThisMean')}</p>
@@ -130,7 +107,7 @@ export default function ReverseListeningMode({ cards, onJudge, onClose, singleCa
       </form>
 
       {revealed && (
-        <div className="quiz-fillblank__feedback">
+        <QuizFeedback onNext={handleNext}>
           {judgment === 'got' ? (
             <span className="quiz-fillblank__correct">{t('common.correct')}</span>
           ) : judgment === 'almost' ? (
@@ -142,8 +119,7 @@ export default function ReverseListeningMode({ cards, onJudge, onClose, singleCa
               {t('common.answer')} <strong>{card.translation}</strong>
             </span>
           )}
-          <button className="btn btn-secondary btn-sm" onClick={handleNext}>{t('common.next')}</button>
-        </div>
+        </QuizFeedback>
       )}
     </div>
   );

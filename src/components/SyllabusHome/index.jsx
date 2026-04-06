@@ -28,7 +28,7 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
 
   const { topic, level, langId, summary, lessons = [], createdAt } = syllabus;
   const langConfig = getLang(langId);
-  const completedSet = new Set(progress?.completedLessons || []);
+  const completedSet = useMemo(() => new Set(progress?.completedLessons || []), [progress?.completedLessons]);
   const completedCount = completedSet.size;
 
   const createdDate = createdAt

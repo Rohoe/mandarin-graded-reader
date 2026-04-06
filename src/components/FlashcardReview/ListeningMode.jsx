@@ -1,6 +1,10 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useT } from '../../i18n';
-import { useFlashcardKeyboard } from '../../hooks/useFlashcardKeyboard';
+import { useQuizMode } from '../../hooks/useQuizMode';
+import QuizDoneScreen from './QuizDoneScreen';
+import QuizFeedback from './QuizFeedback';
+import QuizProgress from './QuizProgress';
+import QuizEmpty from './QuizEmpty';
 
 /**
  * Listening quiz mode.
@@ -8,18 +12,21 @@ import { useFlashcardKeyboard } from '../../hooks/useFlashcardKeyboard';
  */
 export default function ListeningMode({ cards, onJudge, onClose, speakText, singleCard, onComplete }) {
   const t = useT();
-  const [index, setIndex] = useState(0);
   const [input, setInput] = useState('');
-  const [revealed, setRevealed] = useState(false);
-  const [results, setResults] = useState({ correct: 0, incorrect: 0 });
   const [hasPlayed, setHasPlayed] = useState(false);
   const [hintRevealed, setHintRevealed] = useState(false);
   const inputRef = useRef(null);
-  const lastJudgmentRef = useRef(null);
 
-  const activeCards = singleCard ? [singleCard] : cards;
-  const card = activeCards[index] || null;
-  const done = !singleCard && index >= activeCards.length;
+  const resetListeningState = useCallback(() => {
+    setInput('');
+    setHasPlayed(false);
+    setHintRevealed(false);
+  }, []);
+
+  const { index, revealed, results, activeCards, card, done, reveal, handleNext } = useQuizMode({
+    cards, singleCard, onJudge, onClose, onComplete,
+    extraResets: resetListeningState,
+  });
 
   // Auto-play on new card
   useEffect(() => {
@@ -48,61 +55,20 @@ export default function ListeningMode({ cards, onJudge, onClose, speakText, sing
   const handleSubmit = useCallback((e) => {
     e?.preventDefault();
     if (revealed || !card) return;
-    setRevealed(true);
-    const isCorrect = input.trim() === card.target;
-    const judgment = isCorrect ? 'got' : 'missed';
-    setResults(prev => ({
-      correct: prev.correct + (isCorrect ? 1 : 0),
-      incorrect: prev.incorrect + (isCorrect ? 0 : 1),
-    }));
-    lastJudgmentRef.current = judgment;
-    onJudge(card.target, judgment, 'forward');
-  }, [input, card, revealed, onJudge]);
-
-  const handleNext = useCallback(() => {
-    if (singleCard && onComplete) {
-      onComplete(lastJudgmentRef.current);
-      return;
-    }
-    setIndex(i => i + 1);
-    setInput('');
-    setRevealed(false);
-    setHasPlayed(false);
-    setHintRevealed(false);
-  }, [singleCard, onComplete]);
-
-  useFlashcardKeyboard({ onClose, onNext: handleNext, enabled: revealed });
+    reveal(input.trim() === card.target ? 'got' : 'missed');
+  }, [input, card, revealed, reveal]);
 
   if (activeCards.length === 0) {
-    return (
-      <div className="quiz-listening__empty">
-        <p className="text-muted">{t('flashcard.noListeningCards')}</p>
-      </div>
-    );
+    return <QuizEmpty className="quiz-listening__empty" messageKey="flashcard.noListeningCards" />;
   }
 
   if (done) {
-    return (
-      <div className="flashcard-done">
-        <h3 className="font-display flashcard-done__title">{t('flashcard.listeningComplete')}</h3>
-        <div className="flashcard-done__stats">
-          <span className="flashcard-done__stat flashcard-done__stat--got">{t('flashcard.correct', { count: results.correct })}</span>
-          <span className="flashcard-done__stat flashcard-done__stat--missed">{t('flashcard.incorrect', { count: results.incorrect })}</span>
-        </div>
-        <div className="flashcard-done__actions">
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>{t('common.close')}</button>
-        </div>
-      </div>
-    );
+    return <QuizDoneScreen titleKey="flashcard.listeningComplete" results={results} onClose={onClose} />;
   }
 
   return (
     <div className="quiz-listening">
-      <div className="flashcard-progress">
-        <span className="flashcard-progress__count text-muted">
-          {t('flashcard.remaining', { count: activeCards.length - index })}
-        </span>
-      </div>
+      <QuizProgress remaining={activeCards.length - index} />
 
       <div className="quiz-listening__prompt">
         <div className="quiz-listening__controls">
@@ -144,18 +110,13 @@ export default function ListeningMode({ cards, onJudge, onClose, speakText, sing
       </form>
 
       {revealed && (
-        <div className="quiz-listening__feedback">
-          {input.trim() === card.target ? (
-            <span className="quiz-fillblank__correct">{t('common.correct')}</span>
-          ) : (
-            <span className="quiz-fillblank__incorrect">
-              {t('common.answer')} <strong className="text-target">{card.target}</strong>
-              {card.romanization && <span className="text-muted"> ({card.romanization})</span>}
-              {card.translation && <span className="text-muted"> — {card.translation}</span>}
-            </span>
-          )}
-          <button className="btn btn-secondary btn-sm" onClick={handleNext}>{t('common.next')}</button>
-        </div>
+        <QuizFeedback
+          isCorrect={input.trim() === card.target}
+          answer={card.target}
+          answerExtra={<>{card.romanization && <span className="text-muted"> ({card.romanization})</span>}{card.translation && <span className="text-muted"> — {card.translation}</span>}</>}
+          onNext={handleNext}
+          className="quiz-listening__feedback"
+        />
       )}
     </div>
   );

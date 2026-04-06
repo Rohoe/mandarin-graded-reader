@@ -1,9 +1,13 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAppSelector, useAppDispatch } from '../context/useAppSelector';
 import { actions } from '../context/actions';
 import { gradeAnswers, gradeMultipleChoice } from '../lib/api';
 import { buildGradingLLMConfig, hasAnyUserKey } from '../lib/llmConfig';
 import VocabMatchingQuestion from './VocabMatchingQuestion';
+import MCQuestion from './MCQuestion';
+import TFQuestion from './TFQuestion';
+import FBQuestion from './FBQuestion';
+import FRQuestion from './FRQuestion';
 import { buildGradingContext } from '../lib/stats';
 import { getNativeLang } from '../lib/nativeLanguages';
 import { getLang } from '../lib/languages';
@@ -29,6 +33,8 @@ function scoreIndicator(scoreStr) {
 }
 
 const AUTO_SAVE_DELAY = 1500;
+
+const DETERMINISTIC_TYPES = new Set(['mc', 'tf', 'fb', 'vm']);
 
 export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars, showParagraphTools, speakText, speakingKey, ttsSupported, onOpenSettings, questionTranslations, onCacheQuestionTranslations, onWordClick }) {
   const t = useT();
@@ -99,7 +105,6 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
     return () => flushSave();
   }, [flushSave]);
 
-  const DETERMINISTIC_TYPES = new Set(['mc', 'tf', 'fb', 'vm']);
   // Auto-grade when all deterministic questions are checked and no FR questions exist
   const deterministicAllChecked = questions && questions.length > 0
     && questions.every((q) => DETERMINISTIC_TYPES.has(q.type || 'fr'))
@@ -108,6 +113,23 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
   useEffect(() => {
     if (deterministicAllChecked) handleGrade();
   }, [deterministicAllChecked]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const { hasAnyAnswer, hasFrQuestions, allDeterministicChecked, hasFrAnswers } = useMemo(() => {
+    if (!questions || questions.length === 0) {
+      return { hasAnyAnswer: false, hasFrQuestions: false, allDeterministicChecked: true, hasFrAnswers: false };
+    }
+    return {
+      hasAnyAnswer: questions.some((q, i) => {
+        const qType = q.type || 'fr';
+        if (qType === 'vm') return answers[i] && typeof answers[i] === 'object' && Object.keys(answers[i]).length > 0;
+        if (DETERMINISTIC_TYPES.has(qType)) return !!(answers[i] || '').toString().trim();
+        return (answers[i] || '').trim().length > 0;
+      }),
+      hasFrQuestions: questions.some(q => (q.type || 'fr') === 'fr'),
+      allDeterministicChecked: questions.every((q, i) => !DETERMINISTIC_TYPES.has(q.type || 'fr') || mcChecked[i]),
+      hasFrAnswers: questions.some((q, i) => (q.type || 'fr') === 'fr' && (answers[i] || '').trim().length > 0),
+    };
+  }, [questions, answers, mcChecked]);
 
   if (!questions || questions.length === 0) {
     return (
@@ -119,16 +141,6 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
       </section>
     );
   }
-
-  const hasAnyAnswer = questions.some((q, i) => {
-    const qType = q.type || 'fr';
-    if (qType === 'vm') return answers[i] && typeof answers[i] === 'object' && Object.keys(answers[i]).length > 0;
-    if (DETERMINISTIC_TYPES.has(qType)) return !!(answers[i] || '').toString().trim();
-    return (answers[i] || '').trim().length > 0;
-  });
-  const hasFrQuestions = questions.some(q => (q.type || 'fr') === 'fr');
-  const allDeterministicChecked = questions.every((q, i) => !DETERMINISTIC_TYPES.has(q.type || 'fr') || mcChecked[i]);
-  const hasFrAnswers = questions.some((q, i) => (q.type || 'fr') === 'fr' && (answers[i] || '').trim().length > 0);
 
   function handleAnswerChange(i, val) {
     const next = { ...answers, [i]: val };
@@ -319,138 +331,10 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                 )}
 
                   {results === null ? (
-                    isMc ? (
-                      <div className="comprehension__mc-options">
-                        {(q.options || []).map(opt => {
-                          const letter = opt.charAt(0);
-                          const isSelected = answers[i] === letter;
-                          const isChecked = mcChecked[i];
-                          const isCorrectAnswer = letter === q.correctAnswer;
-                          let optClass = 'comprehension__mc-option';
-                          if (isSelected) optClass += ' comprehension__mc-option--selected';
-                          if (isChecked && isSelected && isCorrectAnswer) optClass += ' comprehension__mc-option--correct';
-                          if (isChecked && isSelected && !isCorrectAnswer) optClass += ' comprehension__mc-option--incorrect';
-                          if (isChecked && !isSelected && isCorrectAnswer) optClass += ' comprehension__mc-option--correct';
-                          if (isChecked) optClass += ' comprehension__mc-option--disabled';
-                          return (
-                            <label key={letter} className={optClass}>
-                              <input
-                                type="radio"
-                                name={`mc-${i}`}
-                                value={letter}
-                                checked={isSelected}
-                                onChange={() => handleAnswerChange(i, letter)}
-                                disabled={isChecked || grading}
-                              />
-                              <span>
-                                {opt}
-                                {translateQuestions && questionTranslations?.[`opt-${i}-${letter}`] && (
-                                  <span className="comprehension__option-translation">{questionTranslations[`opt-${i}-${letter}`]}</span>
-                                )}
-                              </span>
-                            </label>
-                          );
-                        })}
-                        {!mcChecked[i] && answers[i] && (
-                          <button
-                            className="btn btn-primary btn-xs comprehension__mc-check"
-                            onClick={() => handleCheckMc(i)}
-                          >
-                            {t('comprehension.checkAnswer')}
-                          </button>
-                        )}
-                        {mcChecked[i] && (
-                          <p className={`comprehension__mc-feedback ${answers[i] === q.correctAnswer ? 'comprehension__mc-feedback--correct' : 'comprehension__mc-feedback--incorrect'}`}>
-                            {answers[i] === q.correctAnswer
-                              ? t('comprehension.correct')
-                              : t('comprehension.incorrect', { answer: q.correctAnswer })}
-                          </p>
-                        )}
-                      </div>
-                    ) : isTf ? (
-                      <div className="comprehension__tf-options">
-                        {['T', 'F'].map(val => {
-                          const isSelected = answers[i] === val;
-                          const isChecked = mcChecked[i];
-                          const isCorrectAnswer = val === q.correctAnswer;
-                          let optClass = 'comprehension__tf-option';
-                          if (isSelected) optClass += ' comprehension__tf-option--selected';
-                          if (isChecked && isSelected && isCorrectAnswer) optClass += ' comprehension__tf-option--correct';
-                          if (isChecked && isSelected && !isCorrectAnswer) optClass += ' comprehension__tf-option--incorrect';
-                          if (isChecked && !isSelected && isCorrectAnswer) optClass += ' comprehension__tf-option--correct';
-                          if (isChecked) optClass += ' comprehension__tf-option--disabled';
-                          return (
-                            <button
-                              key={val}
-                              className={optClass}
-                              onClick={() => !isChecked && handleAnswerChange(i, val)}
-                              disabled={isChecked || grading}
-                            >
-                              {val === 'T' ? tfTrue : tfFalse}
-                            </button>
-                          );
-                        })}
-                        {!mcChecked[i] && answers[i] && (
-                          <button
-                            className="btn btn-primary btn-xs comprehension__mc-check"
-                            onClick={() => handleCheckMc(i)}
-                          >
-                            {t('comprehension.checkAnswer')}
-                          </button>
-                        )}
-                        {mcChecked[i] && (
-                          <p className={`comprehension__mc-feedback ${answers[i] === q.correctAnswer ? 'comprehension__mc-feedback--correct' : 'comprehension__mc-feedback--incorrect'}`}>
-                            {answers[i] === q.correctAnswer
-                              ? t('comprehension.correct')
-                              : t('comprehension.incorrectTF', { answer: q.correctAnswer === 'T' ? tfTrue : tfFalse })}
-                          </p>
-                        )}
-                      </div>
-                    ) : isFb ? (
-                      <div className="comprehension__fb">
-                        <div className="comprehension__fb-bank">
-                          {(q.bank || []).map(word => {
-                            const isSelected = answers[i] === word;
-                            const isChecked = mcChecked[i];
-                            const isCorrectAnswer = word === q.correctAnswer;
-                            let chipClass = 'comprehension__fb-chip';
-                            if (isSelected) chipClass += ' comprehension__fb-chip--selected';
-                            if (isChecked && isSelected && isCorrectAnswer) chipClass += ' comprehension__fb-chip--correct';
-                            if (isChecked && isSelected && !isCorrectAnswer) chipClass += ' comprehension__fb-chip--incorrect';
-                            if (isChecked && !isSelected && isCorrectAnswer) chipClass += ' comprehension__fb-chip--correct';
-                            if (isChecked) chipClass += ' comprehension__fb-chip--disabled';
-                            const fbTranslation = translateQuestions ? questionTranslations?.[`bank-${i}-${word}`] : null;
-                            return (
-                              <button
-                                key={word}
-                                className={chipClass}
-                                onClick={() => !isChecked && handleAnswerChange(i, word)}
-                                disabled={isChecked || grading}
-                                title={fbTranslation || undefined}
-                              >
-                                {word}
-                                {fbTranslation && <span className="comprehension__option-translation">{fbTranslation}</span>}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        {!mcChecked[i] && answers[i] && (
-                          <button
-                            className="btn btn-primary btn-xs comprehension__mc-check"
-                            onClick={() => handleCheckMc(i)}
-                          >
-                            {t('comprehension.checkAnswer')}
-                          </button>
-                        )}
-                        {mcChecked[i] && (
-                          <p className={`comprehension__mc-feedback ${answers[i] === q.correctAnswer ? 'comprehension__mc-feedback--correct' : 'comprehension__mc-feedback--incorrect'}`}>
-                            {answers[i] === q.correctAnswer
-                              ? t('comprehension.correct')
-                              : t('comprehension.incorrectFB', { answer: q.correctAnswer })}
-                          </p>
-                        )}
-                      </div>
-                    ) : isVm ? (
+                    isMc ? <MCQuestion question={q} answer={answers[i]} checked={mcChecked[i]} grading={grading} onAnswerChange={(val) => handleAnswerChange(i, val)} onCheck={() => handleCheckMc(i)} t={t} translateAllOn={translateQuestions} questionTranslations={questionTranslations} questionIndex={i} />
+                    : isTf ? <TFQuestion question={q} answer={answers[i]} checked={mcChecked[i]} grading={grading} onAnswerChange={(val) => handleAnswerChange(i, val)} onCheck={() => handleCheckMc(i)} t={t} tfTrue={tfTrue} tfFalse={tfFalse} />
+                    : isFb ? <FBQuestion question={q} answer={answers[i]} checked={mcChecked[i]} grading={grading} onAnswerChange={(val) => handleAnswerChange(i, val)} onCheck={() => handleCheckMc(i)} t={t} translateAllOn={translateQuestions} questionTranslations={questionTranslations} questionIndex={i} />
+                    : isVm ? (
                       <VocabMatchingQuestion
                         question={q}
                         answer={answers[i]}
@@ -463,15 +347,8 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                         questionTranslations={questionTranslations}
                         questionIndex={i}
                       />
-                    ) : (
-                      <textarea
-                        className="comprehension__answer"
-                        placeholder={t('comprehension.typeAnswer')}
-                        value={answers[i] || ''}
-                        onChange={e => handleAnswerChange(i, e.target.value)}
-                        disabled={grading}
-                      />
                     )
+                    : <FRQuestion answer={answers[i]} grading={grading} onAnswerChange={(val) => handleAnswerChange(i, val)} t={t} />
                   ) : (
                     <div className="comprehension__result">
                       {answers[i] && (
