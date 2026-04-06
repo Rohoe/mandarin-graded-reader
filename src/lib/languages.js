@@ -68,6 +68,7 @@ const zhConfig = {
     standalone: 'e.g. A day at a Beijing market…',
   },
   decorativeChars: ['读', '写', '学', '文', '语', '书'],
+  tfLabels: { true: '对', false: '错' },
   romanizationLabel: '拼',
   romanizationName: 'pinyin',
 
@@ -168,6 +169,7 @@ const koConfig = {
     standalone: 'e.g. A trip to a Seoul café…',
   },
   decorativeChars: ['읽', '쓰', '배', '글', '어', '책'],
+  tfLabels: { true: '맞음', false: '틀림' },
   romanizationLabel: 'Aa',
   romanizationName: 'romanization',
 
@@ -263,6 +265,7 @@ const yueConfig = {
     standalone: 'e.g. A morning at a cha chaan teng…',
   },
   decorativeChars: ['廣', '粵', '話', '語', '字', '音'],
+  tfLabels: { true: '對', false: '錯' },
   romanizationLabel: '粵',
   romanizationName: 'jyutping',
 
@@ -350,6 +353,7 @@ const frConfig = {
     standalone: 'e.g. A morning at a boulangerie\u2026',
   },
   decorativeChars: ['L', 'i', 'r', 'e', '\u00e9', 'F'],
+  tfLabels: { true: 'Vrai', false: 'Faux' },
   romanizationLabel: null,
   romanizationName: null,
 
@@ -433,6 +437,7 @@ const esConfig = {
     standalone: 'e.g. A day at a mercado in Mexico City\u2026',
   },
   decorativeChars: ['L', 'e', 'e', 'r', '\u00f1', 'E'],
+  tfLabels: { true: 'Verdadero', false: 'Falso' },
   romanizationLabel: null,
   romanizationName: null,
 
@@ -518,6 +523,7 @@ const enConfig = {
     standalone: 'e.g. A visit to a farmers market\u2026',
   },
   decorativeChars: ['R', 'e', 'a', 'd', 'E', 'n'],
+  tfLabels: { true: 'True', false: 'False' },
   romanizationLabel: null,
   romanizationName: null,
 

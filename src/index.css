@@ -180,7 +180,7 @@ body {
 }
 
 img { display: block; max-width: 100%; }
-button { cursor: pointer; border: none; background: none; font-family: inherit; }
+button { cursor: pointer; border: none; background: none; font-family: inherit; color: inherit; }
 input, textarea, select { font-family: inherit; }
 a { color: var(--color-accent); text-decoration: none; }
 a:hover { text-decoration: underline; }

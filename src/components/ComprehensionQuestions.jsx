@@ -6,6 +6,7 @@ import { buildGradingLLMConfig, hasAnyUserKey } from '../lib/llmConfig';
 import VocabMatchingQuestion from './VocabMatchingQuestion';
 import { buildGradingContext } from '../lib/stats';
 import { getNativeLang } from '../lib/nativeLanguages';
+import { getLang } from '../lib/languages';
 import { renderInline, stripMarkdown } from '../lib/renderInline';
 import { useT } from '../i18n';
 import { useQuestionTranslation } from '../hooks/useQuestionTranslation';
@@ -30,6 +31,9 @@ const AUTO_SAVE_DELAY = 1500;
 
 export default function ComprehensionQuestions({ questions, lessonKey, reader, story, level, langId, renderChars, showParagraphTools, speakText, speakingKey, ttsSupported, onOpenSettings, questionTranslations, onCacheQuestionTranslations }) {
   const t = useT();
+  const langCfg = getLang(langId);
+  const tfTrue = langCfg.tfLabels?.true || t('comprehension.true');
+  const tfFalse = langCfg.tfLabels?.false || t('comprehension.false');
   const { apiKey, providerKeys, activeProvider, activeModels, gradingModels, customBaseUrl, nativeLang, translateQuestions, learnedVocabulary, learningActivity } = useAppSelector(s => ({
     apiKey: s.apiKey, providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, gradingModels: s.gradingModels, customBaseUrl: s.customBaseUrl, nativeLang: s.nativeLang || 'en',
     translateQuestions: s.translateQuestions, learnedVocabulary: s.learnedVocabulary, learningActivity: s.learningActivity,
@@ -379,7 +383,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                               onClick={() => !isChecked && handleAnswerChange(i, val)}
                               disabled={isChecked || grading}
                             >
-                              {val === 'T' ? t('comprehension.true') : t('comprehension.false')}
+                              {val === 'T' ? tfTrue : tfFalse}
                             </button>
                           );
                         })}
@@ -395,7 +399,7 @@ export default function ComprehensionQuestions({ questions, lessonKey, reader, s
                           <p className={`comprehension__mc-feedback ${answers[i] === q.correctAnswer ? 'comprehension__mc-feedback--correct' : 'comprehension__mc-feedback--incorrect'}`}>
                             {answers[i] === q.correctAnswer
                               ? t('comprehension.correct')
-                              : t('comprehension.incorrectTF', { answer: q.correctAnswer === 'T' ? t('comprehension.true') : t('comprehension.false') })}
+                              : t('comprehension.incorrectTF', { answer: q.correctAnswer === 'T' ? tfTrue : tfFalse })}
                           </p>
                         )}
                       </div>
