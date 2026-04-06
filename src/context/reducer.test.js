@@ -116,6 +116,8 @@ vi.mock('../lib/storage', () => ({
   saveNativeLang: vi.fn(),
   loadShowArchived: () => false,
   saveShowArchived: vi.fn(),
+  loadImmersionMode: () => 'auto',
+  saveImmersionMode: vi.fn(),
   loadDifficultyFeedback: () => ({}),
   saveDifficultyFeedback: vi.fn(),
   loadShownMilestones: () => [],

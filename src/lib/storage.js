@@ -75,6 +75,7 @@ const KEYS = {
   READING_TIME_LOG:    'gradedReader_readingTimeLog',
   WEEKLY_GOALS:        'gradedReader_weeklyGoals',
   SHOW_ARCHIVED:       'gradedReader_showArchived',
+  IMMERSION_MODE:      'gradedReader_immersionMode',
   LEARNING_PATHS:      'gradedReader_learningPaths',
   DIFFICULTY_FEEDBACK: 'gradedReader_difficultyFeedback',
   SHOWN_MILESTONES:    'gradedReader_shownMilestones',
@@ -867,6 +868,16 @@ export function loadShowArchived() {
 
 export function saveShowArchived(val) {
   save(KEYS.SHOW_ARCHIVED, val);
+}
+
+// ── Immersion mode ──────────────────────────────────────────────
+
+export function loadImmersionMode() {
+  return load(KEYS.IMMERSION_MODE, 'auto');
+}
+
+export function saveImmersionMode(mode) {
+  save(KEYS.IMMERSION_MODE, mode);
 }
 
 // ── Storage usage estimate ────────────────────────────────────

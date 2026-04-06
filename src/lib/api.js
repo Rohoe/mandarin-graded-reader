@@ -6,7 +6,7 @@
  *   { provider, apiKey, model, baseUrl }
  */
 
-import { getLang, DEFAULT_LANG_ID, isAdvancedLevel } from './languages';
+import { getLang, DEFAULT_LANG_ID, shouldUseTargetLang } from './languages';
 import { getNativeLang } from './nativeLanguages';
 import { buildSyllabusPrompt } from '../prompts/syllabusPrompt';
 import { buildReaderSystem } from '../prompts/readerSystemPrompt';
@@ -317,13 +317,13 @@ function buildReaderUserMessage(topic, learnedWords, previousStory, langId, { vo
  * Streaming variant of generateReader. Returns an async generator of text chunks.
  * Only supports Anthropic provider.
  */
-export async function* generateReaderStream(llmConfig, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192, previousStory = null, langId = DEFAULT_LANG_ID, { signal: externalSignal, nativeLang = 'en', vocabFocus, syllabusContext, taughtGrammar, difficultyHint, learnerContext, narrativeContext, narrativeType } = {}) {
+export async function* generateReaderStream(llmConfig, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192, previousStory = null, langId = DEFAULT_LANG_ID, { signal: externalSignal, nativeLang = 'en', vocabFocus, syllabusContext, taughtGrammar, difficultyHint, learnerContext, narrativeContext, narrativeType, immersionMode } = {}) {
   const { apiKey, model } = llmConfig;
   if (!apiKey) throw new Error('No API key provided. Please add your API key in Settings.');
 
   const langConfig = getLang(langId);
   const nativeLangName = getNativeLang(nativeLang).name;
-  const useTargetLang = isAdvancedLevel(langId, level);
+  const useTargetLang = shouldUseTargetLang(langId, level, immersionMode);
   const rangePadding = targetChars <= 300 ? 50 : 100;
   const charRange = `${targetChars - rangePadding}-${targetChars + rangePadding}`;
   const system = narrativeType
@@ -342,10 +342,10 @@ export async function* generateReaderStream(llmConfig, topic, level, learnedWord
 
 // ── Syllabus generation ───────────────────────────────────────
 
-export async function generateSyllabus(llmConfig, topic, level, lessonCount = 6, langId = DEFAULT_LANG_ID, nativeLang = 'en', { learnerProfile, recentTopics } = {}) {
+export async function generateSyllabus(llmConfig, topic, level, lessonCount = 6, langId = DEFAULT_LANG_ID, nativeLang = 'en', { learnerProfile, recentTopics, immersionMode } = {}) {
   const langConfig = getLang(langId);
   const nativeLangName = getNativeLang(nativeLang).name;
-  const useTargetLang = isAdvancedLevel(langId, level);
+  const useTargetLang = shouldUseTargetLang(langId, level, immersionMode);
   const prompt = buildSyllabusPrompt(langConfig, topic, level, lessonCount, nativeLangName, { learnerProfile, recentTopics, useTargetLang });
 
   const raw = await callLLM(llmConfig, '', prompt, 2048);
@@ -360,10 +360,10 @@ export async function generateSyllabus(llmConfig, topic, level, lessonCount = 6,
 
 // ── Narrative syllabus generation ─────────────────────────
 
-export async function generateNarrativeSyllabus(llmConfig, sourceMaterial, narrativeType, level, lessonCount = 20, langId = DEFAULT_LANG_ID, nativeLang = 'en', { learnerProfile } = {}) {
+export async function generateNarrativeSyllabus(llmConfig, sourceMaterial, narrativeType, level, lessonCount = 20, langId = DEFAULT_LANG_ID, nativeLang = 'en', { learnerProfile, immersionMode } = {}) {
   const langConfig = getLang(langId);
   const nativeLangName = getNativeLang(nativeLang).name;
-  const useTargetLang = isAdvancedLevel(langId, level);
+  const useTargetLang = shouldUseTargetLang(langId, level, immersionMode);
   const prompt = buildNarrativeSyllabusPrompt(langConfig, sourceMaterial, narrativeType, level, lessonCount, nativeLangName, { learnerProfile, useTargetLang });
 
   const raw = await callLLM(llmConfig, '', prompt, 8192);
@@ -387,10 +387,10 @@ export async function generateNarrativeSyllabus(llmConfig, sourceMaterial, narra
 
 // ── Learning Path blueprint generation ────────────────────────
 
-export async function generateLearningPath(llmConfig, profile, langId = DEFAULT_LANG_ID, nativeLang = 'en') {
+export async function generateLearningPath(llmConfig, profile, langId = DEFAULT_LANG_ID, nativeLang = 'en', { immersionMode } = {}) {
   const langConfig = getLang(langId);
   const nativeLangName = getNativeLang(nativeLang).name;
-  const useTargetLang = isAdvancedLevel(langId, profile.level);
+  const useTargetLang = shouldUseTargetLang(langId, profile.level, immersionMode);
   const prompt = buildLearningPathPrompt(langConfig, profile, nativeLangName, { useTargetLang });
 
   const raw = await callLLM(llmConfig, '', prompt, 8192);
@@ -414,10 +414,10 @@ export async function generateLearningPath(llmConfig, profile, langId = DEFAULT_
   };
 }
 
-export async function extendLearningPathAPI(llmConfig, path, additionalCount = 5, nativeLang = 'en') {
+export async function extendLearningPathAPI(llmConfig, path, additionalCount = 5, nativeLang = 'en', { immersionMode } = {}) {
   const langConfig = getLang(path.langId);
   const nativeLangName = getNativeLang(nativeLang).name;
-  const useTargetLang = isAdvancedLevel(path.langId, path.level);
+  const useTargetLang = shouldUseTargetLang(path.langId, path.level, immersionMode);
   const prompt = buildExtendPathPrompt(langConfig, path, additionalCount, nativeLangName, { useTargetLang });
 
   const raw = await callLLM(llmConfig, '', prompt, 8192);
@@ -436,10 +436,10 @@ export async function extendLearningPathAPI(llmConfig, path, additionalCount = 5
   };
 }
 
-export async function generatePathUnitSyllabus(llmConfig, unit, pathContext, level, lessonCount = 8, langId = DEFAULT_LANG_ID, nativeLang = 'en', { learnerProfile } = {}) {
+export async function generatePathUnitSyllabus(llmConfig, unit, pathContext, level, lessonCount = 8, langId = DEFAULT_LANG_ID, nativeLang = 'en', { learnerProfile, immersionMode } = {}) {
   const langConfig = getLang(langId);
   const nativeLangName = getNativeLang(nativeLang).name;
-  const useTargetLang = isAdvancedLevel(langId, level);
+  const useTargetLang = shouldUseTargetLang(langId, level, immersionMode);
   const prompt = buildPathUnitSyllabusPrompt(langConfig, unit, pathContext, level, lessonCount, nativeLangName, { learnerProfile, useTargetLang });
 
   const maxTokens = unit.style === 'narrative' ? 8192 : 2048;
@@ -663,10 +663,10 @@ export const READER_JSON_SCHEMA = {
 
 // ── Reader generation ─────────────────────────────────────────
 
-export async function generateReader(llmConfig, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192, previousStory = null, langId = DEFAULT_LANG_ID, { signal, structured = false, nativeLang = 'en', vocabFocus, syllabusContext, taughtGrammar, difficultyHint, learnerContext, recentTopics, narrativeContext, narrativeType } = {}) {
+export async function generateReader(llmConfig, topic, level, learnedWords = {}, targetChars = 1200, maxTokens = 8192, previousStory = null, langId = DEFAULT_LANG_ID, { signal, structured = false, nativeLang = 'en', vocabFocus, syllabusContext, taughtGrammar, difficultyHint, learnerContext, recentTopics, narrativeContext, narrativeType, immersionMode } = {}) {
   const langConfig = getLang(langId);
   const nativeLangName = getNativeLang(nativeLang).name;
-  const useTargetLang = isAdvancedLevel(langId, level);
+  const useTargetLang = shouldUseTargetLang(langId, level, immersionMode);
   const rangePadding = targetChars <= 300 ? 50 : 100;
   const charRange = `${targetChars - rangePadding}-${targetChars + rangePadding}`;
   const system = narrativeType
@@ -679,10 +679,10 @@ export async function generateReader(llmConfig, topic, level, learnedWords = {},
 
 // ── Syllabus extension ────────────────────────────────────────
 
-export async function extendSyllabus(llmConfig, topic, level, existingLessons, additionalCount = 3, langId = DEFAULT_LANG_ID, nativeLang = 'en') {
+export async function extendSyllabus(llmConfig, topic, level, existingLessons, additionalCount = 3, langId = DEFAULT_LANG_ID, nativeLang = 'en', { immersionMode } = {}) {
   const langConfig = getLang(langId);
   const nativeLangName = getNativeLang(nativeLang).name;
-  const useTargetLang = isAdvancedLevel(langId, level);
+  const useTargetLang = shouldUseTargetLang(langId, level, immersionMode);
   const prompt = buildExtendSyllabusPrompt(langConfig, topic, level, existingLessons, additionalCount, nativeLangName, { useTargetLang });
 
   const raw = await callLLM(llmConfig, '', prompt, 2048);
@@ -692,10 +692,10 @@ export async function extendSyllabus(llmConfig, topic, level, existingLessons, a
   return { lessons };
 }
 
-export async function extendNarrativeSyllabus(llmConfig, syllabus, additionalCount = 10, nativeLang = 'en') {
+export async function extendNarrativeSyllabus(llmConfig, syllabus, additionalCount = 10, nativeLang = 'en', { immersionMode } = {}) {
   const langConfig = getLang(syllabus.langId);
   const nativeLangName = getNativeLang(nativeLang).name;
-  const useTargetLang = isAdvancedLevel(syllabus.langId, syllabus.level);
+  const useTargetLang = shouldUseTargetLang(syllabus.langId, syllabus.level, immersionMode);
   const prompt = buildExtendNarrativeSyllabusPrompt(langConfig, syllabus, additionalCount, nativeLangName, { useTargetLang });
 
   const raw = await callLLM(llmConfig, '', prompt, 4096);

@@ -102,6 +102,7 @@ export const SET_NEW_CARDS_PER_DAY = 'SET_NEW_CARDS_PER_DAY';
 export const SET_DEFAULT_LEVEL_FOR_LANG = 'SET_DEFAULT_LEVEL_FOR_LANG';
 export const SET_NATIVE_LANG = 'SET_NATIVE_LANG';
 export const SET_SHOW_ARCHIVED = 'SET_SHOW_ARCHIVED';
+export const SET_IMMERSION_MODE = 'SET_IMMERSION_MODE';
 
 // ── Cloud ─────────────────────────────────────────────────────
 export const SET_CLOUD_USER = 'SET_CLOUD_USER';

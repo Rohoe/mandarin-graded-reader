@@ -1,6 +1,7 @@
 export function buildNarrativeReaderSystem(langConfig, level, topic, charRange, targetChars = 1200, nativeLangName = 'English', { difficultyHint, narrativeType, useTargetLang } = {}) {
   const p = langConfig.prompts;
   const profName = langConfig.proficiency.name;
+  const descLang = useTargetLang ? p.targetLanguage : nativeLangName;
 
   const vocabRange = targetChars <= 250 ? '3-5'
     : targetChars <= 500 ? '6-9'
@@ -13,7 +14,7 @@ export function buildNarrativeReaderSystem(langConfig, level, topic, charRange, 
   const accuracySection = (narrativeType === 'historical' || narrativeType === 'book')
     ? `\n### 7. Accuracy Notes
 Return a JSON block tagged \`\`\`accuracy-json containing an array of accuracy note objects.
-Each object: { "claim": "the factual claim made in the story", "status": "accurate|simplified|creative_liberty", "note": "explanation in ${nativeLangName}" }
+Each object: { "claim": "the factual claim made in the story", "status": "accurate|simplified|creative_liberty", "note": "explanation in ${descLang}" }
 Include 2-5 notes covering the most significant historical facts or source material references in this chapter.\n`
     : '';
 
@@ -61,7 +62,7 @@ With bolded vocabulary and italicized proper nouns
 
 ### 3. Vocabulary
 Return a JSON block tagged \`\`\`vocab-json containing an array of vocabulary objects.
-Each object includes: the word fields, a story example sentence (copied exactly from the story, without bold markers), a one-sentence usage note, an extra example sentence, and its usage note.
+Each object includes: the word fields, a story example sentence (copied exactly from the story, without bold markers), a one-sentence usage note (in ${descLang}), an extra example sentence, and its usage note (in ${descLang}).
 Do NOT prefix example sentences with labels like "Example:" — just write the sentence directly.
 \`\`\`vocab-json
 [
@@ -99,7 +100,7 @@ For vocabulary matching questions (use 3-5 vocabulary words from the story), use
 
 ### 5. Grammar Notes
 Identify ${grammarRange} key ${p.grammarContext} used in the story. For each pattern:
-- **Pattern** (${nativeLangName} name) — one-sentence explanation of the structure and when to use it
+- **Pattern** (${descLang} name) — one-sentence ${descLang} explanation of the structure and when to use it
 - Example sentence taken directly from the story
 
 ### 6. Suggested Topics

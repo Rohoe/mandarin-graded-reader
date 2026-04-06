@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useT } from '../i18n';
+import TranslatableText from './TranslatableText';
 import './GrammarNotes.css';
 
-export default function GrammarNotes({ grammarNotes, renderChars }) {
+export default function GrammarNotes({ grammarNotes, renderChars, langId, nativeLang, generatedInTargetLang }) {
   const [collapsed, setCollapsed] = useState(false);
   const t = useT();
   if (!grammarNotes?.length) return null;
@@ -21,7 +22,7 @@ export default function GrammarNotes({ grammarNotes, renderChars }) {
       {!collapsed && (
         <div id="grammar-notes-content" className="grammar-notes__cards fade-in">
           {grammarNotes.map((note, i) => (
-            <GrammarCard key={note.pattern || i} note={note} index={i} renderChars={renderChars} />
+            <GrammarCard key={note.pattern || i} note={note} index={i} renderChars={renderChars} langId={langId} nativeLang={nativeLang} generatedInTargetLang={generatedInTargetLang} />
           ))}
         </div>
       )}
@@ -29,7 +30,7 @@ export default function GrammarNotes({ grammarNotes, renderChars }) {
   );
 }
 
-function GrammarCard({ note, index, renderChars }) {
+function GrammarCard({ note, index, renderChars, langId, nativeLang, generatedInTargetLang }) {
   return (
     <div className="grammar-card">
       <div className="grammar-card__header">
@@ -37,10 +38,24 @@ function GrammarCard({ note, index, renderChars }) {
         <span className="grammar-card__pattern text-chinese">
           {renderChars ? renderChars(note.pattern, `gp-${index}`) : note.pattern}
         </span>
-        <span className="grammar-card__label font-display text-muted">{note.label}</span>
+        <TranslatableText
+          text={note.label}
+          langId={langId}
+          nativeLang={nativeLang}
+          enabled={generatedInTargetLang}
+          tag="span"
+          className="grammar-card__label font-display text-muted"
+        />
       </div>
       <div className="grammar-card__body">
-        <p className="grammar-card__explanation">{note.explanation}</p>
+        <TranslatableText
+          text={note.explanation}
+          langId={langId}
+          nativeLang={nativeLang}
+          enabled={generatedInTargetLang}
+          tag="p"
+          className="grammar-card__explanation"
+        />
         {note.example && (
           <p className="grammar-card__example text-chinese">
             {(() => {

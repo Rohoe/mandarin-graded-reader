@@ -7,6 +7,7 @@ import {
   SET_NATIVE_LANG,
   SET_WEEKLY_GOALS,
   SET_SHOW_ARCHIVED,
+  SET_IMMERSION_MODE,
   RECORD_DIFFICULTY_FEEDBACK,
   MARK_MILESTONE_SHOWN,
 } from '../actionTypes';
@@ -81,6 +82,9 @@ export function preferencesReducer(state, action) {
 
     case SET_SHOW_ARCHIVED:
       return { ...state, showArchived: action.payload };
+
+    case SET_IMMERSION_MODE:
+      return { ...state, immersionMode: action.payload };
 
     case SET_DEFAULT_LEVEL_FOR_LANG:
       return {

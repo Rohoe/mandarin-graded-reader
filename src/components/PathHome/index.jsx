@@ -12,12 +12,12 @@ import './PathHome.css';
 
 
 export default function PathHome({ pathId, onSelectUnit, onOpenSettings, onShowImportExport, onArchive, onDelete }) {
-  const { learningPaths, syllabi, syllabusProgress, generatedReaders, learnedVocabulary, learningActivity, providerKeys, activeProvider, activeModels, customBaseUrl, customModelName, compatPreset, maxTokens, nativeLang, loading } = useAppSelector(s => ({
+  const { learningPaths, syllabi, syllabusProgress, generatedReaders, learnedVocabulary, learningActivity, providerKeys, activeProvider, activeModels, customBaseUrl, customModelName, compatPreset, maxTokens, nativeLang, immersionMode, loading } = useAppSelector(s => ({
     learningPaths: s.learningPaths, syllabi: s.syllabi, syllabusProgress: s.syllabusProgress,
     generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, learningActivity: s.learningActivity,
     providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels,
     customBaseUrl: s.customBaseUrl, customModelName: s.customModelName, compatPreset: s.compatPreset,
-    maxTokens: s.maxTokens, nativeLang: s.nativeLang || 'en', loading: s.loading,
+    maxTokens: s.maxTokens, nativeLang: s.nativeLang || 'en', immersionMode: s.immersionMode || 'auto', loading: s.loading,
   }));
   const dispatch = useAppDispatch();
   const act = actions(dispatch);
@@ -73,7 +73,7 @@ export default function PathHome({ pathId, onSelectUnit, onOpenSettings, onShowI
       const result = await generatePathUnitSyllabus(
         llmConfig, unit, pathContext, path.level,
         unit.estimatedLessons || 8, path.langId, nativeLang,
-        { learnerProfile }
+        { learnerProfile, immersionMode }
       );
 
       // Create the syllabus object
@@ -127,7 +127,7 @@ export default function PathHome({ pathId, onSelectUnit, onOpenSettings, onShowI
         apiKey: providerKeys[activeProvider], providerKeys, activeProvider,
         activeModels, customBaseUrl, customModelName, compatPreset, maxTokens,
       });
-      const result = await extendLearningPathAPI(llmConfig, path, 5, nativeLang);
+      const result = await extendLearningPathAPI(llmConfig, path, 5, nativeLang, { immersionMode });
       const newUnits = (result.units || []).map((u, i) => ({
         title: u.title, description: u.description,
         estimatedLessons: u.estimatedLessons || u.estimated_lessons || 8,

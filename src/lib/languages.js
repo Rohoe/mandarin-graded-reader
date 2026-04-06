@@ -574,6 +574,17 @@ export function isAdvancedLevel(langId, level) {
   return Number(level) >= threshold;
 }
 
+/**
+ * Whether to use target language for descriptions/explanations,
+ * respecting the user's immersion mode setting.
+ * @param {string} immersionMode - 'auto' (default), 'target', or 'native'
+ */
+export function shouldUseTargetLang(langId, level, immersionMode = 'auto') {
+  if (immersionMode === 'target') return true;
+  if (immersionMode === 'native') return false;
+  return isAdvancedLevel(langId, level);
+}
+
 /** Get the target-language title from a lesson object, regardless of language. */
 export function getLessonTitle(lesson, langId) {
   if (!lesson) return '';

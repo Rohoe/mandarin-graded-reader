@@ -6,7 +6,7 @@ import { buildLearnerContext } from '../lib/stats';
 import { buildNarrativeContext } from '../prompts/narrativeReaderPrompt';
 import { startBackgroundGeneration, getRunningGeneration } from '../lib/backgroundGeneration';
 
-export function useReaderGeneration({ lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength, useStructuredOutput = false, nativeLang = 'en', syllabus, generatedReaders, learningActivity, difficultyFeedback }) {
+export function useReaderGeneration({ lessonKey, lessonMeta, reader, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength, useStructuredOutput = false, nativeLang = 'en', immersionMode = 'auto', syllabus, generatedReaders, learningActivity, difficultyFeedback }) {
   const dispatch = useAppDispatch();
   const act = actions(dispatch);
   const [streamingText, setStreamingText] = useState(null);
@@ -63,7 +63,7 @@ export function useReaderGeneration({ lessonKey, lessonMeta, reader, langId, isP
     }
 
     // Build syllabus-aware generation options
-    const genOptions = { nativeLang };
+    const genOptions = { nativeLang, immersionMode };
 
     if (lessonMeta && syllabus?.lessons) {
       const currentIdx = (lessonMeta.lesson_number || 1) - 1;
@@ -125,7 +125,7 @@ export function useReaderGeneration({ lessonKey, lessonMeta, reader, langId, isP
     const streamCb = (text) => setStreamingText(text);
     handle.subscribeStream(streamCb);
     subRef.current = handle;
-  }, [isPending, lessonKey, lessonMeta, reader, langId, llmConfig, learnedVocabulary, readerLength, maxTokens, useStructuredOutput, nativeLang, syllabus, generatedReaders, learningActivity, difficultyFeedback]);
+  }, [isPending, lessonKey, lessonMeta, reader, langId, llmConfig, learnedVocabulary, readerLength, maxTokens, useStructuredOutput, nativeLang, immersionMode, syllabus, generatedReaders, learningActivity, difficultyFeedback]);
 
   return { handleGenerate, act, streamingText };
 }

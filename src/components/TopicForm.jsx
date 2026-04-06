@@ -9,15 +9,15 @@ import { getProvider } from '../lib/providers';
 import { parseReaderResponse } from '../lib/parser';
 import { mapReaderVocabulary } from '../lib/vocabMapper';
 import { mapReaderGrammar } from '../lib/grammarMapper';
-import { getLang, getAllLanguages, DEFAULT_LANG_ID, isAdvancedLevel } from '../lib/languages';
+import { getLang, getAllLanguages, DEFAULT_LANG_ID, shouldUseTargetLang } from '../lib/languages';
 import { useT } from '../i18n';
 import PathWizard from './PathWizard';
 import GenerationProgress from './GenerationProgress';
 import './TopicForm.css';
 
 export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStandaloneGenerating, onCancel, onOpenSettings, onPathCreated, onShowImport }) {
-  const { apiKey, defaultLevels, learnedVocabulary, generatedReaders, syllabi, standaloneReaders, learningActivity, maxTokens, loading, providerKeys, activeProvider, activeModels, customBaseUrl, nativeLang } = useAppSelector(s => ({
-    apiKey: s.apiKey, defaultLevels: s.defaultLevels || {}, nativeLang: s.nativeLang || 'en',
+  const { apiKey, defaultLevels, learnedVocabulary, generatedReaders, syllabi, standaloneReaders, learningActivity, maxTokens, loading, providerKeys, activeProvider, activeModels, customBaseUrl, nativeLang, immersionMode } = useAppSelector(s => ({
+    apiKey: s.apiKey, defaultLevels: s.defaultLevels || {}, nativeLang: s.nativeLang || 'en', immersionMode: s.immersionMode || 'auto',
     learnedVocabulary: s.learnedVocabulary, generatedReaders: s.generatedReaders, syllabi: s.syllabi, standaloneReaders: s.standaloneReaders || [], learningActivity: s.learningActivity,
     maxTokens: s.maxTokens, loading: s.loading,
     providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
@@ -92,7 +92,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
           description: '',
         };
         const { narrativeArc, lessons, futureArc, suggestedTopics } = await generateNarrativeSyllabus(
-          llmConfig, sourceMaterial, narrativeType, level, lessonCount, langId, nativeLang, { learnerProfile }
+          llmConfig, sourceMaterial, narrativeType, level, lessonCount, langId, nativeLang, { learnerProfile, immersionMode }
         );
         const newSyllabus = {
           id: `syllabus_${Date.now().toString(36)}`,
@@ -108,7 +108,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
           lessons,
           suggestedTopics,
           createdAt: Date.now(),
-          ...(isAdvancedLevel(langId, level) && { generatedInTargetLang: true }),
+          ...(shouldUseTargetLang(langId, level, immersionMode) && { generatedInTargetLang: true }),
         };
         setSuggestions(suggestedTopics || []);
         act.addSyllabus(newSyllabus);
@@ -117,7 +117,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
         return; // Skip the standard flow below
       }
 
-      const { summary, lessons, suggestedTopics } = await generateSyllabus(llmConfig, topic.trim(), level, lessonCount, langId, nativeLang, { learnerProfile, recentTopics });
+      const { summary, lessons, suggestedTopics } = await generateSyllabus(llmConfig, topic.trim(), level, lessonCount, langId, nativeLang, { learnerProfile, recentTopics, immersionMode });
       const newSyllabus = {
         id:        `syllabus_${Date.now().toString(36)}`,
         topic:     topic.trim(),
@@ -127,7 +127,7 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
         lessons,
         suggestedTopics,
         createdAt: Date.now(),
-        ...(isAdvancedLevel(langId, level) && { generatedInTargetLang: true }),
+        ...(shouldUseTargetLang(langId, level, immersionMode) && { generatedInTargetLang: true }),
       };
       setSuggestions(suggestedTopics || []);
       act.addSyllabus(newSyllabus);

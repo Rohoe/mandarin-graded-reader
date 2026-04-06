@@ -53,6 +53,26 @@ export default function SettingsReadingTab({ state, act }) {
 
       <hr className="divider" />
 
+      {/* Immersion Mode */}
+      <section className="settings-section">
+        <h3 className="settings-section__title form-label">{t('settings.reading.immersionMode')}</h3>
+        <p className="settings-section__desc text-muted">
+          {t('settings.reading.immersionModeDesc')}
+        </p>
+        <select
+          className="form-select"
+          value={state.immersionMode || 'auto'}
+          onChange={e => act.setImmersionMode(e.target.value)}
+          style={{ maxWidth: '18rem' }}
+        >
+          <option value="auto">{t('settings.reading.immersionAuto')}</option>
+          <option value="target">{t('settings.reading.immersionTarget')}</option>
+          <option value="native">{t('settings.reading.immersionNative')}</option>
+        </select>
+      </section>
+
+      <hr className="divider" />
+
       {/* Dark mode */}
       <section className="settings-section">
         <div className="settings-toggle-row">

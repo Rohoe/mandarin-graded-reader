@@ -12,6 +12,7 @@
 
 import { generateReader, generateReaderStream } from './api';
 import { parseReaderResponse, normalizeStructuredReader } from './parser';
+import { shouldUseTargetLang } from './languages';
 import {
   START_PENDING_READER, CLEAR_PENDING_READER, SET_NOTIFICATION,
 } from '../context/actionTypes';
@@ -170,7 +171,12 @@ async function _runGeneration(lessonKey, entry, opts) {
       });
     }
 
-    _pushGeneratedReader(lessonKey, { ...parsed, topic, level, langId, lessonKey });
+    const immersionMode = genOptions?.immersionMode;
+    const useTargetLang = shouldUseTargetLang(langId, level, immersionMode);
+    _pushGeneratedReader(lessonKey, {
+      ...parsed, topic, level, langId, lessonKey,
+      ...(useTargetLang && { generatedInTargetLang: true }),
+    });
 
     // Update standalone metadata with generated titles
     if ((parsed.titleZh || parsed.titleEn) && (lessonKey.startsWith('standalone_') || lessonKey.startsWith('plan_'))) {

@@ -324,6 +324,7 @@ function AppShell() {
           : 0;
         const { lessons: newLessons } = await extendNarrativeSyllabus(
           llmConfig, currentSyllabus, additionalCount, state.nativeLang,
+          { immersionMode: state.immersionMode },
         );
         act.extendSyllabusLessons(activeSyllabusId, newLessons, segmentsToConsume || undefined);
       } else {
@@ -335,6 +336,7 @@ function AppShell() {
           additionalCount,
           currentSyllabus.langId,
           state.nativeLang,
+          { immersionMode: state.immersionMode },
         );
         act.extendSyllabusLessons(activeSyllabusId, newLessons);
       }

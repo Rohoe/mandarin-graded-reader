@@ -67,6 +67,7 @@ import {
   loadDefaultLevels,
   loadNativeLang,
   loadShowArchived,
+  loadImmersionMode,
   loadLearningPaths,
   loadDifficultyFeedback,
   loadShownMilestones,
@@ -152,6 +153,7 @@ function buildInitialState() {
     useStructuredOutput: loadStructuredOutput(),
     newCardsPerDay:    loadNewCardsPerDay(),
     showArchived:      loadShowArchived(),
+    immersionMode:     loadImmersionMode(),
     // Evicted reader keys (persisted)
     evictedReaderKeys: loadEvictedReaderKeys(),
     // Fetched models from provider APIs (ephemeral, not persisted)

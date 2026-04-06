@@ -1,4 +1,5 @@
 import { useT } from '../../i18n';
+import TranslatableText from '../TranslatableText';
 import './AccuracyNotes.css';
 
 const STATUS_LABELS = {
@@ -7,7 +8,7 @@ const STATUS_LABELS = {
   creative_liberty: 'accuracyNotes.creativeLiberty',
 };
 
-export default function AccuracyNotes({ notes }) {
+export default function AccuracyNotes({ notes, langId, nativeLang, generatedInTargetLang }) {
   const t = useT();
   if (!notes?.length) return null;
 
@@ -23,7 +24,16 @@ export default function AccuracyNotes({ notes }) {
               {t(STATUS_LABELS[note.status] || 'accuracyNotes.accurate')}
             </span>
             <span className="accuracy-notes__claim">{note.claim}</span>
-            {note.note && <p className="accuracy-notes__explanation">{note.note}</p>}
+            {note.note && (
+              <TranslatableText
+                text={note.note}
+                langId={langId}
+                nativeLang={nativeLang}
+                enabled={generatedInTargetLang}
+                tag="p"
+                className="accuracy-notes__explanation"
+              />
+            )}
           </li>
         ))}
       </ul>

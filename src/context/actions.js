@@ -88,6 +88,7 @@ export function actions(dispatch) {
     setDefaultLevelForLang:(langId, level) => dispatch({ type: T.SET_DEFAULT_LEVEL_FOR_LANG, payload: { langId, level: Number(level) } }),
     setNativeLang:         langId => dispatch({ type: T.SET_NATIVE_LANG, payload: langId }),
     setShowArchived:       val    => dispatch({ type: T.SET_SHOW_ARCHIVED, payload: Boolean(val) }),
+    setImmersionMode:      mode   => dispatch({ type: T.SET_IMMERSION_MODE, payload: mode }),
     // Background generation tracking
     startPendingReader:    key    => dispatch({ type: T.START_PENDING_READER, payload: key }),
     clearPendingReader:    key    => dispatch({ type: T.CLEAR_PENDING_READER, payload: key }),

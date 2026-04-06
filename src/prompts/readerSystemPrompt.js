@@ -1,6 +1,7 @@
 export function buildReaderSystem(langConfig, level, topic, charRange, targetChars = 1200, nativeLangName = 'English', { difficultyHint, recentTopics, useTargetLang } = {}) {
   const p = langConfig.prompts;
   const profName = langConfig.proficiency.name;
+  const descLang = useTargetLang ? p.targetLanguage : nativeLangName;
 
   // Scale content expectations based on reader length
   const vocabRange = targetChars <= 250 ? '3-5'
@@ -52,7 +53,7 @@ With bolded vocabulary and italicized proper nouns
 
 ### 3. Vocabulary
 Return a JSON block tagged \`\`\`vocab-json containing an array of vocabulary objects.
-Each object includes: the word fields, a story example sentence (copied exactly from the story, without bold markers), a one-sentence usage note, an extra example sentence, and its usage note.
+Each object includes: the word fields, a story example sentence (copied exactly from the story, without bold markers), a one-sentence usage note (in ${descLang}), an extra example sentence, and its usage note (in ${descLang}).
 Do NOT prefix example sentences with labels like "Example:" — just write the sentence directly.
 \`\`\`vocab-json
 [
@@ -90,7 +91,7 @@ For vocabulary matching questions (use 3-5 vocabulary words from the story), use
 
 ### 5. Grammar Notes
 Identify ${grammarRange} key ${p.grammarContext} used in the story. For each pattern:
-- **Pattern** (${nativeLangName} name) — one-sentence explanation of the structure and when to use it
+- **Pattern** (${descLang} name) — one-sentence ${descLang} explanation of the structure and when to use it
 - Example sentence taken directly from the story
 
 ### 6. Suggested Topics

@@ -51,10 +51,10 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
     ttsVoiceURIs: s.ttsVoiceURIs, ttsSpeechRate: s.ttsSpeechRate,
     romanizationOn: s.romanizationOn, translateButtons: s.translateButtons,
   }));
-  const { providerKeys, activeProvider, activeModels, customBaseUrl, maxTokens, useStructuredOutput, nativeLang, difficultyFeedback } = useAppSelector(s => ({
+  const { providerKeys, activeProvider, activeModels, customBaseUrl, maxTokens, useStructuredOutput, nativeLang, immersionMode, difficultyFeedback } = useAppSelector(s => ({
     providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
     maxTokens: s.maxTokens, useStructuredOutput: s.useStructuredOutput, nativeLang: s.nativeLang || 'en',
-    difficultyFeedback: s.difficultyFeedback,
+    immersionMode: s.immersionMode || 'auto', difficultyFeedback: s.difficultyFeedback,
   }));
   const dispatch = useAppDispatch();
   const { restoreEvictedReader } = useContext(AppContext);
@@ -189,7 +189,7 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
 
   const llmConfig = buildLLMConfig({ providerKeys, activeProvider, activeModels, customBaseUrl });
   const { handleGenerate, streamingText } = useReaderGeneration({
-    lessonKey, lessonMeta, reader: reader || standaloneMeta, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength, useStructuredOutput, nativeLang,
+    lessonKey, lessonMeta, reader: reader || standaloneMeta, langId, isPending, llmConfig, learnedVocabulary, maxTokens, readerLength, useStructuredOutput, nativeLang, immersionMode,
     syllabus, generatedReaders, learningActivity, difficultyFeedback,
   });
 
@@ -432,13 +432,16 @@ export default function ReaderView({ lessonKey, lessonMeta, syllabus, onMarkComp
         onTranslateExample={handleTranslateVocabExample}
         translatingKey={translatingVocabKey}
         vocabTranslations={reader?.vocabTranslations || {}}
+        langId={langId}
+        nativeLang={nativeLang}
+        generatedInTargetLang={!!reader?.generatedInTargetLang}
       />
 
       {/* Grammar notes */}
-      <GrammarNotes grammarNotes={reader.grammarNotes} renderChars={renderChars} />
+      <GrammarNotes grammarNotes={reader.grammarNotes} renderChars={renderChars} langId={langId} nativeLang={nativeLang} generatedInTargetLang={!!reader?.generatedInTargetLang} />
 
       {/* Accuracy notes */}
-      <AccuracyNotes notes={reader.accuracyNotes} />
+      <AccuracyNotes notes={reader.accuracyNotes} langId={langId} nativeLang={nativeLang} generatedInTargetLang={!!reader?.generatedInTargetLang} />
 
       {/* Chat summary (from tutor conversation) */}
       {reader.chatSummary && (

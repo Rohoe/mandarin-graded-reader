@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { renderInline, stripMarkdown } from '../lib/renderInline';
 import { useT } from '../i18n';
+import TranslatableText from './TranslatableText';
 import { Volume2, Square } from 'lucide-react';
 import './VocabularyList.css';
 
-function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSupported, showParagraphTools, onTranslateExample, translatingKey, vocabTranslations, visibleTranslations, toggleTranslation }) {
+function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSupported, showParagraphTools, onTranslateExample, translatingKey, vocabTranslations, visibleTranslations, toggleTranslation, langId, nativeLang, generatedInTargetLang }) {
   const [open, setOpen] = useState(false);
   const t = useT();
 
@@ -76,7 +77,9 @@ function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSuppor
                 <p className="vocab-card__example-translation text-muted">{vocabTranslations[`story-${index}`] || word.exampleStoryTranslation}</p>
               )}
               {word.usageNoteStory && (
-                <p className="vocab-card__usage-note text-subtle">{renderInline(word.usageNoteStory)}</p>
+                generatedInTargetLang
+                  ? <TranslatableText text={word.usageNoteStory} langId={langId} nativeLang={nativeLang} enabled tag="p" className="vocab-card__usage-note text-subtle" />
+                  : <p className="vocab-card__usage-note text-subtle">{renderInline(word.usageNoteStory)}</p>
               )}
             </div>
           )}
@@ -113,7 +116,9 @@ function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSuppor
                 <p className="vocab-card__example-translation text-muted">{vocabTranslations[`extra-${index}`] || word.exampleExtraTranslation}</p>
               )}
               {word.usageNoteExtra && (
-                <p className="vocab-card__usage-note text-subtle">{renderInline(word.usageNoteExtra)}</p>
+                generatedInTargetLang
+                  ? <TranslatableText text={word.usageNoteExtra} langId={langId} nativeLang={nativeLang} enabled tag="p" className="vocab-card__usage-note text-subtle" />
+                  : <p className="vocab-card__usage-note text-subtle">{renderInline(word.usageNoteExtra)}</p>
               )}
             </div>
           )}
@@ -123,7 +128,7 @@ function VocabCard({ word, index, renderChars, speakText, speakingKey, ttsSuppor
   );
 }
 
-export default function VocabularyList({ vocabulary, renderChars, speakText, speakingKey, ttsSupported, showParagraphTools, onTranslateExample, translatingKey, vocabTranslations }) {
+export default function VocabularyList({ vocabulary, renderChars, speakText, speakingKey, ttsSupported, showParagraphTools, onTranslateExample, translatingKey, vocabTranslations, langId, nativeLang, generatedInTargetLang }) {
   const [collapsed, setCollapsed] = useState(false);
   const [visibleTranslations, setVisibleTranslations] = useState(new Set());
   const t = useT();
@@ -170,6 +175,9 @@ export default function VocabularyList({ vocabulary, renderChars, speakText, spe
               vocabTranslations={vocabTranslations || {}}
               visibleTranslations={visibleTranslations}
               toggleTranslation={toggleTranslation}
+              langId={langId}
+              nativeLang={nativeLang}
+              generatedInTargetLang={generatedInTargetLang}
             />
           ))}
         </div>

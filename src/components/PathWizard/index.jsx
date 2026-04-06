@@ -4,7 +4,7 @@ import { actions } from '../../context/actions';
 import { generateLearningPath } from '../../lib/api';
 import { buildLLMConfig, hasAnyUserKey } from '../../lib/llmConfig';
 import { createLearningPath } from '../../lib/learningPathSchema';
-import { getAllLanguages, DEFAULT_LANG_ID, isAdvancedLevel } from '../../lib/languages';
+import { getAllLanguages, DEFAULT_LANG_ID, shouldUseTargetLang } from '../../lib/languages';
 import { useT } from '../../i18n';
 import StepInterests from './StepInterests';
 import StepBlueprint from './StepBlueprint';
@@ -12,8 +12,8 @@ import StepEditBlueprint from './StepEditBlueprint';
 import './PathWizard.css';
 
 export default function PathWizard({ onCreated, onCancel, onOpenSettings, onShowImport }) {
-  const { defaultLevels, nativeLang, providerKeys, activeProvider, activeModels, customBaseUrl, customModelName, compatPreset, maxTokens, loading } = useAppSelector(s => ({
-    defaultLevels: s.defaultLevels || {}, nativeLang: s.nativeLang || 'en',
+  const { defaultLevels, nativeLang, immersionMode, providerKeys, activeProvider, activeModels, customBaseUrl, customModelName, compatPreset, maxTokens, loading } = useAppSelector(s => ({
+    defaultLevels: s.defaultLevels || {}, nativeLang: s.nativeLang || 'en', immersionMode: s.immersionMode || 'auto',
     providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels,
     customBaseUrl: s.customBaseUrl, customModelName: s.customModelName, compatPreset: s.compatPreset,
     maxTokens: s.maxTokens, loading: s.loading,
@@ -52,7 +52,7 @@ export default function PathWizard({ onCreated, onCancel, onOpenSettings, onShow
         apiKey: providerKeys[activeProvider], providerKeys, activeProvider,
         activeModels, customBaseUrl, customModelName, compatPreset, maxTokens,
       });
-      const result = await generateLearningPath(llmConfig, profile, profile.langId, nativeLang);
+      const result = await generateLearningPath(llmConfig, profile, profile.langId, nativeLang, { immersionMode });
       setBlueprint(result);
       setStep(3);
     } catch (err) {
@@ -114,7 +114,7 @@ export default function PathWizard({ onCreated, onCancel, onOpenSettings, onShow
       profile,
       units: blueprint.units,
       continuationContext: blueprint.continuationContext,
-      generatedInTargetLang: isAdvancedLevel(profile.langId, profile.level),
+      generatedInTargetLang: shouldUseTargetLang(profile.langId, profile.level, immersionMode),
     });
     act.addLearningPath(path);
     act.notify('success', `Learning path "${path.title}" created with ${path.units.length} units`);
