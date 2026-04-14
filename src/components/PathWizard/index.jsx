@@ -6,6 +6,7 @@ import { buildLLMConfig, hasAnyUserKey } from '../../lib/llmConfig';
 import { createLearningPath } from '../../lib/learningPathSchema';
 import { getAllLanguages, DEFAULT_LANG_ID, shouldUseTargetLang } from '../../lib/languages';
 import { useT } from '../../i18n';
+import { useIsOnline } from '../../hooks/useIsOnline';
 import StepInterests from './StepInterests';
 import StepBlueprint from './StepBlueprint';
 import StepEditBlueprint from './StepEditBlueprint';
@@ -22,8 +23,9 @@ export default function PathWizard({ onCreated, onCancel, onOpenSettings, onShow
   const act = useMemo(() => actions(dispatch), [dispatch]);
   const t = useT();
 
+  const isOnline = useIsOnline();
   const defaultKeyAvailable = !hasAnyUserKey(providerKeys) && !!import.meta.env.VITE_DEFAULT_GEMINI_KEY;
-  const canGenerate = !!providerKeys[activeProvider] || defaultKeyAvailable;
+  const canGenerate = (!!providerKeys[activeProvider] || defaultKeyAvailable) && isOnline;
 
   const [step, setStep] = useState(1); // 1: interests, 2: generating/review, 3: edit
   const [profile, setProfile] = useState({

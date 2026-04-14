@@ -77,7 +77,7 @@ export function useCloudStartup(state, dispatch, stateRef, startupSyncDoneRef, s
     }
 
     doStartupSync();
-  }, [state.cloudUser, state.fsInitialized]);  // eslint-disable-line react-hooks/exhaustive-deps — reads current state via stateRef, runs once per cloudUser+fsInitialized combo
+  }, [state.cloudUser, state.fsInitialized]);  // eslint-disable-line react-hooks/exhaustive-deps -- reads current state via stateRef, runs once per cloudUser+fsInitialized combo
 
   // Debounced auto-push: 3s after any data change, once startup sync is done
   useEffect(() => {
@@ -103,5 +103,26 @@ export function useCloudStartup(state, dispatch, stateRef, startupSyncDoneRef, s
       }
     }, 3000);
     return () => clearTimeout(timer);
-  }, [state.lastModified, state.cloudUser]);  // eslint-disable-line react-hooks/exhaustive-deps — reads current state via stateRef, refs for startup/pause gates
+  }, [state.lastModified, state.cloudUser]);  // eslint-disable-line react-hooks/exhaustive-deps -- reads current state via stateRef, refs for startup/pause gates
+
+  // Sync on reconnect: push unsynced changes when coming back online
+  useEffect(() => {
+    function handleOnline() {
+      const s = stateRef.current;
+      if (!s.cloudUser || !startupSyncDoneRef.current) return;
+      if (s.cloudLastSynced >= s.lastModified) return;
+      // Small delay to let the network stabilize
+      setTimeout(async () => {
+        try {
+          await pushToCloud(stateRef.current);
+          dispatch({ type: SET_CLOUD_LAST_SYNCED, payload: Date.now() });
+          dispatch({ type: SET_NOTIFICATION, payload: { type: 'success', message: 'Back online — changes synced.', timeout: 4000 } });
+        } catch (e) {
+          console.warn('[AppContext] Reconnect sync failed:', e);
+        }
+      }, 2000);
+    }
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- reads current state via stateRef; stable refs
 }

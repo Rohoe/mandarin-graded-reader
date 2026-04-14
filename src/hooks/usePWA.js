@@ -1,24 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useIsOnline } from './useIsOnline';
 
 /**
  * PWA hook: tracks online/offline status, SW update availability, and install prompt.
  */
 export function usePWA() {
-  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const isOnline = useIsOnline();
   const [needRefresh, setNeedRefresh] = useState(false);
   const [installPrompt, setInstallPrompt] = useState(null);
-
-  // Track online/offline
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
 
   // Track SW updates — listen for controllerchange indicating a new SW activated
   useEffect(() => {

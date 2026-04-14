@@ -4,6 +4,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useT } from '../../i18n';
+import { useIsOnline } from '../../hooks/useIsOnline';
 import { ArrowUp } from 'lucide-react';
 
 const SUGGESTION_KEYS = [
@@ -15,6 +16,7 @@ const SUGGESTION_KEYS = [
 
 export default function ChatInput({ onSend, onSuggestion, isGenerating, showChips }) {
   const t = useT();
+  const isOnline = useIsOnline();
   const [text, setText] = useState('');
   const textareaRef = useRef(null);
 
@@ -25,7 +27,7 @@ export default function ChatInput({ onSend, onSuggestion, isGenerating, showChip
 
   function handleSubmit(e) {
     e?.preventDefault();
-    if (!text.trim() || isGenerating) return;
+    if (!text.trim() || isGenerating || !isOnline) return;
     onSend(text);
     setText('');
     // Reset textarea height
@@ -56,7 +58,7 @@ export default function ChatInput({ onSend, onSuggestion, isGenerating, showChip
               key={key}
               className="tutor-chat__chip"
               onClick={() => onSuggestion(t(key))}
-              disabled={isGenerating}
+              disabled={isGenerating || !isOnline}
             >
               {t(key)}
             </button>
@@ -70,14 +72,14 @@ export default function ChatInput({ onSend, onSuggestion, isGenerating, showChip
           value={text}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
-          placeholder={t('tutor.placeholder')}
+          placeholder={isOnline ? t('tutor.placeholder') : t('pwa.offlineShort')}
           rows={1}
-          disabled={isGenerating}
+          disabled={isGenerating || !isOnline}
         />
         <button
           type="submit"
           className="tutor-chat__send-btn"
-          disabled={!text.trim() || isGenerating}
+          disabled={!text.trim() || isGenerating || !isOnline}
           aria-label={t('tutor.send')}
         >
           <ArrowUp size={16} />

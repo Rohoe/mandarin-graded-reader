@@ -3,6 +3,7 @@ import { useAppSelector } from '../../context/useAppSelector';
 import { getLang, getLessonTitle } from '../../lib/languages';
 import { buildReviewContext, getLevelUpRecommendation } from '../../lib/stats';
 import { useT } from '../../i18n';
+import { useIsOnline } from '../../hooks/useIsOnline';
 import { Check, ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
 import LoadingIndicator from '../LoadingIndicator';
 import TranslatableText from '../TranslatableText';
@@ -18,36 +19,32 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
     nativeLang: s.nativeLang || 'en',
   }));
   const t = useT();
+  const isOnline = useIsOnline();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [extendOpen, setExtendOpen] = useState(false);
   const [additionalCount, setAdditionalCount] = useState(3);
   const [learningSummaryOpen, setLearningSummaryOpen] = useState(false);
   const [vocabExpanded, setVocabExpanded] = useState(false);
 
-  if (!syllabus) return null;
-
-  const { topic, level, langId, summary, lessons = [], createdAt } = syllabus;
-  const langConfig = getLang(langId);
   const completedSet = useMemo(() => new Set(progress?.completedLessons || []), [progress?.completedLessons]);
   const completedCount = completedSet.size;
 
-  const createdDate = createdAt
-    ? new Date(createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
-    : null;
-
-  // First incomplete lesson index for the Continue CTA
-  const firstIncompleteIdx = lessons.findIndex((_, idx) => !completedSet.has(idx));
-  const continueIdx = firstIncompleteIdx === -1 ? 0 : firstIncompleteIdx;
-  const allDone = completedCount === lessons.length && lessons.length > 0;
+  const syllabusId = syllabus?.id;
+  const topic = syllabus?.topic;
+  const level = syllabus?.level;
+  const langId = syllabus?.langId;
+  const summary = syllabus?.summary;
+  const lessons = syllabus?.lessons || [];
+  const createdAt = syllabus?.createdAt;
 
   // Aggregate learning summary from completed readers
   const learningSummary = useMemo(() => {
-    if (!syllabus?.id || completedCount === 0) return null;
+    if (!syllabusId || completedCount === 0) return null;
     const allVocab = [];
     const allGrammar = [];
     let totalLength = 0;
     for (const idx of (progress?.completedLessons || [])) {
-      const reader = generatedReaders[`lesson_${syllabus.id}_${idx}`];
+      const reader = generatedReaders[`lesson_${syllabusId}_${idx}`];
       if (!reader) continue;
       if (reader.vocabulary) {
         for (const v of reader.vocabulary) {
@@ -67,19 +64,32 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
     }
     if (allVocab.length === 0 && allGrammar.length === 0 && totalLength === 0) return null;
     return { vocab: allVocab, grammar: allGrammar, totalLength };
-  }, [syllabus?.id, completedCount, progress?.completedLessons, generatedReaders]);
+  }, [syllabusId, completedCount, progress?.completedLessons, generatedReaders]);
 
   // Level-up recommendation
   const levelUpRec = useMemo(() => {
-    if (!syllabus?.id || !level) return null;
+    if (!syllabusId || !level) return null;
     return getLevelUpRecommendation(learnedVocabulary, learningActivity, generatedReaders, langId, level);
-  }, [syllabus?.id, level, learnedVocabulary, learningActivity, generatedReaders, langId]);
+  }, [syllabusId, level, learnedVocabulary, learningActivity, generatedReaders, langId]);
 
   // Review context for smart review lessons
   const reviewContext = useMemo(() => {
-    if (!syllabus?.id) return null;
-    return buildReviewContext(learnedVocabulary, generatedReaders, learningActivity, syllabus.id, progress?.completedLessons || [], langId);
-  }, [syllabus?.id, learnedVocabulary, generatedReaders, learningActivity, progress?.completedLessons, langId]);
+    if (!syllabusId) return null;
+    return buildReviewContext(learnedVocabulary, generatedReaders, learningActivity, syllabusId, progress?.completedLessons || [], langId);
+  }, [syllabusId, learnedVocabulary, generatedReaders, learningActivity, progress?.completedLessons, langId]);
+
+  if (!syllabus) return null;
+
+  const langConfig = getLang(langId);
+
+  const createdDate = createdAt
+    ? new Date(createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+    : null;
+
+  // First incomplete lesson index for the Continue CTA
+  const firstIncompleteIdx = lessons.findIndex((_, idx) => !completedSet.has(idx));
+  const continueIdx = firstIncompleteIdx === -1 ? 0 : firstIncompleteIdx;
+  const allDone = completedCount === lessons.length && lessons.length > 0;
 
   function handleDelete() {
     setConfirmingDelete(false);
@@ -331,9 +341,9 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
           <button
             className="btn btn-primary btn-sm"
             onClick={() => onGenerateReview(reviewContext)}
-            disabled={loading}
+            disabled={loading || !isOnline}
           >
-            {t('syllabusHome.generateReview')}
+            {!isOnline ? t('pwa.offlineShort') : t('syllabusHome.generateReview')}
           </button>
         </section>
       )}
@@ -388,9 +398,9 @@ export default function SyllabusHome({ syllabus, progress, onSelectLesson, onDel
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={() => { onExtend(additionalCount); setExtendOpen(false); }}
-                  disabled={loading}
+                  disabled={loading || !isOnline}
                 >
-                  {loading ? loadingMessage || t('common.generating') : t('common.generate')}
+                  {!isOnline ? t('pwa.offlineShort') : loading ? loadingMessage || t('common.generating') : t('common.generate')}
                 </button>
               </div>
             </div>

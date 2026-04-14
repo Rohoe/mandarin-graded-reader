@@ -6,12 +6,13 @@ import { buildLLMConfig, hasAnyUserKey } from '../../lib/llmConfig';
 import { buildLearnerProfile } from '../../lib/stats';
 import { getLang } from '../../lib/languages';
 import { useT } from '../../i18n';
+import { useIsOnline } from '../../hooks/useIsOnline';
 import UnitCard from './UnitCard';
 import TranslatableText from '../TranslatableText';
 import './PathHome.css';
 
 
-export default function PathHome({ pathId, onSelectUnit, onOpenSettings, onShowImportExport, onArchive, onDelete }) {
+export default function PathHome({ pathId, onSelectUnit, onShowImportExport, onArchive, onDelete }) {
   const { learningPaths, syllabi, syllabusProgress, generatedReaders, learnedVocabulary, learningActivity, providerKeys, activeProvider, activeModels, customBaseUrl, customModelName, compatPreset, maxTokens, nativeLang, immersionMode, loading } = useAppSelector(s => ({
     learningPaths: s.learningPaths, syllabi: s.syllabi, syllabusProgress: s.syllabusProgress,
     generatedReaders: s.generatedReaders, learnedVocabulary: s.learnedVocabulary, learningActivity: s.learningActivity,
@@ -23,6 +24,7 @@ export default function PathHome({ pathId, onSelectUnit, onOpenSettings, onShowI
   const act = useMemo(() => actions(dispatch), [dispatch]);
   const t = useT();
 
+  const isOnline = useIsOnline();
   const path = learningPaths.find(p => p.id === pathId);
   const [generatingUnit, setGeneratingUnit] = useState(null);
   const [editingUnit, setEditingUnit] = useState(null);
@@ -34,7 +36,7 @@ export default function PathHome({ pathId, onSelectUnit, onOpenSettings, onShowI
   }
 
   const defaultKeyAvailable = !hasAnyUserKey(providerKeys) && !!import.meta.env.VITE_DEFAULT_GEMINI_KEY;
-  const canGenerate = !!providerKeys[activeProvider] || defaultKeyAvailable;
+  const canGenerate = (!!providerKeys[activeProvider] || defaultKeyAvailable) && isOnline;
   const langConfig = getLang(path.langId);
 
   // Compute progress per unit
@@ -128,7 +130,7 @@ export default function PathHome({ pathId, onSelectUnit, onOpenSettings, onShowI
         activeModels, customBaseUrl, customModelName, compatPreset, maxTokens,
       });
       const result = await extendLearningPathAPI(llmConfig, path, 5, nativeLang, { immersionMode });
-      const newUnits = (result.units || []).map((u, i) => ({
+      const newUnits = (result.units || []).map((u) => ({
         title: u.title, description: u.description,
         estimatedLessons: u.estimatedLessons || u.estimated_lessons || 8,
         style: u.style || 'thematic',

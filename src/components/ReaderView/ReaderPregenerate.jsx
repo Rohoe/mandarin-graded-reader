@@ -1,6 +1,7 @@
 import { getLessonTitle } from '../../lib/languages';
 import { getProvider } from '../../lib/providers';
 import { useT } from '../../i18n';
+import { useIsOnline } from '../../hooks/useIsOnline';
 import TranslatableText from '../TranslatableText';
 
 export default function ReaderPregenerate({
@@ -9,6 +10,7 @@ export default function ReaderPregenerate({
   nativeLang, generatedInTargetLang,
 }) {
   const t = useT();
+  const isOnline = useIsOnline();
   return (
     <div className="reader-view reader-view--pregenerate">
       <div className="reader-view__pregenerate card card-padded">
@@ -45,8 +47,8 @@ export default function ReaderPregenerate({
           />
           <div className="reader-view__length-ticks"><span>{t('reader.pregen.short')}</span><span>{t('reader.pregen.long')}</span></div>
         </div>
-        <button className="btn btn-primary btn-lg reader-view__generate-btn" onClick={onGenerate} disabled={isPending}>
-          {t('reader.pregen.generate')}
+        <button className="btn btn-primary btn-lg reader-view__generate-btn" onClick={onGenerate} disabled={isPending || !isOnline}>
+          {!isOnline ? t('pwa.offlineShort') : t('reader.pregen.generate')}
         </button>
         {llmConfig.apiKey && (
           <p className="text-muted" style={{ fontSize: 'var(--text-xs)', textAlign: 'center', marginTop: 'var(--space-2)', opacity: 0.5 }}>

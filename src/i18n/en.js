@@ -590,6 +590,7 @@ export default {
 
   // ── PWA ───────────────────────────────────────────────────────
   'pwa.offline': 'You are offline — reading and flashcards still work.',
+  'pwa.offlineShort': 'Offline',
   'pwa.newVersion': 'A new version is available.',
   'pwa.refresh': 'Refresh',
   'pwa.installPrompt': 'Install this app for offline access.',

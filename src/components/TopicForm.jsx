@@ -11,6 +11,7 @@ import { mapReaderVocabulary } from '../lib/vocabMapper';
 import { mapReaderGrammar } from '../lib/grammarMapper';
 import { getLang, getAllLanguages, DEFAULT_LANG_ID, shouldUseTargetLang } from '../lib/languages';
 import { useT } from '../i18n';
+import { useIsOnline } from '../hooks/useIsOnline';
 import PathWizard from './PathWizard';
 import GenerationProgress from './GenerationProgress';
 import './TopicForm.css';
@@ -23,8 +24,9 @@ export default function TopicForm({ onNewSyllabus, onStandaloneGenerated, onStan
     providerKeys: s.providerKeys, activeProvider: s.activeProvider, activeModels: s.activeModels, customBaseUrl: s.customBaseUrl,
   }));
 
+  const isOnline = useIsOnline();
   const defaultKeyAvailable = !hasAnyUserKey(providerKeys) && !!import.meta.env.VITE_DEFAULT_GEMINI_KEY;
-  const canGenerate = !!apiKey || defaultKeyAvailable;
+  const canGenerate = (!!apiKey || defaultKeyAvailable) && isOnline;
   const dispatch = useAppDispatch();
   const { pushGeneratedReader } = useContext(AppContext);
   const act = useMemo(() => actions(dispatch), [dispatch]);
